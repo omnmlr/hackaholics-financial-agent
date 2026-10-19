@@ -1,8 +1,10 @@
 .agus-workspace {
+  container-name: agus-workspace;
+  container-type: size;
   display: flex;
   height: var(--workspace-height, 100dvh);
   margin-top: var(--workspace-top, 0px);
-  background: #000;
+  background: #131211;
   color: #f5f5f5;
   font:
     16px/1.6 -apple-system,
@@ -25,30 +27,30 @@
 }
 .agus-workspace button {
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: 18px;
   padding: 8px 12px;
 }
 .agus-workspace button:hover,
 .agus-workspace a:hover {
-  background: #191919;
+  background: #292826;
 }
 .agus-workspace button:disabled {
   opacity: 1;
-  background: #191919;
-  color: #8a8a8a;
+  background: #292826;
+  color: #7e7a74;
   cursor: not-allowed;
 }
 .agus-workspace :focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid #329bff;
   outline-offset: 3px;
 }
 .agus-workspace input,
 .agus-workspace select {
   width: 100%;
   min-height: 44px;
-  background: #111;
+  background: #201f1d;
   border: 1px solid #666;
-  border-radius: 8px;
+  border-radius: 18px;
   padding: 8px 12px;
   color: #f5f5f5;
   font-size: 16px;
@@ -59,7 +61,7 @@
 }
 .agus-workspace small {
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-workspace h1 {
   font-size: 32px;
@@ -75,50 +77,34 @@
   font-size: 16px;
   font-weight: 600;
 }
-.brand-asset-placeholder {
-  display: inline-flex;
-  flex-direction: column;
-  border: 1px dashed #666;
-  padding: 8px 12px;
-  color: #b3b3b3;
-  font:
-    13px/1.5 -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  letter-spacing: 0;
-}
-.brand-asset-placeholder.lockup {
-  padding: 16px 24px;
-  gap: 12px;
-}
-.brand-asset-placeholder.lockup > :last-child {
-  font-size: 16px;
-  color: #f5f5f5;
-}
 .agus-sidebar {
   width: 256px;
   flex-shrink: 0;
   padding: 24px 16px 16px;
-  background: #0a0a0a;
+  background: #201f1d;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-right: 1px solid #2a2a2a;
+  border-right: 1px solid #34312d;
 }
 .agus-sidebar-brand {
   padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
-.agus-new,
 .agus-secondary {
   border: 1px solid #666 !important;
+}
+.agus-new {
+  background: #292826;
 }
 .agus-new {
   justify-content: flex-start;
   width: 100%;
 }
 .agus-history-heading {
-  color: #b3b3b3;
+  color: #a7a39d;
   font-size: 13px;
   padding: 8px;
 }
@@ -141,16 +127,16 @@
   white-space: nowrap;
 }
 .agus-history > button.active {
-  background: #191919;
-  border-left: 3px solid #fff;
+  background: #292826;
+  border-left: 3px solid #329bff;
 }
 .agus-sidebar-empty {
   padding: 8px;
-  color: #b3b3b3;
+  color: #a7a39d;
   font-size: 14px;
 }
 .agus-sidebar-bottom {
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid #34312d;
   padding-top: 8px;
 }
 .agus-sidebar-link,
@@ -190,18 +176,18 @@
   position: relative;
 }
 .agus-header {
-  height: 56px;
+  height: 64px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 32px;
-  border-bottom: 1px solid #2a2a2a;
+  padding: 0 16px;
 }
 .agus-header > div {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 .agus-header-title {
   font-size: 14px;
@@ -209,26 +195,33 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.agus-mobile-menu,
-.agus-mobile-brand {
-  display: none !important;
+.agus-header .brand-asset {
+  width: 64px;
+}
+.agus-header .agus-icon-button {
+  color: #a7a39d;
 }
 .agus-account-trigger {
-  max-width: 55%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
-.agus-mobile-scope {
-  display: none;
+.agus-active-scope {
+  padding: 8px 32px;
+  font-size: 13px;
+  color: #a7a39d;
+  flex-shrink: 0;
 }
 .agus-demo-strip {
-  min-height: 32px;
+  min-height: 44px;
   flex-shrink: 0;
-  background: #0a0a0a;
-  padding: 0 32px;
+  background: transparent;
+  padding: 0 16px max(8px, env(safe-area-inset-bottom));
+  text-align: center;
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
   position: relative;
 }
 .agus-demo-strip summary {
@@ -236,17 +229,25 @@
   align-items: center;
   min-height: 44px;
   cursor: pointer;
+  width: fit-content;
+  margin-inline: auto;
+}
+.agus-demo-strip summary::after {
+  content: "⌄";
+  margin-left: 8px;
 }
 .agus-demo-strip[open] > p {
   position: absolute;
-  top: 100%;
-  right: 16px;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: left;
   z-index: 4;
-  background: #111;
+  background: #201f1d;
   border: 1px solid #666;
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 16px;
-  max-width: 400px;
+  width: min(400px, calc(100% - 48px));
 }
 .agus-scroll {
   flex: 1;
@@ -260,32 +261,33 @@
 .agus-welcome,
 .agus-composer-area {
   width: 100%;
-  max-width: 760px;
+  max-width: 960px;
   margin-inline: auto;
 }
 .agus-welcome {
   text-align: center;
-  padding: 24px 0 16px;
-}
-.agus-welcome > p {
-  margin: 16px 0;
+  padding: 0 0 24px;
 }
 .agus-empty .agus-scroll {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
+  overflow: visible;
+  padding-top: 0;
   padding-bottom: 0;
+  margin-top: auto;
 }
 .agus-empty .agus-main {
   overflow-y: auto;
 }
 .agus-empty .agus-composer-area {
   margin-bottom: auto;
+  padding-bottom: clamp(72px, 14dvh, 140px);
 }
 .agus-turn {
   margin-bottom: 32px;
 }
 .agus-user-message {
-  background: #191919;
-  border-radius: 16px;
+  background: #292826;
+  border-radius: 24px;
   padding: 12px 16px;
   margin-left: auto;
   max-width: 90%;
@@ -296,12 +298,73 @@
 .agus-speaker {
   display: block;
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-workspace .agus-response-heading {
   margin-bottom: 8px;
   font-size: 14px;
   font-weight: 600;
+}
+.agus-drawer .agus-collapse {
+  display: none;
+}
+.agus-workspace .agus-welcome-question {
+  color: #f5f5f5;
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.agus-composer:focus-within {
+  border-color: #329bff;
+}
+.agus-workspace .agus-send:hover {
+  background: #4aa8ff !important;
+}
+.agus-workspace .agus-send:active {
+  background: #1f87ea !important;
+}
+.agus-thinking::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: #329bff;
+}
+.agus-handoff {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-color: #34312d;
+  background: #201f1d;
+}
+.agus-dialog.agus-signin {
+  width: min(440px, calc(100% - 32px));
+  padding: 28px;
+}
+.agus-signin .brand-asset {
+  margin-block: 20px 12px;
+}
+.agus-signin > p {
+  color: #a7a39d;
+  font-size: 14px;
+}
+.agus-signin form > button {
+  width: 100%;
+  background: #329bff;
+  color: #131211;
+  border: 0 !important;
+}
+.agus-response-time {
+  color: #7e7a74;
+}
+.agus-prose {
+  max-width: 75ch;
 }
 .agus-prose p {
   margin: 0 0 12px;
@@ -312,10 +375,9 @@
 }
 .agus-history-note,
 .agus-response-time,
-.agus-composer-note,
 .agus-fallback {
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-history-note {
   margin-bottom: 24px;
@@ -326,9 +388,9 @@
 }
 .agus-totals {
   display: flex;
-  border: 1px solid #2a2a2a;
-  background: #111;
-  border-radius: 12px;
+  border: 1px solid #34312d;
+  background: #201f1d;
+  border-radius: 18px;
   padding: 16px;
   gap: 24px;
   margin: 16px 0;
@@ -337,7 +399,7 @@
   flex: 1;
 }
 .agus-totals dt {
-  color: #b3b3b3;
+  color: #a7a39d;
   font-size: 14px;
 }
 .agus-totals dd {
@@ -353,14 +415,14 @@
 }
 .agus-limit {
   margin-top: 8px;
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-record {
   padding: 16px;
-  border: 1px solid #2a2a2a;
-  border-radius: 12px;
+  border: 1px solid #34312d;
+  border-radius: 18px;
   margin-top: 16px;
-  background: #111;
+  background: #201f1d;
 }
 .agus-record strong {
   display: block;
@@ -374,7 +436,7 @@
 .agus-sources {
   font-size: 14px;
   margin: 16px 0;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid #34312d;
 }
 .agus-sources summary {
   padding: 10px 4px;
@@ -388,7 +450,7 @@
   font-family: inherit;
   font-size: 14px;
   line-height: 1.5;
-  color: #b3b3b3;
+  color: #a7a39d;
   margin: 12px 0;
 }
 .agus-thinking {
@@ -401,10 +463,10 @@
   width: calc(100% - 64px);
 }
 .agus-composer {
-  background: #111;
-  border: 1px solid #666;
-  border-radius: 16px;
-  padding: 16px;
+  background: #201f1d;
+  border: 1px solid #34312d;
+  border-radius: 24px;
+  padding: 20px;
 }
 .agus-composer textarea {
   display: block;
@@ -414,13 +476,13 @@
   resize: none;
   font-size: 16px;
   line-height: 1.6;
-  min-height: 44px;
+  min-height: 52px;
   max-height: 160px;
   color: #f5f5f5;
   padding: 0 4px;
 }
 .agus-composer textarea::placeholder {
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-composer-toolbar {
   display: flex;
@@ -431,40 +493,40 @@
 }
 .agus-character-count {
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
   margin-right: auto;
 }
 .agus-send {
-  background: #fff !important;
-  color: #000 !important;
+  background: #329bff !important;
+  color: #131211 !important;
+  border-radius: 50% !important;
   width: 44px;
   height: 44px;
 }
-.agus-send:disabled {
-  background: #2a2a2a !important;
-  color: #b3b3b3 !important;
-}
-.agus-composer-note {
-  text-align: center;
-  padding: 8px 0 0;
+.agus-workspace .agus-send:disabled {
+  background: #329bff !important;
+  color: #131211 !important;
 }
 .agus-suggestions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 20px;
   padding-bottom: 16px;
 }
 .agus-suggestions button {
-  display: flex;
-  justify-content: flex-start;
-  text-align: left;
-  border: 1px solid #666;
-  gap: 12px;
-  padding: 12px;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #34312d;
+  border-radius: 999px;
+  color: #a7a39d;
+  font-size: 14px;
+  font-weight: 400;
 }
-.agus-suggestions button > svg:last-child {
-  margin-left: auto;
+.agus-suggestions button:hover {
+  color: #f5f5f5;
+  border-color: #666;
 }
 .agus-error,
 .agus-handoff,
@@ -473,31 +535,23 @@
   padding: 12px 16px;
   margin-bottom: 12px;
   border: 1px solid #666;
-  border-radius: 12px;
+  border-radius: 18px;
 }
 .agus-error button {
-  text-decoration: underline;
-}
-.agus-signin-hint {
-  font-size: 14px;
-  margin-bottom: 8px;
-  text-align: center;
-}
-.agus-signin-hint button {
   text-decoration: underline;
 }
 .agus-latest {
   position: absolute;
   bottom: 230px;
   right: 32px;
-  background: #111;
+  background: #201f1d;
   border: 1px solid #666 !important;
 }
 .agus-dialog {
   color: #f5f5f5;
-  background: #111;
+  background: #201f1d;
   border: 1px solid #666;
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 24px;
   width: min(720px, calc(100% - 32px));
   max-height: calc(100dvh - 32px);
@@ -515,7 +569,7 @@
 .agus-dialog-heading {
   position: sticky;
   top: -24px;
-  background: #111;
+  background: #201f1d;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -545,7 +599,7 @@
 }
 .agus-plan-grid section {
   border: 1px solid #666;
-  border-radius: 12px;
+  border-radius: 18px;
   padding: 16px;
 }
 .agus-plan-grid h3 {
@@ -558,7 +612,7 @@
 }
 .agus-preview {
   font-size: 13px;
-  color: #b3b3b3;
+  color: #a7a39d;
 }
 .agus-drawer {
   position: fixed;
@@ -569,7 +623,7 @@
   margin: 0;
   border-radius: 0;
   padding: 16px;
-  background: #0a0a0a;
+  background: #201f1d;
 }
 .agus-drawer[open] {
   display: flex;
@@ -595,7 +649,7 @@
   z-index: 20;
   padding: 8px;
   background: #fff;
-  color: #000;
+  color: #131211;
 }
 .agus-skip:focus {
   transform: none;
@@ -603,12 +657,6 @@
 @media (max-width: 1023px) {
   .agus-sidebar {
     display: none;
-  }
-  .agus-mobile-menu {
-    display: inline-flex !important;
-  }
-  .agus-header {
-    padding: 0 24px;
   }
   .agus-scroll {
     padding-inline: 24px;
@@ -618,6 +666,16 @@
   }
 }
 @media (max-width: 767px) {
+  .agus-workspace .agus-welcome-question {
+    font-size: 26px;
+  }
+  .agus-composer {
+    padding: 16px;
+  }
+  .agus-suggestions {
+    gap: 8px;
+    margin-top: 16px;
+  }
   .agus-header {
     padding: 0 8px;
     gap: 4px;
@@ -625,33 +683,7 @@
   .agus-header-title {
     display: none;
   }
-  .agus-mobile-brand {
-    display: inline-flex !important;
-  }
-  .agus-mobile-brand .brand-asset-placeholder {
-    border: 0;
-    padding: 0;
-    max-width: 100px;
-    font-size: 13px;
-  }
-  .agus-account-trigger {
-    max-width: 110px;
-  }
-  .agus-desktop-account {
-    display: none;
-  }
-  .agus-account-trigger:has(.agus-desktop-account)::after {
-    content: "Account";
-  }
-  .agus-mobile-scope {
-    display: block;
-    min-height: 44px;
-    padding: 8px 16px;
-    font-size: 14px;
-    flex-shrink: 0;
-    border-bottom: 1px solid #2a2a2a;
-  }
-  .agus-demo-strip {
+  .agus-active-scope {
     padding-inline: 16px;
   }
   .agus-scroll {
@@ -661,16 +693,9 @@
     width: calc(100% - 32px);
   }
   .agus-welcome {
-    padding: 16px 0 8px;
-  }
-  .agus-welcome > p {
-    margin: 12px 0;
-  }
-  .agus-suggestions {
-    grid-template-columns: 1fr;
+    padding: 0 0 24px;
   }
   .agus-suggestions button {
-    min-height: 44px;
     padding: 8px 12px;
   }
   .agus-turn {
@@ -709,15 +734,12 @@
     font-size: 22px;
   }
 }
-@media (max-height: 520px) {
+@container agus-workspace (max-height: 520px) {
+  .agus-empty .agus-composer-area {
+    padding-bottom: 16px;
+  }
   .agus-welcome {
     padding: 8px 0;
-  }
-  .agus-mobile-scope {
-    display: none;
-  }
-  .agus-composer-note {
-    display: none;
   }
   .agus-composer {
     padding: 8px 12px;
@@ -746,7 +768,7 @@
   background: transparent;
   padding: 0;
 }
-@media (max-height: 520px) {
+@container agus-workspace (max-height: 520px) {
   .agus-drawer {
     padding-top: 56px;
     gap: 8px;
@@ -767,7 +789,7 @@
   .agus-drawer .agus-profile small {
     display: none;
   }
-  .agus-workspace .agus-mobile-scope {
+  .agus-workspace .agus-active-scope {
     display: block;
     min-height: 32px;
     padding: 4px 16px;

@@ -1,0 +1,44 @@
+name: AGUS finals release candidate (fixtures only)
+on:
+  push:
+    branches: [release/agus-finals-rc-20261020]
+permissions:
+  contents: read
+concurrency:
+  group: agus-finals-rc-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Select Chromium
+        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\n`)'
+      - run: npm run test:http
+      - run: npm run test:browser
+      - run: npm run test:browser:native
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agus-finals-rc-evidence
+          path: |
+            /tmp/agus-native-agent-browser.json
+            /tmp/agus-native-agent-*.png
+            /tmp/agus-chat-payments-browser.json
+            /tmp/agus-chat-payments-*.png
+            /tmp/agus-voice-submit.json
+            /tmp/agus-voice-meter/results.json
+          retention-days: 30

@@ -1,8 +1,26 @@
 # Agus — Hackaholics 7.0
 
+The consolidated October 20 finals candidate, isolated fixture preview, UI integration contracts, verification and Railway release/rollback gates are in [the release handoff](docs/finals-release/HANDOFF.md). Start the local scripted preview with `npm run preview:fixture` after building; genuine provider campaigns remain closed pending a new bounded allocation.
+
+The October 20 conversation and voice repair is documented in [the architectural investigation](docs/agent-reconstruction/REPORT.md), including the new source-linked calculator, conversational memory, grounded explanations, real microphone waveform, validation evidence and outstanding live acceptance checks. Run `npm run evaluate:agent` with a privately configured model for the genuine conversation evaluation, or `npm run test:browser:voice` for the synthetic-microphone browser regression.
+
 Agus is a monochrome, chat-first Next.js financial workflow prototype: prepare payments, resolve beneficiaries, review and approve an immutable snapshot, explicitly submit individual Paystack transfers, and follow persisted outcomes. The agent never approves or executes payments.
 
 **Default: fixtures. No real money moves. No live transfer was attempted or verified during implementation.** Real transfers can only come from an eligible, funded, authorized Paystack business account; this is not a way to debit arbitrary personal accounts.
+
+## Integrated AGUS v1.2 candidate
+
+The consolidated candidate preserves the approved v1.2 conversation UI, original artwork, financial tools, saved chats and the existing payment workspace. See [the integration report](docs/integration/candidate/README.md) for ancestry, validation evidence and limitations.
+
+For this experience, follow the local setup below and set `FINANCIAL_DEMO_ENABLED=true` in `.env.local`, keeping `PAYMENT_MODE=fixture` and all live transfer flags false. Configure `AI_PROVIDER`, `AI_MODEL` and a legitimate server-side `AI_API_KEY` privately for natural conversation and grounded financial narration. With `AI_PROVIDER=none`, the conversation reports that a model is unavailable; only the payment workspace has the limited demonstration parser. The fixture financial accounts are fictional and scoped to the authenticated shared operator.
+
+```sh
+npm run test:integration          # Focused conversation/tools/history/payment suite
+npm run build
+npm run test:browser:integration  # Desktop/mobile production journeys; mocked AI
+```
+
+The browser integration command starts its own isolated fixture-only production server and writes sanitized results to `/tmp/agus-browser-integration.json` (override with `INTEGRATION_REPORT`). It requires Chromium at `/usr/bin/chromium` or `CHROMIUM_PATH`. It does not use your model or payment credentials.
 
 ## Run locally / in Codex Cloud
 

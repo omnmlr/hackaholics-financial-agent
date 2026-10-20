@@ -1,0 +1,50 @@
+{
+  "model": "mocked native Gemini function transport",
+  "genuineModelCalls": 0,
+  "data": "fictional",
+  "paymentMode": "fixture",
+  "results": [
+    {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "passed": true,
+      "checks": [
+        "Ordinary direct reply uses one generation and no tool",
+        "Native calculator signature round trip and saved contextual correction after reload",
+        "Hypothetical budget is independently calculated and final financial prose reviewed",
+        "Account picker resumes original request through authorized native read and source-backed cards",
+        "Provider 429 after authorized read retains visible factual financial cards",
+        "Explicit payment draft remains editable and persists without approval or execution",
+        "Provider error remains private and failed question survives reload for recovery"
+      ],
+      "preparations": 1,
+      "approvals": 0,
+      "executions": 0,
+      "errors": [],
+      "screenshot": "/tmp/agus-native-agent-1440.png"
+    },
+    {
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "passed": true,
+      "checks": [
+        "Ordinary direct reply uses one generation and no tool",
+        "Native calculator signature round trip and saved contextual correction after reload",
+        "Hypothetical budget is independently calculated and final financial prose reviewed",
+        "Account picker resumes original request through authorized native read and source-backed cards",
+        "Provider 429 after authorized read retains visible factual financial cards",
+        "Explicit payment draft remains editable and persists without approval or execution",
+        "Provider error remains private and failed question survives reload for recovery"
+      ],
+      "preparations": 1,
+      "approvals": 0,
+      "executions": 0,
+      "errors": [],
+      "screenshot": "/tmp/agus-native-agent-390.png"
+    }
+  ]
+}

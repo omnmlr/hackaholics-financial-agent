@@ -23,7 +23,9 @@
     "test:integration": "vitest run tests/financial-integration tests/financial-agent/grounded-narration.test.ts tests/financial-agent/routing.test.ts tests/financial-agent/education.test.ts tests/financial-agent/date-window.test.ts tests/payments.test.ts tests/financial-safety.test.ts tests/voice.test.ts",
     "test:browser:integration": "node scripts/browser-integration.mjs",
     "test:browser:chat-payments": "node scripts/browser-chat-payments.mjs",
-    "test:browser:legacy": "node scripts/browser-safety.mjs && node scripts/browser-chat-first.mjs && node scripts/browser-chat-ux.mjs && node scripts/browser-conversation.mjs && node scripts/browser-demo-polish.mjs"
+    "test:browser:legacy": "node scripts/browser-safety.mjs && node scripts/browser-chat-first.mjs && node scripts/browser-chat-ux.mjs && node scripts/browser-conversation.mjs && node scripts/browser-demo-polish.mjs",
+    "preview:fixture": "node scripts/preview-fixture.mjs",
+    "test:browser:native": "node scripts/browser-native-agent.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",

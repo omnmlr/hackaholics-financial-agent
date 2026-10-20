@@ -1,0 +1,53 @@
+{
+  "recordedAtUtc": "2026-10-20T18:18:37.309894+00:00",
+  "branch": "release/agus-finals-rc-20261020",
+  "base": "main",
+  "inheritedPr38Sha": "c28f4d2d38c1f97906f77af4c65468cae1d47e2b",
+  "runtimeSourceSha256": "dd94d85e75ac09ae8cbc9acd5be34a5c1597dbaaa6d92c493002a8dca789d1e2",
+  "digestMethod": "Sorted relative paths under src/ and scripts/ plus package.json, package-lock.json, next.config.ts; SHA256 of path + NUL + file bytes + NUL for each. Docs/tests are excluded.",
+  "environment": {
+    "node": "v24.19.0",
+    "chromium": "/usr/bin/chromium",
+    "data": "fictional",
+    "paymentMode": "fixture",
+    "genuineProviderCalls": 0
+  },
+  "results": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "build": "PASS",
+    "unitIntegration": {
+      "passed": 1167,
+      "files": 47,
+      "log": "unit-integration.log"
+    },
+    "previewNetworkRegression": {
+      "passed": 1,
+      "files": 1,
+      "log": "preview-guard.log"
+    },
+    "http": "PASS",
+    "chatPaymentBrowserGroups": 54,
+    "voiceSubmissionGroups": 36,
+    "webAudioLifecycleChecks": 8,
+    "nativeBrowserGroups": 14,
+    "nativeApprovalRequests": 0,
+    "nativeExecutionRequests": 0,
+    "persistentPreview": "PASS after actual process restart, saved sidebar, account selection, Lagos records and edited draft reload"
+  },
+  "ci": "Credential-free workflow agus-finals-rc.yml runs on this branch; final PR links the exact run and artifacts.",
+  "providerCampaign": "Closed: 40/40 previous native attempts, no new allocation; zero calls this task.",
+  "review": "Independent native and integration agents plus cross-review of final changes; found preview redirect escape, fixed and regression-tested. Not an external penetration test.",
+  "verdict": "CONDITIONAL GO for isolated fictional-data integration; NO-GO for live Railway release pending provider/service verification.",
+  "blockers": [
+    "Genuine repaired Lagos-date read and narrated correction under a new bounded allocation",
+    "Actual Railway deployed SHA/startup/runtime/storage manifest and reconciliation",
+    "Physical-device voice acceptance for voice-quality claims"
+  ],
+  "limits": [
+    "Scripted model/speech browser transports, synthetic microphone",
+    "Current-turn payment extraction; manually complete missing earlier-turn recipient details",
+    "Workspace-local preview, no public deployment",
+    "No production DB reset, credential change, bank access or real-money transfer"
+  ]
+}

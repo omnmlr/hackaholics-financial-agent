@@ -593,7 +593,7 @@ export function createModelLedAgent(
         // through the same fresh permission/source checks as the successful path.
         if (
           reads &&
-          /^(?:MODEL_|GENERAL_MODEL_|UNSUPPORTED_CLAIM|REPEATED_CALL|TOOL_BUDGET)/.test(
+          /^(?:MODEL_|GENERAL_MODEL_|UNSUPPORTED_CLAIM|REPEATED_CALL|TOOL_BUDGET|TIMEOUT$)/.test(
             code,
           )
         ) {

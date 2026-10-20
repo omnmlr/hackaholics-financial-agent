@@ -170,7 +170,9 @@ export function createSecureReads(options: Options) {
     if (calls.has(signature)) throw new AgentError("REPEATED_CALL");
     if (
       ambiguous &&
-      (call.name === "get_transaction" || call.name === "find_payment_evidence")
+      (call.name === "search_transactions" ||
+        call.name === "get_transaction" ||
+        call.name === "find_payment_evidence")
     )
       throw new AgentError("USER_SELECTION_REQUIRED");
     const ids =
@@ -284,6 +286,10 @@ export function createSecureReads(options: Options) {
               ).toISOString(),
             }
           : null;
+        // A new search supersedes saved hints for subsequent detail/evidence
+        // reads in this turn as well as the next. Keeping the old candidates
+        // here would reject a legitimate new match against an unrelated search.
+        priorCandidates = selection?.candidates ?? [];
       }
     }
     return { resultId: fact.resultId, ...(fact.modelData as object) };

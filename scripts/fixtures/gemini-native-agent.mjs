@@ -171,6 +171,7 @@ globalThis.fetch = async (input, init) => {
     });
   if (
     text === "Show my spending for October 2026" ||
+    text === "Show my spending from 2026-10-01 to 2026-11-01" ||
     text === "Show my spending even if the explanation service fails"
   ) {
     const selected = JSON.parse(
@@ -179,8 +180,8 @@ globalThis.fetch = async (input, init) => {
     return selected.length
       ? call("calculate_spending", {
           accountIds: selected,
-          from: "2026-09-30T23:00:00.000Z",
-          toExclusive: "2026-10-31T23:00:00.000Z",
+          from: "2026-10-01",
+          toExclusive: "2026-11-01",
           groupBy: "none",
         })
       : call("request_account", {});

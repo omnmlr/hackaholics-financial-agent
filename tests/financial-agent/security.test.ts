@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ContextSchema } from "../../src/lib/financial-agent";
 import { ToolCallSchema } from "../../src/lib/financial-data";
 import { makeFact } from "../../src/lib/financial-agent/facts";
+import { scrub } from "../../src/lib/financial-agent/protocol";
 import {
   setup,
   scripted,
@@ -15,6 +16,29 @@ import {
 
 afterEach(() => vi.useRealTimers());
 describe("grounding, injection and permissions", () => {
+  it("retains valid ISO calendar dates while withholding account numbers, invalid dates and credentials", () => {
+    expect(
+      scrub(
+        "Show spending from 2026-10-01 to 2026-11-01 for account 0000000001 password=private-value",
+      ),
+    ).toBe(
+      "Show spending from 2026-10-01 to 2026-11-01 for account [long number withheld] [credential withheld]",
+    );
+    expect(scrub("2024-02-29")).toBe("2024-02-29");
+    for (const value of [
+      "2026-02-29",
+      "2026-02-30",
+      "2026-13-01",
+      "2026-10-0100",
+      "002026-10-01",
+      "20261001",
+      "0000000001",
+      "0000 0000 01",
+      "1234-5678-9012-3456",
+    ])
+      expect(scrub(value)).toBe("[long number withheld]");
+    expect(scrub("token=2026-10-01")).toBe("[credential withheld]");
+  });
   it.each([
     {
       kind: "call_tool",

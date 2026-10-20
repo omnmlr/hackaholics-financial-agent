@@ -111,6 +111,40 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("preserves explicit calendar dates through model input and Lagos read dispatch", async () => {
+    const s = setup(
+      call("calculate_spending", {
+        accountIds: ["amina-current"],
+        from: "2026-10-01",
+        toExclusive: "2026-11-01",
+        groupBy: "none",
+      }),
+      answer("Use the verified source cards."),
+    );
+    const text =
+      "Show my spending from 2026-10-01 up to but excluding 2026-11-01 in Lagos.";
+    const result = await s.agent.turn({
+      ...s.input,
+      text,
+      accountIds: ["amina-current"],
+    });
+    expect(s.inputs[0].contents.at(-1)?.parts?.[0].text).toBe(text);
+    expect(s.tools.dispatch).toHaveBeenCalledExactlyOnceWith(
+      expect.anything(),
+      expect.objectContaining({
+        name: "calculate_spending",
+        args: {
+          accountIds: ["amina-current"],
+          from: "2026-09-30T23:00:00.000Z",
+          toExclusive: "2026-10-31T23:00:00.000Z",
+          groupBy: "none",
+        },
+      }),
+    );
+    expect(result.kind).toBe("financial");
+    expect(result.text).toContain("19,751.51");
+    expect(result.text).toContain("FICTIONAL");
+  });
   it("replays the genuine indirect explanation without its unverified extra year conversion", async () => {
     // Recorded provider text, replayed locally: this test spends zero calls and
     // is not claimed as a second genuine provider verification of the repair.
@@ -269,6 +303,57 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(result.citations.length).toBeGreaterThan(0);
     expect(s.generate).toHaveBeenCalledTimes(2);
   });
+
+  it.each([false, true])(
+    "rechecks facts after a local model timeout (revoked: %s)",
+    async (revoked) => {
+      vi.useFakeTimers();
+      try {
+        const s = setup(
+          call("calculate_spending", {
+            accountIds: ["amina-current"],
+            ...lagosDateInterval("2026-10-01", "2026-11-01"),
+            groupBy: "none",
+          }),
+        );
+        s.generate.mockImplementationOnce(async () =>
+          call("calculate_spending", {
+            accountIds: ["amina-current"],
+            ...lagosDateInterval("2026-10-01", "2026-11-01"),
+            groupBy: "none",
+          }),
+        );
+        s.generate.mockImplementationOnce(() => new Promise(() => {}));
+        const pending = s.agent.turn({
+          ...s.input,
+          accountIds: ["amina-current"],
+        });
+        await vi.waitFor(() => expect(s.generate).toHaveBeenCalledTimes(2));
+        if (revoked)
+          await s.repository.revokeConsent(
+            s.input.ctx,
+            "consent-amina",
+            FIXTURE_NOW,
+          );
+        await vi.advanceTimersByTimeAsync(NATIVE_LIMITS.modelMs);
+        const result = await pending;
+        if (revoked) {
+          expect(result.kind).toBe("unavailable");
+          expect(result.text).not.toContain("19,751.51");
+          expect(result.citations).toEqual([]);
+        } else {
+          expect(result.kind).toBe("financial");
+          expect(result.text).toContain("19,751.51");
+          expect(result.text).toContain("FICTIONAL");
+          expect(result.evidence.code).toBe("TIMEOUT");
+          expect(result.citations.length).toBeGreaterThan(0);
+        }
+        expect(s.generate.mock.calls[1][0].signal.aborted).toBe(true);
+      } finally {
+        vi.useRealTimers();
+      }
+    },
+  );
 
   it("rechecks permissions before provider-error factual fallback", async () => {
     const s = setup(

@@ -141,8 +141,9 @@ export class AgentError extends Error {
 }
 export const bytes = (v: unknown) =>
   Buffer.byteLength(JSON.stringify(v), "utf8");
-/** Scrub before model disclosure and persistence, including user-supplied credentials/URLs. */
-export function scrub(text: string) {
+/** Remove credentials/URLs before disclosure. Payment extraction also uses this
+ * boundary while retaining account digits deliberately entered for its draft. */
+export function scrubCredentials(text: string) {
   return text
     .replace(/https?:\/\/\S+/gi, "[URL withheld]")
     .replace(/\b(?:sk-|AIza)[A-Za-z0-9_-]+/g, "[credential withheld]")
@@ -150,7 +151,6 @@ export function scrub(text: string) {
       /\b(?:password|token|secret|api[_ -]?key|otp)\s*[:=]\s*\S+/gi,
       "[credential withheld]",
     )
-    .replace(/\b\d(?:[ -]?\d){7,}\b/g, "[long number withheld]")
     .split("")
     .map((character) =>
       character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127
@@ -158,6 +158,23 @@ export function scrub(text: string) {
         : character,
     )
     .join("");
+}
+/** Scrub dialogue before model disclosure and persistence, including long numbers. */
+export function scrub(text: string) {
+  return scrubCredentials(text).replace(/\b\d(?:[ -]?\d){7,}\b/g, (value) => {
+    // Exact calendar dates are tool inputs, not account identifiers. Do not
+    // remove a user's date range before the model can interpret it; preserve
+    // only a whole, valid date, never a substring of a longer number.
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const time = Date.parse(`${value}T00:00:00.000Z`);
+      if (
+        Number.isFinite(time) &&
+        new Date(time).toISOString().slice(0, 10) === value
+      )
+        return value;
+    }
+    return "[long number withheld]";
+  });
 }
 /** Conservative backstop; semantic routing/review are additional gates, never a grounding proof. */
 export function financialLanguage(text: string) {

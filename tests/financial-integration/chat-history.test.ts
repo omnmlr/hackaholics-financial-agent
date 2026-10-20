@@ -77,6 +77,25 @@ it("authenticates all history reads and rejects injected scopes, malformed and f
   expect((await GET(request("?id=%3Cscript%3E"))).status).toBe(400);
   expect((await GET(request("?id=nonexistent"))).status).toBe(404);
 });
+it("reads a bounded chronological tail for model context while preserving complete saved history", async () => {
+  for (let i = 0; i < 10; i++) {
+    const lease = await history.claim("long-history", `Turn ${i}`);
+    await history.finish("long-history", lease, `Turn ${i}`, reply);
+  }
+  const all = await history.read("long-history");
+  expect(all).toHaveLength(10);
+  expect(await history.read("long-history", 8)).toEqual(all.slice(-8));
+  expect(await history.read("long-history", 1)).toEqual(all.slice(-1));
+  await expect(history.read("long-history", 0)).rejects.toMatchObject({
+    status: 400,
+  });
+  await expect(history.read("long-history", 17)).rejects.toMatchObject({
+    status: 400,
+  });
+  await expect(
+    chatHistory("different-operator").read("long-history", 8),
+  ).rejects.toMatchObject({ status: 404 });
+});
 it("serializes concurrent turns and recovers stale request leases without accepting stale writes", async () => {
   const lease = await history.claim("concurrent", "First");
   await expect(history.claim("concurrent", "Second")).rejects.toMatchObject({

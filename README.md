@@ -1,5 +1,7 @@
 # Agus — Hackaholics 7.0
 
+The consolidated October 20 finals candidate, isolated fixture preview, UI integration contracts, verification and Railway release/rollback gates are in [the release handoff](docs/finals-release/HANDOFF.md). Start the local scripted preview with `npm run preview:fixture` after building; genuine provider campaigns remain closed pending a new bounded allocation.
+
 The October 20 conversation and voice repair is documented in [the architectural investigation](docs/agent-reconstruction/REPORT.md), including the new source-linked calculator, conversational memory, grounded explanations, real microphone waveform, validation evidence and outstanding live acceptance checks. Run `npm run evaluate:agent` with a privately configured model for the genuine conversation evaluation, or `npm run test:browser:voice` for the synthetic-microphone browser regression.
 
 Agus is a monochrome, chat-first Next.js financial workflow prototype: prepare payments, resolve beneficiaries, review and approve an immutable snapshot, explicitly submit individual Paystack transfers, and follow persisted outcomes. The agent never approves or executes payments.

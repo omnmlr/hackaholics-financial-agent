@@ -180,7 +180,7 @@ try {
       "Hypothetical budget is independently calculated and final financial prose reviewed",
     );
 
-    const missing = await send("Show my spending for October 2026");
+    const missing = await send("Show my spending from 2026-10-01 to 2026-11-01");
     assert.equal(missing.accountAction, "choose_demo_account");
     await page
       .getByRole("button", { name: "Choose demo account", exact: true })
@@ -204,7 +204,7 @@ try {
     assert.equal(resumed.reply.citations.length, 1);
     assert.equal(resumed.reply.presentation.results.length, 1);
     checks.push(
-      "Account picker resumes original request through authorized native read and source-backed cards",
+      "Explicit ISO dates survive chat and account-picker resumption through Lagos calendar conversion to source-backed cards",
     );
 
     const recoveredFacts = await send(

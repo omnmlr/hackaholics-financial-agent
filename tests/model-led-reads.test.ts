@@ -219,6 +219,14 @@ describe("native financial read boundary", () => {
     await expect(
       reads.execute("get_transaction", transaction),
     ).rejects.toMatchObject({ code: "USER_SELECTION_REQUIRED" });
+    // The model cannot select a candidate by silently narrowing its own search.
+    await expect(
+      reads.execute("search_transactions", {
+        ...search,
+        query: "SYNTHETIC-ada-okafor-oct",
+      }),
+    ).rejects.toMatchObject({ code: "USER_SELECTION_REQUIRED" });
+    expect(reads.selection!.candidates.length).toBeGreaterThan(1);
     expect(reads.toolCalls).toBe(1);
     expect((await reads.finish())!.kind).toBe("clarify");
     const next = createSecureReads({
@@ -230,6 +238,35 @@ describe("native financial read boundary", () => {
       selection: reads.selection,
     });
     await next.execute("find_payment_evidence", transaction);
+    expect(next.toolCalls).toBe(2);
+    expect((await next.finish())!.kind).toBe("financial");
+  });
+  it("replaces old selection constraints after a fresh exact search", async () => {
+    const s = fixture();
+    const prior = s.reads();
+    await prior.execute("search_transactions", search);
+    const next = createSecureReads({
+      tools: s.tools,
+      access: s.access,
+      clock: s.clock,
+      ctx: s.input.ctx,
+      accountIds: s.input.accountIds,
+      selection: prior.selection,
+    });
+    await next.execute("search_transactions", {
+      ...search,
+      query: "SYNTHETIC-salary-oct",
+    });
+    expect(next.selection!.candidates.map((c) => c.transactionId)).toEqual([
+      "salary-oct",
+    ]);
+    await next.execute("get_transaction", {
+      accountId: "amina-current",
+      transactionId: "salary-oct",
+    });
+    await expect(
+      next.execute("get_transaction", transaction),
+    ).rejects.toMatchObject({ code: "SELECTION_INVALID" });
     expect(next.toolCalls).toBe(2);
     expect((await next.finish())!.kind).toBe("financial");
   });

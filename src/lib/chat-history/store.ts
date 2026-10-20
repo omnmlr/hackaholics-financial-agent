@@ -55,17 +55,25 @@ export function chatHistory(owner: string) {
       );
       return result.rows as SavedChat[];
     },
-    async read(id: string): Promise<SavedTurn[]> {
+    async read(id: string, recentLimit?: number): Promise<SavedTurn[]> {
       IdSchema.parse(id);
+      if (
+        recentLimit !== undefined &&
+        (!Number.isInteger(recentLimit) || recentLimit < 1 || recentLimit > 16)
+      )
+        throw new AppError("Invalid history limit", 400);
       const d = await storage();
       const exists = await d.execute(
         sql`SELECT id FROM chat_history WHERE owner=${owner} AND id=${id}`,
       );
       if (!exists.rows.length) throw new AppError("Chat not found", 404);
       const result = await d.execute(
-        sql`SELECT payload FROM chat_turns WHERE owner=${owner} AND chat=${id} ORDER BY created_at, id`,
+        recentLimit === undefined
+          ? sql`SELECT payload FROM chat_turns WHERE owner=${owner} AND chat=${id} ORDER BY created_at, id`
+          : sql`SELECT payload FROM chat_turns WHERE owner=${owner} AND chat=${id} ORDER BY created_at DESC, id DESC LIMIT ${recentLimit}`,
       );
-      return result.rows.map((row) => row.payload as SavedTurn);
+      const turns = result.rows.map((row) => row.payload as SavedTurn);
+      return recentLimit === undefined ? turns : turns.reverse();
     },
     async claim(id: string, text: string) {
       IdSchema.parse(id);

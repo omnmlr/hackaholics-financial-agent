@@ -3,6 +3,7 @@ import { chatHistory } from "./chat-history/store";
 import { mutate, readState } from "./db";
 import { AppError, now, type Message } from "./domain";
 import { extractConversationPayment } from "./intelligence";
+import { scrubCredentials } from "./financial-agent/protocol";
 
 /** Payment preparation retains its source in the existing payment store; saved
  * conversational transcripts deliberately redact long account numbers. */
@@ -23,7 +24,7 @@ export async function rememberConversationPayment(
       generation: "manual",
       topic: "payment_source",
       content: "Payment preparation available.",
-      sourceRequest,
+      sourceRequest: scrubCredentials(sourceRequest),
       conversationId: chatId,
       turnId,
     });
@@ -60,6 +61,10 @@ export async function conversationPayment(
     const existing = s.messages.find(
       (m) => m.id === turnId && m.owner === owner,
     );
+    // Older saved sources may predate credential filtering. Sanitize at the
+    // inference boundary too, preserving only intentional draft account digits.
+    if (existing?.sourceRequest)
+      existing.sourceRequest = scrubCredentials(existing.sourceRequest);
     if (existing && existing.topic !== "payment_source")
       return { claimed: false, source: existing.sourceRequest ?? turn.text };
     if (existing) {

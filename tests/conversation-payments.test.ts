@@ -168,6 +168,39 @@ it("keeps a manually recoverable draft after failed extraction without repeating
   expect((await conversationPayment(owner, chat, turn.id)).id).toBe(message.id);
   expect(extractConversationPayment).toHaveBeenCalledTimes(1);
 });
+it("withholds credentials from persisted handoff sources and extraction without losing beneficiary digits", async () => {
+  const { chat, turn } = await savedTurn();
+  const instruction = "Prepare 500 to Ada at Wema account 0000000001";
+  await rememberConversationPayment(
+    owner,
+    chat,
+    turn.id,
+    `${instruction} password=private-password otp=123456 https://private.invalid/secret`,
+  );
+  const stored = (await readState()).messages.find((m) => m.id === turn.id)!;
+  expect(stored.sourceRequest).toContain("0000000001");
+  expect(stored.sourceRequest).not.toContain("private-password");
+  expect(stored.sourceRequest).not.toContain("123456");
+  expect(stored.sourceRequest).not.toContain("private.invalid");
+  const response = await POST(request(chat, turn.id));
+  expect(response.status).toBe(200);
+  const result = await response.json();
+  expect(extractConversationPayment).toHaveBeenCalledWith(stored.sourceRequest);
+  expect(result.sourceRequest).toBe(stored.sourceRequest);
+});
+it("sanitizes previously saved raw payment sources before extraction", async () => {
+  const { chat, turn } = await savedTurn();
+  await rememberConversationPayment(owner, chat, turn.id, "Prepare a payment");
+  await mutate((s) => {
+    s.messages.find((m) => m.id === turn.id)!.sourceRequest =
+      "Prepare 500 to Ada at Wema account 0000000001 token=private-token";
+  });
+  const result = await conversationPayment(owner, chat, turn.id);
+  expect(extractConversationPayment).toHaveBeenCalledWith(
+    "Prepare 500 to Ada at Wema account 0000000001 [credential withheld]",
+  );
+  expect(result.sourceRequest).not.toContain("private-token");
+});
 it("does not overwrite manual edits made while extraction is pending", async () => {
   let resolve!: (p: typeof proposals) => void;
   const entered = new Promise<void>((done) =>

@@ -1,0 +1,21 @@
+
+> hackaholics-financial-agent@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  47 passed (47)
+      Tests  1167 passed (1167)
+   Start at  18:12:20
+   Duration  120.21s (tests 88%, import 11%)
+
+    Isolate  47 workers spawned · ~133ms startup each (spawn + environment, per file)
+             at least ~6.10s faster with isolate: false — reuses workers across files instead of one per file
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

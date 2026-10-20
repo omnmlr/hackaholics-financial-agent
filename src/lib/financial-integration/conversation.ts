@@ -38,12 +38,12 @@ export async function conversationTurn(
   // Display history can supply dialogue after the short-lived tool context
   // expires. Owner is session-derived; facts/selections are never rehydrated.
   const turns = await chatHistory(await operator(req))
-    .read(parsed.conversationId)
+    .read(parsed.conversationId, 8)
     .catch((error) => {
       if (error instanceof AppError && error.status === 404) return [];
       throw error;
     });
-  const dialogue = turns.slice(-8).flatMap((turn) => [
+  const dialogue = turns.flatMap((turn) => [
     { role: "user" as const, text: turn.text },
     {
       role: "assistant" as const,

@@ -450,6 +450,68 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(s.tools.dispatch).not.toHaveBeenCalled();
   });
 
+  it("rechecks disclosed selection permissions even when Gemini answers without a read tool", async () => {
+    const s = setup();
+    const key = {
+      tenantId: s.input.ctx.tenantId,
+      actorId: s.input.ctx.actorId,
+      conversationId: s.input.conversationId,
+    };
+    const snapshot = await s.options.access.check(
+      s.input.ctx,
+      ["amina-current"],
+      [],
+    );
+    await s.options.store.compareAndSwap(key, null, {
+      ...key,
+      schemaVersion: 1,
+      revision: 1,
+      messages: [],
+      selection: {
+        resultId: "prior-search",
+        accountIds: ["amina-current"],
+        candidates: [
+          {
+            accountId: "amina-current",
+            transactionId: "prior-candidate",
+            untrustedCounterpartyLabel: "AUTHORIZED STORED LABEL",
+            revision: 1,
+            amountKobo: 100,
+          },
+        ],
+        filter: null,
+        accessVersion: snapshot.version,
+        expiresAt: snapshot.expiresAt,
+      },
+    });
+    const realCheck = s.options.access.check.bind(s.options.access);
+    let revoked = false;
+    const access = vi
+      .spyOn(s.options.access, "check")
+      .mockImplementation(async (...args) => {
+        if (revoked) throw new AgentError("PERMISSION_DENIED");
+        return realCheck(...args);
+      });
+    s.generate.mockImplementationOnce(async (input) => {
+      expect(input.system).toContain("AUTHORIZED STORED LABEL");
+      revoked = true;
+      return answer("We can talk about something else.");
+    });
+    const result = await s.agent.turn({
+      ...s.input,
+      accountIds: ["amina-current"],
+    });
+    expect(
+      access.mock.calls.some((args) => args[2].includes("transactions:read")),
+    ).toBe(true);
+    expect(result).toMatchObject({
+      kind: "unavailable",
+      evidence: { code: "PERMISSION_DENIED" },
+    });
+    expect(result.text).not.toContain("something else");
+    expect(s.tools.dispatch).not.toHaveBeenCalled();
+  });
+
   it("stops repeated tool calls instead of cycling", async () => {
     const s = setup(call("nonexistent_tool", {}), call("nonexistent_tool", {}));
     const reply = await s.agent.turn(s.input);

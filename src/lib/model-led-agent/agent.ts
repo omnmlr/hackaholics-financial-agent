@@ -223,7 +223,7 @@ export function createModelLedAgent(
           previous.accountIds.every((id) => input.accountIds.includes(id)) &&
           previous.accessVersion === snapshot.version &&
           Date.parse(previous.expiresAt) > Date.parse(clock())
-            ? previous
+            ? await bounded(10000, () => reads!.authorizeSelectionDisclosure())
             : null;
         finish = async (value) => {
           await bounded(10000, () => reads!.recheck());

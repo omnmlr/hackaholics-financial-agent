@@ -329,6 +329,13 @@ export function createSecureReads(options: Options) {
     execute,
     finish,
     recheck,
+    async authorizeSelectionDisclosure() {
+      await ensureSelection();
+      if (selection) await check(selection.accountIds, ["transactions:read"]);
+      // Register the disclosure in used access snapshots so even a subsequent
+      // no-tool answer must recheck consent/version before release and after CAS.
+      return selection ? structuredClone(selection) : null;
+    },
     get authoring() {
       const successful = [...facts.values()].filter((fact) =>
         successIds.has(fact.resultId),

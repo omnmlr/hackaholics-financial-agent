@@ -61,6 +61,7 @@ describe("native financial read boundary", () => {
     ["submit_payment", {}],
     ["calculate_spending", { ...spending, actorId: "tunde" }],
     ["get_account_summary", { accountIds: ["amina-current"], approval: true }],
+    ["calculate_spending", { ...spending, from: "2026-02-30T00:00:00Z" }],
   ])(
     "rejects injected authority or unavailable tools: %s",
     async (name, args) => {

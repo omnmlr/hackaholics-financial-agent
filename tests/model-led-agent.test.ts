@@ -18,6 +18,7 @@ import {
   createModelLedAgent,
   DECLARATIONS,
   NATIVE_LIMITS,
+  declarationsForTurn,
 } from "../src/lib/model-led-agent/agent";
 import {
   createGeminiToolModel,
@@ -109,6 +110,19 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("exposes financial authoring only after facts and private reads only with selected accounts", () => {
+    expect(declarationsForTurn(false, false).map((d) => d.name)).toEqual([
+      "calculate",
+      "request_account",
+      "prepare_payment_draft",
+    ]);
+    const initial = declarationsForTurn(true, false).map((d) => d.name);
+    expect(initial).toContain("search_transactions");
+    expect(initial).not.toContain("present_financial");
+    expect(declarationsForTurn(true, true).map((d) => d.name)).toContain(
+      "present_financial",
+    );
+  });
   it("requires explicit interpretation confirmation even for a nonfinancial calculation", async () => {
     const s = setup(
       call("calculate", { ...budgetArgs, expression: "7*8", unit: "number" }),

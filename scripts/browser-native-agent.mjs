@@ -114,7 +114,7 @@ try {
             ?.getAttribute("aria-busy") === "false",
       );
     }
-    async function send(text) {
+    async function send(text, status = 200) {
       await input.fill(text);
       const response = page.waitForResponse(
         (r) =>
@@ -125,7 +125,7 @@ try {
         .getByRole("button", { name: "Send message", exact: true })
         .click();
       const result = await response;
-      assert.equal(result.status(), 200);
+      assert.equal(result.status(), status);
       const data = await result.json();
       await idle();
       return data.reply;
@@ -207,6 +207,23 @@ try {
       "Account picker resumes original request through authorized native read and source-backed cards",
     );
 
+    const recoveredFacts = await send(
+      "Show my spending even if the explanation service fails",
+    );
+    assert.equal(recoveredFacts.kind, "financial");
+    assert.equal(recoveredFacts.evidence.code, "MODEL_HTTP_429");
+    assert.equal(recoveredFacts.presentation.narration, "factual_fallback");
+    assert.match(recoveredFacts.text, /19,751\.51/);
+    await page
+      .locator(".agus-assistant-message")
+      .last()
+      .getByText(/19,751\.51/)
+      .first()
+      .waitFor();
+    checks.push(
+      "Provider 429 after authorized read retains visible factual financial cards",
+    );
+
     const handoff = await send(
       "Prepare 500 to Ada at Wema account 0000000001 for Lunch and 600 to Chidi at Access account 0000000002 for Books",
     );
@@ -251,6 +268,24 @@ try {
     assert.equal(executions, 0);
     checks.push(
       "Explicit payment draft remains editable and persists without approval or execution",
+    );
+    const outage = await send(
+      "Simulate an unavailable provider while discussing lizards",
+      503,
+    );
+    assert.equal(outage.kind, "unavailable");
+    assert.equal(outage.evidence.modelCalls, 1);
+    await page.reload();
+    await page.locator(".agus-assistant-message").last().waitFor();
+    const recoveredDialogue = await send("Try the last question again");
+    assert.equal(recoveredDialogue.kind, "general");
+    assert.match(recoveredDialogue.text, /Lizards warm/);
+    assert.doesNotMatch(
+      await page.locator("body").innerText(),
+      /FIXTURE_PRIVATE_ERROR_MUST_STAY_HIDDEN/,
+    );
+    checks.push(
+      "Provider error remains private and failed question survives reload for recovery",
     );
     assert.deepEqual(errors, []);
     assert.equal(

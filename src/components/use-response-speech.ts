@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { pronounceResponse } from "@/lib/response-speech";
 
 export function useResponseSpeech() {
   const [playing, setPlaying] = useState<string | null>(null);
@@ -22,8 +23,13 @@ export function useResponseSpeech() {
       return;
     }
     const token = generation.current;
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(pronounceResponse(text));
     utterance.lang = "en-NG";
+    const voices = window.speechSynthesis.getVoices?.() ?? [];
+    const voice =
+      voices.find((v) => v.lang.toLowerCase() === "en-ng") ??
+      voices.find((v) => /^en[-_]/i.test(v.lang));
+    if (voice) utterance.voice = voice;
     utterance.onend = () => {
       if (token === generation.current) stop();
     };
@@ -42,9 +48,14 @@ export function useResponseSpeech() {
     }
   };
   useEffect(() => {
+    const hide = () => {
+      if (document.visibilityState === "hidden") stop();
+    };
     window.addEventListener("pagehide", stop);
+    document.addEventListener("visibilitychange", hide);
     return () => {
       window.removeEventListener("pagehide", stop);
+      document.removeEventListener("visibilitychange", hide);
       stop();
     };
   }, [stop]);

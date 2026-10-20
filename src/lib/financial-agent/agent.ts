@@ -23,6 +23,7 @@ import {
 import { makeFact, canonical, type Fact, type ReadResult } from "./facts";
 import { PRODUCT_KNOWLEDGE, productAnswer } from "./knowledge";
 import { resolveDateWindow } from "./date-window";
+import { computeCalculation, composeCalculation } from "./calculator";
 import {
   recordsRequest,
   reasoningRequest,
@@ -32,6 +33,7 @@ import {
 } from "./reasoning";
 import {
   acceptNarration,
+  prepareReviewedNarration,
   factualPresentation,
   narrationContract,
   NarrationError,
@@ -49,7 +51,6 @@ import {
   UNAVAILABLE,
   AgentError,
   bytes,
-  financialLanguage,
   personalFinancialLanguage,
   actionClaim,
   paymentIntent,
@@ -99,6 +100,9 @@ export type AgentOptions = {
   store: ContextStore;
   clock?: () => string;
   monotonic?: () => number;
+  // Server-loaded, owner-scoped dialogue only. Never restores permission,
+  // selections, tool results or other financial authority after context expiry.
+  dialogue?: ConversationContext["messages"];
 };
 const inputSchema = z.strictObject({
   ctx: PermissionContextSchema,
@@ -120,6 +124,7 @@ export function createFinancialAgent(options: AgentOptions) {
       let models = 0,
         tools = 0,
         totalBytes = 0;
+      let recover: ((value: AgentReply) => Promise<AgentReply>) | undefined;
       const evidence = (code?: string) => ({
         modelCalls: models,
         toolCalls: tools,
@@ -189,7 +194,7 @@ export function createFinancialAgent(options: AgentOptions) {
         let selection = context?.selection ?? null;
         const text = scrub(input.text);
         const history = boundedMessages(
-          (context?.messages ?? []).map((message) => ({
+          (context?.messages ?? options.dialogue ?? []).map((message) => ({
             ...message,
             text: scrub(message.text),
           })),
@@ -230,11 +235,13 @@ export function createFinancialAgent(options: AgentOptions) {
             revision: (context?.revision ?? 0) + 1,
             messages: boundedMessages([
               ...history,
-              { role: "user", text: text.slice(0, 1800) },
+              { role: "user", text: text.slice(0, 4000) },
               {
                 role: "assistant",
                 text:
-                  value.kind === "general"
+                  value.kind === "general" ||
+                  value.kind === "product" ||
+                  (value.kind === "clarify" && !value.citations.length)
                     ? scrub(value.text)
                     : `[${value.kind} response; re-read current sources for facts]`,
               },
@@ -254,6 +261,7 @@ export function createFinancialAgent(options: AgentOptions) {
           await recheck();
           return value;
         }
+        recover = async (value) => (used.size === 0 ? finish(value) : value);
         const chooseAccount = () =>
           finish({
             ...reply("clarify", QUESTIONS.account),
@@ -294,7 +302,30 @@ export function createFinancialAgent(options: AgentOptions) {
               authoring: contract,
             });
             await recheck();
-            presentation.explanation = acceptNarration(raw, selected);
+            try {
+              presentation.explanation = acceptNarration(raw, selected);
+            } catch (error) {
+              if (!(error instanceof NarrationError)) throw error;
+              try {
+                const candidate = prepareReviewedNarration(raw, selected);
+                const review = ReviewSchema.parse(
+                  await model("review_narration", {
+                    question: text,
+                    draft: raw,
+                    authoring: contract,
+                    facts: selected.map((f) => ({
+                      resultId: f.resultId,
+                      ...(f.modelData as object),
+                    })),
+                  }),
+                );
+                if (!review.safeGeneralConversation) throw error;
+                await recheck();
+                presentation.explanation = candidate.render();
+              } catch {
+                throw error;
+              }
+            }
             presentation.narration = "ai";
           } catch (error) {
             if (error instanceof NarrationError)
@@ -351,28 +382,6 @@ export function createFinancialAgent(options: AgentOptions) {
           if (recordsRequest(text)) route = "financial_read";
           else if (reasoningRequest(text)) route = "financial_reasoning";
         }
-        if (
-          route === "general" &&
-          (/\bAGUS\b/i.test(text) ||
-            /what can you|your capabilities/i.test(text))
-        )
-          route = "product";
-        if (
-          route === "general" &&
-          (financialLanguage(text) ||
-            (selection &&
-              /\b(?:one|that|it|those|smaller|larger|first|second|third|same)\b/i.test(
-                text,
-              )))
-        )
-          route =
-            recordsRequest(text) || selection
-              ? "financial_read"
-              : "financial_education";
-        if (route === "financial_education" && recordsRequest(text))
-          route = "financial_read";
-        if (route === "financial_reasoning" && recordsRequest(text))
-          route = "financial_read";
         if (route === "payment_draft") {
           selection = null;
           const value = reply(
@@ -399,37 +408,84 @@ export function createFinancialAgent(options: AgentOptions) {
         }
         if (route === "financial_reasoning") {
           selection = null;
-          // User statements are assumptions, never verified records. No backend
-          // results, selections or assistant financial prose reach this channel.
-          const assumptions = calculationContext(input.text, history);
+          // Dialogue is unverified. Only user statements supply operands;
+          // backend results and selections never reach this channel.
+          const assumptions = history.filter((m) => m.role === "user");
+          const userStatements = [...assumptions.map((m) => m.text), text];
           const draft = ReasoningSchema.parse(
             await model("reason", {
               text,
-              history: assumptions,
+              history,
               reasoning: true,
               educational: false,
               source: "unverified_user_statements",
+              userStatements,
             }),
           );
-          const calculation = draft.calculation
-            ? calculateIllustration(
-                draft.calculation,
-                [...assumptions.map((m) => m.text), input.text].join("\n"),
-              )
-            : null;
+          const computed =
+            draft.calculation && draft.bindings
+              ? computeCalculation(
+                  draft.calculation,
+                  draft.bindings,
+                  userStatements,
+                )
+              : null;
+          // Older server-side model integrations may still supply the legacy
+          // recipe format; its strict validator remains a compatibility path.
+          const calculation =
+            draft.calculation && !computed
+              ? calculateIllustration(
+                  draft.calculation,
+                  [
+                    ...calculationContext(input.text, history).map(
+                      (m) => m.text,
+                    ),
+                    input.text,
+                  ].join("\n"),
+                )
+              : null;
           if (calculation && /\d|[₦$€£]/.test(draft.text))
             throw new AgentError("CALCULATION_PROSE");
-          const answer = calculation
+          let answer = calculation
             ? `${calculation}\n\n${draft.text}`
             : draft.text;
+          if (computed) {
+            const composition = GeneralSchema.parse(
+              await model("compose", {
+                question: text,
+                history,
+                calculation: draft.calculation,
+                computed,
+                assumptions: draft.assumptions ?? [],
+              }),
+            );
+            const prose = composition.text.replace(/[\r\n\t]/g, " ");
+            if (scrub(prose) !== prose)
+              throw new AgentError("GENERAL_POLICY_DISCLOSURE");
+            if (
+              unsafeReasoning(composition.text) ||
+              actionClaim(composition.text)
+            )
+              throw new AgentError("REASONING_POLICY");
+            answer = `${composeCalculation(composition.text, computed)}\n\n${computed.assumptions.join(" ")}`;
+          }
           const review = ReviewSchema.parse(
             await model("review_general", {
               question: text,
               answer,
-              history: assumptions,
+              history,
               reasoning: true,
               educational: false,
               source: "unverified_user_statements",
+              ...(computed
+                ? {
+                    userStatements,
+                    calculation: draft.calculation,
+                    bindings: draft.bindings,
+                    assumptions: draft.assumptions ?? [],
+                    computed,
+                  }
+                : {}),
             }),
           );
           if (!review.safeGeneralConversation)
@@ -443,12 +499,12 @@ export function createFinancialAgent(options: AgentOptions) {
         }
         if (route === "general" || route === "financial_education") {
           const educational = route === "financial_education";
-          // Education never receives persisted financial context, even after revocation.
+          // Education sees dialogue, never selected records or financial authority.
           if (educational) selection = null;
           const draft = GeneralSchema.parse(
             await model("general", {
               text,
-              history: educational ? [] : history,
+              history,
               educational,
             }),
           );
@@ -457,15 +513,18 @@ export function createFinancialAgent(options: AgentOptions) {
               question: text,
               answer: draft.text,
               educational,
+              ...(history.length ? { history } : {}),
             }),
           );
           // Fixed codes only: no draft, question, provider body or record in diagnostics.
           if (!review.safeGeneralConversation)
             throw new AgentError("GENERAL_MODEL_REJECTED");
+          if (!educational && actionClaim(draft.text))
+            throw new AgentError("GENERAL_POLICY_ACTION");
           if (
             educational
               ? personalFinancialLanguage(draft.text)
-              : financialLanguage(draft.text)
+              : unsafeReasoning(draft.text)
           )
             throw new AgentError(
               educational
@@ -553,8 +612,7 @@ export function createFinancialAgent(options: AgentOptions) {
                 c.transactionId === call.args.transactionId,
             );
             if (candidate) {
-              if (tools + 2 > LIMITS.tools)
-                throw new AgentError("TOOL_BUDGET");
+              if (tools + 2 > LIMITS.tools) throw new AgentError("TOOL_BUDGET");
               await execute(
                 ToolCallSchema.parse({
                   protocolVersion: 1,
@@ -569,7 +627,9 @@ export function createFinancialAgent(options: AgentOptions) {
             }
             // The existing proof boundary is unchanged: evidence requires
             // a successful fresh detail read, including revision recheck.
-            if (!details.has(`${call.args.accountId}:${call.args.transactionId}`))
+            if (
+              !details.has(`${call.args.accountId}:${call.args.transactionId}`)
+            )
               throw new AgentError("DETAIL_REQUIRED");
           }
           if (
@@ -763,12 +823,14 @@ export function createFinancialAgent(options: AgentOptions) {
           (error instanceof z.ZodError &&
             error.issues.some((issue) => issue.path.includes("calculation")))
         )
-          return reply(
-            "clarify",
-            "Please confirm the calculation figures with their roles and units: naira amounts, monthly income or savings, savings percentage or annual interest rate, and duration in months. Include any starting savings and target. I couldn’t safely match the proposed inputs to your request.",
-            [],
-            code,
-          );
+          return await (recover ?? (async (value: AgentReply) => value))(
+            reply(
+              "clarify",
+              "I couldn’t verify that calculation. Could you clarify the amount or assumption you want to use? I’ve kept our conversation so we can continue.",
+              [],
+              code,
+            ),
+          ).catch(() => reply("unavailable", UNAVAILABLE, [], code));
         return reply("unavailable", UNAVAILABLE, [], code);
       }
     },

@@ -561,10 +561,7 @@ try {
       .locator(".agus-audio-status")
       .filter({ hasText: /Transcript ready/ })
       .waitFor({ state: "hidden", timeout: 7000 });
-    assert.equal(
-      await page.locator(".agus-voice-help").evaluate((el) => el.open),
-      false,
-    );
+    assert.equal(await page.getByText("About voice", { exact: true }).count(), 0);
     const hello = await send("Hello");
     assert.equal(hello.reply.kind, "general");
     const copyUser = page

@@ -906,21 +906,26 @@
   align-items: center;
   gap: 8px;
 }
-.agus-voice-help {
-  color: #a7a39d;
-  font-size: 12px;
-  margin-top: 4px;
-  text-align: center;
-  flex-shrink: 0;
+.agus-live-transcript {
+  color: #c9c5bf;
+  font-size: 14px;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
 }
-.agus-voice-help > summary {
-  min-height: 24px;
-  cursor: pointer;
-  width: fit-content;
-  margin-inline: auto;
+.agus-voice-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0;
 }
-.agus-voice-help p {
-  padding: 8px 0;
+.agus-voice-setting select {
+  max-width: 190px;
+  color: inherit;
+  background: #292826;
+  padding: 8px;
+  border-radius: 8px;
 }
 @media (max-width: 600px) {
   .agus-payment .form-grid {
@@ -965,13 +970,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 3px;
-  width: 44px;
+  gap: 2px;
+  width: 96px;
   height: 32px;
   color: #79a6cd;
 }
 .agus-recording-level i {
-  width: 3px;
+  width: 2px;
   border-radius: 2px;
   background: currentColor;
   transition: height 100ms linear;
@@ -988,12 +993,6 @@
   border-radius: 50%;
   background: #79a6cd;
   margin-right: 6px;
-  animation: agus-voice-pulse 1.4s ease-in-out infinite;
-}
-@keyframes agus-voice-pulse {
-  50% {
-    opacity: 0.4;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .agus-recording-level i {

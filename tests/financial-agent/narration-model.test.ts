@@ -24,6 +24,8 @@ it.each(["accepted", "invented-claim", "revoked"] as const)(
               ),
             }
           : calc;
+      else if (task === "review_narration")
+        output = { safeGeneralConversation: false };
       else {
         expect(task).toBe("narrate");
         expect(body.generationConfig.responseMimeType).toBe("application/json");
@@ -82,9 +84,19 @@ it.each(["accepted", "invented-claim", "revoked"] as const)(
       }),
     );
     const reply = await s.agent().turn(s.input);
-    expect(tasks).toEqual(["classify", "plan", "plan", "narrate"]);
-    expect(request).toHaveBeenCalledTimes(4);
-    expect(reply.evidence).toMatchObject({ modelCalls: 4, toolCalls: 1 });
+    const expectedTasks = [
+      "classify",
+      "plan",
+      "plan",
+      "narrate",
+      ...(outcome === "invented-claim" ? ["review_narration"] : []),
+    ];
+    expect(tasks).toEqual(expectedTasks);
+    expect(request).toHaveBeenCalledTimes(expectedTasks.length);
+    expect(reply.evidence).toMatchObject({
+      modelCalls: expectedTasks.length,
+      toolCalls: 1,
+    });
     if (outcome === "revoked") {
       expect(reply.kind).toBe("unavailable");
       expect(reply.citations).toEqual([]);

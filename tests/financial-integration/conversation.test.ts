@@ -64,6 +64,102 @@ afterAll(async () => {
   await rm(dir, { recursive: true, force: true });
 });
 
+it("recovers the reported failed calculation through authenticated HTTP, SQL history and expired context", async () => {
+  const priorProvider = process.env.AI_PROVIDER,
+    priorKey = process.env.AI_API_KEY;
+  process.env.AI_PROVIDER = "gemini";
+  process.env.AI_API_KEY = "mocked-http-only";
+  const goal = {
+    kind: "savings_goal",
+    monthlySavingsNaira: "10000",
+    targetNaira: "1000000",
+    startingNaira: "0",
+  };
+  const bindings = [
+    {
+      field: "monthlySavingsNaira",
+      sourceIndex: 0,
+      quote: "10,000",
+      unit: "naira",
+    },
+    {
+      field: "targetNaira",
+      sourceIndex: 0,
+      quote: "millionaire",
+      unit: "naira",
+    },
+    { field: "startingNaira", sourceIndex: null, quote: "", unit: "naira" },
+  ];
+  const outputs = [
+    { route: "financial_reasoning" },
+    { text: "Working it out.", calculation: goal, bindings: [] },
+    { route: "financial_reasoning" },
+    { text: "Continue the prior question.", calculation: goal, bindings },
+    {
+      text: "Na {{calculation.months}} months, or {{calculation.years}} years and {{calculation.remainingMonths}} months.",
+    },
+    { safeGeneralConversation: true },
+    { route: "financial_reasoning" },
+    {
+      text: "Use the new amount.",
+      calculation: { ...goal, monthlySavingsNaira: "20000" },
+      bindings: [
+        { ...bindings[0], sourceIndex: 2, quote: "20k" },
+        bindings[1],
+        bindings[2],
+      ],
+    },
+    { text: "Now na {{calculation.months}} months." },
+    { safeGeneralConversation: true },
+  ];
+  const requests: unknown[] = [];
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (_url: string, init: RequestInit) => {
+      requests.push(
+        JSON.parse(JSON.parse(String(init.body)).contents[0].parts[0].text),
+      );
+      return Response.json({
+        candidates: [
+          {
+            finishReason: "STOP",
+            content: { parts: [{ text: JSON.stringify(outputs.shift()) }] },
+          },
+        ],
+      });
+    }),
+  );
+  try {
+    const conversationId = "reported-failure-http";
+    const send = (text: string) =>
+      POST(request({ conversationId, text, accountIds: [] }));
+    const first = await send(
+      "If i saved 10,000 naira every month, how much until I become a millionaire",
+    );
+    expect(first.status).toBe(200);
+    expect((await first.json()).reply.kind).toBe("clarify");
+    const next = await send("as how naw, just use what you can match");
+    expect(next.status).toBe(200);
+    expect((await next.json()).reply.text).toContain("100 months");
+    // Expiring the authority context must not erase owner-scoped dialogue.
+    const d = await db();
+    await d.execute(
+      sql`UPDATE fm_context SET expires_at=now() - interval '1 minute' WHERE id=${conversationId}`,
+    );
+    const corrected = await send("Actually make it 20k every month");
+    expect(corrected.status).toBe(200);
+    const result = (await corrected.json()).reply;
+    expect(result.text).toContain("50 months");
+    expect(result.evidence.toolCalls).toBe(0);
+    expect(JSON.stringify(requests)).toContain("couldn’t verify");
+    expect((await readState()).batches).toHaveLength(0);
+  } finally {
+    process.env.AI_PROVIDER = priorProvider;
+    process.env.AI_API_KEY = priorKey;
+    vi.unstubAllGlobals();
+  }
+});
+
 it("authenticates and bounds the HTTP route; rejects identity and model injection", async () => {
   expect((await POST(request(input, ""))).status).toBe(401);
   expect(

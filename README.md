@@ -1,5 +1,7 @@
 # Agus — Hackaholics 7.0
 
+The October 20 conversation and voice repair is documented in [the architectural investigation](docs/agent-reconstruction/REPORT.md), including the new source-linked calculator, conversational memory, grounded explanations, real microphone waveform, validation evidence and outstanding live acceptance checks. Run `npm run evaluate:agent` with a privately configured model for the genuine conversation evaluation, or `npm run test:browser:voice` for the synthetic-microphone browser regression.
+
 Agus is a monochrome, chat-first Next.js financial workflow prototype: prepare payments, resolve beneficiaries, review and approve an immutable snapshot, explicitly submit individual Paystack transfers, and follow persisted outcomes. The agent never approves or executes payments.
 
 **Default: fixtures. No real money moves. No live transfer was attempted or verified during implementation.** Real transfers can only come from an eligible, funded, authorized Paystack business account; this is not a way to debit arbitrary personal accounts.

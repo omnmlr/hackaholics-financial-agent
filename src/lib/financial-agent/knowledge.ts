@@ -3,13 +3,13 @@ import type { ProductTopicSchema } from "./protocol";
 
 /** Reviewed code-local product facts only. No external retrieval or user-writable knowledge. */
 export const PRODUCT_KNOWLEDGE = Object.freeze({
-  version: "agus-product-v1.0.0",
-  reviewedAt: "2026-10-18",
+  version: "agus-product-v1.2.1",
+  reviewedAt: "2026-10-20",
   source:
-    "Agent B isolated-module capability manifest; docs/phase1/ARCHITECTURE_CONTRACTS.md",
+    "Integrated application capability manifest; docs/agent-reconstruction/REPORT.md",
   entries: Object.freeze({
     overview:
-      "AGUS can support general conversation and permission-checked financial reads. This Phase 2B module is isolated; application integration is still required.",
+      "AGUS supports natural conversation, financial education, hypothetical calculations and planning, saved chats, voice dictation and permission-checked financial reads over a fictional demo dataset. Payment preparation opens editable cards with separate review and authorization.",
     data: "The supplied financial dataset is fictional. Financial responses must identify source, mode, freshness and coverage. Wema and Mono account connections are not verified or supplied by this module.",
     payments:
       "Payment requests are handed to the existing editable draft workflow. This module cannot verify beneficiaries, approve, submit, retry or execute payments. The existing workflow requires its own review and authorization.",

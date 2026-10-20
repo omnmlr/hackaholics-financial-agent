@@ -268,6 +268,7 @@ export function calculateIllustration(
   source: string,
 ): string {
   const c = CalculationSchema.parse(calculation);
+  if (c.kind === "arithmetic") throw new AgentError("CALCULATION_BINDINGS");
   const grounded = calculationOperands(source);
   const roles: OperandRole[] =
     c.kind === "savings_goal"
@@ -339,7 +340,9 @@ export function calculateIllustration(
  * actions, credentials and guarantees retain the existing lexical backstops.
  * An independent model review is additionally required. */
 export function unsafeReasoning(text: string) {
-  const withoutAdviceWords = text.replace(/\b(?:recommend\w*|should)\b/gi, "");
+  const withoutAdviceWords = text
+    .replace(/\b(?:recommend\w*|should)\b/gi, "")
+    .replace(/\bI(?:['’]m| am)\s+AGUS\b/gi, "I am the assistant");
   return (
     personalFinancialLanguage(withoutAdviceWords) ||
     /\b(?:records? (?:show|confirm)|(?:checked|accessed|retrieved|found|reviewed) (?:your|the) (?:bank|account|transactions?)|belongs to|account holder|verified owner)\b/i.test(

@@ -56,8 +56,8 @@ describe("isolated routing and genuine-model protocol (scripted transport in uni
   it.each([
     ["product", "Does AGUS provide verified Wema or Mono account connections?"],
     ["product", "Does AGUS have real bank connections?"],
-    ["general", "Can AGUS link a Mono account?"],
-    ["general", "Are Wema connections supported by AGUS?"],
+    ["product", "Can AGUS link a Mono account?"],
+    ["product", "Are Wema connections supported by AGUS?"],
   ])("grounds product selection after route %s: %s", async (route, text) => {
     const model = scripted({ route }, { topic: "data" });
     const s = setup(model);
@@ -69,7 +69,7 @@ describe("isolated routing and genuine-model protocol (scripted transport in uni
     ]);
     expect(r.kind).toBe("product");
     expect(r.text).toContain("fictional");
-    expect(r.text).toContain("agus-product-v1.0.0");
+    expect(r.text).toContain(PRODUCT_KNOWLEDGE.version);
     expect(r.text).toContain(
       "Wema and Mono account connections are not verified or supplied by this module.",
     );

@@ -238,7 +238,7 @@ export async function transcribeAudio(
     form.append("model", "gpt-4o-mini-transcribe");
     form.append(
       "prompt",
-      "Transcribe the speaker verbatim. Preserve business names, bank names, amounts, dates, and account details exactly as heard. Do not answer or infer missing information.",
+      "Transcribe the speaker verbatim, including Nigerian Pidgin, mixed English, slang and natural pauses. Preserve business names, bank names, amounts, dates, and account details exactly as heard. Do not translate, answer or infer missing information.",
     );
     form.append(
       "file",
@@ -298,7 +298,7 @@ export async function transcribeAudio(
             role: "user",
             parts: [
               {
-                text: "Transcribe the speaker verbatim. Preserve business names, bank names, amounts, dates, and account details exactly as heard. Do not answer, infer missing information, or add commentary. Return only the transcript.",
+                text: "Transcribe the speaker verbatim, including Nigerian Pidgin, mixed English, slang and natural pauses. Preserve business names, bank names, amounts, dates, and account details exactly as heard. Do not translate, answer, infer missing information, or add commentary. Return only the transcript.",
               },
               {
                 inlineData: {

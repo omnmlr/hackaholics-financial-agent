@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createSecureReads } from "../src/lib/model-led-agent/reads";
 import { AgentError } from "../src/lib/financial-agent/protocol";
 import { setup, scripted, filter } from "./financial-agent/helpers";
@@ -25,6 +25,36 @@ const transaction = {
 const search = { ...filter, query: "Ada", limit: 10, cursor: null };
 
 describe("native financial read boundary", () => {
+  it("converts whole Lagos calendar months at the backend before dispatch", async () => {
+    const s = fixture();
+    await s
+      .reads()
+      .execute("calculate_spending", {
+        ...spending,
+        from: "2026-10-01",
+        toExclusive: "2026-11-01",
+      });
+    expect(vi.mocked(s.tools.dispatch).mock.calls[0][1]).toMatchObject({
+      args: {
+        from: "2026-09-30T23:00:00.000Z",
+        toExclusive: "2026-10-31T23:00:00.000Z",
+      },
+    });
+  });
+  it.each([
+    { from: "2026-02-30", toExclusive: "2026-03-02" },
+    { from: "2026-10-01", toExclusive: "2026-11-01T00:00:00Z" },
+    { from: "2026-10-01", toExclusive: "2026-09-01" },
+  ])(
+    "rejects invalid, mixed or reversed calendar boundaries %j",
+    async (dates) => {
+      const s = fixture();
+      await expect(
+        s.reads().execute("calculate_spending", { ...spending, ...dates }),
+      ).rejects.toMatchObject({ code: "INVALID_TOOL_ARGUMENT" });
+      expect(s.tools.dispatch).not.toHaveBeenCalled();
+    },
+  );
   it("discards expired selection hints without blocking an unrelated fresh read", async () => {
     const s = fixture();
     const prior = s.reads();

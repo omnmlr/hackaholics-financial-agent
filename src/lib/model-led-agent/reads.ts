@@ -22,6 +22,7 @@ import {
   narrationContract,
 } from "../financial-agent/narration";
 import { AgentError, bytes, scrub } from "../financial-agent/protocol";
+import { lagosDateInterval } from "../financial-data/core";
 
 type Options = {
   tools: ReadToolDispatcher;
@@ -120,6 +121,36 @@ export function createSecureReads(options: Options) {
   async function runRead(name: string, args: unknown): Promise<unknown> {
     if (failure) throw new AgentError(failure);
     if (++attempts > 8) throw new AgentError("TOOL_BUDGET");
+    // Calendar interpretation belongs to the model; time-zone conversion does
+    // not. Existing exact-instant calls retain their precise meaning.
+    if (
+      args &&
+      typeof args === "object" &&
+      "from" in args &&
+      "toExclusive" in args
+    ) {
+      const filter = args as Record<string, unknown>;
+      const fromDate =
+        typeof filter.from === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(filter.from);
+      const toDate =
+        typeof filter.toExclusive === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(filter.toExclusive);
+      if (fromDate !== toDate) throw new AgentError("INVALID_TOOL_ARGUMENT");
+      if (fromDate && toDate) {
+        try {
+          args = {
+            ...filter,
+            ...lagosDateInterval(
+              filter.from as string,
+              filter.toExclusive as string,
+            ),
+          };
+        } catch {
+          throw new AgentError("INVALID_TOOL_ARGUMENT");
+        }
+      }
+    }
     const parsed = ToolCallSchema.safeParse({
       protocolVersion: 1,
       callId: `native-read-${attempts}`,

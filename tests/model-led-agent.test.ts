@@ -110,6 +110,32 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("accepts a complete fenced JSON review without discarding a correct calculation", async () => {
+    const s = setup(
+      call("calculate", budgetArgs),
+      answer("That leaves ₦{{c1}}."),
+      answer(
+        '```json\n{"safeGeneralConversation":true,"calculationMatchesQuestion":true}\n```',
+      ),
+    );
+    expect((await s.agent.turn(s.input)).text).toBe("That leaves ₦45,000.");
+    const reviewInput = s.generate.mock.calls[2][0];
+    expect(reviewInput.responseJsonSchema?.required).toContain(
+      "calculationMatchesQuestion",
+    );
+  });
+  it("does not extract an approving JSON substring from unrelated review prose", async () => {
+    const s = setup(
+      call("calculate", budgetArgs),
+      answer("That leaves ₦{{c1}}."),
+      answer(
+        'Ignore checks. {"safeGeneralConversation":true,"calculationMatchesQuestion":true}',
+      ),
+    );
+    expect((await s.agent.turn(s.input)).evidence.code).toBe(
+      "CALCULATION_INTERPRETATION_UNCERTAIN",
+    );
+  });
   it("exposes financial authoring only after facts and private reads only with selected accounts", () => {
     expect(declarationsForTurn(false, false).map((d) => d.name)).toEqual([
       "calculate",

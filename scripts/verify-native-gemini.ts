@@ -28,7 +28,12 @@ if (
 )
   throw new Error("ISOLATED_FIXTURE_MODE_REQUIRED");
 const modelId = "gemini-3.5-flash-lite";
-const maximumAttempts = 40;
+// Only the separately guarded repair workflow sets this literal after reading
+// the prior immutable 25-attempt artifact. Never reset the campaign allowance.
+const repairCampaign =
+  process.env.AGUS_NATIVE_REPAIR_CAMPAIGN === "verified-initial-25";
+const priorGenuineAttempts = repairCampaign ? 25 : 0;
+const maximumAttempts = 40 - priorGenuineAttempts;
 const minimumIntervalMs = 6500; // <10 RPM, continuations and reviews included.
 type Attempt = {
   number: number;
@@ -45,6 +50,8 @@ type Attempt = {
   historyBytes: number;
   requestedFunctionResponses: unknown[];
   returnedFunctionCalls?: unknown[];
+  returnedText?: string;
+  finishReason?: string;
 };
 const attempts: Attempt[] = [];
 const results: Array<{
@@ -71,6 +78,7 @@ async function save() {
         runId: process.env.GITHUB_RUN_ID ?? null,
         model: modelId,
         maximumAttempts,
+        priorGenuineAttempts,
         minimumIntervalMs,
         genuineGenerationAttempts: attempts.length,
         mockedModel: false,
@@ -159,6 +167,15 @@ globalThis.fetch = async (input, init) => {
       ).flatMap((p: { functionCall?: unknown }) =>
         p.functionCall ? [p.functionCall] : [],
       );
+      attempt.returnedText = (raw.candidates?.[0]?.content?.parts ?? [])
+        .filter(
+          (p: { thought?: boolean; text?: string }) =>
+            !p.thought && typeof p.text === "string",
+        )
+        .map((p: { text: string }) => p.text)
+        .join("")
+        .slice(0, 8000);
+      attempt.finishReason = raw.candidates?.[0]?.finishReason;
     }
     await save();
     return response;
@@ -170,7 +187,7 @@ globalThis.fetch = async (input, init) => {
 };
 const number = (reply: AgentReply, value: string) =>
   reply.kind === "general" && reply.text.replaceAll(",", "").includes(value);
-const scenarios = [
+const corpus = [
   {
     id: "calculation",
     chat: "math",
@@ -271,6 +288,26 @@ const scenarios = [
       ),
   },
 ];
+const scenarios = repairCampaign
+  ? corpus
+      .filter((s) =>
+        [
+          "calculation",
+          "savings",
+          "indirect-followup",
+          "correction",
+          "ordinary",
+          "authorized-transactions",
+        ].includes(s.id),
+      )
+      .sort((a, b) =>
+        a.id === "authorized-transactions"
+          ? 1
+          : b.id === "authorized-transactions"
+            ? -1
+            : 0,
+      )
+  : corpus;
 try {
   if (
     !process.env.AI_API_KEY ||
@@ -342,6 +379,14 @@ try {
   globalThis.fetch = originalFetch;
   await save();
 }
+// Synthetic, scrubbed data only. Keep full evidence retrievable through the
+// connected GitHub logs even if artifact download is unavailable in a workspace.
+console.log("BEGIN_AGUS_GENUINE_EVIDENCE");
+const { readFile } = await import("node:fs/promises");
+console.log(
+  await readFile(path, "utf8").then((text) => JSON.stringify(JSON.parse(text))),
+);
+console.log("END_AGUS_GENUINE_EVIDENCE");
 console.log(
   JSON.stringify({
     status,

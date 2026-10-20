@@ -78,6 +78,23 @@ function declaration(
     if (Array.isArray(value)) return value.map(compact);
     if (value && typeof value === "object") {
       const schema = value as Record<string, unknown>;
+      if (schema.format === "date-time")
+        return {
+          anyOf: [
+            {
+              type: "string",
+              format: "date",
+              description:
+                "Preferred for whole days/months: Africa/Lagos calendar date YYYY-MM-DD; server converts to UTC.",
+            },
+            {
+              type: "string",
+              format: "date-time",
+              description:
+                "Use an exact UTC instant only when the user specified a time of day.",
+            },
+          ],
+        };
       return Object.fromEntries(
         Object.entries(schema)
           .filter(
@@ -108,9 +125,9 @@ export const DECLARATIONS: FunctionDeclaration[] = [
       name,
       {
         search_transactions:
-          "Search current authorized historical records. Never total search pages. Ambiguous matches require user selection in a later turn. Times UTC from Africa/Lagos inclusive from and exclusive toExclusive.",
+          "Search current authorized historical records. Never total search pages. Ambiguous matches require user selection in a later turn. For whole days/months use Lagos calendar dates YYYY-MM-DD: inclusive from and exclusive toExclusive; backend converts to UTC. Exact UTC instants only for explicit times.",
         calculate_spending:
-          "Compute complete posted spending/income totals from authorized current records with source coverage. Use this for totals, not search. Times UTC from Africa/Lagos.",
+          "Compute complete posted spending/income totals from authorized current records with source coverage. Use for totals, not search. Whole days/months use Lagos calendar dates YYYY-MM-DD: inclusive from and exclusive toExclusive; backend converts to UTC. Exact UTC instants only for explicit times.",
         get_transaction:
           "Read an authorized exact transaction. Re-read a selected candidate before requesting evidence.",
         find_payment_evidence:
@@ -403,12 +420,33 @@ export function createModelLedAgent(
                     },
                   ],
                   declarations: [],
+                  responseJsonSchema: {
+                    type: "object",
+                    properties: {
+                      safeGeneralConversation: { type: "boolean" },
+                      ...(calculations.length
+                        ? { calculationMatchesQuestion: { type: "boolean" } }
+                        : {}),
+                    },
+                    required: calculations.length
+                      ? [
+                          "safeGeneralConversation",
+                          "calculationMatchesQuestion",
+                        ]
+                      : ["safeGeneralConversation"],
+                    additionalProperties: false,
+                  },
                   signal,
                 }),
               );
               let rawReview: unknown;
               try {
-                rawReview = JSON.parse(review.text);
+                // Accept one complete JSON value, optionally fenced. Never
+                // extract a convenient substring from surrounding model prose.
+                const fenced = review.text.match(
+                  /^\s*```(?:json)?\s*([\s\S]*?)\s*```\s*$/i,
+                );
+                rawReview = JSON.parse(fenced ? fenced[1] : review.text);
               } catch {
                 rawReview = null;
               }

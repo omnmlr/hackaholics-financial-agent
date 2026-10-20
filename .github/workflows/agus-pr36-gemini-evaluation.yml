@@ -43,6 +43,49 @@ jobs:
             exit 2
           fi
           echo "A secret was supplied; its value will not be printed."
+      - name: Select a Gemini model actually available to this API key
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFile } from "node:fs/promises";
+          const found = new Set();
+          let token = "";
+          for (let page = 0; page < 4; page++) {
+            const url = new URL("https://generativelanguage.googleapis.com/v1beta/models");
+            url.searchParams.set("pageSize", "1000");
+            if (token) url.searchParams.set("pageToken", token);
+            const response = await fetch(url, { headers: { "x-goog-api-key": process.env.AI_API_KEY } });
+            if (!response.ok) {
+              console.error("Gemini model discovery returned HTTP", response.status);
+              process.exit(1);
+            }
+            const data = await response.json();
+            for (const model of data.models || []) {
+              if (model.supportedGenerationMethods?.includes("generateContent")) {
+                found.add(model.name.replace(/^models\//, ""));
+              }
+            }
+            token = data.nextPageToken || "";
+            if (!token) break;
+          }
+          const available = [...found];
+          const preferred = [
+            process.env.AI_MODEL,
+            "gemini-3.5-flash-lite",
+            "gemini-3.5-flash",
+            "gemini-3-flash",
+            "gemini-3-flash-preview",
+            "gemini-2.5-flash-lite",
+            "gemini-2.5-flash",
+          ];
+          const selected = preferred.find(name => name && found.has(name));
+          if (!selected) {
+            console.error("No preferred Gemini model available; supported model IDs:", available.join(", ").slice(0, 1500));
+            process.exit(1);
+          }
+          await appendFile(process.env.GITHUB_ENV, "AI_MODEL=" + selected + "\n");
+          console.log("Selected supported Gemini model:", selected);
+          NODE
       - name: Evaluate genuine model with fictional records and no payment execution
         env:
           NODE_USE_ENV_PROXY: '1'

@@ -1,0 +1,160 @@
+{
+  "source": "Actual HTTP request/response ledger, no simulated transport",
+  "roundtrips": [
+    {
+      "campaign": "initial",
+      "scenario": "calculation",
+      "callAttempt": 1,
+      "function": "calculate",
+      "id": "call_47349",
+      "responses": [
+        {
+          "attempt": 2,
+          "status": 200,
+          "functionId": "call_47349"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "initial",
+      "scenario": "savings",
+      "callAttempt": 4,
+      "function": "calculate",
+      "id": "call_28605",
+      "responses": [
+        {
+          "attempt": 5,
+          "status": 200,
+          "functionId": "call_28605"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "initial",
+      "scenario": "indirect-followup",
+      "callAttempt": 7,
+      "function": "calculate",
+      "id": "call_43250",
+      "responses": [
+        {
+          "attempt": 8,
+          "status": 200,
+          "functionId": "call_43250"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "initial",
+      "scenario": "correction",
+      "callAttempt": 10,
+      "function": "calculate",
+      "id": "call_34833",
+      "responses": [
+        {
+          "attempt": 11,
+          "status": 200,
+          "functionId": "call_34833"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "initial",
+      "scenario": "authorized-transactions",
+      "callAttempt": 13,
+      "function": "search_transactions",
+      "id": "call_104739",
+      "responses": [
+        {
+          "attempt": 14,
+          "status": 200,
+          "functionId": "call_104739"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "initial",
+      "scenario": "unseen-budget",
+      "callAttempt": 22,
+      "function": "calculate",
+      "id": "call_394",
+      "responses": [
+        {
+          "attempt": 23,
+          "status": 200,
+          "functionId": "call_394"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "repair",
+      "scenario": "calculation",
+      "callAttempt": 1,
+      "function": "calculate",
+      "id": "call_500632",
+      "responses": [
+        {
+          "attempt": 2,
+          "status": 200,
+          "functionId": "call_500632"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "repair",
+      "scenario": "savings",
+      "callAttempt": 4,
+      "function": "calculate",
+      "id": "call_271674",
+      "responses": [
+        {
+          "attempt": 5,
+          "status": 200,
+          "functionId": "call_271674"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "repair",
+      "scenario": "indirect-followup",
+      "callAttempt": 7,
+      "function": "calculate",
+      "id": "call_563853",
+      "responses": [
+        {
+          "attempt": 8,
+          "status": 200,
+          "functionId": "call_563853"
+        }
+      ],
+      "providerAcceptedContinuation": true
+    },
+    {
+      "campaign": "repair",
+      "scenario": "correction",
+      "callAttempt": 10,
+      "function": "calculate",
+      "id": "call_497285",
+      "responses": [
+        {
+          "attempt": 11,
+          "status": 504,
+          "functionId": "call_497285"
+        },
+        {
+          "attempt": 12,
+          "status": 504,
+          "functionId": "call_497285"
+        }
+      ],
+      "providerAcceptedContinuation": false
+    }
+  ]
+}

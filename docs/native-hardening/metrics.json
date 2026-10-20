@@ -121,7 +121,7 @@
       "repair": {
         "attempts": 2,
         "elapsedMs": 34568,
-        "tokens": 0,
+        "tokens": null,
         "kind": "unavailable",
         "code": "MODEL_HTTP_504"
       }

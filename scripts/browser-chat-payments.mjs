@@ -561,7 +561,10 @@ try {
       .locator(".agus-audio-status")
       .filter({ hasText: /Transcript ready/ })
       .waitFor({ state: "hidden", timeout: 7000 });
-    assert.equal(await page.getByText("About voice", { exact: true }).count(), 0);
+    assert.equal(
+      await page.getByText("About voice", { exact: true }).count(),
+      0,
+    );
     const hello = await send("Hello");
     assert.equal(hello.reply.kind, "general");
     const copyUser = page
@@ -975,6 +978,35 @@ try {
       "Reproduced mismatched fixture bank rejection; contextual recovery opens saved payments and clears obsolete error; corrected fields verify",
     );
     await batch.getByRole("checkbox").check();
+    // Closing the edit view must discard unsaved batch changes. It must not
+    // approve or submit a payment, or silently persist the temporary amount.
+    const beforeCancel = await page.request
+      .get(`${base}/api/state`)
+      .then((r) => r.json());
+    await batch
+      .getByRole("button", { name: "Edit instructions", exact: true })
+      .click();
+    const cancelledEditor = card.getByRole("region", {
+      name: "Edit payment details",
+      exact: true,
+    });
+    await cancelledEditor
+      .getByLabel("Amount (NGN)", { exact: true })
+      .first()
+      .fill("499");
+    await cancelledEditor
+      .getByRole("button", { name: "Close payment details", exact: true })
+      .click();
+    await cancelledEditor.waitFor({ state: "hidden" });
+    const afterCancel = await page.request
+      .get(`${base}/api/state`)
+      .then((r) => r.json());
+    assert.deepEqual(afterCancel.batches, beforeCancel.batches);
+    assert.equal(executions, 0);
+    await batch.getByRole("checkbox").check();
+    checks.push(
+      "Cancelling payment edits discards unsaved changes without altering verification, approving or submitting",
+    );
     await batch
       .getByLabel("Password to approve reviewed batch", { exact: true })
       .fill(password);

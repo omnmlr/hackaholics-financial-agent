@@ -1,0 +1,35 @@
+{
+  "repository": "omnmlr/hackaholics-financial-agent",
+  "pullRequest": "https://github.com/omnmlr/hackaholics-financial-agent/pull/38",
+  "basePullRequest": 37,
+  "baseSha": "9d10d49f2df6c2c32faf51db3582e79a5e6187dc",
+  "genuineCampaignBudget": 40,
+  "genuineCampaignActualAttempts": 40,
+  "providerCampaignClosed": true,
+  "campaigns": [
+    {
+      "name": "initial",
+      "runId": 39430148876,
+      "commit": "f2408d142b3677d4bc06ca7b2f8eba9dbca22728",
+      "artifactId": 12267033827,
+      "artifactZipSha256": "30d9d505eb181519643d8751a4d1057ba0d46ccd7337cd3538e250e9f81cad2f",
+      "generationAttempts": 25,
+      "file": "genuine-initial.json"
+    },
+    {
+      "name": "repair",
+      "runId": 39465098073,
+      "commit": "bd7565cdc18bed7e170c29b41635a2aa7fa40a3b",
+      "artifactId": 12284347570,
+      "artifactZipSha256": "f3172f07b202b1e312f8e496eebf66aabc4ea6c47787c8678c8f5196e8f0c5df",
+      "generationAttempts": 15,
+      "file": "genuine-repair.json"
+    }
+  ],
+  "guardedReentryRunId": 39465097674,
+  "guardedReentryGenuineAttempts": 0,
+  "postCampaignChange": "Grounded paragraph preservation: validated locally by replaying recorded genuine output, not a new provider run.",
+  "productionDeployment": false,
+  "realPayments": false,
+  "secretsChanged": false
+}

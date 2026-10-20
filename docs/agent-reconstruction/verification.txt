@@ -1,0 +1,114 @@
+AGUS isolated repair verification — 2026-10-20
+Baseline: 5fc0eac18b8120eaa3457f855d4f153c4264350e
+No deployment, live bank operation or real-money movement.
+
+$ npm test
+> hackaholics-financial-agent@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  44 passed (44)
+      Tests  1080 passed (1080)
+   Start at  10:31:19
+   Duration  85.47s (tests 89%, import 11%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+$ npm run lint
+> hackaholics-financial-agent@0.1.0 lint
+> eslint .
+
+$ npm run typecheck
+> hackaholics-financial-agent@0.1.0 typecheck
+> tsc --noEmit
+
+$ npm run build
+> hackaholics-financial-agent@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.1 (webpack)
+✓ Running next.config.ts took 48ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.4s
+  Running TypeScript ...
+  Finished TypeScript in 6.0s ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/3) ...
+✓ Generating static pages using 2 workers (3/3) in 431ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/[...path]
+├ ƒ /api/conversation
+├ ƒ /api/conversation/payment-draft
+├ ƒ /api/conversations
+├ ƒ /api/financial-agent
+└ ƒ /conversation
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+$ npm run test:http
+> hackaholics-financial-agent@0.1.0 test:http
+> node scripts/http-smoke.mjs
+
+PASS: production Next.js HTTP smoke — login, route protection, two recipients, verification, approval, explicit submission, duplicate rejection, reconciliation, persisted status chat, CSV. No provider network calls or real money.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice
+
+$ npm run test:browser (all four viewports; model/speech doubles)
+PASS 1440px: 14 integrated groups
+PASS 820px: 12 integrated groups
+PASS 390px: 12 integrated groups
+PASS 320px: 12 integrated groups
+PASS voice submit native 1440px: 4 groups
+PASS voice submit media 1440px: 5 groups
+PASS voice submit native 820px: 4 groups
+PASS voice submit media 820px: 5 groups
+PASS voice submit native 390px: 4 groups
+PASS voice submit media 390px: 5 groups
+PASS voice submit native 320px: 4 groups
+PASS voice submit media 320px: 5 groups
+
+$ npm run test:browser:voice (final playback opt-out regression)
+{
+  "passed": 8,
+  "reportDir": "/workspace/hackaholics-financial-agent/docs/agent-reconstruction/voice",
+  "checks": [
+    "native: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "native: network failure and late permission grant clean up actual microphone tracks",
+    "native: spoken replies opt-in works after explicit Send, without restarting capture",
+    "native: disabling spoken replies during an in-flight answer suppresses playback",
+    "media: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "media: cancellation during provider processing ignores its late transcript",
+    "media: spoken replies opt-in works after explicit Send, without restarting capture",
+    "actual Chromium microphone permission denial retains draft and shows an error without fabricated bars"
+  ]
+}
+
+$ npm run evaluate:agent
+BLOCKED: MODEL_NOT_CONFIGURED; zero genuine model calls. See live-evaluation.json.
+
+Sandbox note: initial baseline restart tests required supported subprocess/network execution permission; they pass in the final full suite.
+Physical microphone, actual Web Speech accuracy, actual TTS audio and genuine Gemini quality were not tested.

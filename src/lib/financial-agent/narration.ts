@@ -373,6 +373,56 @@ export function acceptNarration(raw: unknown, facts: Fact[]): string[] {
   return paragraphs;
 }
 
+/** Flexible authoring keeps values and provenance server-owned. This validates
+ * structure, references and literal values, NOT arbitrary natural-language
+ * truth. Its caller must obtain independent semantic review before display. */
+export function prepareReviewedNarration(raw: unknown, facts: Fact[]) {
+  const { paragraphs } = NarrationSchema.parse(raw);
+  const contract = narrationContract(facts);
+  const ids = new Set(facts.map((f) => f.resultId));
+  const used = new Set<string>();
+  for (const p of paragraphs) {
+    if (
+      new Set(p.resultIds).size !== p.resultIds.length ||
+      p.resultIds.some((id) => !ids.has(id))
+    )
+      throw new AgentError("NARRATION_REFERENCE");
+    const tokens = p.text.match(/\{\{[^}]+\}\}/g) ?? [];
+    for (const token of tokens) {
+      if (!Object.hasOwn(contract.slots, token))
+        throw new AgentError("NARRATION_VALUE");
+      const index = Number(token.match(/^\{\{r(\d+)\./)?.[1]);
+      if (!facts[index] || !p.resultIds.includes(facts[index].resultId))
+        throw new AgentError("NARRATION_REFERENCE");
+    }
+    if (
+      /\d|[₦$€£{}]|https?:\/\/|\b(?:sk-|AIza)[\w-]+/i.test(
+        p.text.replace(/\{\{[^}]+\}\}/g, ""),
+      )
+    )
+      throw new AgentError("NARRATION_VALUE");
+    for (const id of p.resultIds) used.add(id);
+  }
+  if (facts.some((f) => !used.has(f.resultId)))
+    throw new AgentError("NARRATION_REFERENCE");
+  return {
+    render: () => [
+      ...paragraphs.map((p) =>
+        p.text.replace(/\{\{[^}]+\}\}/g, (token) => contract.slots[token]),
+      ),
+      // Qualifications are never delegated to model compliance.
+      ...contract.required
+        .filter((token) => !paragraphs.some((p) => p.text.includes(token)))
+        .map((token) => contract.slots[token]),
+      ...(facts.some((f) =>
+        f.presentation.sources.some((s) => s.mode === "fixture"),
+      )
+        ? ["Fictional demo records; no real bank account data."]
+        : []),
+    ],
+  };
+}
+
 export function factualPresentation(facts: Fact[]): FinancialPresentation {
   return {
     version: 1,

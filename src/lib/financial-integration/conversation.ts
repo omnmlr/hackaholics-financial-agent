@@ -10,6 +10,9 @@ import {
 import { authorizedFinancialAccess } from "./access";
 import { createContextPersistence } from "./context-persistence";
 import { createDurableRepository } from "./storage";
+import { chatHistory } from "../chat-history/store";
+import { operator } from "../auth";
+import { AppError } from "../domain";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -29,6 +32,27 @@ export async function conversationTurn(
 ) {
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
+  const parsed = ConversationInput.parse(input);
+  // Display history can supply dialogue after the short-lived tool context
+  // expires. Owner is session-derived; facts/selections are never rehydrated.
+  const turns = await chatHistory(await operator(req))
+    .read(parsed.conversationId)
+    .catch((error) => {
+      if (error instanceof AppError && error.status === 404) return [];
+      throw error;
+    });
+  const dialogue = turns.slice(-8).flatMap((turn) => [
+    { role: "user" as const, text: turn.text },
+    {
+      role: "assistant" as const,
+      text:
+        turn.reply.kind === "general" ||
+        turn.reply.kind === "product" ||
+        (turn.reply.kind === "clarify" && !turn.reply.citations.length)
+          ? turn.reply.text
+          : `[${turn.reply.kind} response; re-read current sources for facts]`,
+    },
+  ]);
   return createFinancialAgent({
     model,
     tools: capability.tools,
@@ -40,8 +64,9 @@ export async function conversationTurn(
       { renewExpired: true },
     ),
     clock,
+    dialogue,
   }).turn({
-    ...ConversationInput.parse(input),
+    ...parsed,
     ctx: capability.context,
     // Requested IDs confer no permission. B checks ownership, consent and source
     // revisions before planning/reads; education never resolves account grants.

@@ -34,6 +34,7 @@ import {
 } from "./conversation-payments";
 import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
+import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
 
@@ -107,6 +108,10 @@ export function FinancialConversation({
   const signin = useRef<HTMLDialogElement>(null);
   const paymentHistory = useRef<HTMLDialogElement>(null);
   const accountDialog = useRef<HTMLDialogElement>(null);
+  const voiceSettings = useRef<HTMLDialogElement>(null);
+  const [voiceLanguage, setVoiceLanguage] = useState("en-NG");
+  const [spokenReplies, setSpokenReplies] = useState(false);
+  const spokenRepliesEnabled = useRef(false);
   const modalReturn = useRef<HTMLElement | null>(null);
   const modalSelection = useRef<DraftSelection | undefined>(undefined);
   const requestVersion = useRef(0);
@@ -165,6 +170,7 @@ export function FinancialConversation({
     },
     aiEnabled,
     disabled: busy || loading || !!unknown || !authenticated,
+    language: voiceLanguage,
     focus: () => composer.current?.focus({ preventScroll: true }),
   });
   const { discardVoiceCapture } = voice;
@@ -174,6 +180,8 @@ export function FinancialConversation({
   const clearPrivate = useCallback(() => {
     discardVoiceCapture();
     stopSpeech();
+    setSpokenReplies(false);
+    spokenRepliesEnabled.current = false;
     ++privacyVersion.current;
     ++requestVersion.current;
     drafts.clear();
@@ -499,6 +507,11 @@ export function FinancialConversation({
             `/conversation?chat=${encodeURIComponent(chatId)}`,
           );
         setTurns((previous) => [...previous, data.turn]);
+        if (
+          spokenRepliesEnabled.current &&
+          ["general", "financial", "product"].includes(data.turn.reply.kind)
+        )
+          speech.speak(data.turn.id, responseSpeechText(data.turn.reply));
         setAnnouncement("Response saved. The answer is ready.");
         void refresh().catch(() => {
           if (version === privacyVersion.current)
@@ -736,6 +749,12 @@ export function FinancialConversation({
       <div className="agus-sidebar-bottom">
         <button
           className="agus-sidebar-link"
+          onClick={() => openModal(voiceSettings.current)}
+        >
+          <Mic size={18} /> Voice settings
+        </button>
+        <button
+          className="agus-sidebar-link"
           onClick={() => {
             openModal(paymentHistory.current);
             void payments.refresh().catch(() => {});
@@ -961,7 +980,9 @@ export function FinancialConversation({
                         speech.playing === turn.id ? "Stop reading" : "Listen"
                       }
                       aria-pressed={speech.playing === turn.id}
-                      onClick={() => speech.speak(turn.id, turn.reply.text)}
+                      onClick={() =>
+                        speech.speak(turn.id, responseSpeechText(turn.reply))
+                      }
                     >
                       {speech.playing === turn.id ? (
                         <VolumeX size={16} />
@@ -1035,6 +1056,15 @@ export function FinancialConversation({
               )}
             </div>
           )}
+          {voice.liveTranscript && (
+            <p
+              className="agus-live-transcript"
+              aria-live="polite"
+              aria-label="Live transcript"
+            >
+              {voice.liveTranscript}
+            </p>
+          )}
           {error && (
             <div className="agus-error" role="alert">
               <p>{error}</p>
@@ -1104,25 +1134,25 @@ export function FinancialConversation({
                     : ""}
               </span>
               {voice.listening &&
-                (voice.audioLevel === null ? (
+                (voice.waveform === null ? (
                   <span
                     className="agus-recording-pulse"
                     aria-label="Recording indicator"
                   >
-                    Recording
+                    Recording · level unavailable
                   </span>
                 ) : (
                   <span
                     className="agus-recording-level"
                     role="img"
                     aria-label="Microphone sound level"
-                    data-level={voice.audioLevel.toFixed(2)}
+                    data-level={voice.audioLevel?.toFixed(2)}
                   >
-                    {[0.6, 1, 0.8, 1, 0.6].map((scale, index) => (
+                    {voice.waveform.map((level, index) => (
                       <i
                         key={index}
                         style={{
-                          height: `${4 + voice.audioLevel! * scale * 24}px`,
+                          height: `${2 + level * 28}px`,
                         }}
                       />
                     ))}
@@ -1176,15 +1206,6 @@ export function FinancialConversation({
             </div>
           )}
         </div>
-        <details key={id} className="agus-voice-help">
-          <summary>About voice</summary>
-          <p>
-            Voice fills your editable draft and never sends it. Browser speech
-            services or the configured AI provider may process microphone audio.
-            Stop to add the transcript; cancel to discard it. Microphone access
-            requires HTTPS or localhost.
-          </p>
-        </details>
         <details className="agus-demo-strip">
           <summary>
             {paymentMode === "fixture"
@@ -1203,6 +1224,72 @@ export function FinancialConversation({
       <div className="agus-sr-only" role="status" aria-live="polite">
         {announcement}
       </div>
+      <dialog
+        ref={voiceSettings}
+        className="agus-dialog"
+        aria-labelledby="voice-settings-title"
+        onClose={restoreFocus}
+      >
+        <div className="agus-dialog-heading">
+          <h2 id="voice-settings-title">Voice settings</h2>
+          <button
+            className="agus-icon-button"
+            aria-label="Close voice settings"
+            onClick={() => voiceSettings.current?.close()}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <label className="agus-voice-setting">
+          Recognition language
+          <select
+            value={voiceLanguage}
+            disabled={voiceBusy}
+            onChange={(event) => setVoiceLanguage(event.target.value)}
+          >
+            <option value="en-NG">English (Nigeria)</option>
+            <option value="en-GB">English (UK)</option>
+            <option value="en-US">English (US)</option>
+          </select>
+        </label>
+        <p>
+          Speak naturally, including Pidgin. Recognition quality and live text
+          depend on your browser and speech provider. Always review names,
+          amounts and account details.
+        </p>
+        <label className="agus-voice-setting">
+          <span>Read new replies aloud</span>
+          <input
+            type="checkbox"
+            checked={spokenReplies}
+            onChange={(event) => {
+              spokenRepliesEnabled.current = event.target.checked;
+              setSpokenReplies(event.target.checked);
+              if (!event.target.checked) stopSpeech();
+            }}
+          />
+        </label>
+        <p>
+          This enables spoken turn-taking for this session. Press the
+          microphone, stop, review and send. AGUS can read its answer aloud. It
+          does not keep listening, send speech automatically or authorize a
+          payment.
+        </p>
+        <details>
+          <summary>Voice processing and privacy</summary>
+          <p>
+            Microphone access begins only when you press Record and requires
+            HTTPS or localhost. The waveform measures real microphone samples
+            locally. Native browser recognition may send audio to the browser’s
+            speech service. Where unavailable, a recording is sent to the
+            configured AI provider for transcription after Stop. The app does
+            not save audio. Cancel discards pending input; leaving the page
+            stops capture. Sent transcripts are saved with your conversation.
+            Browser or operating-system speech services may process reply text
+            for playback.
+          </p>
+        </details>
+      </dialog>
       <dialog
         ref={paymentHistory}
         className="agus-dialog agus-payment-history"

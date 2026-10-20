@@ -36,10 +36,35 @@ export const DecisionSchema = z.discriminatedUnion("kind", [
 ]);
 export type Decision = z.infer<typeof DecisionSchema>;
 export const GeneralSchema = z.strictObject({
-  text: z.string().trim().min(1).max(1800),
+  text: z.string().trim().min(1).max(6000),
 });
 const figure = z.string().regex(/^\d{1,12}(?:\.\d{1,2})?$/);
 export const CalculationSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("arithmetic"),
+    inputs: z
+      .array(
+        z.strictObject({
+          name: z.string().regex(/^[a-z][a-zA-Z]{0,24}$/),
+          value: figure,
+        }),
+      )
+      .min(1)
+      .max(20),
+    steps: z
+      .array(
+        z.strictObject({
+          id: z.string().regex(/^[a-z][a-zA-Z]{0,24}$/),
+          op: z.enum(["add", "subtract", "multiply", "divide"]),
+          left: z.string().max(25),
+          right: z.string().max(25),
+        }),
+      )
+      .min(1)
+      .max(12),
+    output: z.string().max(25),
+    unit: z.enum(["naira", "number", "percent", "months"]),
+  }),
   z.strictObject({
     kind: z.literal("savings_goal"),
     monthlySavingsNaira: figure,
@@ -59,8 +84,19 @@ export const CalculationSchema = z.discriminatedUnion("kind", [
     months: z.number().int().min(1).max(1200),
   }),
 ]);
+// Source positions refer to the userStatements array supplied by the server.
+// Exact quotes establish provenance; semantic role/unit interpretation is
+// reviewed separately. No phrase dictionary decides what a person meant.
+export const CalculationBindingSchema = z.strictObject({
+  field: z.string().min(1).max(50),
+  sourceIndex: z.number().int().min(0).max(16).nullable(),
+  quote: z.string().max(160),
+  unit: z.enum(["naira", "kobo", "percent", "months", "years", "number"]),
+});
 export const ReasoningSchema = GeneralSchema.extend({
   calculation: CalculationSchema.nullable().optional(),
+  bindings: z.array(CalculationBindingSchema).max(20).optional(),
+  assumptions: z.array(z.string().trim().min(1).max(300)).max(8).optional(),
 });
 export const ReviewSchema = z.strictObject({
   safeGeneralConversation: z.boolean(),
@@ -72,7 +108,9 @@ export type ModelTask =
   | "review_general"
   | "product"
   | "plan"
-  | "narrate";
+  | "narrate"
+  | "compose"
+  | "review_narration";
 /** One request means one HTTP attempt. Implementations must honor signal; the executor also races it. */
 export interface AgentModel {
   readonly provider: string;

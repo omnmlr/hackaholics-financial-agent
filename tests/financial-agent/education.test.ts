@@ -95,7 +95,10 @@ it("education ignores a saved selection after consent revocation", async () => {
   const generation = s.model.generate.mock.calls.findLast(
     ([task]) => task === "general",
   );
-  expect(generation?.[1]).toMatchObject({ history: [], educational: true });
+  expect(generation?.[1]).toMatchObject({ educational: true });
+  expect(JSON.stringify(generation?.[1])).toContain(
+    "Check October 2026 spending",
+  );
   expect(JSON.stringify(generation)).not.toContain("ada-okafor-oct");
 });
 it.each([

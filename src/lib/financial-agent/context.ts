@@ -57,7 +57,7 @@ export const ContextSchema = z
       .array(
         z.strictObject({
           role: z.enum(["user", "assistant"]),
-          text: z.string().max(1800),
+          text: z.string().max(4000),
         }),
       )
       .max(16),
@@ -103,7 +103,7 @@ export class MemoryContextStore implements ContextStore {
 export function boundedMessages(messages: ConversationContext["messages"]) {
   const result = messages
     .slice(-16)
-    .map((m) => ({ ...m, text: m.text.slice(0, 1800) }));
+    .map((m) => ({ ...m, text: m.text.slice(0, 4000) }));
   while (bytes(result) > 12 * 1024) result.shift();
   return result;
 }

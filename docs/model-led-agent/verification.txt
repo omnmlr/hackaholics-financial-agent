@@ -1,0 +1,80 @@
+AGUS model-led candidate — local final verification, 20 October 2026 UTC
+Branch: experiment/agus-model-led-20261020
+Base: dac1f769bff31a3c5ef5820e222e9545025163cd (PR #36)
+Node: v24.19.0
+Dependencies: npm ci; pinned @google/genai 2.30.0, decimal.js 10.6.0
+
+npm run typecheck
+PASS — tsc --noEmit, exit 0
+
+npm run lint
+PASS — eslint ., exit 0
+
+npx prettier --check [new agent, tests, harness/browser scripts, workflows]
+PASS — all matched files use Prettier style
+
+npm test -- --reporter=dot
+PASS — 47 test files, 1,141 tests
+Final run: 12:36:17 UTC; duration 86.14 seconds
+Includes 61 new calculator/read/native-protocol tests.
+Scripted models and mocked HTTP only; zero genuine model calls.
+
+npm run build
+PASS — optimized Next.js production build, webpack, exit 0
+Final build included final redaction, tone and interpretation/prose changes.
+Build/test process execution required the supported sandbox network permission.
+An earlier restricted run failed subprocess execution; rerun passed without code
+changes intended to suppress build/typecheck errors.
+
+node scripts/http-smoke.mjs
+PASS — production HTTP login, route protection, two recipients, verification,
+approval, explicit fixture submission, duplicate rejection, reconciliation,
+persisted status chat and CSV. No provider network calls or real money.
+
+npm run test:browser
+PASS — 50 chat/payment integrated groups over 1440/820/390/320px.
+PASS — 36 native/media voice-submission groups over those four sizes.
+PASS — 8 real Chromium Web Audio waveform/cleanup/opt-in/microphone-denial checks.
+Synthetic PCM microphone and mocked recognition/provider; physical mic and real
+recognition accuracy remain unverified.
+
+node scripts/browser-native-agent.mjs
+PASS — final production build; 5 integration groups at 1440px and 5 at 390px.
+Ordinary reply: one scripted generation, no tool.
+Generic calculation: 540; corrected after reload: 1,080.
+Budget: 45,000; authorized fictional spending: 19,751.51.
+Editable two-recipient payment draft persists an edited 650 amount.
+Approval requests: 0; execution requests: 0, each native viewport journey.
+No browser page errors or horizontal overflow.
+Genuine Gemini calls: 0 (explicit native function transport fixture).
+
+Genuine comparative campaign
+Run: https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39422739466
+Commit: c5b4132a2527d621e8d6c77af002b412c250d7c3
+Model: gemini-3.5-flash-lite (provider model discovery confirmed)
+STATUS: BLOCKED_QUOTA_OR_PERMISSIONS — actual transport status HTTP 429
+Generation attempts: 17 (16 HTTP 200, then 429); 8 candidate turns recorded.
+Automatic retries/reruns: none after quota stop.
+Native genuine calculation/read/function-response round trip: NOT REACHED.
+Tone/redaction/interpretation refinements after this commit: NOT live validated.
+See comparative-gemini-evaluation.json and REPORT.md; do not substitute local
+scripted or browser checks for these missing provider results.
+
+Preserved: production credentials, database, startup scripts, main, deployment
+branches, Railway, real banks and real money were not modified or used.
+Candidate remains server-opt-in; baseline remains the default.
+
+FINAL IMPLEMENTATION CI VERIFICATION (supersedes the local suite count above)
+Run: https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39424438282
+Commit: b5ef640e1a672925adac5b207154ffbbc1d83271
+Conclusion: success
+47 test files; 1,142 tests passed.
+Typecheck, lint, production build, HTTP smoke, existing browser/voice regressions,
+and native production-browser journeys all passed in the same isolated CI job.
+Includes final remembered-selection permission scope and release recheck.
+Genuine model calls in this CI job: 0. No provider secret is supplied to this job.
+Later commits update documentation/evidence only.
+
+Run 39424099134 correctly rejected automatic provider-campaign re-entry at its
+history guard, before installation or the provider-secret step. Additional
+generation attempts from that guarded workflow run: 0. The campaign remains at17.

@@ -13,6 +13,8 @@ import { createDurableRepository } from "./storage";
 import { chatHistory } from "../chat-history/store";
 import { operator } from "../auth";
 import { AppError } from "../domain";
+import { createModelLedAgent } from "../model-led-agent/agent";
+import { createGeminiToolModel } from "../model-led-agent/model";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -28,7 +30,7 @@ export const ConversationInput = z.strictObject({
 export async function conversationTurn(
   req: Request,
   input: z.infer<typeof ConversationInput>,
-  model: AgentModel = createConfiguredModel(),
+  model?: AgentModel,
 ) {
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
@@ -53,8 +55,7 @@ export async function conversationTurn(
           : `[${turn.reply.kind} response; re-read current sources for facts]`,
     },
   ]);
-  return createFinancialAgent({
-    model,
+  const options = {
     tools: capability.tools,
     access: createRepositoryAccess(createDurableRepository(), clock),
     store: createContextPersistence(
@@ -65,7 +66,17 @@ export async function conversationTurn(
     ),
     clock,
     dialogue,
-  }).turn({
+  };
+  // Explicit server flag keeps the repaired baseline available throughout
+  // evaluation/rollback. Client input never selects a provider or architecture.
+  const agent =
+    !model && process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini"
+      ? createModelLedAgent({ ...options, model: createGeminiToolModel() })
+      : createFinancialAgent({
+          ...options,
+          model: model ?? createConfiguredModel(),
+        });
+  return agent.turn({
     ...parsed,
     ctx: capability.context,
     // Requested IDs confer no permission. B checks ownership, consent and source

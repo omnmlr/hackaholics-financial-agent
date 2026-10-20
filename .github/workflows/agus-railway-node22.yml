@@ -28,7 +28,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - name: Select Chromium
-        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\\n`)'
+        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, "CHROMIUM_PATH=" + chromium.executablePath() + String.fromCharCode(10))'
       - run: npm run test:http
       - run: npm run test:browser
       - run: npm run test:browser:native

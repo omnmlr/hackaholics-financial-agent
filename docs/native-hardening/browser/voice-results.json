@@ -1,0 +1,17 @@
+{
+  "mockedRecognition": true,
+  "mockedModel": true,
+  "syntheticMicrophone": true,
+  "physicalMicrophone": false,
+  "realWebAudio": true,
+  "checks": [
+    "native: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "native: network failure and late permission grant clean up actual microphone tracks",
+    "native: spoken replies opt-in works after explicit Send, without restarting capture",
+    "native: disabling spoken replies during an in-flight answer suppresses playback",
+    "media: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "media: cancellation during provider processing ignores its late transcript",
+    "media: spoken replies opt-in works after explicit Send, without restarting capture",
+    "actual Chromium microphone permission denial retains draft and shows an error without fabricated bars"
+  ]
+}

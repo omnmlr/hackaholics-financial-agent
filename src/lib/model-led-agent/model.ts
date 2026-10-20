@@ -12,6 +12,7 @@ export type ToolModel = {
     system: string;
     contents: Content[];
     declarations: FunctionDeclaration[];
+    responseJsonSchema?: Record<string, unknown>;
     signal: AbortSignal;
   }): Promise<{
     content: Content;
@@ -33,7 +34,13 @@ export function createGeminiToolModel(
   return {
     provider: "gemini",
     model,
-    async generate({ system, contents, declarations, signal }) {
+    async generate({
+      system,
+      contents,
+      declarations,
+      responseJsonSchema,
+      signal,
+    }) {
       if (!key || env.AI_PROVIDER !== "gemini")
         throw new AgentError("MODEL_NOT_CONFIGURED");
       if (!/^[A-Za-z0-9._-]{1,100}$/.test(model))
@@ -59,6 +66,9 @@ export function createGeminiToolModel(
             abortSignal: signal,
             maxOutputTokens: 2048,
             temperature: 0.2,
+            ...(responseJsonSchema
+              ? { responseMimeType: "application/json", responseJsonSchema }
+              : {}),
           },
         });
         const candidate = response.candidates?.[0];

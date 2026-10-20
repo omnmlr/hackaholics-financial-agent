@@ -28,7 +28,12 @@ globalThis.fetch = async (input, init) => {
   const system =
     body.systemInstruction?.parts?.map((p) => p.text ?? "").join("") ?? "";
   if (system.startsWith("Independently check a proposed AGUS answer."))
-    return say(JSON.stringify({ safeGeneralConversation: true }));
+    return say(
+      JSON.stringify({
+        safeGeneralConversation: true,
+        calculationMatchesQuestion: true,
+      }),
+    );
   if (
     !system.startsWith(
       "You are AGUS, an intelligent conversational financial assistant.",
@@ -38,6 +43,15 @@ globalThis.fetch = async (input, init) => {
   if (++calls > 100) throw new Error("Native fixture budget exceeded");
   const contents = body.contents;
   const last = contents.at(-1);
+  const currentQuestion =
+    contents
+      .findLast(
+        (content) =>
+          content.role === "user" &&
+          content.parts.some((p) => typeof p.text === "string"),
+      )
+      ?.parts.map((p) => p.text ?? "")
+      .join("") ?? "";
   const toolResponses = last.parts.filter((p) => p.functionResponse);
   if (toolResponses.length) {
     if (
@@ -59,6 +73,20 @@ globalThis.fetch = async (input, init) => {
           : "That comes to {{c1}}.",
       );
     if (tool.name === "calculate_spending") {
+      if (
+        currentQuestion ===
+        "Show my spending even if the explanation service fails"
+      )
+        return Response.json(
+          {
+            error: {
+              code: 429,
+              status: "RESOURCE_EXHAUSTED",
+              message: "FIXTURE_PRIVATE_ERROR_MUST_STAY_HIDDEN",
+            },
+          },
+          { status: 429 },
+        );
       const authoring = output.authoring;
       const resultId = output.result.resultId;
       const example = authoring.examples.find(
@@ -76,6 +104,34 @@ globalThis.fetch = async (input, init) => {
     throw new Error(`Unexpected native fixture tool: ${tool.name}`);
   }
   const text = last.parts.map((p) => p.text ?? "").join("");
+  if (text === "Simulate an unavailable provider while discussing lizards")
+    return Response.json(
+      {
+        error: {
+          code: 429,
+          status: "RESOURCE_EXHAUSTED",
+          message: "FIXTURE_PRIVATE_ERROR_MUST_STAY_HIDDEN",
+        },
+      },
+      { status: 429 },
+    );
+  if (text === "Try the last question again") {
+    if (
+      !contents.some(
+        (content) =>
+          content.role === "user" &&
+          content.parts.some(
+            (p) =>
+              p.text ===
+              "Simulate an unavailable provider while discussing lizards",
+          ),
+      )
+    )
+      throw new Error("Failed-provider question was not restored");
+    return say(
+      "Lizards warm themselves in sunlight to regulate their body temperature.",
+    );
+  }
   if (text === "Tell me a short joke about robots")
     return say(
       "Why did the robot bring a ladder? It wanted to reach a higher level.",
@@ -113,7 +169,10 @@ globalThis.fetch = async (input, init) => {
       unit: "naira",
       assumptions: ["Only the two stated expenses are deducted."],
     });
-  if (text === "Show my spending for October 2026") {
+  if (
+    text === "Show my spending for October 2026" ||
+    text === "Show my spending even if the explanation service fails"
+  ) {
     const selected = JSON.parse(
       system.match(/Server selected accounts: (\[[^\n]*?\])\./)[1],
     );

@@ -40,7 +40,8 @@ export function createSecureReads(options: Options) {
   let selection = options.selection
     ? SelectionSchema.parse(options.selection)
     : null;
-  const priorCandidates = selection?.candidates ?? [];
+  let priorCandidates = selection?.candidates ?? [];
+  let staleSelection = false;
   const used = new Map<
     string,
     { ids: string[]; scopes: Scope[]; version: string }
@@ -112,7 +113,8 @@ export function createSecureReads(options: Options) {
         selection.accountIds.some((id) => !allowedIds.includes(id)))
     ) {
       selection = null;
-      fail("SELECTION_STALE");
+      priorCandidates = [];
+      staleSelection = true;
     }
   }
   async function runRead(name: string, args: unknown): Promise<unknown> {
@@ -127,6 +129,11 @@ export function createSecureReads(options: Options) {
     if (!parsed.success) throw new AgentError("INVALID_TOOL_ARGUMENT");
     const call: ToolCall = parsed.data;
     await ensureSelection();
+    if (
+      staleSelection &&
+      (call.name === "get_transaction" || call.name === "find_payment_evidence")
+    )
+      throw new AgentError("SELECTION_STALE");
     if (toolCalls >= 5) throw new AgentError("TOOL_BUDGET");
     const signature = canonical([call.name, call.args]);
     if (calls.has(signature)) throw new AgentError("REPEATED_CALL");
@@ -214,6 +221,7 @@ export function createSecureReads(options: Options) {
     } else {
       successIds.add(fact.resultId);
       if (call.name === "search_transactions" && result.data) {
+        staleSelection = false;
         const data = result.data as ToolData["search_transactions"];
         ambiguous = data.selection === "ambiguous";
         selection = data.matches.length

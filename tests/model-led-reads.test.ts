@@ -25,6 +25,22 @@ const transaction = {
 const search = { ...filter, query: "Ada", limit: 10, cursor: null };
 
 describe("native financial read boundary", () => {
+  it("discards expired selection hints without blocking an unrelated fresh read", async () => {
+    const s = fixture();
+    const prior = s.reads();
+    await prior.execute("search_transactions", search);
+    const next = createSecureReads({
+      tools: s.tools,
+      access: s.access,
+      clock: s.clock,
+      ctx: s.input.ctx,
+      accountIds: s.input.accountIds,
+      selection: { ...prior.selection!, expiresAt: "2026-10-01T00:00:00.000Z" },
+    });
+    await next.execute("calculate_spending", spending);
+    expect((await next.finish())?.kind).toBe("financial");
+    expect(next.selection).toBeNull();
+  });
   it("renders exact source values and provenance without model prose", async () => {
     const s = fixture();
     const reads = s.reads();

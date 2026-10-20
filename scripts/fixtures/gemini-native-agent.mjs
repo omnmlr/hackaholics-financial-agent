@@ -28,7 +28,12 @@ globalThis.fetch = async (input, init) => {
   const system =
     body.systemInstruction?.parts?.map((p) => p.text ?? "").join("") ?? "";
   if (system.startsWith("Independently check a proposed AGUS answer."))
-    return say(JSON.stringify({ safeGeneralConversation: true }));
+    return say(
+      JSON.stringify({
+        safeGeneralConversation: true,
+        calculationMatchesQuestion: true,
+      }),
+    );
   if (
     !system.startsWith(
       "You are AGUS, an intelligent conversational financial assistant.",

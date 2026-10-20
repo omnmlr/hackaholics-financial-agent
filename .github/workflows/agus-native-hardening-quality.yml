@@ -1,0 +1,44 @@
+name: AGUS native hardening quality (no provider credential)
+on:
+  push:
+    branches: [hardening/agus-native-release-20261020]
+    paths:
+      - src/**
+      - tests/**
+      - scripts/**
+      - package.json
+      - package-lock.json
+      - .github/workflows/agus-native-hardening-quality.yml
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Select installed Chromium
+        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\n`)'
+      - run: npm run test:http
+      - run: npm run test:browser
+      - run: node scripts/browser-native-agent.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agus-hardening-quality
+          path: |
+            /tmp/agus-native-agent-browser.json
+            /tmp/agus-native-agent-*.png
+            /tmp/agus-chat-payments-browser.json
+            /tmp/agus-voice-meter/results.json
+          retention-days: 30

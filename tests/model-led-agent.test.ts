@@ -109,6 +109,85 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("requires explicit interpretation confirmation even for a nonfinancial calculation", async () => {
+    const s = setup(
+      call("calculate", { ...budgetArgs, expression: "7*8", unit: "number" }),
+      answer("It comes to {{c1}}."),
+      answer('{"safeGeneralConversation":true}'),
+    );
+    const result = await s.agent.turn({
+      ...s.input,
+      text: "What is seven times eight?",
+    });
+    expect(result.kind).toBe("clarify");
+    expect(result.evidence.code).toBe("CALCULATION_INTERPRETATION_UNCERTAIN");
+    expect(s.generate).toHaveBeenCalledTimes(3);
+  });
+
+  it("retains authorized read facts when the next provider generation fails", async () => {
+    const s = setup(
+      call("calculate_spending", {
+        accountIds: ["amina-current"],
+        ...lagosDateInterval("2026-10-01", "2026-11-01"),
+        groupBy: "none",
+      }),
+      new AgentError("MODEL_HTTP_429"),
+    );
+    const result = await s.agent.turn({
+      ...s.input,
+      accountIds: ["amina-current"],
+    });
+    expect(result.kind).toBe("financial");
+    expect(result.text).toContain("19,751.51");
+    expect(result.text).toContain("FICTIONAL");
+    expect(result.evidence.code).toBe("MODEL_HTTP_429");
+    expect(result.citations.length).toBeGreaterThan(0);
+    expect(s.generate).toHaveBeenCalledTimes(2);
+  });
+
+  it("rechecks permissions before provider-error factual fallback", async () => {
+    const s = setup(
+      call("calculate_spending", {
+        accountIds: ["amina-current"],
+        ...lagosDateInterval("2026-10-01", "2026-11-01"),
+        groupBy: "none",
+      }),
+    );
+    s.generate.mockImplementationOnce(async () =>
+      call("calculate_spending", {
+        accountIds: ["amina-current"],
+        ...lagosDateInterval("2026-10-01", "2026-11-01"),
+        groupBy: "none",
+      }),
+    );
+    s.generate.mockImplementationOnce(async () => {
+      await s.repository.revokeConsent(
+        s.input.ctx,
+        "consent-amina",
+        FIXTURE_NOW,
+      );
+      throw new AgentError("MODEL_HTTP_429");
+    });
+    const result = await s.agent.turn({
+      ...s.input,
+      accountIds: ["amina-current"],
+    });
+    expect(result.kind).toBe("unavailable");
+    expect(result.text).not.toContain("19,751.51");
+    expect(result.citations).toEqual([]);
+  });
+
+  it("preserves a failed-provider question so a later retry can use its context", async () => {
+    const s = setup(
+      new AgentError("MODEL_HTTP_429"),
+      answer("A short explanation."),
+    );
+    await s.agent.turn({ ...s.input, text: "Explain why leaves turn yellow" });
+    await s.agent.turn({ ...s.input, text: "Please try that again" });
+    expect(JSON.stringify(s.inputs.at(-1)?.contents)).toContain(
+      "Explain why leaves turn yellow",
+    );
+  });
   it("answers ordinary conversation in one model call without accessing financial tools", async () => {
     const s = setup(
       answer("Rainy mornings are a good excuse for a cup of tea."),
@@ -131,7 +210,9 @@ describe("native model-directed conversation (scripted model)", () => {
     const s = setup(
       first,
       answer("That leaves ₦{{c1}} after rent and food."),
-      answer('{"safeGeneralConversation":true}'),
+      answer(
+        '{"safeGeneralConversation":true,"calculationMatchesQuestion":true}',
+      ),
     );
     const reply = await s.agent.turn({
       ...s.input,
@@ -196,6 +277,9 @@ describe("native model-directed conversation (scripted model)", () => {
         assumptions: ["No interest or withdrawals"],
       }),
       answer("With the new contribution, it takes {{c1}} months."),
+      answer(
+        '{"safeGeneralConversation":true,"calculationMatchesQuestion":true}',
+      ),
     );
     await s.agent.turn({
       ...s.input,
@@ -245,7 +329,9 @@ describe("native model-directed conversation (scripted model)", () => {
       call("calculate", { ...budgetArgs, unit: "unsupported-unit" }, "bad"),
       call("calculate", budgetArgs, "fixed"),
       answer("It leaves ₦{{c1}}."),
-      answer('{"safeGeneralConversation":true}'),
+      answer(
+        '{"safeGeneralConversation":true,"calculationMatchesQuestion":true}',
+      ),
     );
     const reply = await s.agent.turn(s.input);
     expect(reply.text).toBe("It leaves ₦45,000.");
@@ -424,8 +510,8 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(s.inputs[0].system).not.toContain(
       "PRIVATE SAVED LABEL MUST STAY HIDDEN",
     );
-    expect(s.inputs[0].system).toContain(
-      "Previous selection (untrusted labels, must re-read): null",
+    expect(JSON.stringify(s.inputs[0].contents)).not.toContain(
+      "PRIVATE SAVED LABEL MUST STAY HIDDEN",
     );
     expect(s.tools.dispatch).not.toHaveBeenCalled();
   });
@@ -493,7 +579,10 @@ describe("native model-directed conversation (scripted model)", () => {
         return realCheck(...args);
       });
     s.generate.mockImplementationOnce(async (input) => {
-      expect(input.system).toContain("AUTHORIZED STORED LABEL");
+      expect(input.system).not.toContain("AUTHORIZED STORED LABEL");
+      expect(JSON.stringify(input.contents)).toContain(
+        "AUTHORIZED STORED LABEL",
+      );
       revoked = true;
       return answer("We can talk about something else.");
     });

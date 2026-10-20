@@ -105,6 +105,14 @@ vocabulary in a joke. Clarification is appropriate for ambiguous transaction
 candidates, but the original arithmetic clarifications were unnecessary and are
 recorded as failures. There is no claim of universal conversational reliability.
 
+The inherited shared privacy scrubber also withholds unseparated numeric strings
+of eight or more digits: `10000000` becomes `[long number withheld]`, while
+`10,000,000` survives. This was confirmed locally. The decimal tool can evaluate
+large integers, but that does not prove the conversational input path accepts
+every representation. This redaction remains unchanged to preserve the existing
+account-number/credential boundary; improving its amount-versus-identifier
+handling remains a documented usability limitation.
+
 ## Efficiency and latency
 
 Offline measurements use the exact PR #37 source and final source with identical
@@ -148,9 +156,18 @@ repair generation rather than adding a redundant model review.
 
 ## Validation, safety and release gates
 
+[Final isolated CI](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39466798924)
+passed on `6dbabf6e7a1fdfc746c32cc2b6f19a57341a2780`: **1,159 tests in 47 files**,
+typecheck, ESLint, production build, authenticated HTTP smoke, 54 payment/UI
+browser groups, 36 voice-submission groups, 8 Web Audio checks and 14 native-agent
+browser groups. It includes the final explanation repair and payment-edit
+cancellation checks. No provider secret is supplied to this job. Later commits
+only finalize documentation/evidence. [ci-quality.json](ci-quality.json) records
+the run, exact commit, job, artifact identity and all passing steps.
+
 [verification.txt](verification.txt) and [browser evidence](browser/native-results.json)
-record local results; final CI identity is added in the release handoff. Unit and
-browser model responses are explicitly scripted. The native production-browser
+record local results. Unit and browser model responses are explicitly scripted.
+The native production-browser
 journeys cover desktop 1440px and mobile 390px, calculator correction after
 reload, account selection and SQL-backed records, editable persisted payment
 drafts, provider-error factual cards and context recovery. Approval/execution

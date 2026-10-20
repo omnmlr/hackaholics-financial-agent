@@ -140,3 +140,9 @@ npm notice
 Physical microphone, genuine speech-recognition accuracy, real-device TTS audibility: not verified.
 Provider campaign: 40/40 generation attempts, including reviews/continuations/errors. No 429; four HTTP 504s and one timeout. See genuine-initial.json and genuine-repair.json. No further provider calls permitted in this campaign.
 Railway live configuration and repaired date-tool selection remain external/genuine acceptance gaps. No deployment, secret change, production data operation or real payment performed.
+
+FINAL ISOLATED CI: PASS
+Run: https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39466798924
+Commit: 6dbabf6e7a1fdfc746c32cc2b6f19a57341a2780
+1,159 tests / 47 files; typecheck; lint; production build; authenticated HTTP smoke; 54 payment/UI browser groups; 36 voice-submission groups; 8 Web Audio checks; 14 native browser groups. All steps passed in the same job, including cancellation and final explanation preservation.
+Genuine model calls in this job: zero; provider credential absent. Later commits finalize documentation/evidence only.

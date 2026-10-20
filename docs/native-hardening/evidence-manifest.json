@@ -31,5 +31,13 @@
   "postCampaignChange": "Grounded paragraph preservation: validated locally by replaying recorded genuine output, not a new provider run.",
   "productionDeployment": false,
   "realPayments": false,
-  "secretsChanged": false
+  "secretsChanged": false,
+  "finalQuality": {
+    "runId": 39466798924,
+    "commit": "6dbabf6e7a1fdfc746c32cc2b6f19a57341a2780",
+    "conclusion": "success",
+    "artifactId": 12286081940,
+    "artifactZipSha256": "88be37f4576e38213c47053f6db38e44fe91a84e9fcc144ba3bca80f12faa49a",
+    "file": "ci-quality.json"
+  }
 }

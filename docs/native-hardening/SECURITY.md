@@ -34,3 +34,9 @@ the same-model reviewer are security proofs. Testing uses fictional accounts;
 no production database, real bank, live transfer, secret change or deployment is
 part of this review. Physical microphone recognition and real-device playback
 need device acceptance.
+
+The existing shared privacy scrubber deliberately withholds unseparated long
+numbers; this can also remove large mathematical operands. Its regexes are a
+best-effort disclosure filter, not proof that arbitrary user-supplied secrets can
+never be sent. Provider credentials are separate server configuration and are
+never inserted into conversation content or diagnostics by the native agent.

@@ -120,8 +120,9 @@ formula or units. Financial semantic review and scenario evaluation address that
 separate, fallible interpretation step. The backend inserts computed numeric
 slots into explanations and falls back if explanation numbers do not match.
 
-The native turn permits at most four model generations, five model-requested
-functions, 60 seconds overall and 20 seconds per generation. Reads have a separate
+The native turn permits at most four model generations, five executed native
+functions, 60 seconds overall and 20 seconds per generation. Rejected function
+requests can also appear in the diagnostic request counter. Reads have a separate
 five-dispatch ceiling (including automatic prerequisite reads), ten-second waits
 and a 48 KiB aggregate result budget; strict per-result validation also applies.
 Read transports do not accept cancellation signals in the legacy interface: a
@@ -190,6 +191,15 @@ now five seconds; the automatic rerun guard remains closed after the quota stop.
 
 [verification.txt](verification.txt) records final commands/results. The new
 tests use scripted models or mocked HTTP, never genuine-provider claims.
+
+The final implementation commit `b5ef640e1a672925adac5b207154ffbbc1d83271`
+also passed [isolated CI run 39424438282](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39424438282):
+**1,142 tests in 47 files**, typecheck, lint, production build, HTTP smoke,
+existing browser/voice suites and native browser journeys. Its additional test
+requires transaction-read scope for remembered-selection disclosure and rechecks
+that disclosure before release even when Gemini uses no new read tool.
+Subsequent commits update evidence/documentation only. See
+[ci-quality.json](ci-quality.json) for exact run, commit and artifact identity.
 
 - Native protocol tests preserve complete provider content, thought signatures,
   function IDs and response ordering, and verify the SDK has no implicit retries.

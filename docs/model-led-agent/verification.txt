@@ -63,3 +63,18 @@ scripted or browser checks for these missing provider results.
 Preserved: production credentials, database, startup scripts, main, deployment
 branches, Railway, real banks and real money were not modified or used.
 Candidate remains server-opt-in; baseline remains the default.
+
+FINAL IMPLEMENTATION CI VERIFICATION (supersedes the local suite count above)
+Run: https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39424438282
+Commit: b5ef640e1a672925adac5b207154ffbbc1d83271
+Conclusion: success
+47 test files; 1,142 tests passed.
+Typecheck, lint, production build, HTTP smoke, existing browser/voice regressions,
+and native production-browser journeys all passed in the same isolated CI job.
+Includes final remembered-selection permission scope and release recheck.
+Genuine model calls in this CI job: 0. No provider secret is supplied to this job.
+Later commits update documentation/evidence only.
+
+Run 39424099134 correctly rejected automatic provider-campaign re-entry at its
+history guard, before installation or the provider-secret step. Additional
+generation attempts from that guarded workflow run: 0. The campaign remains at17.

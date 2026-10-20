@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "runId": 39424438282,
+  "runUrl": "https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/39424438282",
+  "commit": "b5ef640e1a672925adac5b207154ffbbc1d83271",
+  "testsPassed": 1142,
+  "testFilesPassed": 47,
+  "checksPassed": [
+    "npm ci",
+    "typecheck",
+    "lint",
+    "unit and integration tests",
+    "production build",
+    "authenticated HTTP payment smoke",
+    "existing browser and voice suites",
+    "native agent browser journeys"
+  ],
+  "genuineModelCalls": 0,
+  "modelTransport": "scripted or mocked for model-dependent tests",
+  "financialData": "fictional",
+  "paymentMode": "fixture",
+  "artifact": {
+    "id": 12265661045,
+    "name": "agus-model-led-quality",
+    "digest": "sha256:5fb9d6419329fba8b833bc96b510da3337585a165a024334126ef8b6f6771078",
+    "createdAt": "2026-10-20T12:49:19Z",
+    "expiresAt": "2026-10-27T12:49:19Z"
+  },
+  "genuineEvaluationSeparate": {
+    "runId": 39422739466,
+    "generationAttempts": 17,
+    "status": "BLOCKED_HTTP_429",
+    "acceptedAsComplete": false,
+    "artifactZipSha256": "82554a36dbf99c70c513b65267ae9f368411b41ef6cf8cfb7239408fbfe7ec6e"
+  },
+  "priorBaselineArtifactZipSha256": "2843306865581a302bab796cd24b170e5477d3ec9a40214c2ab7492fcb23000d",
+  "automaticCampaignReentry": {
+    "runId": 39424099134,
+    "result": "REJECTED_BY_HISTORY_GUARD",
+    "additionalGenerationAttempts": 0
+  }
+}

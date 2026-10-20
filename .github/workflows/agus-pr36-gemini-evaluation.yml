@@ -1,0 +1,73 @@
+name: AGUS PR36 genuine Gemini evaluation (isolated)
+
+on:
+  push:
+    branches:
+      - verify/agus-pr36-live-gemini-20261020
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  genuine-gemini:
+    name: Genuine Gemini + fictional financial fixtures
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AI_PROVIDER: gemini
+      AI_MODEL: ${{ vars.AGUS_AI_MODEL || vars.AI_MODEL || 'gemini-2.5-flash' }}
+      AI_API_KEY: ${{ secrets.AI_API_KEY || secrets.GEMINI_API_KEY || secrets.GOOGLE_API_KEY || secrets.GEMINI_KEY }}
+      PAYMENT_MODE: fixture
+      PAYSTACK_TRANSFERS_ENABLED: 'false'
+      LIVE_TRANSFERS_ENABLED: 'false'
+      LIVE_OWNER_AUTHORIZED: 'false'
+      LIVE_WEBHOOK_VALIDATED: 'false'
+      LIVE_RECONCILIATION_VALIDATED: 'false'
+      FINANCIAL_DEMO_ENABLED: 'true'
+    steps:
+      - name: Checkout PR36 verification snapshot
+        uses: actions/checkout@v4
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install exact dependencies
+        run: npm ci
+      - name: Require configured secret without printing it
+        shell: bash
+        run: |
+          if [[ -z "${AI_API_KEY}" ]]; then
+            echo "::error::No AI key available under AI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY, or GEMINI_KEY. Configure a GitHub Actions secret; do not commit or paste it."
+            exit 2
+          fi
+          echo "A secret was supplied; its value will not be printed."
+      - name: Evaluate genuine model with fictional records and no payment execution
+        env:
+          NODE_USE_ENV_PROXY: '1'
+        run: npm run evaluate:agent -- "${RUNNER_TEMP}/agus-live-evaluation.json"
+      - name: Summarize results without exposing credentials
+        if: always()
+        shell: bash
+        run: |
+          FILE="${RUNNER_TEMP}/agus-live-evaluation.json"
+          if [[ -f "$FILE" ]]; then
+            EVAL_FILE="$FILE" node --input-type=module -e '
+              import fs from "node:fs";
+              const r=JSON.parse(fs.readFileSync(process.env.EVAL_FILE,"utf8"));
+              const a=r.results??[];
+              const passed=a.filter(x=>x.passed).length;
+              console.log(JSON.stringify({status:r.status,model:r.model,genuineModelCalls:r.genuineModelCalls,passed,total:a.length,failedIds:a.filter(x=>!x.passed).map(x=>x.id)}));
+            '
+          else
+            echo "No result file; inspect preceding error."
+          fi
+      - name: Save synthetic-only evaluation for private review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agus-pr36-gemini-evaluation
+          path: ${{ runner.temp }}/agus-live-evaluation.json
+          if-no-files-found: ignore
+          retention-days: 3

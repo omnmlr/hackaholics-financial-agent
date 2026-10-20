@@ -17,7 +17,7 @@ jobs:
     env:
       AI_PROVIDER: gemini
       AI_MODEL: ${{ vars.AGUS_AI_MODEL || vars.AI_MODEL || 'gemini-2.5-flash' }}
-      AI_API_KEY: ${{ secrets.AI_API_KEY || secrets.GEMINI_API_KEY || secrets.GOOGLE_API_KEY || secrets.GEMINI_KEY }}
+      AI_API_KEY: ${{ secrets.AGUS_GEMINI_API_KEY || secrets.AI_API_KEY || secrets.GEMINI_API_KEY || secrets.GOOGLE_API_KEY || secrets.GEMINI_KEY }}
       PAYMENT_MODE: fixture
       PAYSTACK_TRANSFERS_ENABLED: 'false'
       LIVE_TRANSFERS_ENABLED: 'false'
@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           if [[ -z "${AI_API_KEY}" ]]; then
-            echo "::error::No AI key available under AI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY, or GEMINI_KEY. Configure a GitHub Actions secret; do not commit or paste it."
+            echo "::error::No AI key available under AGUS_GEMINI_API_KEY, AI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY, or GEMINI_KEY. Configure a GitHub Actions secret; do not commit or paste it."
             exit 2
           fi
           echo "A secret was supplied; its value will not be printed."

@@ -27,13 +27,11 @@ const search = { ...filter, query: "Ada", limit: 10, cursor: null };
 describe("native financial read boundary", () => {
   it("converts whole Lagos calendar months at the backend before dispatch", async () => {
     const s = fixture();
-    await s
-      .reads()
-      .execute("calculate_spending", {
-        ...spending,
-        from: "2026-10-01",
-        toExclusive: "2026-11-01",
-      });
+    await s.reads().execute("calculate_spending", {
+      ...spending,
+      from: "2026-10-01",
+      toExclusive: "2026-11-01",
+    });
     expect(vi.mocked(s.tools.dispatch).mock.calls[0][1]).toMatchObject({
       args: {
         from: "2026-09-30T23:00:00.000Z",

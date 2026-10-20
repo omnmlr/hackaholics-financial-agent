@@ -1,0 +1,138 @@
+{
+  "campaignMaximum": 40,
+  "campaignActualAttempts": 40,
+  "initial": {
+    "attempts": 25,
+    "statusCounts": {
+      "200": 24,
+      "network_failure": 1
+    },
+    "reportedInputTokens": 32184,
+    "reportedOutputTokens": 1351,
+    "reportedTotalTokens": 33535,
+    "medianTurnMs": 14930.0,
+    "turnSamples": 12,
+    "medianSuccessfulApiMs": 2666.5,
+    "successfulApiSamples": 24
+  },
+  "repair": {
+    "attempts": 15,
+    "statusCounts": {
+      "200": 11,
+      "504": 4
+    },
+    "reportedInputTokens": 12436,
+    "reportedOutputTokens": 582,
+    "reportedTotalTokens": 13018,
+    "medianTurnMs": 28329.0,
+    "turnSamples": 6,
+    "medianSuccessfulApiMs": 9391,
+    "successfulApiSamples": 11
+  },
+  "pairedNativeOnly": [
+    {
+      "id": "calculation",
+      "initial": {
+        "attempts": 3,
+        "elapsedMs": 25476,
+        "tokens": 3220,
+        "kind": "clarify"
+      },
+      "repair": {
+        "attempts": 3,
+        "elapsedMs": 28089,
+        "tokens": 3219,
+        "kind": "general",
+        "code": null
+      }
+    },
+    {
+      "id": "savings",
+      "initial": {
+        "attempts": 3,
+        "elapsedMs": 14015,
+        "tokens": 3462,
+        "kind": "clarify"
+      },
+      "repair": {
+        "attempts": 3,
+        "elapsedMs": 28569,
+        "tokens": 3511,
+        "kind": "general",
+        "code": null
+      }
+    },
+    {
+      "id": "indirect-followup",
+      "initial": {
+        "attempts": 3,
+        "elapsedMs": 32767,
+        "tokens": 3702,
+        "kind": "clarify"
+      },
+      "repair": {
+        "attempts": 3,
+        "elapsedMs": 27004,
+        "tokens": 3625,
+        "kind": "general",
+        "code": null
+      }
+    },
+    {
+      "id": "correction",
+      "initial": {
+        "attempts": 3,
+        "elapsedMs": 26604,
+        "tokens": 3899,
+        "kind": "clarify"
+      },
+      "repair": {
+        "attempts": 3,
+        "elapsedMs": 47537,
+        "tokens": 1429,
+        "kind": "general",
+        "code": "MODEL_HTTP_504"
+      }
+    },
+    {
+      "id": "ordinary",
+      "initial": {
+        "attempts": 2,
+        "elapsedMs": 14502,
+        "tokens": 1746,
+        "kind": "unavailable"
+      },
+      "repair": {
+        "attempts": 1,
+        "elapsedMs": 9052,
+        "tokens": 1234,
+        "kind": "general",
+        "code": null
+      }
+    },
+    {
+      "id": "authorized-transactions",
+      "initial": {
+        "attempts": 2,
+        "elapsedMs": 15358,
+        "tokens": 7233,
+        "kind": "clarify"
+      },
+      "repair": {
+        "attempts": 2,
+        "elapsedMs": 34568,
+        "tokens": 0,
+        "kind": "unavailable",
+        "code": "MODEL_HTTP_504"
+      }
+    }
+  ],
+  "reportedTotalTokens": 46553,
+  "caveats": [
+    "No additional provider calls permitted: budget exhausted.",
+    "Token usage for timed-out/error requests is unavailable, not proven zero.",
+    "Turn timings include 6500ms minimum request spacing. Successful API times exclude pacing.",
+    "Two different times of day/provider conditions; no causal speedup or p95 production claim.",
+    "Post-campaign paragraph preservation is validated by local recorded-response replay only."
+  ]
+}

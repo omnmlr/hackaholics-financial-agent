@@ -149,12 +149,24 @@ export function composeVerified(text: string, calculations: Calculation[]) {
       ])
       .map((n) => new D(n).toString()),
   );
+  // A speculative secondary derivation must not erase a valid explanation in
+  // another paragraph. Retain only complete paragraphs whose explicit values
+  // are grounded; the agent still reviews the resulting answer and formula.
+  // This is output validation, never language/intent routing or numeric repair.
+  rendered = rendered
+    .split(/\n\s*\n/)
+    .filter((paragraph) => {
+      const numbers = paragraph.match(/-?\d[\d,]*(?:\.\d+)?/g) ?? [];
+      return (
+        !/\{\{/.test(paragraph) &&
+        numbers.every((n) =>
+          allowed.has(new D(n.replaceAll(",", "")).toString()),
+        )
+      );
+    })
+    .join("\n\n")
+    .trim();
   const numeric = rendered.match(/-?\d[\d,]*(?:\.\d+)?/g) ?? [];
-  if (
-    /\{\{/.test(rendered) ||
-    numeric.some((n) => !allowed.has(new D(n.replaceAll(",", "")).toString()))
-  )
-    return calculationFallback(calculations);
   // Require each result to appear; do not accept a qualitative non-answer.
   if (
     calculations.some(

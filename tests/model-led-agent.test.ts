@@ -25,6 +25,7 @@ import {
   type ToolModel,
 } from "../src/lib/model-led-agent/model";
 import { calculate } from "../src/lib/model-led-agent/calculate";
+import { readFileSync } from "node:fs";
 
 type Generated = Awaited<ReturnType<ToolModel["generate"]>>;
 const answer = (text: string): Generated => ({
@@ -110,6 +111,90 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("replays the genuine indirect explanation without its unverified extra year conversion", async () => {
+    // Recorded provider text, replayed locally: this test spends zero calls and
+    // is not claimed as a second genuine provider verification of the repair.
+    const record = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/native-hardening/genuine-repair.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    const turn = record.attempts.find(
+      (attempt: { number: number }) => attempt.number === 8,
+    );
+    const s = setup(
+      call("calculate", {
+        ...budgetArgs,
+        expression: "900000/18000",
+        unit: "months",
+      }),
+      answer(turn.returnedText),
+      answer(
+        '{"safeGeneralConversation":true,"calculationMatchesQuestion":true}',
+      ),
+    );
+    const reply = await s.agent.turn({
+      ...s.input,
+      text: "Abeg break that down for me, how you take reach there?",
+    });
+    expect(reply.kind).toBe("general");
+    expect(reply.text).toContain("I simply divided your total target");
+    expect(reply.text).toContain("50 equal monthly deposits");
+    expect(reply.text).not.toContain("4 years");
+    expect(
+      s.generate.mock.calls[2][0].contents[0].parts?.[0].text,
+    ).not.toContain("4 years");
+  });
+  it("releases only one answer when native turns race on the same context revision", async () => {
+    const s = setup();
+    const pending: Array<(result: Generated) => void> = [];
+    s.generate.mockImplementation(
+      () => new Promise((resolve) => pending.push(resolve)),
+    );
+    const first = s.agent.turn({ ...s.input, text: "First question" });
+    const second = s.agent.turn({ ...s.input, text: "Second question" });
+    await vi.waitFor(() => expect(pending).toHaveLength(2));
+    pending.forEach((resolve) => resolve(answer("A short answer.")));
+    const replies = await Promise.all([first, second]);
+    expect(replies.map((reply) => reply.kind).sort()).toEqual([
+      "conflict",
+      "general",
+    ]);
+    expect(s.tools.dispatch).not.toHaveBeenCalled();
+  });
+  it("suppresses native financial facts if consent is revoked during context persistence", async () => {
+    const s = setup(
+      call("calculate_spending", {
+        accountIds: ["amina-current"],
+        ...lagosDateInterval("2026-10-01", "2026-11-01"),
+        groupBy: "none",
+      }),
+      answer("Use the verified source cards."),
+    );
+    const swap = s.options.store.compareAndSwap.bind(s.options.store);
+    vi.spyOn(s.options.store, "compareAndSwap").mockImplementation(
+      async (...args) => {
+        const saved = await swap(...args);
+        await s.repository.revokeConsent(
+          s.input.ctx,
+          "consent-amina",
+          FIXTURE_NOW,
+        );
+        return saved;
+      },
+    );
+    const reply = await s.agent.turn({
+      ...s.input,
+      accountIds: ["amina-current"],
+    });
+    expect(reply.kind).toBe("unavailable");
+    expect(reply.citations).toEqual([]);
+    expect(reply.text).not.toContain("19,751.51");
+  });
   it("accepts a complete fenced JSON review without discarding a correct calculation", async () => {
     const s = setup(
       call("calculate", budgetArgs),

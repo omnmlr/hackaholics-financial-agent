@@ -278,6 +278,50 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(s.tools.dispatch).not.toHaveBeenCalled();
   });
 
+  it("scrubs fixture credentials from current questions and restored dialogue before generation and review", async () => {
+    const s = setup(
+      answer("The ledger places available funds at ₦999,999."),
+      answer('{"safeGeneralConversation":false}'),
+    );
+    const agent = createModelLedAgent({
+      ...s.options,
+      dialogue: [
+        {
+          role: "user",
+          text: "Earlier password=FAKE_HISTORY_TEST_ONLY and sk-FAKE_REFERENCE_ONLY_LONG_TEXT",
+        },
+        {
+          role: "assistant",
+          text: "A previous note included AIzaFAKE_REFERENCE_ONLY_LONG_TEXT",
+        },
+      ],
+    });
+    const reply = await agent.turn({
+      ...s.input,
+      text: "Explain budgeting. password=FAKE_TEST_ONLY and token=FAKE_CURRENT_TEST_ONLY",
+    });
+    expect(reply).toMatchObject({
+      kind: "unavailable",
+      evidence: { modelCalls: 2, code: "GENERAL_MODEL_REJECTED" },
+    });
+    expect(s.inputs).toHaveLength(2);
+    expect(s.inputs[1].system).toContain("Independently check");
+    for (const modelInput of s.inputs) {
+      const disclosed = JSON.stringify(modelInput);
+      for (const fixture of [
+        "FAKE_TEST_ONLY",
+        "FAKE_HISTORY_TEST_ONLY",
+        "FAKE_CURRENT_TEST_ONLY",
+        "sk-FAKE_REFERENCE_ONLY_LONG_TEXT",
+        "AIzaFAKE_REFERENCE_ONLY_LONG_TEXT",
+      ])
+        expect(disclosed).not.toContain(fixture);
+      expect(disclosed).toContain("[credential withheld]");
+    }
+    expect(reply.text).not.toContain("999,999");
+    expect(s.tools.dispatch).not.toHaveBeenCalled();
+  });
+
   it("does not copy model-written claims from assumptions into the factual fallback", async () => {
     const s = setup(
       call("calculate", {
@@ -294,6 +338,39 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(reply.text).not.toContain("999,999");
     expect(reply.text).not.toContain("transfer");
     expect(reply.text).toMatch(/^Hypothetical result:/);
+  });
+
+  it("distinguishes rejected interpretation from a rejected explanation", async () => {
+    const wrongFormula = setup(
+      call("calculate", budgetArgs),
+      answer("That leaves ₦{{c1}}."),
+      answer(
+        '{"safeGeneralConversation":false,"calculationMatchesQuestion":false}',
+      ),
+    );
+    const uncertain = await wrongFormula.agent.turn(wrongFormula.input);
+    expect(uncertain).toMatchObject({
+      kind: "clarify",
+      evidence: { code: "CALCULATION_INTERPRETATION_UNCERTAIN" },
+    });
+    expect(uncertain.text).toContain(
+      "couldn’t confirm that the formula matches",
+    );
+    expect(uncertain.text).toContain("45,000");
+
+    const badProse = setup(
+      call("calculate", budgetArgs),
+      answer("That leaves ₦{{c1}}."),
+      answer(
+        '{"safeGeneralConversation":false,"calculationMatchesQuestion":true}',
+      ),
+    );
+    const verified = await badProse.agent.turn(badProse.input);
+    expect(verified).toMatchObject({
+      kind: "general",
+      evidence: { code: "PROSE_FALLBACK" },
+    });
+    expect(verified.text).toContain("45,000 naira");
   });
 
   it("preserves exact large integer arithmetic beyond fifteen significant digits", () => {

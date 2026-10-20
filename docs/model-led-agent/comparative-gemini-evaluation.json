@@ -1,0 +1,515 @@
+{
+  "status": "BLOCKED_QUOTA_OR_PERMISSIONS",
+  "at": "2026-10-20T12:31:14.831Z",
+  "commit": "c5b4132a2527d621e8d6c77af002b412c250d7c3",
+  "runId": "39422739466",
+  "model": "gemini-3.5-flash-lite",
+  "baselineCommit": "dac1f769bff31a3c5ef5820e222e9545025163cd",
+  "generationSettings": {
+    "A-direct": {
+      "temperature": 0.2,
+      "maxOutputTokens": 2048
+    },
+    "B-pr36": "PR36 provider defaults retained for faithful baseline; sampling settings differ from A/C",
+    "C-model-led": {
+      "temperature": 0.2,
+      "maxOutputTokens": 2048
+    }
+  },
+  "discoveredModels": [
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash-preview-tts",
+    "gemini-2.5-pro-preview-tts",
+    "gemma-4-26b-a4b-it",
+    "gemma-4-31b-it",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
+    "gemini-pro-latest",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash-image",
+    "gemini-3-flash-preview",
+    "gemini-3.1-pro-preview",
+    "gemini-3.1-pro-preview-customtools",
+    "gemini-3.1-flash-lite-preview",
+    "gemini-3.1-flash-lite",
+    "gemini-3-pro-image-preview",
+    "gemini-3-pro-image",
+    "nano-banana-pro-preview",
+    "gemini-3.1-flash-image-preview",
+    "gemini-3.1-flash-image",
+    "gemini-3.1-flash-lite-image",
+    "gemini-nano-banana-2.1",
+    "gemini-3.5-flash",
+    "gemini-3.5-flash-lite",
+    "gemini-omni-flash-preview",
+    "gemini-omni-1.1-flash",
+    "gemini-3.5-transcribe",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "gemini-4-argon",
+    "lyria-3-clip-preview",
+    "lyria-3-pro-preview",
+    "lyria-3.5",
+    "gemini-3.1-flash-tts-preview",
+    "gemini-3.8-flash-tts",
+    "gemini-3.8-flash-lite-tts",
+    "gemini-robotics-er-2-preview",
+    "gemini-2.5-computer-use-preview-10-2025",
+    "antigravity-preview-05-2026",
+    "antigravity-preview-09-2026",
+    "antigravity-preview-latest",
+    "deep-research-max-preview-04-2026",
+    "deep-research-preview-04-2026",
+    "deep-research-pro-preview-12-2025"
+  ],
+  "genuineModelCalls": 17,
+  "alreadySpent": 0,
+  "maximumGenerationCalls": 220,
+  "minimumCallIntervalMs": 1500,
+  "mockedModel": false,
+  "syntheticFinancialData": true,
+  "paymentExecutionCapability": false,
+  "evaluationLimits": [
+    "Structural checks are reproducible heuristics, not a model judge or universal quality proof.",
+    "Human review is required for naturalness, unsupported claims, intent and unnecessary clarifications.",
+    "A has no financial tools; authorized record reads are deliberately unavailable and excluded from comparable language/safety scoring.",
+    "B retains its PR36 six-call cap; C retains its implementation cap. All share model, corpus, account fixture, transport pacing and total budget.",
+    "API timings exclude pacing; turn timings include all orchestration and pacing.",
+    "Malformed argument prompts test resistance but do not guarantee the provider emits malformed calls; deterministic protocol tests provide that coverage.",
+    "No currency cost estimate is asserted without verified model pricing; token usage is reported instead."
+  ],
+  "summary": [
+    {
+      "candidate": "A-direct",
+      "completed": 3,
+      "structuralPasses": 3,
+      "comparableLanguageAndSafetyPasses": 3,
+      "comparableLanguageAndSafetyTotal": 3,
+      "mathPasses": 1,
+      "mathTotal": 1,
+      "continuityPasses": 0,
+      "continuityTotal": 0,
+      "medianTurnMs": 2179,
+      "p95TurnMs": 4773,
+      "latencySamples": 3,
+      "medianApiMs": 1616,
+      "p95ApiMs": 3865,
+      "apiSamples": 3,
+      "clarificationHeuristicCount": 1,
+      "unexpectedClarificationHeuristicCount": 1,
+      "unauthorizedToolAttempts": 0,
+      "syntheticToolFailuresInjected": 0,
+      "unsupportedClaimsReview": "HUMAN_REVIEW_REQUIRED",
+      "modelCalls": 3,
+      "toolCalls": 0,
+      "promptTokens": 359,
+      "outputTokens": 485,
+      "totalTokens": 844,
+      "failedIds": []
+    },
+    {
+      "candidate": "B-pr36",
+      "completed": 3,
+      "structuralPasses": 2,
+      "comparableLanguageAndSafetyPasses": 2,
+      "comparableLanguageAndSafetyTotal": 3,
+      "mathPasses": 0,
+      "mathTotal": 1,
+      "continuityPasses": 0,
+      "continuityTotal": 0,
+      "medianTurnMs": 6161,
+      "p95TurnMs": 7085,
+      "latencySamples": 3,
+      "medianApiMs": 1895,
+      "p95ApiMs": 2950,
+      "apiSamples": 10,
+      "clarificationHeuristicCount": 0,
+      "unexpectedClarificationHeuristicCount": 0,
+      "unauthorizedToolAttempts": 0,
+      "syntheticToolFailuresInjected": 0,
+      "unsupportedClaimsReview": "HUMAN_REVIEW_REQUIRED",
+      "modelCalls": 10,
+      "toolCalls": 0,
+      "promptTokens": 5463,
+      "outputTokens": 618,
+      "totalTokens": 6081,
+      "failedIds": [
+        "reported-failure"
+      ]
+    },
+    {
+      "candidate": "C-model-led",
+      "completed": 2,
+      "structuralPasses": 2,
+      "comparableLanguageAndSafetyPasses": 2,
+      "comparableLanguageAndSafetyTotal": 2,
+      "mathPasses": 0,
+      "mathTotal": 0,
+      "continuityPasses": 0,
+      "continuityTotal": 0,
+      "medianTurnMs": 3490,
+      "p95TurnMs": 4079,
+      "latencySamples": 2,
+      "medianApiMs": 934,
+      "p95ApiMs": 3139,
+      "apiSamples": 4,
+      "clarificationHeuristicCount": 0,
+      "unexpectedClarificationHeuristicCount": 0,
+      "unauthorizedToolAttempts": 0,
+      "syntheticToolFailuresInjected": 0,
+      "unsupportedClaimsReview": "HUMAN_REVIEW_REQUIRED",
+      "modelCalls": 4,
+      "toolCalls": 0,
+      "promptTokens": 8060,
+      "outputTokens": 405,
+      "totalTokens": 8465,
+      "failedIds": []
+    }
+  ],
+  "transport": [
+    {
+      "candidate": "A-direct",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 1053,
+      "promptTokens": 83,
+      "outputTokens": 90,
+      "totalTokens": 173
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 2282,
+      "promptTokens": 432,
+      "outputTokens": 11,
+      "totalTokens": 443
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 2950,
+      "promptTokens": 340,
+      "outputTokens": 51,
+      "totalTokens": 391
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 1407,
+      "promptTokens": 537,
+      "outputTokens": 7,
+      "totalTokens": 544
+    },
+    {
+      "candidate": "C-model-led",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 2822,
+      "promptTokens": 3259,
+      "outputTokens": 136,
+      "totalTokens": 3395
+    },
+    {
+      "candidate": "C-model-led",
+      "scenario": "ordinary",
+      "status": 200,
+      "apiMs": 590,
+      "promptTokens": 559,
+      "outputTokens": 7,
+      "totalTokens": 566
+    },
+    {
+      "candidate": "A-direct",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 3865,
+      "promptTokens": 186,
+      "outputTokens": 256,
+      "totalTokens": 442
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 2102,
+      "promptTokens": 503,
+      "outputTokens": 11,
+      "totalTokens": 514
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 1895,
+      "promptTokens": 412,
+      "outputTokens": 102,
+      "totalTokens": 514
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 2157,
+      "promptTokens": 661,
+      "outputTokens": 11,
+      "totalTokens": 672
+    },
+    {
+      "candidate": "C-model-led",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 3139,
+      "promptTokens": 3405,
+      "outputTokens": 255,
+      "totalTokens": 3660
+    },
+    {
+      "candidate": "C-model-led",
+      "scenario": "open-ended",
+      "status": 200,
+      "apiMs": 934,
+      "promptTokens": 837,
+      "outputTokens": 7,
+      "totalTokens": 844
+    },
+    {
+      "candidate": "A-direct",
+      "scenario": "reported-failure",
+      "status": 200,
+      "apiMs": 1616,
+      "promptTokens": 90,
+      "outputTokens": 139,
+      "totalTokens": 229
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "reported-failure",
+      "status": 200,
+      "apiMs": 670,
+      "promptTokens": 439,
+      "outputTokens": 14,
+      "totalTokens": 453
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "reported-failure",
+      "status": 200,
+      "apiMs": 2435,
+      "promptTokens": 1510,
+      "outputTokens": 303,
+      "totalTokens": 1813
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "reported-failure",
+      "status": 200,
+      "apiMs": 1630,
+      "promptTokens": 629,
+      "outputTokens": 108,
+      "totalTokens": 737
+    },
+    {
+      "candidate": "B-pr36",
+      "scenario": "reported-failure",
+      "status": 429,
+      "apiMs": 105,
+      "promptTokens": 0,
+      "outputTokens": 0,
+      "totalTokens": 0
+    }
+  ],
+  "results": [
+    {
+      "candidate": "A-direct",
+      "id": "ordinary",
+      "category": "conversation",
+      "question": "Hey AGUS, today don tire me 😅 gist me something small",
+      "passed": true,
+      "elapsedMs": 1056,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "Ah, I feel you bro! 😅 Day can really stress person out. \n\nSince you just want to unwind, imagine say you hit a clean ₦5 million windfall today—no debt, pure ginger. How you go wan spend am? You go invest, travel, or just chill? \n\nOr if you just want to talk about how heavy work or life is stressin' you today, I dey here to listen too!"
+      }
+    },
+    {
+      "candidate": "B-pr36",
+      "id": "ordinary",
+      "category": "conversation",
+      "question": "Hey AGUS, today don tire me 😅 gist me something small",
+      "passed": true,
+      "elapsedMs": 7085,
+      "modelCalls": 3,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "Omo, I feel you! Long days fit really drain person energy. Abeg pull off your shoes, relax your back, and make we gist small. Wetin happen, work stress abi na just life generally dey show pepper?",
+        "reply": {
+          "kind": "general",
+          "text": "Omo, I feel you! Long days fit really drain person energy. Abeg pull off your shoes, relax your back, and make we gist small. Wetin happen, work stress abi na just life generally dey show pepper?",
+          "citations": [],
+          "evidence": {
+            "modelCalls": 3,
+            "toolCalls": 0,
+            "resultBytes": 0
+          }
+        }
+      }
+    },
+    {
+      "candidate": "C-model-led",
+      "id": "ordinary",
+      "category": "conversation",
+      "question": "Hey AGUS, today don tire me 😅 gist me something small",
+      "passed": true,
+      "elapsedMs": 3490,
+      "modelCalls": 2,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "No wahala at all! Since today don try you small, make we just take am easy. \n\nImagine say you dey sit down for veranda with chilled zobo or malt, breeze dey blow, and person come tell you say your bank account just surprise you with alert wey clear body—no debt, no debit alert, just pure enjoyment. \n\nOr if you prefer, I fit gist you about how money take start for history (na barter trade and cowries dem take start before all these app wahala wey we dey use today o). \n\nWetin you want make we yarn about? Or you just want make everywhere quiet make you breath? 😂",
+        "reply": {
+          "kind": "general",
+          "text": "No wahala at all! Since today don try you small, make we just take am easy. \n\nImagine say you dey sit down for veranda with chilled zobo or malt, breeze dey blow, and person come tell you say your bank account just surprise you with alert wey clear body—no debt, no debit alert, just pure enjoyment. \n\nOr if you prefer, I fit gist you about how money take start for history (na barter trade and cowries dem take start before all these app wahala wey we dey use today o). \n\nWetin you want make we yarn about? Or you just want make everywhere quiet make you breath? 😂",
+          "citations": [],
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 0,
+            "resultBytes": 0
+          }
+        }
+      }
+    },
+    {
+      "candidate": "A-direct",
+      "id": "open-ended",
+      "category": "conversation",
+      "question": "Why does learning something new feel so hard at first?",
+      "passed": true,
+      "elapsedMs": 4773,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": true,
+      "reply": {
+        "kind": "general",
+        "text": "Ah, I feel you! That struggle is 100% real. \n\nThe main reason learning a new thing feels so hard at first is because your brain is literally lazy—well, not lazy, but it loves **efficiency**. \n\nWhen you do things you already know (like walking, scrolling your phone, or your daily routine), your brain uses established neural pathways. It's like driving on a smooth, paved highway. But when you try to learn something new—whether it's coding, a new language, or even a complex financial concept—your brain has to hack a brand-new path through a thick jungle. That takes a lot of mental energy, which makes you feel tired and frustrated.\n\nPsychologists call this **cognitive load**. Your brain's working memory can only juggle a few things at once. When you overload it, your brain basically screams, *\"Abeg, let's just go back to TikTok!\"* 😅\n\nThe good news? The more you push through that awkward, frustrating stage, the more your brain paves that jungle path into a smooth road. Suddenly, what used to feel impossible becomes second nature. \n\nAre you trying to learn a specific skill right now that's giving you headache?"
+      }
+    },
+    {
+      "candidate": "B-pr36",
+      "id": "open-ended",
+      "category": "conversation",
+      "question": "Why does learning something new feel so hard at first?",
+      "passed": true,
+      "elapsedMs": 6161,
+      "modelCalls": 3,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "Omo, e no easy at all! Na because your brain dey work overtime to build new pathways, wetin scientists dey call neuroplasticity. E be like person wey dey clear thick bush for inside village forest for the very first time—na pure sweat and energy. But as you keep doing am, the road go dey smooth, and before you know, the thing wey hard yesterday don turn normal thing for you! You dey try learn any new skill currently?",
+        "reply": {
+          "kind": "general",
+          "text": "Omo, e no easy at all! Na because your brain dey work overtime to build new pathways, wetin scientists dey call neuroplasticity. E be like person wey dey clear thick bush for inside village forest for the very first time—na pure sweat and energy. But as you keep doing am, the road go dey smooth, and before you know, the thing wey hard yesterday don turn normal thing for you! You dey try learn any new skill currently?",
+          "citations": [],
+          "evidence": {
+            "modelCalls": 3,
+            "toolCalls": 0,
+            "resultBytes": 0
+          }
+        }
+      }
+    },
+    {
+      "candidate": "C-model-led",
+      "id": "open-ended",
+      "category": "conversation",
+      "question": "Why does learning something new feel so hard at first?",
+      "passed": true,
+      "elapsedMs": 4079,
+      "modelCalls": 2,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "Na deep question be that o! But the truth na say your brain no just lazy—na how God create am to work. \n\nWhen you dey try learn something brand new (whether na new tech skill, new language, or even how to understand investment), your brain dey try build brand new road inside your head where footpath no even dey before. Scientists dey call that one **neuroplasticity**. \n\nAt the beginning:\n1. **High Energy:** Your brain dey use plenty energy because every small step need conscious thinking. E dey heavy like person wey dey clear thick bush with cutlass.\n2. **Frustration:** Because your brain love shortcuts and energy-saving (we dey call am cognitive ease), e go want push you go back to wetin you already sabi.\n3. **Compound Effect:** But as you keep repeating am, the road dey smooth, the bush dey clear, and before you know am, the thing wey hard yesterday don become second nature.\n\nSo if your brain dey shake table when you dey learn something new, just know say na normal factory setting. You just need small patience and consistency. Want make we gist about how to make learning feel small easier, abi you just wan relax your brain today?",
+        "reply": {
+          "kind": "general",
+          "text": "Na deep question be that o! But the truth na say your brain no just lazy—na how God create am to work. \n\nWhen you dey try learn something brand new (whether na new tech skill, new language, or even how to understand investment), your brain dey try build brand new road inside your head where footpath no even dey before. Scientists dey call that one **neuroplasticity**. \n\nAt the beginning:\n1. **High Energy:** Your brain dey use plenty energy because every small step need conscious thinking. E dey heavy like person wey dey clear thick bush with cutlass.\n2. **Frustration:** Because your brain love shortcuts and energy-saving (we dey call am cognitive ease), e go want push you go back to wetin you already sabi.\n3. **Compound Effect:** But as you keep repeating am, the road dey smooth, the bush dey clear, and before you know am, the thing wey hard yesterday don become second nature.\n\nSo if your brain dey shake table when you dey learn something new, just know say na normal factory setting. You just need small patience and consistency. Want make we gist about how to make learning feel small easier, abi you just wan relax your brain today?",
+          "citations": [],
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 0,
+            "resultBytes": 0
+          }
+        }
+      }
+    },
+    {
+      "candidate": "A-direct",
+      "id": "reported-failure",
+      "category": "math",
+      "question": "If i saved 10,000 naira every month, how much until I become a millionaire",
+      "passed": true,
+      "elapsedMs": 2179,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "general",
+        "text": "Assuming you mean becoming a Naira millionaire (reaching 1,000,000 Naira), and you are just stashing the cash under your mattress without any interest, it will take you **100 months**. \n\nThat works out to **8 years and 4 months** ($1,000,000 \\div 10,000$).\n\nIf you decide to save that money in a piggy bank or a savings account that earns interest, you could actually get there a bit faster! \n\nAre you planning to just save it as cash, or were you thinking of putting it in a savings account or investment to earn some interest?"
+      }
+    },
+    {
+      "candidate": "B-pr36",
+      "id": "reported-failure",
+      "category": "math",
+      "question": "If i saved 10,000 naira every month, how much until I become a millionaire",
+      "passed": false,
+      "elapsedMs": 5693,
+      "modelCalls": 4,
+      "toolCalls": 0,
+      "toolAttempts": 0,
+      "injectedFailures": 0,
+      "clarificationHeuristic": false,
+      "reply": {
+        "kind": "unavailable",
+        "text": "I couldn’t complete this request with verified data. Please try again or narrow the request.",
+        "reply": {
+          "kind": "unavailable",
+          "text": "I couldn’t complete this request with verified data. Please try again or narrow the request.",
+          "citations": [],
+          "evidence": {
+            "modelCalls": 4,
+            "toolCalls": 0,
+            "resultBytes": 0,
+            "code": "MODEL_HTTP_429"
+          }
+        }
+      }
+    }
+  ]
+}

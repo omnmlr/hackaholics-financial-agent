@@ -335,7 +335,7 @@ globalThis.fetch = async (input, init) => {
     if (quotaBlocked || calls >= configuredLimit || activeTurnCalls >= 6)
       throw new Error("EVALUATION_BUDGET");
     await delay(
-      Math.max(0, 1500 - (performance.now() - lastStarted)),
+      Math.max(0, 5000 - (performance.now() - lastStarted)),
       undefined,
       { signal: init?.signal ?? undefined },
     );
@@ -483,7 +483,7 @@ async function save() {
         genuineModelCalls: calls,
         alreadySpent,
         maximumGenerationCalls: configuredLimit,
-        minimumCallIntervalMs: 1500,
+        minimumCallIntervalMs: 5000,
         mockedModel: false,
         syntheticFinancialData: true,
         paymentExecutionCapability: false,

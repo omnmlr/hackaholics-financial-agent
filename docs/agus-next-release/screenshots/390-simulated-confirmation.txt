@@ -1,0 +1,15 @@
+AGUS — SIMULATED PAYMENT CONFIRMATION
+DEMO ONLY — NO REAL FUNDS MOVED
+This is not a bank receipt or evidence of recipient-bank credit.
+
+Recorded status: Simulation · successful
+Recipient label: "Ada"
+Verified fictional name: "ADA OKAFOR"
+Fictional institution: "Wema Bank"
+Amount: ₦700.00
+Confirmed fee: ₦0.00
+Recorded at: 2026-10-21T18:34:18.820Z
+Simulation reference: ha_de48ff830cc8466180f8f5fe918fbbed
+
+Status reflects the recorded simulation at the timestamp above. Check AGUS for later reversals or updates.
+SIMULATED — NOT VALID AS PROOF OF REAL PAYMENT

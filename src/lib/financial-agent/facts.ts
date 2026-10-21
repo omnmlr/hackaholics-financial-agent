@@ -237,7 +237,7 @@ export function makeFact(
         text = data.accounts
           .map(
             (a) =>
-              `Account ${a.accountId}: available balance ${money(a.availableKobo)}, current balance ${money(a.currentKobo)}; observed ${a.asOf ?? "unknown"}, last synced ${a.lastSyncedAt ?? "unknown"}${a.unavailableReason ? `; ${a.unavailableReason}` : ""}. Unknown balances are not zero.`,
+              `Account ${a.accountId}: available balance ${money(a.availableKobo)}, current balance ${money(a.currentKobo)}; state as of ${a.asOf ?? "unknown"}, last synced ${a.lastSyncedAt ?? "unknown"}${a.unavailableReason ? `; ${a.unavailableReason}` : ""}.${a.simulation ? " Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh." : ""} Unknown balances are not zero.`,
           )
           .join("\n");
         modelData = data;
@@ -282,7 +282,7 @@ function present(
     coverage: result.meta.coverage?.state ?? "not supplied",
     originalText,
   };
-  if (value.coverage !== "complete")
+  if (result.meta.coverage && value.coverage !== "complete")
     value.limits.push(
       value.coverage === "not supplied"
         ? "Coverage not supplied"
@@ -379,6 +379,20 @@ function present(
   }
   if (call.name === "get_account_summary") {
     const d = ToolDataSchemas.get_account_summary.parse(result.data);
+    if (
+      d.accounts.every(
+        (a) => a.availableKobo === null && a.currentKobo === null,
+      )
+    )
+      value.balanceUnavailable = d.accounts.some(
+        (a) => a.unavailableReason === "stale",
+      )
+        ? "stale"
+        : "not_provided";
+    if (d.accounts.some((a) => a.simulation))
+      value.limits.push(
+        "Fictional balance, maintained separately from the historical demonstration records. No real bank connection.",
+      );
     value.metrics = d.accounts.flatMap((a, i) => [
       {
         label: `Available balance${d.accounts.length > 1 ? ` · Account ${i + 1}` : ""}`,

@@ -35,6 +35,13 @@ it("retains sessions, principal mapping, data, context and revocation across pro
     expect(seeded.expenseKobo).toBe(1975151);
     expect(seeded.counts).toEqual({ transactions: 77, seeds: 1 });
     const restored = run("read");
+    expect(restored.simulationBalance).toEqual(seeded.simulationBalance);
+    expect(restored.simulationBalance).toMatchObject({
+      availableKobo: 12345678,
+      currentKobo: 12445678,
+      asOf: "2026-10-17T10:00:00.000Z",
+      simulation: { historicalTransactionsReconciled: false, changeCount: 0 },
+    });
     expect(restored.contextOutcome).toEqual(seeded.contextOutcome);
     expect(restored.genericContext).toEqual(seeded.genericContext);
     expect(restored.genericContext.transcript).toBe(

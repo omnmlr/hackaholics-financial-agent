@@ -5,6 +5,7 @@ import {
   ReadFilterSchema,
 } from "../financial-data/contracts";
 import { bytes, AgentError } from "./protocol";
+import { SavingsMemorySchema } from "../model-led-agent/savings";
 
 export const ContextKeySchema = z.strictObject({
   tenantId: IdSchema,
@@ -62,6 +63,7 @@ export const ContextSchema = z
       )
       .max(16),
     selection: SelectionSchema.nullable(),
+    savings: SavingsMemorySchema.optional(),
   })
   .refine((v) => bytes(v.messages) <= 12 * 1024);
 export type ConversationContext = z.infer<typeof ContextSchema>;

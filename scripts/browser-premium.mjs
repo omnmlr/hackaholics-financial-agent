@@ -208,10 +208,7 @@ try {
     );
     await capture("welcome");
     await axe("welcome");
-    assert.equal(
-      await input.getAttribute("placeholder"),
-      "Ask agus anything...",
-    );
+    assert.equal(await input.getAttribute("placeholder"), "Ask agus…");
     assert.deepEqual(
       await page.locator(".agus-suggestions button").allTextContents(),
       ["Analyze spending", "Track a payment", "Prepare a transfer"],
@@ -285,13 +282,10 @@ try {
       "Prepare 500 to Ada at Wema account 0000000001 for Lunch and 600 to Chidi at Access account 0000000002 for Books",
     );
     assert.equal(handoff.reply.kind, "handoff");
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .last()
-      .click();
     const card = page.locator(".agus-thread .agus-payment").last();
     await card.waitFor();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     await card.getByLabel("Amount (NGN)", { exact: true }).first().waitFor();
     await page.waitForFunction(
       () =>
@@ -424,9 +418,15 @@ try {
     checks.push(
       "Reading position retained while a reply arrives; jump to latest works",
     );
-    await page
-      .getByRole("button", { name: "Open conversations", exact: true })
-      .click();
+    if (
+      !(await page
+        .getByRole("button", { name: "Collapse navigation", exact: true })
+        .filter({ visible: true })
+        .count())
+    )
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
     await capture("navigation");
     await axe("navigation");
     if (width >= 1024)

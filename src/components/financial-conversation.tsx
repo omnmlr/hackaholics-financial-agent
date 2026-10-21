@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   ChevronDown,
   X,
+  PanelRight,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
@@ -38,6 +39,11 @@ import {
 } from "./conversation-payments";
 import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
+import { usePaymentImage } from "./use-payment-image";
+import { AttachmentMenu } from "./attachment-menu";
+import { currentPaymentReply } from "./payment-outcome";
+import { FinancialWorkspace } from "./financial-workspace";
+import { workspaceViewport } from "@/lib/workspace-viewport";
 import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
@@ -95,6 +101,28 @@ export function FinancialConversation({
   const [signinError, setSigninError] = useState("");
   const [showLatest, setShowLatest] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wide, setWide] = useState(false),
+    [workspaceOpen, setWorkspaceOpen] = useState(true);
+  const [liveResult, setLiveResult] = useState<{
+    turnId: string;
+    account: string;
+  } | null>(null);
+  const workspaceButton = useRef<HTMLButtonElement>(null),
+    sidebarTouched = useRef(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1280px)");
+    const update = () => {
+      if (
+        !query.matches &&
+        document.activeElement?.closest(".agus-context-workspace")
+      )
+        composer.current?.focus({ preventScroll: true });
+      setWide(query.matches);
+    };
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [longWait, setLongWait] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pageVisible, setPageVisible] = useState(true);
@@ -214,6 +242,7 @@ export function FinancialConversation({
     setLoading(false);
     setAuthenticated(false);
     setTurns([]);
+    setLiveResult(null);
     setChats([]);
     setAccounts([]);
     setAccount("");
@@ -224,6 +253,7 @@ export function FinancialConversation({
     setPassword("");
   }, [discardVoiceCapture, stopSpeech]);
   const payments = useConversationPayments(authenticated, clearPrivate);
+  const image = usePaymentImage(id, authenticated);
   useEffect(() => {
     setAiEnabled(!!payments.snapshot?.aiEnabled);
   }, [payments.snapshot?.aiEnabled]);
@@ -253,6 +283,7 @@ export function FinancialConversation({
     });
   }
   function toggleSidebar(open: boolean) {
+    sidebarTouched.current = true;
     setSidebarOpen(open);
     requestAnimationFrame(() => {
       document
@@ -309,6 +340,7 @@ export function FinancialConversation({
       setAccountQuestion(null);
       setAccounts([]);
       setTurns([]);
+      setLiveResult(null);
       setId(next);
       setUnknown(null);
       setPendingText("");
@@ -400,23 +432,35 @@ export function FinancialConversation({
   }, [busy]);
   useEffect(() => {
     const viewport = window.visualViewport;
+    let frame = 0;
     const fit = () => {
+      frame = 0;
+      const size = workspaceViewport({
+        innerHeight: window.innerHeight,
+        visualHeight: viewport?.height,
+        offsetTop: viewport?.offsetTop,
+        scale: viewport?.scale,
+      });
+      if (!size) return;
       const el = document.querySelector<HTMLElement>(".agus-workspace");
-      el?.style.setProperty(
-        "--workspace-height",
-        `${viewport?.height ?? window.innerHeight}px`,
-      );
-      el?.style.setProperty("--workspace-top", `${viewport?.offsetTop ?? 0}px`);
+      el?.style.setProperty("--workspace-height", `${size.height}px`);
+      el?.style.setProperty("--workspace-top", `${size.top}px`);
       resizeComposer();
     };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(fit);
+    };
     fit();
-    viewport?.addEventListener("resize", fit);
-    viewport?.addEventListener("scroll", fit);
-    window.addEventListener("resize", fit);
+    viewport?.addEventListener("resize", schedule);
+    viewport?.addEventListener("scroll", schedule);
+    window.addEventListener("resize", schedule);
+    window.addEventListener("orientationchange", schedule);
     return () => {
-      viewport?.removeEventListener("resize", fit);
-      viewport?.removeEventListener("scroll", fit);
-      window.removeEventListener("resize", fit);
+      if (frame) cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", schedule);
+      viewport?.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("orientationchange", schedule);
     };
   }, [resizeComposer]);
   useEffect(() => {
@@ -481,7 +525,8 @@ export function FinancialConversation({
       pending.current ||
       loading ||
       unknown ||
-      !(question ?? text).trim() ||
+      (!(question ?? text).trim() && !image.file) ||
+      image.busy ||
       voiceBusy
     )
       return;
@@ -489,6 +534,49 @@ export function FinancialConversation({
     stopSpeech();
     if (!authenticated) {
       openModal(signin.current);
+      return;
+    }
+    if (image.file) {
+      const chatId = id || crypto.randomUUID();
+      pending.current = true;
+      setOperation("image");
+      await image.upload(
+        chatId,
+        (data) => {
+          setId(chatId);
+          setTurns((previous) => [...previous, data.turn]);
+          setLiveResult({ turnId: data.turn.id, account });
+          window.history.replaceState(
+            null,
+            "",
+            `/conversation?chat=${encodeURIComponent(chatId)}`,
+          );
+          void payments
+            .refresh()
+            .catch(() =>
+              setError("Draft saved. Retry loading saved payments to view it."),
+            );
+          void refresh().catch(() =>
+            setHistoryError(
+              "Image review saved; retry loading the conversation list.",
+            ),
+          );
+          setAnnouncement("Image reviewed. Editable details are ready.");
+        },
+        () => {
+          setId(chatId);
+          setError(
+            "The image response is unconfirmed. Check the saved conversation before selecting it again.",
+          );
+          setUnknown({
+            chat: chatId,
+            count: turns.length,
+            original: "Image review",
+          });
+        },
+      );
+      pending.current = false;
+      setOperation("");
       return;
     }
     pending.current = true;
@@ -548,6 +636,13 @@ export function FinancialConversation({
             `/conversation?chat=${encodeURIComponent(chatId)}`,
           );
         setTurns((previous) => [...previous, data.turn]);
+        setLiveResult({ turnId: data.turn.id, account });
+        if (data.turn.reply.handoff)
+          void payments
+            .refresh()
+            .catch(() =>
+              setError("Draft saved. Retry loading saved payments to view it."),
+            );
         if (
           spokenRepliesEnabled.current &&
           ["general", "financial", "product"].includes(data.turn.reply.kind)
@@ -648,6 +743,13 @@ export function FinancialConversation({
       if (!response.ok && response.status !== 404) throw new Error();
       if (data?.turns.length > unknown.count) {
         setTurns(data.turns);
+        void payments
+          .refresh()
+          .catch(() =>
+            setError(
+              "Saved conversation recovered. Retry loading saved payments to view its current card.",
+            ),
+          );
         setId(unknown.chat);
         const currentDraft = drafts.get(id) ?? "";
         const retained =
@@ -767,6 +869,40 @@ export function FinancialConversation({
     ? `${selected.displayName}${selected.maskedNumber ? ` · •${selected.maskedNumber}` : ""}`
     : "No account selected";
   const empty = !loading && !turns.length && !pendingText;
+  useEffect(() => {
+    if (
+      wide &&
+      !loading &&
+      !empty &&
+      (turns.length > 0 || pendingText) &&
+      !sidebarTouched.current
+    )
+      setSidebarOpen(true);
+  }, [wide, empty, loading, turns.length, pendingText]);
+  const focusTurn = turns.at(-1);
+  const focusMessage = payments.snapshot?.messages.find(
+    (m) =>
+      m.turnId === focusTurn?.id && m.conversationId === id && !m.supersededBy,
+  );
+  const focusBatch = payments.snapshot?.batches.find(
+    (b) => b.id === focusMessage?.batchId,
+  );
+  const freshSource =
+    liveResult?.turnId === focusTurn?.id && liveResult?.account === account;
+  const hasWorkspace =
+    !!focusTurn &&
+    (!!focusBatch ||
+      !!focusTurn.reply.payments ||
+      (!focusTurn.reply.savings?.source && !!focusTurn.reply.savings) ||
+      (freshSource &&
+        (!!focusTurn.reply.presentation || !!focusTurn.reply.savings)));
+  const showWorkspace = wide && workspaceOpen && hasWorkspace && !empty;
+  const closeWorkspace = () => {
+    setWorkspaceOpen(false);
+    requestAnimationFrame(() =>
+      workspaceButton.current?.focus({ preventScroll: true }),
+    );
+  };
   const sidebar = (
     <>
       <div className="agus-sidebar-brand">
@@ -892,7 +1028,7 @@ export function FinancialConversation({
   );
   return (
     <main
-      className={`agus-workspace ${empty ? "agus-empty" : ""}`}
+      className={`agus-workspace ${empty ? "agus-empty" : "agus-active"} ${showWorkspace ? "has-context-workspace" : ""}`}
       data-page-visible={pageVisible}
     >
       {!empty && <h1 className="agus-sr-only">Conversation</h1>}
@@ -965,6 +1101,23 @@ export function FinancialConversation({
             )}
           </div>
           <div className="agus-header-actions">
+            {wide && hasWorkspace && !empty && (
+              <button
+                ref={workspaceButton}
+                className="agus-icon-button agus-workspace-toggle"
+                type="button"
+                aria-label={
+                  showWorkspace
+                    ? "Hide financial workspace"
+                    : "Show financial workspace"
+                }
+                aria-expanded={showWorkspace}
+                aria-controls="agus-context-workspace"
+                onClick={() => setWorkspaceOpen((value) => !value)}
+              >
+                <PanelRight size={18} />
+              </button>
+            )}
             {authenticated ? (
               <button
                 className="agus-account-pill"
@@ -1034,119 +1187,147 @@ export function FinancialConversation({
                   account to check current records.
                 </p>
               )}
-              {turns.map((turn) => (
-                <article key={turn.id} className="agus-turn">
-                  <div className="agus-user-message">
-                    <span className="agus-speaker">You</span>
-                    <CopyableMessage label="user message">
-                      <p>{turn.text}</p>
-                    </CopyableMessage>
-                  </div>
-                  <div className="agus-assistant-message">
-                    <h2 className="agus-response-heading">
-                      <BrandAsset />
-                      <small>
-                        {turn.reply.kind === "financial"
-                          ? "Financial insight"
-                          : turn.reply.handoff
-                            ? "Payment planning"
-                            : ""}
-                      </small>
-                    </h2>
-                    {turn.reply.kind === "conflict" && (
-                      <p className="agus-reply-notice">
-                        Your financial context changed. Choose an account and
-                        check the records again.
-                      </p>
-                    )}
-                    <CopyableMessage label="AGUS response">
-                      <FinancialResponse reply={turn.reply} choose={choose} />
-                    </CopyableMessage>
-                    {turn.reply.accountAction === "choose_demo_account" && (
-                      <button
-                        className="agus-secondary"
-                        disabled={busy || !!unknown}
-                        onClick={() => {
-                          setAccountQuestion({ chat: id, text: turn.text });
-                          openModal(accountDialog.current);
-                          void loadAccounts();
-                        }}
-                      >
-                        Choose demo account
-                      </button>
-                    )}
-                    {turn.reply.handoff &&
-                      (() => {
-                        const message = payments.snapshot?.messages.find(
-                          (m) =>
-                            m.turnId === turn.id &&
-                            m.conversationId === id &&
-                            (!!m.proposals?.length || !!m.batchId),
-                        );
-                        return message ? (
-                          <NativePayment
-                            controller={payments}
-                            message={message}
-                            recover={() => openModal(paymentHistory.current)}
-                          />
-                        ) : (
-                          <div className="agus-handoff">
-                            <PaymentNotice
+              {turns.map((turn) => {
+                const linkedMessage = payments.snapshot?.messages.find(
+                  (m) => m.turnId === turn.id && m.conversationId === id,
+                );
+                const linkedBatch = payments.snapshot?.batches.find(
+                  (b) => b.id === linkedMessage?.batchId,
+                );
+                const shownReply = linkedMessage?.supersededBy
+                  ? {
+                      ...turn.reply,
+                      text: "This draft was continued later in the conversation. Review its latest payment card.",
+                    }
+                  : turn.reply.handoff
+                    ? currentPaymentReply(turn.reply, linkedBatch)
+                    : turn.reply;
+                return (
+                  <article
+                    key={turn.id}
+                    id={`agus-turn-${turn.id}`}
+                    className="agus-turn"
+                  >
+                    <div className="agus-user-message">
+                      <span className="agus-speaker">You</span>
+                      <CopyableMessage label="user message">
+                        <p>{turn.text}</p>
+                      </CopyableMessage>
+                    </div>
+                    <div className="agus-assistant-message">
+                      <h2 className="agus-response-heading">
+                        <BrandAsset />
+                        <small>
+                          {turn.reply.kind === "financial"
+                            ? "Financial insight"
+                            : turn.reply.handoff
+                              ? "Payment planning"
+                              : ""}
+                        </small>
+                      </h2>
+                      {turn.reply.kind === "conflict" && (
+                        <p className="agus-reply-notice">
+                          Your financial context changed. Choose an account and
+                          check the records again.
+                        </p>
+                      )}
+                      <CopyableMessage label="AGUS response">
+                        <FinancialResponse
+                          reply={shownReply}
+                          choose={choose}
+                          workspaceOpen={
+                            showWorkspace && focusTurn?.id === turn.id
+                          }
+                        />
+                      </CopyableMessage>
+                      {turn.reply.accountAction === "choose_demo_account" && (
+                        <button
+                          className="agus-secondary"
+                          disabled={busy || !!unknown}
+                          onClick={() => {
+                            setAccountQuestion({ chat: id, text: turn.text });
+                            openModal(accountDialog.current);
+                            void loadAccounts();
+                          }}
+                        >
+                          Choose demo account
+                        </button>
+                      )}
+                      {turn.reply.handoff &&
+                        (() => {
+                          const message = payments.snapshot?.messages.find(
+                            (m) =>
+                              m.turnId === turn.id &&
+                              m.conversationId === id &&
+                              (!!m.proposals?.length || !!m.batchId),
+                          );
+                          return message ? (
+                            <NativePayment
                               controller={payments}
-                              scope={`turn:${turn.id}`}
+                              message={message}
                               recover={() => openModal(paymentHistory.current)}
                             />
-                            <button
-                              className="agus-secondary"
-                              disabled={
-                                busy ||
-                                payments.busy ||
-                                !!unknown ||
-                                !payments.snapshot
-                              }
-                              onClick={() => void draft(turn.id)}
-                            >
-                              Prepare payment draft
-                            </button>
-                          </div>
-                        );
-                      })()}
-                    <button
-                      className="agus-listen agus-icon-button"
-                      aria-label={
-                        speech.playing === turn.id
-                          ? "Stop reading response"
-                          : "Listen to response"
-                      }
-                      title={
-                        speech.playing === turn.id ? "Stop reading" : "Listen"
-                      }
-                      aria-pressed={speech.playing === turn.id}
-                      onClick={() =>
-                        speech.speak(turn.id, responseSpeechText(turn.reply))
-                      }
-                    >
-                      {speech.playing === turn.id ? (
-                        <VolumeX size={16} />
-                      ) : (
-                        <Volume2 size={16} />
-                      )}
-                    </button>
-                    <span className="agus-response-time">
-                      Saved{" "}
-                      {new Date(turn.createdAt).toLocaleString("en-NG", {
-                        timeZone: "Africa/Lagos",
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      WAT
-                    </span>
-                  </div>
-                </article>
-              ))}
+                          ) : (
+                            <div className="agus-handoff">
+                              <PaymentNotice
+                                controller={payments}
+                                scope={`turn:${turn.id}`}
+                                recover={() =>
+                                  openModal(paymentHistory.current)
+                                }
+                              />
+                              <button
+                                className="agus-secondary"
+                                disabled={
+                                  busy ||
+                                  payments.busy ||
+                                  !!unknown ||
+                                  !payments.snapshot
+                                }
+                                onClick={() => void draft(turn.id)}
+                              >
+                                Prepare payment draft
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      <button
+                        className="agus-listen agus-icon-button"
+                        aria-label={
+                          speech.playing === turn.id
+                            ? "Stop reading response"
+                            : "Listen to response"
+                        }
+                        title={
+                          speech.playing === turn.id ? "Stop reading" : "Listen"
+                        }
+                        aria-pressed={speech.playing === turn.id}
+                        onClick={() =>
+                          speech.speak(turn.id, responseSpeechText(shownReply))
+                        }
+                      >
+                        {speech.playing === turn.id ? (
+                          <VolumeX size={16} />
+                        ) : (
+                          <Volume2 size={16} />
+                        )}
+                      </button>
+                      <span className="agus-response-time">
+                        Saved{" "}
+                        {new Date(turn.createdAt).toLocaleString("en-NG", {
+                          timeZone: "Africa/Lagos",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        WAT
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
               {pendingText && (
                 <article className="agus-turn">
                   <div className="agus-user-message">
@@ -1236,29 +1417,55 @@ export function FinancialConversation({
             <p role="status">
               {operation === "draft"
                 ? "Opening payment draft…"
-                : operation === "check"
-                  ? "Checking saved conversation…"
-                  : "Updating session…"}
+                : operation === "image"
+                  ? "Reading image details for your review…"
+                  : operation === "check"
+                    ? "Checking saved conversation…"
+                    : "Updating session…"}
             </p>
           )}
           <form
             className="agus-composer"
             aria-busy={busy}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              if (e.dataTransfer.files.length) {
+                e.preventDefault();
+                if (!busy) image.select(e.dataTransfer.files[0]);
+              }
+            }}
             onSubmit={(e) => {
               e.preventDefault();
               void send();
             }}
           >
+            <AttachmentMenu
+              key={`${id}:${authenticated}`}
+              input={image.input}
+              select={image.select}
+              disabled={busy || loading || voiceBusy || !authenticated}
+            />
             <label className="agus-sr-only" htmlFor="financial-message">
               Message AGUS
             </label>
             <textarea
               ref={composer}
               id="financial-message"
-              placeholder="Ask agus anything..."
+              placeholder="Ask agus…"
               value={text}
               rows={1}
               maxLength={4000}
+              onPaste={(e) => {
+                const file = [...e.clipboardData.files].find((f) =>
+                  f.type.startsWith("image/"),
+                );
+                if (file) {
+                  e.preventDefault();
+                  if (!busy) image.select(file);
+                }
+              }}
               readOnly={
                 (busy && operation !== "message") || loading || voiceBusy
               }
@@ -1348,7 +1555,11 @@ export function FinancialConversation({
                   type="submit"
                   aria-label="Send message"
                   disabled={
-                    busy || loading || voiceBusy || !!unknown || !text.trim()
+                    busy ||
+                    loading ||
+                    voiceBusy ||
+                    !!unknown ||
+                    (!text.trim() && !image.file)
                   }
                 >
                   <ArrowUp size={20} />
@@ -1356,6 +1567,30 @@ export function FinancialConversation({
               )}
             </div>
           </form>
+          {image.preview && (
+            <div className="agus-image-preview">
+              <img src={image.preview} alt="Local payment image preview" />
+              <div>
+                <strong>Image ready for review</strong>
+                <p>
+                  Details become editable drafts. The image is not kept in chat
+                  history.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label={image.busy ? "Cancel image upload" : "Remove image"}
+                onClick={image.busy ? image.cancel : image.clear}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+          {image.error && (
+            <p className="agus-error" role="alert">
+              {image.error}
+            </p>
+          )}
           {empty && (
             <div className="agus-suggestions" aria-label="Suggested questions">
               {suggestions.map(({ title, text: prompt }) => (
@@ -1375,7 +1610,9 @@ export function FinancialConversation({
               <ShieldCheck size={12} />
               You stay in control of every payment.
             </span>
-            <span>Shift + Enter for a new line</span>
+            <span title="Shift + Enter for a new line">
+              Text, voice or a payment image
+            </span>
           </div>
         </div>
         <details className="agus-demo-strip">
@@ -1393,6 +1630,24 @@ export function FinancialConversation({
           </p>
         </details>
       </section>
+      {showWorkspace && focusTurn && (
+        <FinancialWorkspace
+          reply={focusTurn.reply}
+          batch={focusBatch}
+          close={closeWorkspace}
+          review={() =>
+            document
+              .getElementById(`agus-turn-${focusTurn.id}`)
+              ?.scrollIntoView({
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                  .matches
+                  ? "auto"
+                  : "smooth",
+                block: "start",
+              })
+          }
+        />
+      )}
       <div className="agus-sr-only" role="status" aria-live="polite">
         {announcement}
       </div>

@@ -136,6 +136,7 @@ writeFileSync(
     consentState: consent?.state,
     continuationError: continuation.error?.code ?? null,
     counts: counts.rows[0],
+    simulationBalance: await repository.getAccountSummary(ctx, "amina-current"),
     expenseKobo:
       (total.data as { expenseKobo?: number } | null)?.expenseKobo ?? null,
   }),

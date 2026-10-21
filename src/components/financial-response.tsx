@@ -1,5 +1,10 @@
 import type { AgentReply } from "@/lib/financial-agent";
-import { FinancialPresentationSchema } from "@/lib/financial-agent/presentation";
+import {
+  FinancialPresentationSchema,
+  PaymentPresentationSchema,
+  SavingsPresentationSchema,
+} from "@/lib/financial-agent/presentation";
+import { SavingsPlan, balanceUnavailableText } from "./financial-workspace";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -50,10 +55,56 @@ const date = (value: string, time = false) =>
 export function FinancialResponse({
   reply,
   choose,
+  workspaceOpen = false,
 }: {
   reply: AgentReply;
   choose: (text: string) => void;
+  workspaceOpen?: boolean;
 }) {
+  const savings = SavingsPresentationSchema.safeParse(reply.savings);
+  const payment = PaymentPresentationSchema.safeParse(reply.payments);
+  if (payment.success)
+    return (
+      <>
+        <div className="agus-prose">
+          {reply.text.split(/\n\n/).map((text, i) => (
+            <p key={i}>{text}</p>
+          ))}
+        </div>
+        <section
+          className="agus-payment-status-result"
+          aria-label="Saved payment status"
+        >
+          <p className="agus-scope">
+            {payment.data.scope} · Checked {date(payment.data.asOf, true)} WAT
+          </p>
+          {payment.data.records.map((p) => (
+            <div className="agus-status-record" key={p.paymentId}>
+              <strong>{p.verifiedName ?? p.label}</strong>
+              <span>{p.status.replaceAll("_", " ")}</span>
+              <b>
+                {new Intl.NumberFormat("en-NG", {
+                  style: "currency",
+                  currency: "NGN",
+                }).format(p.amountKobo / 100)}
+              </b>
+              <code className="agus-safe-reference">{p.reference}</code>
+              {p.canConfirm && (
+                <a
+                  href={`/api/batches/${p.batchId}/confirmation?payment=${encodeURIComponent(p.paymentId)}`}
+                >
+                  Download SIMULATED confirmation
+                </a>
+              )}
+            </div>
+          ))}
+          <small>
+            Saved response reflects the check time above. Ask again for the
+            current recorded state.
+          </small>
+        </section>
+      </>
+    );
   const parsed = FinancialPresentationSchema.safeParse(reply.presentation);
   const presentation =
     parsed.success &&
@@ -62,11 +113,16 @@ export function FinancialResponse({
       : null;
   if (!presentation)
     return (
-      <div className="agus-prose">
-        {reply.text.split(/\n+/).map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </div>
+      <>
+        <div className="agus-prose">
+          {reply.text.split(/\n+/).map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+        </div>
+        {savings.success && !workspaceOpen && (
+          <SavingsPlan plan={savings.data} />
+        )}
+      </>
     );
   const sources = new Set(
     presentation.results.flatMap((r) =>
@@ -82,10 +138,9 @@ export function FinancialResponse({
             <p key={i}>{p}</p>
           ))}
       </div>
-      {presentation.narration === "factual_fallback" && (
-        <p className="agus-fallback">
-          Source summary · AI explanation unavailable
-        </p>
+      {savings.success && !workspaceOpen && <SavingsPlan plan={savings.data} />}
+      {presentation.narration === "factual_fallback" && !reply.savings && (
+        <p className="agus-fallback">Verified source summary</p>
       )}
       {[...new Set(presentation.results.flatMap((r) => r.limits))]
         .filter(
@@ -96,81 +151,92 @@ export function FinancialResponse({
             {limit}
           </p>
         ))}
-      {presentation.results.map((r) => (
-        <section
-          className="agus-result"
-          key={r.resultId}
-          aria-label="Financial result"
-        >
-          <div className="agus-result-header">
-            <span>
-              {r.type === "calculate_spending" ? (
-                <ChartNoAxesCombined size={16} />
-              ) : (
-                <FileSearch size={16} />
-              )}
-              {resultTitles[r.type]}
-            </span>
-            <small>
-              <ShieldCheck size={11} />{" "}
-              {r.sources.some((s) => /fixture|demo|fictional/i.test(s.mode))
-                ? "Fictional records"
-                : "Source records"}
-            </small>
-          </div>
-          {r.metrics.length > 0 && (
-            <dl className="agus-totals" aria-label="Financial totals">
-              {r.metrics.map((m) => (
-                <div key={m.label}>
-                  <dt>{m.label}</dt>
-                  <dd>{m.value}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {r.type === "calculate_spending" && <Cashflow metrics={r.metrics} />}
-          <p className="agus-scope">{r.scope}</p>
-          {r.records.map((record, i) => (
-            <section className="agus-record" key={i}>
-              <div className="agus-record-heading">
-                <span
-                  className={`agus-record-direction ${record.direction}`}
-                  aria-hidden="true"
-                >
-                  {record.direction === "debit" ? (
-                    <ArrowUpRight size={16} />
-                  ) : (
-                    <ArrowDownLeft size={16} />
-                  )}
-                </span>
-                <div>
-                  <h3>{record.name}</h3>
-                  <small>
-                    {record.direction === "debit" ? "Money out" : "Money in"}
-                  </small>
-                </div>
-                <strong>{record.amount}</strong>
-              </div>
-              <p>
-                {record.date ? date(record.date) : "Date unavailable"} ·{" "}
-                {record.status === "posted"
-                  ? "Posted in source records"
-                  : `Source status: ${record.status}`}
+      {presentation.results
+        .filter((r) => !(savings.success && r.type === "get_account_summary"))
+        .map((r) => (
+          <section
+            className="agus-result"
+            key={r.resultId}
+            aria-label="Financial result"
+          >
+            <div className="agus-result-header">
+              <span>
+                {r.type === "calculate_spending" ? (
+                  <ChartNoAxesCombined size={16} />
+                ) : (
+                  <FileSearch size={16} />
+                )}
+                {resultTitles[r.type]}
+              </span>
+              <small>
+                <ShieldCheck size={11} />{" "}
+                {r.sources.some((s) => /fixture|demo|fictional/i.test(s.mode))
+                  ? "Fictional records"
+                  : "Source records"}
+              </small>
+            </div>
+            {r.balanceUnavailable && (
+              <p className="agus-balance-empty">
+                {balanceUnavailableText(r.balanceUnavailable)}
               </p>
-              <p>{record.account}</p>
-              {record.choice && (
-                <button
-                  className="agus-secondary"
-                  onClick={() => choose(record.choice!)}
-                >
-                  Show {record.name} · {record.amount}
-                  {record.date ? ` · ${date(record.date)}` : ""}
-                </button>
+            )}
+            {r.metrics.length > 0 &&
+              !savings.success &&
+              !r.balanceUnavailable && (
+                <dl className="agus-totals" aria-label="Financial totals">
+                  {r.metrics.map((m) => (
+                    <div key={m.label}>
+                      <dt>{m.label}</dt>
+                      <dd>{m.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               )}
-            </section>
-          ))}
-        </section>
-      ))}
+            {r.type === "calculate_spending" && (
+              <Cashflow metrics={r.metrics} />
+            )}
+            <p className="agus-scope">{r.scope}</p>
+            {r.records.map((record, i) => (
+              <section className="agus-record" key={i}>
+                <div className="agus-record-heading">
+                  <span
+                    className={`agus-record-direction ${record.direction}`}
+                    aria-hidden="true"
+                  >
+                    {record.direction === "debit" ? (
+                      <ArrowUpRight size={16} />
+                    ) : (
+                      <ArrowDownLeft size={16} />
+                    )}
+                  </span>
+                  <div>
+                    <h3>{record.name}</h3>
+                    <small>
+                      {record.direction === "debit" ? "Money out" : "Money in"}
+                    </small>
+                  </div>
+                  <strong>{record.amount}</strong>
+                </div>
+                <p>
+                  {record.date ? date(record.date) : "Date unavailable"} ·{" "}
+                  {record.status === "posted"
+                    ? "Posted in source records"
+                    : `Source status: ${record.status}`}
+                </p>
+                <p>{record.account}</p>
+                {record.choice && (
+                  <button
+                    className="agus-secondary"
+                    onClick={() => choose(record.choice!)}
+                  >
+                    Show {record.name} · {record.amount}
+                    {record.date ? ` · ${date(record.date)}` : ""}
+                  </button>
+                )}
+              </section>
+            ))}
+          </section>
+        ))}
       <details className="agus-sources">
         <summary>
           Sources and calculation · {sources.size}{" "}

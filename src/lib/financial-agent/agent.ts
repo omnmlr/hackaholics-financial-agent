@@ -83,7 +83,23 @@ export type AgentReply = {
   text: string;
   citations: string[];
   presentation?: FinancialPresentation;
+  savings?: {
+    target: number;
+    startingAmount: number;
+    contribution: number;
+    cadence: "days" | "weeks" | "months" | "years";
+    periods: number;
+    duration?: string;
+    source?: {
+      accountId: string;
+      field: "available" | "current";
+      asOf: string;
+      simulated: boolean;
+    };
+  };
   handoff?: { kind: "existing_payment_draft" };
+  paymentDraftId?: string;
+  payments?: import("./presentation").PaymentPresentation;
   accountAction?: "choose_demo_account";
   evidence: {
     modelCalls: number;
@@ -105,6 +121,8 @@ export type AgentOptions = {
   // Server-loaded, owner-scoped dialogue only. Never restores permission,
   // selections, tool results or other financial authority after context expiry.
   dialogue?: ConversationContext["messages"];
+  savingsHint?: import("../model-led-agent/savings").SavingsMemory;
+  paymentStatus?: (args: unknown) => Promise<AgentReply>;
 };
 const inputSchema = z.strictObject({
   ctx: PermissionContextSchema,

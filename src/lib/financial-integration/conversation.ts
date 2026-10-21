@@ -16,6 +16,11 @@ import { AppError } from "../domain";
 import { createModelLedAgent } from "../model-led-agent/agent";
 import { createGeminiToolModel } from "../model-led-agent/model";
 import { turnDiagnostic } from "../model-led-agent/diagnostics";
+import { SavingsMemorySchema } from "../model-led-agent/savings";
+import { readState } from "../db";
+import { editConversationDraft } from "../conversation-edits";
+import { currentPaymentStatus } from "../payment-status";
+import { provider } from "../paystack";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -36,6 +41,40 @@ export async function conversationTurn(
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
   const parsed = ConversationInput.parse(input);
+  const owner = await operator(req);
+  const state = await readState();
+  const messages = state.messages.filter(
+    (m) => m.owner === owner && m.conversationId === parsed.conversationId,
+  );
+  const batchIds = new Set(messages.map((m) => m.batchId));
+  if (messages.length) {
+    const edited = await editConversationDraft(
+      owner,
+      parsed.text,
+      {
+        ...state,
+        messages,
+        batches: state.batches.filter(
+          (b) => b.owner === owner && batchIds.has(b.id),
+        ),
+      },
+      true,
+    );
+    if (edited)
+      return {
+        kind:
+          edited.proposals.length || edited.batchId
+            ? ("handoff" as const)
+            : ("clarify" as const),
+        text: edited.reply,
+        citations: [],
+        ...(edited.proposals.length || edited.batchId
+          ? { handoff: { kind: "existing_payment_draft" as const } }
+          : {}),
+        paymentDraftId: edited.messageId,
+        evidence: { modelCalls: 0, toolCalls: 0, resultBytes: 0 },
+      };
+  }
   // Display history can supply dialogue after the short-lived tool context
   // expires. Owner is session-derived; facts/selections are never rehydrated.
   const turns = await chatHistory(await operator(req))
@@ -57,6 +96,34 @@ export async function conversationTurn(
     },
   ]);
   const options = {
+    paymentStatus: async (args: unknown) =>
+      currentPaymentStatus(
+        owner,
+        parsed.conversationId,
+        args,
+        await provider().banks(),
+      ),
+    // Owner-scoped server history restores parameters after tool context expiry.
+    // Never restore an old balance value as authority: source plans keep only
+    // the account/field hint, and the next turn must read current sources.
+    savingsHint: (() => {
+      const saved = [...turns].reverse().find((t) => t.reply.savings)
+        ?.reply.savings;
+      if (!saved) return undefined;
+      const parsed = SavingsMemorySchema.safeParse({
+        target: saved.target,
+        contribution: saved.contribution,
+        cadence: saved.cadence,
+        starting: saved.source
+          ? {
+              kind: "balance",
+              accountId: saved.source.accountId,
+              field: saved.source.field,
+            }
+          : { kind: "amount", value: saved.startingAmount },
+      });
+      return parsed.success ? parsed.data : undefined;
+    })(),
     tools: capability.tools,
     access: createRepositoryAccess(createDurableRepository(), clock),
     store: createContextPersistence(

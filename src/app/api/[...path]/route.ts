@@ -12,6 +12,9 @@ import {
 } from "@/lib/auth";
 import { mutate, readState } from "@/lib/db";
 import { provider, fixtureBeneficiaries } from "@/lib/paystack";
+import { conversationImage } from "@/lib/conversation-image";
+import { financialContext } from "@/lib/financial-integration/service";
+import { simulatedConfirmation } from "@/lib/payment-status";
 import {
   approveBatch,
   editBatch,
@@ -125,6 +128,32 @@ async function handle(req: Request) {
     }
     if (action === "banks" && req.method === "GET")
       return reply(await provider().banks());
+    if (
+      action === "batches" &&
+      path[2] === "confirmation" &&
+      req.method === "GET"
+    ) {
+      const paymentId = z
+        .uuid()
+        .parse(new URL(req.url).searchParams.get("payment"));
+      const batch = (await readState()).batches.find(
+        (b) => b.id === path[1] && b.owner === actor,
+      );
+      const payment = batch?.payments.find((p) => p.id === paymentId);
+      if (!batch || !payment) throw new AppError("Payment not found", 404);
+      return new Response(
+        simulatedConfirmation(batch, payment, await provider().banks()),
+        {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Content-Disposition":
+              'attachment; filename="AGUS-SIMULATED-confirmation.txt"',
+            "Cache-Control": "no-store, private",
+            "X-Content-Type-Options": "nosniff",
+          },
+        },
+      );
+    }
     if (action === "balance" && req.method === "GET") {
       const r = await provider().balance();
       return reply({ availableKobo: r.data, mode: config().mode, at: now() });
@@ -221,15 +250,16 @@ async function handle(req: Request) {
           "audio/webm",
         ].includes(mimeType)
       )
-        throw new AppError("This browser's audio format is not supported.", 415);
-      return reply(
-        {
-          transcript: await transcribeAudio(
-            Buffer.from(await file.arrayBuffer()),
-            mimeType,
-          ),
-        },
-      );
+        throw new AppError(
+          "This browser's audio format is not supported.",
+          415,
+        );
+      return reply({
+        transcript: await transcribeAudio(
+          Buffer.from(await file.arrayBuffer()),
+          mimeType,
+        ),
+      });
     }
     if (action === "extract" && req.method === "POST") {
       if (Number(req.headers.get("content-length") ?? 0) > 6 * 1024 * 1024)
@@ -240,6 +270,25 @@ async function handle(req: Request) {
       }).formData();
       const file = form.get("image");
       if (!(file instanceof File)) throw new AppError("Image file required");
+      const conversationId = form.get("conversationId"),
+        uploadId = form.get("uploadId");
+      if (conversationId || uploadId) {
+        const ids = z
+          .object({ conversationId: z.uuid(), uploadId: z.uuid() })
+          .parse({ conversationId, uploadId });
+        await financialContext(req);
+        return reply(
+          await conversationImage(
+            actor,
+            ids.conversationId,
+            ids.uploadId,
+            Buffer.from(await file.arrayBuffer()),
+            file.type,
+          ),
+          200,
+          { "Cache-Control": "no-store, private" },
+        );
+      }
       return reply(
         await extractImage(
           Buffer.from(await file.arrayBuffer()),

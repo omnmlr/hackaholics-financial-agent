@@ -177,9 +177,15 @@ try {
     await page
       .getByRole("heading", { name: "Let's talk money.", exact: true })
       .waitFor();
-    await page
-      .getByRole("button", { name: "Open conversations", exact: true })
-      .click();
+    if (
+      !(await page
+        .getByRole("button", { name: "Collapse navigation", exact: true })
+        .filter({ visible: true })
+        .count())
+    )
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
     await page
       .getByRole("button", { name: "Sign in", exact: true })
       .filter({ visible: true })
@@ -722,9 +728,20 @@ try {
     );
     const totals = await send("Show my spending for October 2026");
     assert.equal(totals.reply.kind, "financial");
-    assert.match(totals.reply.text, /₦19,751.51/);
+    // Earlier viewport sessions share this durable workspace and posted transfers.
+    const ledgerState = await (
+      await page.request.get(`${base}/api/state`)
+    ).json();
+    const posted = ledgerState.batches
+      .filter((b) => b.simulationSource?.accountId === "amina-current")
+      .flatMap((b) => b.payments)
+      .filter((p) => p.status === "successful")
+      .reduce((sum, p) => sum + p.amountKobo + (p.providerFeeKobo ?? 0), 0);
+    const naira = (kobo) =>
+      `₦${(kobo / 100).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    assert.ok(totals.reply.text.includes(naira(1975151 + posted)));
     assert.match(totals.reply.text, /₦250,000.00/);
-    assert.match(totals.reply.text, /₦230,248.49/);
+    assert.ok(totals.reply.text.includes(naira(23024849 - posted)));
     const total = page.locator(".agus-assistant-message").last();
     assert.equal(await total.locator(".agus-fallback").count(), 0);
     await total.locator(".agus-sources>summary").click();
@@ -777,12 +794,9 @@ try {
       "Send 500 to Musa, he uses OPay and his account number is 90991234AB. Turn AB to numbers and get his account.",
     );
     assert.equal(musa.reply.kind, "handoff");
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .last()
-      .click();
     const musaCard = page.locator(".agus-thread .agus-payment").last();
-    await musaCard.locator("summary").first().click();
+    if ((await musaCard.getAttribute("open")) === null)
+      await musaCard.locator("summary").first().click();
     assert.equal(
       await musaCard
         .getByLabel("Recipient label", { exact: true })
@@ -840,15 +854,13 @@ try {
       await page.getByRole("button", { name: "Stop reading response" }).count(),
       0,
     );
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .click();
     await page.waitForFunction(
       () =>
         document.querySelectorAll(".agus-thread .agus-payment").length === 2,
     );
     const card = page.locator(".agus-thread .agus-payment").last();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     const editor = card.getByRole("region", {
       name: "Payment proposal",
       exact: true,
@@ -868,12 +880,8 @@ try {
     const url = page.url();
     await page.reload();
     await page.locator(".agus-thread .agus-payment").last().waitFor();
-    await page
-      .locator(".agus-thread .agus-payment")
-      .last()
-      .locator("summary")
-      .first()
-      .click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     assert.equal(
       await editor
         .getByLabel("Amount (NGN)", { exact: true })
@@ -881,7 +889,7 @@ try {
         .inputValue(),
       "650",
     );
-    assert.equal(preparations, 2);
+    assert.equal(preparations, 0);
     // A valid ten-digit number at the wrong fixture bank must fail verification.
     await editor
       .getByLabel("Bank", { exact: true })
@@ -900,6 +908,7 @@ try {
       .waitFor();
     // A payment error must stay attached to its card when the user changes topics/chats.
     await page
+      .locator(".agus-header")
       .getByRole("button", { name: "New chat", exact: true })
       .filter({ visible: true })
       .click();
@@ -921,9 +930,15 @@ try {
         .count(),
       0,
     );
-    await page
-      .getByRole("button", { name: "Open conversations", exact: true })
-      .click();
+    if (
+      !(await page
+        .getByRole("button", { name: "Collapse navigation", exact: true })
+        .filter({ visible: true })
+        .count())
+    )
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
     await page
       .getByRole("navigation", { name: "Saved chats" })
       .locator('button[title="Hello"]')
@@ -931,7 +946,8 @@ try {
       .first()
       .click();
     await card.waitFor();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     if (viewport.width >= 1024)
       await page
         .getByRole("button", { name: "Collapse navigation", exact: true })
@@ -1185,7 +1201,8 @@ try {
       .then((r) => r.json());
     const refs = before.batches[0].payments.map((p) => p.reference);
     await page.reload();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     await batch
       .getByRole("button", { name: "Check provider", exact: true })
       .waitFor();
@@ -1234,9 +1251,15 @@ try {
       "Expanded payment card has no horizontal overflow or automated WCAG A/AA violations",
     );
     // Verify drawer and history navigation at each requested width.
-    await page
-      .getByRole("button", { name: "Open conversations", exact: true })
-      .click();
+    if (
+      !(await page
+        .getByRole("button", { name: "Collapse navigation", exact: true })
+        .filter({ visible: true })
+        .count())
+    )
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
     await page
       .getByRole("button", { name: "Saved payments", exact: true })
       .filter({ visible: true })
@@ -1308,7 +1331,10 @@ try {
     await page.evaluate(() => {
       window.__lateVoice = window.__voice.onresult;
     });
-    await page.getByRole("button", { name: "New chat", exact: true }).click();
+    await page
+      .locator(".agus-header")
+      .getByRole("button", { name: "New chat", exact: true })
+      .click();
     await page.evaluate(() =>
       window.__lateVoice({
         results: [{ 0: { transcript: "must not enter new chat" } }],
@@ -1327,9 +1353,15 @@ try {
     await page.evaluate(() => {
       window.__logoutLateVoice = window.__voice.onresult;
     });
-    await page
-      .getByRole("button", { name: "Open conversations", exact: true })
-      .click();
+    if (
+      !(await page
+        .getByRole("button", { name: "Collapse navigation", exact: true })
+        .filter({ visible: true })
+        .count())
+    )
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
     await page
       .getByRole("button", { name: "Sign out", exact: true })
       .filter({ visible: true })

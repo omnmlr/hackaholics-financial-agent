@@ -32,6 +32,8 @@ import {
   type TransferData,
 } from "./paystack";
 import { hash } from "./auth";
+import { paymentSimulationSource } from "./financial-integration/service";
+import { reserveSimulation } from "./financial-integration/simulation";
 export function findBatch(s: State, batchId: string, actor: string) {
   const b = s.batches.find((x) => x.id === batchId && x.owner === actor);
   if (!b) throw new AppError("Payment batch not found", 404);
@@ -54,6 +56,7 @@ export async function preparePaymentBatch(
   const values = z.array(instructionSchema).min(1).max(10).parse(input);
   const c = config();
   const b: Batch = {
+    simulationSource: await paymentSimulationSource(actor),
     id: id(),
     owner: actor,
     mode: c.mode,
@@ -551,6 +554,16 @@ async function executeBatchAttempt(
   executionGate(before.mode, (await readState()).emergencyDisabled);
   if (api.mode !== before.mode)
     throw new AppError("Provider environment mismatch", 409);
+  if (before.simulationSource) {
+    const currentSource = await paymentSimulationSource(actor);
+    if (
+      !currentSource ||
+      currentSource.tenantId !== before.simulationSource.tenantId ||
+      currentSource.ownerId !== before.simulationSource.ownerId ||
+      currentSource.accountId !== before.simulationSource.accountId
+    )
+      throw new AppError("Fictional source authorization changed", 403);
+  }
   const balance = await api.balance();
   const claimed = await mutate((s) => {
     const b = findBatch(s, batchId, actor);
@@ -611,6 +624,7 @@ async function executeBatchAttempt(
       p.operationGeneration = (p.operationGeneration ?? 0) + 1;
     });
     b.status = "submitted";
+    reserveSimulation(s, b);
     audit(
       s,
       actor,

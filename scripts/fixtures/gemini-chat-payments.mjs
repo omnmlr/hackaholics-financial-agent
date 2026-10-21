@@ -8,6 +8,60 @@ globalThis.fetch = async (input, init) => {
   if (process.env.AI_API_KEY !== "browser-mock-inference-only")
     throw new Error("Explicit test credential required");
   const prompt = JSON.parse(init.body).contents[0].parts[0].text;
+  const image = JSON.parse(init.body).contents[0].parts.some(
+    (p) => p.inlineData,
+  );
+  const source = prompt.split("\nUser request: ").at(-1);
+  if (image || source === "500 OPay 9812345670")
+    return Response.json({
+      candidates: [
+        {
+          content: {
+            parts: [
+              {
+                text: JSON.stringify({
+                  intent: "prepare",
+                  period: "all",
+                  category: null,
+                  payments: image
+                    ? [
+                        {
+                          name: "Ada",
+                          bankCode: "035",
+                          accountNumber: "0000000001",
+                          amountNaira: "500",
+                          reason: "Payment",
+                          confidence: "low",
+                          warnings: [],
+                        },
+                        {
+                          name: "Chidi",
+                          bankCode: "044",
+                          accountNumber: "0000000002",
+                          amountNaira: "600",
+                          reason: "Payment",
+                          confidence: "low",
+                          warnings: [],
+                        },
+                      ]
+                    : [
+                        {
+                          name: "",
+                          bankCode: "999992",
+                          accountNumber: "9812345670",
+                          amountNaira: "500",
+                          reason: "Payment",
+                          confidence: "low",
+                          warnings: [],
+                        },
+                      ],
+                }),
+              },
+            ],
+          },
+        },
+      ],
+    });
   try {
     const envelope = JSON.parse(prompt);
     if (

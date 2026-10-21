@@ -296,6 +296,7 @@ describe("native model-directed conversation (scripted model)", () => {
   });
   it("exposes financial authoring only after facts and private reads only with selected accounts", () => {
     expect(declarationsForTurn(false, false).map((d) => d.name)).toEqual([
+      "get_payment_status",
       "plan_savings",
       "calculate",
       "request_account",
@@ -492,18 +493,18 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(s.tools.dispatch).not.toHaveBeenCalled();
   });
 
-  it("keeps a verified answer when final prose substitutes an unsupported number", async () => {
+  it("withholds unreviewed arithmetic when final prose substitutes an unsupported number", async () => {
     const s = setup(
       call("calculate", budgetArgs),
       answer("The result is ₦46,000."),
     );
     const reply = await s.agent.turn(s.input);
     expect(reply.kind).toBe("clarify");
-    expect(reply.text).toContain("45,000 naira");
+    expect(reply.text).not.toContain("45,000 naira");
     expect(reply.text).not.toContain("46,000");
   });
 
-  it("keeps verified arithmetic when the provider fails after calculation", async () => {
+  it("withholds unreviewed arithmetic when the provider fails after calculation", async () => {
     const s = setup(
       call("calculate", budgetArgs),
       new AgentError("MODEL_HTTP_429"),
@@ -513,7 +514,7 @@ describe("native model-directed conversation (scripted model)", () => {
       kind: "clarify",
       evidence: { modelCalls: 2, code: "MODEL_HTTP_429" },
     });
-    expect(reply.text).toContain("45,000 naira");
+    expect(reply.text).not.toContain("45,000 naira");
     expect(s.generate).toHaveBeenCalledTimes(2);
   });
 
@@ -670,7 +671,7 @@ describe("native model-directed conversation (scripted model)", () => {
     );
     const reply = await s.agent.turn(s.input);
     expect(reply.kind).toBe("clarify");
-    expect(reply.text).toContain("45,000 naira");
+    expect(reply.text).not.toContain("45,000 naira");
     expect(reply.text).not.toContain("999,999");
     expect(reply.text).not.toContain("transfer");
     expect(reply.text).not.toMatch(/Hypothetical result|150000-80000/);
@@ -689,10 +690,8 @@ describe("native model-directed conversation (scripted model)", () => {
       kind: "clarify",
       evidence: { code: "CALCULATION_INTERPRETATION_UNCERTAIN" },
     });
-    expect(uncertain.text).toContain(
-      "couldn’t confirm that the formula matches",
-    );
-    expect(uncertain.text).toContain("45,000");
+    expect(uncertain.text).toContain("confirm the figures");
+    expect(uncertain.text).not.toContain("45,000");
 
     const badProse = setup(
       call("calculate", budgetArgs),

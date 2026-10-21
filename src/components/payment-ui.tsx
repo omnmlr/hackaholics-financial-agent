@@ -207,7 +207,7 @@ export function PaymentEditor({
             {editing ? "EDIT PAYMENT DETAILS" : "PAYMENT PROPOSAL · UNVERIFIED"}
           </p>
           <h2>
-            {editing ? "Update your instructions" : "Let’s fill in the details"}
+            {editing ? "Update your instructions" : "Review your instructions"}
           </h2>
         </div>
         {onCancel && (
@@ -217,11 +217,18 @@ export function PaymentEditor({
         )}
       </div>
       {sourceRequest && (
-        <p className="request-link">Original request: “{sourceRequest}”</p>
+        <details className="request-link">
+          <summary>Instruction source</summary>
+          <p>
+            {sourceRequest.startsWith("Ephemeral image")
+              ? "Details read from your uploaded image. The image is not retained."
+              : sourceRequest}
+          </p>
+        </details>
       )}
       <p className="muted">
-        Your label is separate from the verified account name. Save, then verify
-        the destination.{" "}
+        Confirm the label, institution, account and amount. Beneficiary
+        verification happens after you save.{" "}
         {editing && "Editing invalidates verification and approval."}
       </p>
       {stale && (
@@ -289,6 +296,16 @@ export function PaymentEditor({
           }
         }}
       >
+        {fixtures.length > 0 && (
+          <details className="micro agus-demo-recipient-help">
+            <summary>Only listed fictional recipients can be verified</summary>
+            <p>
+              An institution such as OPay being listed does not verify arbitrary
+              accounts or real ownership. Keep your draft details, or explicitly
+              choose demo details below to test a simulation.
+            </p>
+          </details>
+        )}
         {rows.map((r, i) => (
           <fieldset className="recipient-form" key={i} disabled={busy}>
             <legend>Recipient {i + 1}</legend>
@@ -688,6 +705,11 @@ export function BatchCard({
               });
             }}
           >
+            <p className="micro">
+              Use your AGUS operator credential. This is separate from any
+              personal bank, Wema or OPay password. Never send a password in
+              chat.
+            </p>
             <label className="checkbox-label">
               <input
                 type="checkbox"

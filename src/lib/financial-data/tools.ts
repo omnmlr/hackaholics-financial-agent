@@ -664,7 +664,11 @@ export function createReadTools(options: {
             );
             if (
               summary.accountId !== b.account.accountId ||
-              summary.simulated !== b.account.simulated
+              summary.simulated !== b.account.simulated ||
+              (summary.simulation &&
+                (b.account.provider !== "fixture" ||
+                  b.account.mode !== "fixture" ||
+                  !b.account.simulated))
             )
               fail("INVALID_PROVIDER_DATA");
             if (
@@ -673,6 +677,7 @@ export function createReadTools(options: {
             )
               fail("INVALID_PROVIDER_DATA");
             const stale =
+              !summary.simulation &&
               summary.asOf !== null &&
               Date.parse(trustedNow(clock)) - Date.parse(summary.asOf) >
                 86400000;

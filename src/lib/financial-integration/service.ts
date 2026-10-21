@@ -13,7 +13,12 @@ import type {
   PermissionContext,
   ReadToolDispatcher,
 } from "../financial-data/contracts";
-import { createDurableRepository, initializeFinancialStorage } from "./storage";
+import {
+  createDurableRepository,
+  initializeFinancialStorage,
+  initializeSimulation,
+} from "./storage";
+import { createAuthorizer } from "../financial-data/permissions";
 
 export const simulation = Object.freeze({
   mode: "fixture",
@@ -45,11 +50,48 @@ export async function financialContext(
   if (!result.rows.length)
     throw new AppError("Financial access unavailable", 403);
   const row = result.rows[0] as { tenant: string; owner: string };
+  await initializeSimulation({ tenantId: row.tenant, actorId: row.owner });
   return {
     tenantId: row.tenant,
     actorId: row.owner,
     requestId: randomUUID(),
     now: new Date().toISOString(),
+  };
+}
+/** Explicit server binding for NEW fixture payment drafts only. The separate
+ * provider wallet remains a provider check, never a personal balance source. */
+export async function paymentSimulationSource(actor: string) {
+  if (
+    process.env.FINANCIAL_DEMO_ENABLED !== "true" ||
+    config().mode !== "fixture"
+  )
+    return undefined;
+  await initializeFinancialStorage();
+  const d = await db();
+  const rows = await d.execute(
+    sql`SELECT tenant, owner FROM fm_principals WHERE operator_id=${actor}`,
+  );
+  if (!rows.rows.length)
+    throw new AppError(
+      "Open the authorized fictional workspace before preparing payments",
+      403,
+    );
+  const p = {
+    tenantId: String(rows.rows[0].tenant),
+    actorId: String(rows.rows[0].owner),
+  };
+  const repository = createDurableRepository();
+  const ctx = { ...p, requestId: randomUUID(), now: new Date().toISOString() };
+  const auth = createAuthorizer(repository, () => ctx.now);
+  // Current demo has one funded source. Never infer a source from user/model IDs.
+  const bindings = await auth.bind(ctx, ["amina-current"], ["accounts:read"]);
+  if (bindings[0].account.provider !== "fixture")
+    throw new AppError("Fictional source unavailable", 403);
+  await initializeSimulation(p);
+  return {
+    tenantId: p.tenantId,
+    ownerId: p.actorId,
+    accountId: bindings[0].account.accountId,
   };
 }
 let dispatcher: ReadToolDispatcher | undefined;

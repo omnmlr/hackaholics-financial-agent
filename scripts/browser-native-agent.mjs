@@ -180,7 +180,9 @@ try {
       "Hypothetical budget is independently calculated and final financial prose reviewed",
     );
 
-    const missing = await send("Show my spending from 2026-10-01 to 2026-11-01");
+    const missing = await send(
+      "Show my spending from 2026-10-01 to 2026-11-01",
+    );
     assert.equal(missing.accountAction, "choose_demo_account");
     await page
       .getByRole("button", { name: "Choose demo account", exact: true })
@@ -230,12 +232,10 @@ try {
     assert.equal(handoff.kind, "handoff");
     assert.equal(handoff.handoff.kind, "existing_payment_draft");
     assert.equal(preparations, 0);
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .click();
     const card = page.locator(".agus-thread .agus-payment").last();
     await card.waitFor();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     const editor = card.getByRole("region", {
       name: "Payment proposal",
       exact: true,
@@ -250,12 +250,8 @@ try {
     await editor.getByText("Changes saved", { exact: true }).waitFor();
     await page.reload();
     await page.locator(".agus-thread .agus-payment").last().waitFor();
-    await page
-      .locator(".agus-thread .agus-payment")
-      .last()
-      .locator("summary")
-      .first()
-      .click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     assert.equal(
       await editor
         .getByLabel("Amount (NGN)", { exact: true })
@@ -263,11 +259,11 @@ try {
         .inputValue(),
       "650",
     );
-    assert.equal(preparations, 1);
+    assert.equal(preparations, 0);
     assert.equal(approvals, 0);
     assert.equal(executions, 0);
     checks.push(
-      "Explicit payment draft remains editable and persists without approval or execution",
+      "Automatic editable payment draft remains non-executing and persists without approval or execution",
     );
     const outage = await send(
       "Simulate an unavailable provider while discussing lizards",

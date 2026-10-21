@@ -5,6 +5,206 @@
   font-weight: 100 900;
   font-display: swap;
 }
+.agus-composer textarea {
+  min-width: 0;
+}
+.agus-attachment {
+  position: relative;
+  flex: 0 0 44px;
+  height: 44px;
+  align-self: flex-end;
+}
+.agus-empty .agus-attachment {
+  align-self: center;
+}
+.agus-workspace .agus-attachment-trigger {
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: #aeb6c2;
+  background: transparent;
+}
+.agus-workspace .agus-attachment-trigger:hover,
+.agus-workspace .agus-attachment-trigger[aria-expanded="true"] {
+  color: #bed8ff;
+  background: #1a2738;
+  border-color: #405b7c;
+}
+.agus-attachment-menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 30;
+  width: 248px;
+  max-width: calc(100vw - 48px);
+  max-height: min(240px, calc(var(--agus-viewport-height, 100dvh) - 120px));
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #3a4554;
+  border-radius: 16px;
+  background: #11161d;
+  box-shadow:
+    0 16px 48px #0009,
+    inset 0 1px 0 #ffffff06;
+}
+.agus-attachment-menu > p {
+  padding: 6px 10px 8px;
+  color: #a7b5c8;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+.agus-workspace .agus-attachment-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #e1e8f2;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+}
+.agus-attachment-menu button > span {
+  text-align: left;
+}
+.agus-attachment-menu button svg {
+  flex-shrink: 0;
+  color: #9ac4ff;
+}
+.agus-attachment-menu small {
+  display: block;
+  margin-top: 2px;
+  color: #a4adba;
+  font-size: 11px;
+}
+.agus-workspace .agus-attachment-menu button:hover,
+.agus-workspace .agus-attachment-menu button:focus-visible {
+  background: #1c293b;
+  border-color: #405b7c;
+}
+.agus-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px solid #30363e;
+  border-radius: 14px;
+  background: #101214;
+  font-size: 12px;
+}
+.agus-image-preview img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.agus-image-preview p {
+  color: #aeb3bb;
+}
+.agus-image-preview > div {
+  flex: 1;
+}
+.agus-payment-outcome {
+  margin: 20px 0 12px;
+  padding: 22px;
+  border: 1px solid #394655;
+  border-radius: 18px;
+  background: #10151a;
+}
+.agus-payment-outcome.is-success {
+  border-color: #517baf;
+  background: #101923;
+}
+.agus-outcome-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #bed7f8;
+  margin-bottom: 10px;
+}
+.agus-payment-outcome p {
+  font-size: 13px;
+  color: #bac0c9;
+  line-height: 1.65;
+}
+.agus-outcome-record {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #303a46;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+}
+.agus-outcome-record > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.agus-outcome-record span,
+.agus-outcome-record small {
+  color: #aeb8c5;
+  font-size: 12px;
+}
+.agus-outcome-record details,
+.agus-outcome-record small {
+  grid-column: 1/-1;
+}
+.agus-outcome-record b {
+  color: #d7e6fa;
+  font-variant-numeric: tabular-nums;
+}
+.agus-safe-reference,
+.agus-payment .payment-reference code {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.agus-simulated-confirmation {
+  border: 1px dashed #7191b8;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+}
+.agus-simulated-confirmation strong {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #bad5f5;
+}
+.agus-simulated-confirmation a,
+.agus-status-record a {
+  color: #a9ceff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.agus-status-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #2c333d;
+}
+.agus-status-record code,
+.agus-status-record a {
+  grid-column: 1/-1;
+}
+.agus-payment-status-result {
+  margin-top: 20px;
+}
+.agus-payment-status-result > small {
+  display: block;
+  color: #aeb6c2;
+  margin-top: 12px;
+}
 /* AGUS: black surfaces, restrained blue interaction, neutral source evidence. */
 .agus-workspace {
   --agus-bg: #070809;
@@ -18,8 +218,11 @@
   container-name: agus-workspace;
   container-type: size;
   display: flex;
+  position: fixed;
+  inset-inline: 0;
+  top: var(--workspace-top, 0px);
   height: var(--workspace-height, 100dvh);
-  margin-top: var(--workspace-top, 0px);
+  margin: 0;
   background: var(--agus-bg);
   color: var(--agus-ink);
   font:
@@ -34,6 +237,11 @@
 }
 .agus-workspace * {
   min-width: 0;
+}
+body:has(.agus-workspace) {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #08090b;
 }
 .agus-workspace ::selection {
   background: #6aa8ff;
@@ -1262,6 +1470,9 @@
 .agus-payment .payment-row {
   grid-template-columns: 24px minmax(0, 1fr);
 }
+.agus-payment .recipient-details {
+  grid-column: 2;
+}
 .agus-payment .payment-value {
   grid-column: 2;
   align-items: flex-start;
@@ -2052,4 +2263,445 @@ body:has(.agus-workspace) {
   font-size: 12px;
   margin: 8px 0;
   line-height: 1.6;
+}
+
+/* Payment details must not inherit the legacy mobile 24px number column. */
+@media (max-width: 600px) {
+  .agus-payment .payment-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .agus-payment .recipient-details,
+  .agus-payment .payment-value {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    max-width: none;
+  }
+  .agus-payment .payment-value {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  .agus-outcome-record {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agus-outcome-record > b {
+    grid-row: 2;
+  }
+}
+
+/* Conversation workbench. The approved welcome retains its own composition. */
+.agus-active {
+  --agus-bg: #08090b;
+}
+.agus-active .agus-main {
+  background: #08090b;
+}
+.agus-active .agus-financial-backdrop {
+  opacity: 0.13;
+}
+.agus-active .agus-sidebar {
+  width: 232px;
+  background: #0c0d10;
+  border-color: #22262c;
+  padding: 26px 16px 18px;
+}
+.agus-active .agus-header {
+  height: 78px;
+  min-height: 78px;
+  border-color: #22262c;
+}
+.agus-active .agus-scroll {
+  padding: 38px 36px 24px;
+}
+.agus-active .agus-thread {
+  max-width: 760px;
+}
+.agus-active .agus-composer-area {
+  width: calc(100% - 72px);
+  max-width: 760px;
+}
+.agus-active .agus-active-scope {
+  width: calc(100% - 72px);
+  max-width: 760px;
+  margin-top: 18px;
+}
+.agus-active .agus-turn {
+  margin-bottom: 46px;
+}
+.agus-active .agus-user-message {
+  border-radius: 18px 18px 4px 18px;
+  background: #16191e;
+  border-color: #2b3038;
+  padding: 13px 19px;
+  max-width: 86%;
+}
+.agus-active .agus-assistant-message {
+  padding-top: 24px;
+}
+.agus-active .agus-response-heading {
+  margin-bottom: 18px;
+  gap: 12px;
+}
+.agus-active .agus-prose {
+  font-size: 15px;
+  line-height: 1.85;
+  color: #e0e3e9;
+}
+.agus-active .agus-result {
+  background: #101216;
+  border-color: #2b3038;
+  border-radius: 16px;
+}
+.agus-active .agus-result-header {
+  padding: 16px 20px;
+}
+.agus-active .agus-response-time {
+  color: #929ca9;
+}
+.agus-context-workspace {
+  flex: 0 0 clamp(280px, 22vw, 340px);
+  width: clamp(280px, 22vw, 340px);
+  padding: 32px 22px;
+  background: #0e1013;
+  border-left: 1px solid #252a32;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #353e4a transparent;
+  z-index: 1;
+  animation: agus-context-in 240ms ease both;
+}
+.agus-context-workspace > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+}
+.agus-context-workspace > header > div > span {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #919ead;
+}
+.agus-context-workspace h2 {
+  font-size: 32px;
+  font-weight: 450;
+  letter-spacing: -1.3px;
+  margin-top: 8px;
+}
+.agus-context-workspace h2 span {
+  color: #83b9ff;
+}
+.agus-context-intro {
+  color: #9ca6b3;
+  font-size: 12px;
+  margin: 14px 0 30px;
+}
+.agus-context-workspace .agus-icon-button {
+  border: 1px solid #2a313b;
+  background: #15191e;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+.agus-savings-plan {
+  margin: 24px 0;
+  padding: 24px;
+  border: 1px solid #343e4c;
+  border-radius: 18px;
+  background: #11161d;
+}
+.agus-plan-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+}
+.agus-plan-topline > span,
+.agus-panel-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: #b9cce5;
+}
+.agus-plan-topline small {
+  font-size: 10px;
+  color: #9aa8ba;
+  text-align: right;
+}
+.agus-goal-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 28px 0 18px;
+}
+.agus-goal-amount small {
+  font-size: 12px;
+  color: #a4afbd;
+}
+.agus-goal-amount strong {
+  font-size: clamp(27px, 2.5vw, 38px);
+  letter-spacing: -1.2px;
+  line-height: 1.2;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.agus-savings-plan progress {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #2a3443;
+  accent-color: #76adf4;
+}
+.agus-savings-plan progress::-webkit-progress-bar {
+  background: #2a3443;
+}
+.agus-savings-plan progress::-webkit-progress-value {
+  background: #76adf4;
+  border-radius: 4px;
+}
+.agus-savings-plan progress::-moz-progress-bar {
+  background: #76adf4;
+}
+.agus-plan-figures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0;
+}
+.agus-plan-figures dt {
+  color: #a8b3c2;
+  font-size: 11px;
+  margin-bottom: 5px;
+}
+.agus-plan-figures dd {
+  margin: 0;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.agus-plan-timeline {
+  border-top: 1px solid #2d3744;
+  padding-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #a8ccff;
+}
+.agus-plan-timeline > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.agus-plan-timeline strong {
+  color: #e3edfb;
+  font-size: 15px;
+}
+.agus-plan-timeline span {
+  color: #b3bfd0;
+  font-size: 12px;
+}
+.agus-workspace .agus-plan-assumption {
+  font-size: 11px;
+  color: #a4b0c0;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+.agus-savings-plan.is-compact {
+  margin: 0;
+  padding: 20px 0;
+  border: 0;
+  border-block: 1px solid #2b333e;
+  border-radius: 0;
+  background: transparent;
+}
+.agus-savings-plan.is-compact .agus-plan-topline {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 8px;
+}
+.agus-savings-plan.is-compact .agus-goal-amount strong {
+  font-size: 30px;
+}
+.agus-savings-plan.is-compact .agus-plan-figures {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+.agus-savings-plan.is-compact .agus-plan-figures > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.agus-savings-plan.is-compact .agus-plan-figures dd {
+  font-size: 16px;
+}
+.agus-focus-source,
+.agus-focus-payment {
+  padding: 24px 0;
+  border-block: 1px solid #2b333e;
+}
+.agus-focus-source > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 24px 0;
+}
+.agus-focus-source > div > span {
+  font-size: 12px;
+  color: #a8b5c7;
+}
+.agus-focus-source > div > strong {
+  font-size: 26px;
+  font-weight: 450;
+  letter-spacing: -0.8px;
+  font-variant-numeric: tabular-nums;
+}
+.agus-focus-source > small,
+.agus-focus-payment > small {
+  color: #9eabba;
+  font-size: 11px;
+}
+.agus-focus-payment h3 {
+  margin-top: 18px;
+  font-size: 30px;
+  font-weight: 450;
+  letter-spacing: -0.9px;
+}
+.agus-focus-payment p {
+  color: #a4b1c2;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.agus-focus-payment > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 5px 12px;
+  padding: 18px 0;
+  border-bottom: 1px solid #29323e;
+}
+.agus-focus-payment > div strong {
+  font-size: 12px;
+}
+.agus-focus-payment > div span {
+  font-size: 12px;
+  color: #c1d5ee;
+}
+.agus-focus-payment > div small {
+  grid-column: 1/-1;
+  color: #a0afc2;
+}
+.agus-focus-payment > button {
+  width: 100%;
+  border: 1px solid #384a61;
+  background: #16202e;
+  color: #bfdaff;
+  margin: 20px 0 14px;
+  font-size: 12px;
+}
+.agus-context-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  border-top: 1px solid #232b35;
+  padding-top: 20px;
+  margin-top: 32px;
+}
+.agus-context-footnote > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #77a5e0;
+  margin-top: 7px;
+  flex-shrink: 0;
+}
+.agus-context-footnote p {
+  color: #99a6b8;
+  font-size: 11px;
+  line-height: 1.8;
+}
+@keyframes agus-context-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@media (max-width: 1279px) {
+  .agus-context-workspace {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .agus-active .agus-scroll {
+    padding: 22px 16px 16px;
+  }
+  .agus-active .agus-composer-area,
+  .agus-active .agus-active-scope {
+    width: calc(100% - 24px);
+  }
+  .agus-active .agus-header {
+    height: 64px;
+    min-height: 64px;
+  }
+  .agus-active .agus-user-message {
+    max-width: 94%;
+    padding: 11px 15px;
+  }
+  .agus-active .agus-turn {
+    margin-bottom: 34px;
+  }
+  .agus-active .agus-prose {
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .agus-savings-plan {
+    padding: 18px;
+  }
+  .agus-plan-topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .agus-goal-amount strong {
+    font-size: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .agus-context-workspace {
+    animation: none;
+  }
+}
+.agus-balance-empty {
+  padding: 20px;
+  font-size: 14px;
+  color: #c2ccd9;
+  line-height: 1.8;
+}
+
+/* Top-layer forms use the same visible area as the fixed conversation shell. */
+.agus-dialog {
+  max-height: calc(var(--workspace-height, 100dvh) - 32px);
+}
+@media (max-width: 600px) {
+  .agus-dialog:not(.agus-drawer) {
+    top: calc(var(--workspace-top, 0px) + 8px);
+    bottom: auto;
+    margin-block: 0;
+    max-height: calc(var(--workspace-height, 100dvh) - 16px);
+  }
+  .agus-drawer {
+    top: var(--workspace-top, 0px);
+    height: var(--workspace-height, 100dvh);
+    max-height: var(--workspace-height, 100dvh);
+  }
 }

@@ -431,6 +431,7 @@ export function createFixtureDataSource(options: {
       };
       summary = parseProvider(AccountSummarySchema, summary);
       if (
+        !summary.simulation &&
         summary.asOf &&
         Date.parse(trustedNow(clock)) - Date.parse(summary.asOf) > 86400000
       )

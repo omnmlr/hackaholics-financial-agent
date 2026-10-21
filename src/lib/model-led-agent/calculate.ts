@@ -205,6 +205,19 @@ export function planSavings(raw: unknown, id: string): Calculation {
     },
     id,
   );
+  // Independent integer-rational check, separate from the expression parser.
+  const inputs = [args.target, args.startingAmount, args.contribution].map(
+    (n) => new D(n),
+  );
+  const places = Math.max(...inputs.map((n) => n.decimalPlaces()));
+  if (places > 20) throw new AgentError("CALCULATION_RANGE");
+  const scale = new D(10).pow(places);
+  const [target, starting, deposit] = inputs.map((n) =>
+    BigInt(n.mul(scale).toFixed(0)),
+  );
+  const remaining = target > starting ? target - starting : 0n;
+  if (BigInt(result.value) !== (remaining + deposit - 1n) / deposit)
+    throw new AgentError("CALCULATION_MISMATCH");
   return { ...result, savings: args };
 }
 

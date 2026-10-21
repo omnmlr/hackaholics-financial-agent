@@ -415,7 +415,10 @@ try {
       "if i saved 10k every week, how long until i become a millionaire 👀🥲",
     );
     assert.equal(savings.reply.kind, "general");
-    assert.match(savings.reply.text, /100 weeks, roughly 1 year and 11 months/);
+    assert.match(
+      savings.reply.text,
+      /100 weeks \(roughly 1 year and 11 months\)/,
+    );
     assert.doesNotMatch(savings.reply.text, /Hypothetical|ceil\(/);
     await capture("savings");
     assert.equal(
@@ -535,13 +538,10 @@ try {
     await send(
       "Prepare 500 to Ada at Wema account 0000000001 for Lunch and 600 to Chidi at Access account 0000000002 for Books",
     );
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .last()
-      .click();
     const card = page.locator(".agus-thread .agus-payment").last();
     await card.waitFor();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     await card.getByLabel("Amount (NGN)", { exact: true }).first().waitFor();
     await capture("payment-draft");
     await axe("payment-draft");

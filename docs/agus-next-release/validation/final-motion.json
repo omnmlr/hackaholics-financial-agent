@@ -1,0 +1,289 @@
+{
+  "model": "scripted transport; zero genuine calls",
+  "results": [
+    {
+      "width": 1440,
+      "checks": [
+        "All three existing blue points visibly travel along the existing curves",
+        "Visibility event pauses and resumes decorative SVG motion (simulated page visibility)",
+        "Reduced motion removes SVG travel and CSS animation; static approved points remain",
+        "Savings answers use verified time units, follow-up corrections and persisted dialogue",
+        "Reviewed Ada narration, fresh candidate detail and explicit credit boundary; technical evidence disclosed once"
+      ],
+      "beforeMotion": [
+        {
+          "x": 238.09951417183763,
+          "y": 660.468690326946
+        },
+        {
+          "x": 432.47670150829845,
+          "y": 765.6956347344911
+        },
+        {
+          "x": 1282.0822041342703,
+          "y": 179.36734109325184
+        }
+      ],
+      "afterMotion": [
+        {
+          "x": 282.8850967918287,
+          "y": 681.4427309917972
+        },
+        {
+          "x": 479.62371388120516,
+          "y": 776.2149563504582
+        },
+        {
+          "x": 1317.7466638008375,
+          "y": 142.33336818585613
+        }
+      ],
+      "frameSample": {
+        "cpuThrottle": 1,
+        "performanceDelta": {
+          "TaskDuration": 0.14718,
+          "ScriptDuration": 0.002853,
+          "LayoutCount": 91,
+          "RecalcStyleCount": 91
+        },
+        "frames": 90,
+        "p95Ms": 50,
+        "over50ms": 1
+      },
+      "accessibility": [
+        {
+          "state": "welcome-reduced-motion",
+          "violations": []
+        },
+        {
+          "state": "financial",
+          "violations": []
+        },
+        {
+          "state": "processing",
+          "violations": []
+        },
+        {
+          "state": "payment-draft",
+          "violations": []
+        }
+      ],
+      "approvalCalls": 0,
+      "executionCalls": 0,
+      "errors": []
+    },
+    {
+      "width": 820,
+      "checks": [
+        "All three existing blue points visibly travel along the existing curves",
+        "Visibility event pauses and resumes decorative SVG motion (simulated page visibility)",
+        "Reduced motion removes SVG travel and CSS animation; static approved points remain",
+        "Savings answers use verified time units, follow-up corrections and persisted dialogue",
+        "Reviewed Ada narration, fresh candidate detail and explicit credit boundary; technical evidence disclosed once"
+      ],
+      "beforeMotion": [
+        {
+          "x": 133.5083022414212,
+          "y": 659.0686437300743
+        },
+        {
+          "x": 244.08336037083677,
+          "y": 764.8179868075849
+        },
+        {
+          "x": 728.4280059668436,
+          "y": 182.44958405286928
+        }
+      ],
+      "afterMotion": [
+        {
+          "x": 159.03009150016823,
+          "y": 679.4746877283143
+        },
+        {
+          "x": 270.96773795533977,
+          "y": 775.3520969630047
+        },
+        {
+          "x": 748.7613002649334,
+          "y": 145.19678292188328
+        }
+      ],
+      "frameSample": {
+        "cpuThrottle": 1,
+        "performanceDelta": {
+          "TaskDuration": 0.094792,
+          "ScriptDuration": 0.002673,
+          "LayoutCount": 91,
+          "RecalcStyleCount": 91
+        },
+        "frames": 90,
+        "p95Ms": 16.700000000000273,
+        "over50ms": 0
+      },
+      "accessibility": [
+        {
+          "state": "welcome-reduced-motion",
+          "violations": []
+        },
+        {
+          "state": "financial",
+          "violations": []
+        },
+        {
+          "state": "processing",
+          "violations": []
+        },
+        {
+          "state": "payment-draft",
+          "violations": []
+        }
+      ],
+      "approvalCalls": 0,
+      "executionCalls": 0,
+      "errors": []
+    },
+    {
+      "width": 390,
+      "checks": [
+        "All three existing blue points visibly travel along the existing curves",
+        "Visibility event pauses and resumes decorative SVG motion (simulated page visibility)",
+        "Reduced motion removes SVG travel and CSS animation; static approved points remain",
+        "Savings answers use verified time units, follow-up corrections and persisted dialogue",
+        "Reviewed Ada narration, fresh candidate detail and explicit credit boundary; technical evidence disclosed once"
+      ],
+      "beforeMotion": [
+        {
+          "x": 114.74037152158016,
+          "y": 556.5453899193013
+        },
+        {
+          "x": 209.42503743878962,
+          "y": 645.6981474889579
+        },
+        {
+          "x": 623.9610769463497,
+          "y": 153.3304990794783
+        }
+      ],
+      "afterMotion": [
+        {
+          "x": 135.72200873708042,
+          "y": 573.0837967940522
+        },
+        {
+          "x": 231.51503779215105,
+          "y": 654.2141074364041
+        },
+        {
+          "x": 640.666874351684,
+          "y": 123.15086405284853
+        }
+      ],
+      "frameSample": {
+        "cpuThrottle": 4,
+        "performanceDelta": {
+          "TaskDuration": 0.33060999999999996,
+          "ScriptDuration": 0.031398,
+          "LayoutCount": 91,
+          "RecalcStyleCount": 91
+        },
+        "frames": 90,
+        "p95Ms": 16.799999999999727,
+        "over50ms": 0
+      },
+      "accessibility": [
+        {
+          "state": "welcome-reduced-motion",
+          "violations": []
+        },
+        {
+          "state": "financial",
+          "violations": []
+        },
+        {
+          "state": "processing",
+          "violations": []
+        },
+        {
+          "state": "payment-draft",
+          "violations": []
+        }
+      ],
+      "approvalCalls": 0,
+      "executionCalls": 0,
+      "errors": []
+    },
+    {
+      "width": 320,
+      "checks": [
+        "All three existing blue points visibly travel along the existing curves",
+        "Visibility event pauses and resumes decorative SVG motion (simulated page visibility)",
+        "Reduced motion removes SVG travel and CSS animation; static approved points remain",
+        "Savings answers use verified time units, follow-up corrections and persisted dialogue",
+        "Reviewed Ada narration, fresh candidate detail and explicit credit boundary; technical evidence disclosed once"
+      ],
+      "beforeMotion": [
+        {
+          "x": 93.78195672286185,
+          "y": 556.2543732565091
+        },
+        {
+          "x": 171.45423473011365,
+          "y": 645.5066545833057
+        },
+        {
+          "x": 511.6766783791866,
+          "y": 153.9865183004284
+        }
+      ],
+      "afterMotion": [
+        {
+          "x": 111.2448672061902,
+          "y": 572.9522480655553
+        },
+        {
+          "x": 189.83332087320576,
+          "y": 654.1520282611584
+        },
+        {
+          "x": 525.5789987664474,
+          "y": 123.3564807920223
+        }
+      ],
+      "frameSample": {
+        "cpuThrottle": 1,
+        "performanceDelta": {
+          "TaskDuration": 0.077578,
+          "ScriptDuration": 0.002442,
+          "LayoutCount": 91,
+          "RecalcStyleCount": 91
+        },
+        "frames": 90,
+        "p95Ms": 16.799999999999727,
+        "over50ms": 0
+      },
+      "accessibility": [
+        {
+          "state": "welcome-reduced-motion",
+          "violations": []
+        },
+        {
+          "state": "financial",
+          "violations": []
+        },
+        {
+          "state": "processing",
+          "violations": []
+        },
+        {
+          "state": "payment-draft",
+          "violations": []
+        }
+      ],
+      "approvalCalls": 0,
+      "executionCalls": 0,
+      "errors": []
+    }
+  ]
+}

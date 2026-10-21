@@ -1,5 +1,48 @@
 import { z } from "zod";
 
+export const SavingsPresentationSchema = z.object({
+  target: z.number().positive().max(1e12),
+  startingAmount: z.number().nonnegative().max(1e12),
+  contribution: z.number().positive().max(1e12),
+  cadence: z.enum(["days", "weeks", "months", "years"]),
+  periods: z.number().int().nonnegative().safe(),
+  duration: z.string().max(100).optional(),
+  source: z
+    .object({
+      accountId: z.string().max(128),
+      field: z.enum(["available", "current"]),
+      asOf: z.iso.datetime(),
+      simulated: z.boolean(),
+    })
+    .optional(),
+});
+export type SavingsPresentation = z.infer<typeof SavingsPresentationSchema>;
+
+export const PaymentPresentationSchema = z.object({
+  asOf: z.iso.datetime(),
+  scope: z.string().max(120),
+  totalSuccessfulKobo: z.number().int().nonnegative().safe(),
+  records: z
+    .array(
+      z.object({
+        batchId: z.uuid(),
+        paymentId: z.uuid(),
+        reference: z.string().max(100),
+        label: z.string().max(100),
+        verifiedName: z.string().max(100).nullable(),
+        institution: z.string().max(150),
+        amountKobo: z.number().int().positive().safe(),
+        feeKobo: z.number().int().nonnegative().safe().nullable(),
+        status: z.string().max(50),
+        mode: z.enum(["fixture", "test", "live"]),
+        recordedAt: z.iso.datetime(),
+        canConfirm: z.boolean(),
+      }),
+    )
+    .max(100),
+});
+export type PaymentPresentation = z.infer<typeof PaymentPresentationSchema>;
+
 const Metric = z.object({
   label: z.string().min(1),
   value: z.string().regex(/^(?:-?₦[\d,]+\.\d{2}|Unavailable)$/),
@@ -38,6 +81,7 @@ export const FinancialPresentationSchema = z.object({
           ),
           asOf: z.string().datetime(),
           coverage: z.string(),
+          balanceUnavailable: z.enum(["stale", "not_provided"]).optional(),
           originalText: z.string(),
         })
         .refine(

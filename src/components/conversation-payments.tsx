@@ -6,6 +6,7 @@ import {
   type ExecutionAttempt,
 } from "./payment-recovery";
 import type { Message } from "@/lib/domain";
+import { PaymentOutcome } from "./payment-outcome";
 import {
   BatchCard,
   PaymentEditor,
@@ -237,7 +238,9 @@ export function NativePayment({
   recover?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(
+    !!message?.proposals?.length && !message.batchId,
+  );
   const { snapshot: s } = c;
   if (!s) return null;
   const batch = directBatch ?? s.batches.find((b) => b.id === message?.batchId);
@@ -259,6 +262,13 @@ export function NativePayment({
         amountNaira: p.amountNaira ?? "",
       }));
   if (!batch && !rows.length) return null;
+  if (!directBatch && message?.supersededBy)
+    return (
+      <p className="agus-history-note">
+        This draft was updated later in the conversation. Review the latest
+        payment card.
+      </p>
+    );
   const common = {
     banks: c.banks,
     bankError: c.bankError,
@@ -270,80 +280,96 @@ export function NativePayment({
     maxBatchKobo: s.maxBatchKobo,
   };
   return (
-    <details
-      className="agus-payment"
-      open={expanded}
-      onToggle={(e) => {
-        const card = e.currentTarget;
-        setExpanded(card.open);
-        if (card.open)
-          requestAnimationFrame(() => {
-            const container = card.closest<HTMLElement>(".agus-scroll, dialog");
-            if (container)
-              container.scrollTop +=
-                card.getBoundingClientRect().top -
-                container.getBoundingClientRect().top -
-                (container.tagName === "DIALOG" ? 80 : 8);
-          });
-      }}
-    >
-      <summary>
-        <span className="agus-payment-symbol">
-          <Wallet size={18} />
-        </span>
-        <span className="agus-payment-summary-title">
-          {s.mode === "fixture" ? "Simulated payment" : "Payment"} ·{" "}
-          {batch
-            ? money(batch.payments.reduce((n, p) => n + p.amountKobo, 0))
-            : "Editable draft"}
-          <small>
+    <>
+      {batch && (
+        <PaymentOutcome
+          batch={batch}
+          banks={c.banks}
+          busy={c.busy}
+          check={() =>
+            void run(`reconcile-${batch.id}`, () =>
+              paymentApi(`batches/${batch.id}/reconcile`, {}),
+            )
+          }
+        />
+      )}
+      <details
+        className="agus-payment"
+        open={expanded}
+        onToggle={(e) => {
+          const card = e.currentTarget;
+          setExpanded(card.open);
+          if (card.open)
+            requestAnimationFrame(() => {
+              const container = card.closest<HTMLElement>(
+                ".agus-scroll, dialog",
+              );
+              if (container)
+                container.scrollTop +=
+                  card.getBoundingClientRect().top -
+                  container.getBoundingClientRect().top -
+                  (container.tagName === "DIALOG" ? 80 : 8);
+            });
+        }}
+      >
+        <summary>
+          <span className="agus-payment-symbol">
+            <Wallet size={18} />
+          </span>
+          <span className="agus-payment-summary-title">
+            {s.mode === "fixture" ? "Simulated payment" : "Payment"} ·{" "}
             {batch
-              ? batch.status.replaceAll("_", " ")
-              : `${rows.length} recipient${rows.length === 1 ? "" : "s"} · Unverified`}
-          </small>
-        </span>
-        <ChevronDown size={16} className="agus-payment-chevron" />
-      </summary>
-      <div className="agus-payment-body">
-        <PaymentNotice controller={c} scope={scope} recover={recover} />
-        {batch && !editing ? (
-          <BatchCard
-            key={batch.reviewDigest}
-            batch={batch}
-            banks={c.banks}
-            busy={c.busy}
-            editing={false}
-            run={run}
-            edit={() => setEditing(true)}
-            mode={s.mode}
-            stopped={s.emergencyDisabled}
-          />
-        ) : (
-          <PaymentEditor
-            key={batch ? `${batch.id}:${batch.version}` : message?.id}
-            {...common}
-            initialRows={rows}
-            editing={!!batch}
-            sourceMessageId={batch ? undefined : message?.id}
-            sourceRequest={message?.sourceRequest}
-            onCancel={batch ? () => setEditing(false) : undefined}
-            onSave={(payments) =>
-              run("save", async () => {
-                await paymentApi(
-                  batch ? `batches/${batch.id}/edit` : "batches",
-                  {
-                    payments,
-                    ...(batch
-                      ? { expectedVersion: batch.version }
-                      : { sourceMessageId: message?.id }),
-                  },
-                );
-                setEditing(false);
-              })
-            }
-          />
-        )}
-      </div>
-    </details>
+              ? money(batch.payments.reduce((n, p) => n + p.amountKobo, 0))
+              : "Editable draft"}
+            <small>
+              {batch
+                ? batch.status.replaceAll("_", " ")
+                : `${rows.length} recipient${rows.length === 1 ? "" : "s"} · Unverified`}
+            </small>
+          </span>
+          <ChevronDown size={16} className="agus-payment-chevron" />
+        </summary>
+        <div className="agus-payment-body">
+          <PaymentNotice controller={c} scope={scope} recover={recover} />
+          {batch && !editing ? (
+            <BatchCard
+              key={batch.reviewDigest}
+              batch={batch}
+              banks={c.banks}
+              busy={c.busy}
+              editing={false}
+              run={run}
+              edit={() => setEditing(true)}
+              mode={s.mode}
+              stopped={s.emergencyDisabled}
+            />
+          ) : (
+            <PaymentEditor
+              key={batch ? `${batch.id}:${batch.version}` : message?.id}
+              {...common}
+              initialRows={rows}
+              editing={!!batch}
+              sourceMessageId={batch ? undefined : message?.id}
+              sourceRequest={message?.sourceRequest}
+              onCancel={batch ? () => setEditing(false) : undefined}
+              onSave={(payments) =>
+                run("save", async () => {
+                  await paymentApi(
+                    batch ? `batches/${batch.id}/edit` : "batches",
+                    {
+                      payments,
+                      ...(batch
+                        ? { expectedVersion: batch.version }
+                        : { sourceMessageId: message?.id }),
+                    },
+                  );
+                  setEditing(false);
+                })
+              }
+            />
+          )}
+        </div>
+      </details>
+    </>
   );
 }

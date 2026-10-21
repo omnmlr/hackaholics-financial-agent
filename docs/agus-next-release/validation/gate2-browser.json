@@ -1,0 +1,61 @@
+{
+  "transport": "scripted Gemini; zero genuine provider or bank requests",
+  "widths": [
+    {
+      "width": 1440,
+      "checks": 16,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nCurrent fictional simulation from an opening snapshot and authorized changes. Historical transactions are outside balance reconciliation; no bank refresh.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 9bb56b4a-c0d5-45fe-82fc-2fd8a8f46ff1: fixture/fixture; as of 2026-10-21T13:36:01.383Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ]
+    },
+    {
+      "width": 820,
+      "checks": 16,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nCurrent fictional simulation from an opening snapshot and authorized changes. Historical transactions are outside balance reconciliation; no bank refresh.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 1c5d0c76-d16c-4e59-b678-d6d2f1028362: fixture/fixture; as of 2026-10-21T13:36:07.469Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ]
+    },
+    {
+      "width": 390,
+      "checks": 16,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nCurrent fictional simulation from an opening snapshot and authorized changes. Historical transactions are outside balance reconciliation; no bank refresh.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source bb129307-13a5-47ae-96dc-a88aba7fd262: fixture/fixture; as of 2026-10-21T13:36:13.808Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ]
+    },
+    {
+      "width": 320,
+      "checks": 16,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nCurrent fictional simulation from an opening snapshot and authorized changes. Historical transactions are outside balance reconciliation; no bank refresh.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 4e890432-bf8c-4a86-8598-e6e96d512b04: fixture/fixture; as of 2026-10-21T13:36:19.436Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ]
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 # Same-task continuation
 
-Status: **implementation and validation complete; draft PR delivery in progress**.
+Status: **complete — implemented, validated and delivered as draft PR #41**.
 
 Repository: `omnmlr/hackaholics-financial-agent`  
 Branch: `ui/agus-premium-experience-20261020`  
 Base: PR #40, `release/agus-railway-ready-20261020`, commit `c2117ed643790950b6f4af7210e707831fab54db`.
 
-The original premium redesign has been implemented and validated. Preserve this work; do not start a competing redesign. [README.md](README.md) describes the design language, repaired UX issues, screenshot gallery and practical limits. [validation.txt](validation.txt) records the final checks. The only remaining delivery step is committing/pushing this UI branch and creating its draft PR against the release base, then recording that PR here and marking this handoff complete.
+The original premium redesign has been implemented and validated. Preserve this work; do not start a competing redesign. [README.md](README.md) describes the design language, repaired UX issues, screenshot gallery and practical limits. [validation.txt](validation.txt) records the final checks. Delivery: [draft PR #41](https://github.com/omnmlr/hackaholics-financial-agent/pull/41), targeting the PR #40 release base. Implementation commit: `56f5e02e0b4699e24c8d804846eb64c05847fe72`; the following documentation-only commit records final delivery. The PR is attached to this same Codex chat. Nothing was merged or deployed.
 
 ## Implemented
 

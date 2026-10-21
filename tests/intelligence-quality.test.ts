@@ -312,10 +312,10 @@ describe("savings semantics and verified calendar narration", () => {
       text: "I already have ₦200k; saving ₦10k weekly, how long to ₦1 million?",
     });
     expect(r.kind).toBe("clarify");
-    expect(r.evidence.code).toBe("CALCULATION_INTERPRETATION_UNCERTAIN");
+    expect(r.evidence.code).toBe("CALCULATION_QUANTITY_MISMATCH");
     expect(r.text).not.toContain("1000000/10000");
   });
-  it("does not assert a savings plan as confirmed if review is unavailable", async () => {
+  it("does not compute invented savings figures for an unrelated question", async () => {
     let step = 0;
     const s = fixture(async () => {
       if (step++ === 0)
@@ -329,7 +329,8 @@ describe("savings semantics and verified calendar narration", () => {
     });
     const r = await s.agent.turn(s.input);
     expect(r.kind).toBe("clarify");
-    expect(r.text).toContain("couldn’t confirm");
+    expect(r.evidence.code).toBe("SAVINGS_QUANTITIES_REQUIRED");
+    expect(r.text).toContain("savings target");
     expect(r.text).not.toMatch(/you’ll reach|ceil\(/);
   });
   it("does not permit an unsupported conversion or changed result", () => {

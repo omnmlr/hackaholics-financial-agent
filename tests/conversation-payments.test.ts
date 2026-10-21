@@ -18,6 +18,7 @@ import {
   reconcileBatch,
 } from "../src/lib/payments";
 import { FixtureProvider } from "../src/lib/paystack";
+import { financialContext } from "../src/lib/financial-integration/service";
 vi.mock("../src/lib/intelligence", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   extractConversationPayment: vi.fn(),
@@ -63,6 +64,11 @@ beforeEach(async () => {
     .mockReset()
     .mockResolvedValue(proposals);
   await mutate((s) => Object.assign(s, seedState()));
+  await financialContext(
+    new Request(`${origin}/api/financial-agent`, {
+      headers: { cookie: `ha_session=${token}` },
+    }),
+  );
 });
 afterEach(() => vi.restoreAllMocks());
 async function savedTurn(handoff = true) {

@@ -2,7 +2,17 @@
 
 Baseline: PR #42 head `ca9994b8c0dedb0ba02e50b9d00308e96a28d277` (verified through GitHub and fetched). Branch: `improve/agus-banking-workspace-20261021`; intended PR base: `improve/agus-intelligence-motion-20261021`. PRs #41/#42 are still draft/open, despite their releases being deployed. Never use the older workspace `work` branch as a baseline.
 
-## PAUSED at owner request: Phase 1 complete; Phase 2 core checkpoint
+## Resumed October 21: revised integrated mission
+
+Owner explicitly resumed development and expanded the mission. Preserve `98d867d`/`2b8a23e`; the earlier pause is superseded. Work sequentially: (1) close financial-intelligence acceptance; (2) text/image/voice → unified editable payment drafts; (3) persisted outcome feedback, current payment enquiries and unmistakably simulated confirmations; (4) premium desktop conversation workspace; (5) mobile/browser/keyboard repair; (6) integrated release-candidate verification and one PR. Never merge, deploy or touch production.
+
+Resume audit: branch and tree verified clean at `2b8a23e`; 28 changed files relative to exact PR #42. No unfinished experiments. PR #42 remains open/draft with unchanged head. Current environment has no configured development provider/database secrets. Existing `/api/extract` validates signatures and invokes the same structured extractor but needs decoded-image resource checks, ephemeral image handling, scoped idempotent chat linkage and composer controls. Text `groundProposal` drops a correctly extracted bare amount before institution/account. Existing native payment cards share verification/approval/submission/reconciliation infrastructure but hide outcomes in details; native agent has no payment-state read tool. Voice already feeds transcribed text through the common composer.
+
+Next gate: full checkpoint regression, build and browser savings acceptance. Then implement multimodal preparation; do not duplicate payment execution.
+
+Resume Gate 1 passed: production build/typecheck/lint; 70 targeted regression tests across four files; 32 actual browser checks across 1440/820/390/320, four axe scans with zero violations/page errors, persistence after reload, 100→88→44 weekly deposits, zero reset→50 and 5h daily→2,000. Actual captures and final wording: screenshots/workflows.json. All model transport is scripted; no genuine provider calls. Full initial checkpoint regression found 1,229 passing/three failing tests: one needed explicit source-authorization setup and two asserted obsolete unsafe-fallback diagnostics. Repaired tests retain denial assertions and now verify earlier quantity rejection. Final full suite will rerun at Gate 6. Removed a misleading unavailable-AI label from deterministic savings and a coverage warning where no coverage contract applies. No safety boundary relaxed. Proceed to Gate 2 text/image/voice preparation.
+
+## Historical pause checkpoint
 
 The owner changed priorities during Phase 2: finish the current safe unit, run focused checks, commit/push, and pause for competitive-strategy reassessment. **Do not start desktop redesign, mobile overhaul or another major phase without further owner authorization.** No UI implementation has started. Reviewing an existing baseline screenshot did not change the UI.
 

@@ -282,7 +282,7 @@ function present(
     coverage: result.meta.coverage?.state ?? "not supplied",
     originalText,
   };
-  if (value.coverage !== "complete")
+  if (result.meta.coverage && value.coverage !== "complete")
     value.limits.push(
       value.coverage === "not supplied"
         ? "Coverage not supplied"

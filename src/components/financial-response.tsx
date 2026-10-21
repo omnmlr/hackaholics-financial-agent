@@ -82,7 +82,7 @@ export function FinancialResponse({
             <p key={i}>{p}</p>
           ))}
       </div>
-      {presentation.narration === "factual_fallback" && (
+      {presentation.narration === "factual_fallback" && !reply.savings && (
         <p className="agus-fallback">
           Source summary · AI explanation unavailable
         </p>

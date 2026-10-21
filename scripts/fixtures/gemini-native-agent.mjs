@@ -68,6 +68,15 @@ globalThis.fetch = async (input, init) => {
       throw new Error("Native model content/signature was not preserved");
     const tool = toolResponses.at(-1).functionResponse;
     const output = tool.response.output;
+    if (tool.name === "get_account_summary")
+      return call("present_financial", {
+        paragraphs: [
+          {
+            resultIds: [output.result.resultId],
+            text: "The available source details are shown below.",
+          },
+        ],
+      });
     if (tool.name === "plan_savings")
       return say(
         `Saving ₦${output.savings.contribution.toLocaleString("en-NG")} weekly, you’ll reach ₦1,000,000 in {{c1}} weeks${output.duration ? `, ${output.duration.text}` : ""}. That assumes consistent end-of-week deposits, no interest, fees or withdrawals.`,
@@ -143,6 +152,44 @@ globalThis.fetch = async (input, init) => {
     throw new Error(`Unexpected native fixture tool: ${tool.name}`);
   }
   const text = last.parts.map((p) => p.text ?? "").join("");
+  if (text === "What's my fictional account balance?") {
+    const selected = JSON.parse(
+      system.match(/Server selected accounts: (\[[^\n]*?\])\./)[1],
+    );
+    return selected.length
+      ? call("get_account_summary", { accountIds: selected })
+      : call("request_account", {});
+  }
+  if (
+    [
+      "Save 5h daily until I become a millionaire",
+      "If I save 10k weekly to 1m",
+      "Use my existing balance as the starting point",
+      "Make it 20k weekly instead",
+      "Actually calculate from zero",
+    ].includes(text)
+  ) {
+    const memory = JSON.parse(
+      system.match(/Saved planning parameters: (.*?)\. Selection\/planning/)[1],
+    );
+    return call("plan_savings", {
+      target: 1000000,
+      contribution: text.includes("5h")
+        ? 500
+        : text.includes("20k")
+          ? 20000
+          : (memory?.contribution ?? 10000),
+      cadence: text.includes("daily")
+        ? "days"
+        : text.includes("weekly")
+          ? "weeks"
+          : (memory?.cadence ?? "weeks"),
+      startingAmount: 0,
+      ...(text.includes("existing balance")
+        ? { startingBalance: "available" }
+        : {}),
+    });
+  }
   if (text === "10 times 20 is what??")
     return call("calculate", {
       expression: "10*20",

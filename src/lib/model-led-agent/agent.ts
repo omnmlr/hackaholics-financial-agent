@@ -679,7 +679,8 @@ export function createModelLedAgent(
                   },
                   "c1",
                 );
-                const text = `${source ? `Using your ${source.simulated ? "fictional " : "source-reported "}${source.field} balance of ₦${startingAmount.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} as the starting point, ` : ""}${calculationFallback([computed])}`;
+                const explanation = calculationFallback([computed]);
+                const text = `${source ? `Using your ${source.simulated ? "fictional " : "source-reported "}${source.field} balance of ₦${startingAmount.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} as the starting point, ` : ""}${source ? explanation[0].toLowerCase() + explanation.slice(1) : explanation}`;
                 savingsMemory = memory;
                 return await finish({
                   ...reply(source ? "financial" : "general", text),

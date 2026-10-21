@@ -8,8 +8,8 @@ Verified fictional name: "ADA OKAFOR"
 Fictional institution: "Wema Bank"
 Amount: ₦700.00
 Confirmed fee: ₦0.00
-Recorded at: 2026-10-21T14:35:41.528Z
-Simulation reference: ha_060be3361f2a405aacff5b5bf430f37f
+Recorded at: 2026-10-21T14:56:20.568Z
+Simulation reference: ha_95b33db4a4dc4d0ea48b06a087b19626
 
 Status reflects the recorded simulation at the timestamp above. Check AGUS for later reversals or updates.
 SIMULATED — NOT VALID AS PROOF OF REAL PAYMENT

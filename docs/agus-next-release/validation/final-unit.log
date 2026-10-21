@@ -7,12 +7,9 @@
 
 
  Test Files  54 passed (54)
-      Tests  1276 passed (1276)
-   Start at  14:27:30
-   Duration  139.32s (tests 84%, import 15%)
-
-    Isolate  54 workers spawned · ~162ms startup each (spawn + environment, per file)
-             at least ~8.59s faster with isolate: false — reuses workers across files instead of one per file
+      Tests  1282 passed (1282)
+   Start at  14:49:35
+   Duration  112.38s (tests 87%, import 13%)
 
 npm notice
 npm notice New major version of npm available! 11.9.0 -> 12.2.0

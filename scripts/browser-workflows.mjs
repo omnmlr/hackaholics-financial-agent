@@ -331,6 +331,12 @@ try {
         await card
           .getByRole("button", { name: "Approve reviewed batch", exact: true })
           .click();
+        await card
+          .getByRole("button", {
+            name: "Submit simulated transfers",
+            exact: true,
+          })
+          .waitFor();
         const beforeSubmit = await (
           await context.request.get(`${base}/api/state`)
         ).json();

@@ -93,7 +93,9 @@ function structure(text: string): NarrationDiagnostic["structure"] {
           | "scope_slot"
           | "count_slot";
       if (/^\{\{r\d+\.limit\d+\}\}$/.test(token)) return "limit_slot";
-      return /^\{\{r\d+\.(?:name|amount|direction|status)\d+\}\}$/.test(token)
+      return /^\{\{r\d+\.(?:(?:name|amount|direction|status|date)\d+|monthYear)\}\}$/.test(
+        token,
+      )
         ? "record_slot"
         : "unknown_slot";
     });
@@ -202,6 +204,20 @@ export function narrationContract(facts: Fact[]) {
       );
     }
     if (r.type === "search_transactions" || r.type === "get_transaction") {
+      const months = [
+        ...new Set(
+          r.records
+            .filter((record) => record.date)
+            .map((record) =>
+              new Date(record.date!).toLocaleDateString("en-NG", {
+                timeZone: "Africa/Lagos",
+                month: "long",
+                year: "numeric",
+              }),
+            ),
+        ),
+      ];
+      if (months.length === 1) token("monthYear", months[0]);
       if (r.records.length)
         allow(
           r.resultId,
@@ -487,15 +503,16 @@ export function bindSourceValues(raw: unknown, facts: Fact[]) {
           const d = new Date(record.date);
           for (const locale of ["en-NG", "en-US"])
             for (const month of ["short", "long"] as const)
-              add(
-                d.toLocaleDateString(locale, {
-                  timeZone: "Africa/Lagos",
-                  day: "numeric",
-                  month,
-                  year: "numeric",
-                }),
-                slot,
-              );
+              for (const includeYear of [true, false])
+                add(
+                  d.toLocaleDateString(locale, {
+                    timeZone: "Africa/Lagos",
+                    day: "numeric",
+                    month,
+                    ...(includeYear ? { year: "numeric" } : {}),
+                  }),
+                  slot,
+                );
         }
       }
       const unique = [...aliases]

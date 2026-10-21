@@ -434,6 +434,31 @@ export function createSecureReads(options: Options) {
           type: f.presentation.type,
         }));
     },
+    get narrationExamples() {
+      return [...facts.values()]
+        .filter((f) => successIds.has(f.resultId))
+        .map((f, i) => {
+          const r = f.presentation;
+          const slot = (key: string) => `{{r${i}.${key}}}`;
+          const text =
+            r.type === "calculate_spending"
+              ? `Your spending came to ${slot("expenses")}, and income came to ${slot("income")}.`
+              : r.records.length
+                ? `${r.type === "search_transactions" ? `I found ${slot("count")} possible matches. ` : ""}${r.records
+                    .slice(0, 2)
+                    .map(
+                      (_, n) =>
+                        `${slot(`name${n}`)}: ${slot(`amount${n}`)} on ${slot(`date${n}`)}.`,
+                    )
+                    .join(
+                      " ",
+                    )}${r.records.length > 1 ? " Which one would you like to inspect?" : ""}`
+                : r.type === "find_payment_evidence"
+                  ? "The available evidence cannot confirm recipient bank credit."
+                  : "The available source details are shown below.";
+          return { resultIds: [f.resultId], text };
+        });
+    },
     get selection() {
       return selection;
     },

@@ -1,0 +1,52 @@
+{
+  "commit": "b4a455b97dc0dce38e1df70e0093fd5d796e7212",
+  "priorHttpAttempts": 37,
+  "maximumAdditionalAttempts": 3,
+  "aggregateMaximum": 40,
+  "genuineProvider": true,
+  "syntheticRecords": true,
+  "reply": {
+    "kind": "clarify",
+    "narration": "factual_fallback",
+    "explanation": [
+      "I found 2 possible matches in the selected records.\n\nAda Obi (fictional): ₦7,500.00 on 7 October 2026.\n\nAda Okafor (fictional): ₦5,000.00 on 5 October 2026.\n\nWhich one would you like to inspect?"
+    ],
+    "evidence": {
+      "modelCalls": 2,
+      "toolCalls": 2,
+      "resultBytes": 2226,
+      "narrationCode": "NARRATION_VALUE",
+      "narrationDiagnostic": {
+        "version": 1,
+        "stage": "claim",
+        "category": "literal_value",
+        "paragraphIndex": 0,
+        "clauseIndex": 0,
+        "structure": [
+          "text",
+          "colon",
+          "text",
+          "record_slot",
+          "text",
+          "record_slot",
+          "text",
+          "unknown_slot",
+          "comma",
+          "text",
+          "record_slot",
+          "text",
+          "record_slot",
+          "text",
+          "unknown_slot",
+          "period"
+        ]
+      }
+    }
+  },
+  "status": "complete_requires_human_review",
+  "attempts": 2,
+  "httpStatuses": [
+    200,
+    200
+  ]
+}

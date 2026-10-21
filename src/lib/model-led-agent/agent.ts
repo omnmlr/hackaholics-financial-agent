@@ -619,6 +619,7 @@ export function createModelLedAgent(
                         slots: authoring.slots,
                         required: authoring.required,
                         results: reads.narrationResults,
+                        examples: reads.narrationExamples,
                         guidance:
                           "Use slots for source values. Write only the details useful to this question; cards already show the full source fields. Do not repeat caveats: the server retains them. Ask which candidate to inspect when the result is ambiguous.",
                       }

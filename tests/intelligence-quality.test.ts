@@ -76,6 +76,51 @@ const search = {
   cursor: null,
 };
 
+describe("ordinary conversation stays conversational (scripted protocol)", () => {
+  it.each([
+    ["How are you doing?", "I’m here and ready to chat. How’s your day going?"],
+    [
+      "I'm bored. Tell me something interesting.",
+      "Octopuses have three hearts, and their blue blood helps carry oxygen in cold water.",
+    ],
+    [
+      "Who are you and what can you do?",
+      "I’m AGUS. We can chat, work through financial questions, read fictional account records you authorize, or prepare an editable payment draft for you to review.",
+    ],
+    [
+      "Explain inflation like I'm 12.",
+      "Inflation means prices generally rise over time, so the same pocket money buys fewer things. It is about prices across the economy, rather than a single shop raising its price.",
+    ],
+    [
+      "Omo, this economy no funny again 😭",
+      "E tough. When everyday things keep costing more, the pressure can really add up.",
+    ],
+  ])(
+    "does not force account selection or tools for %s",
+    async (question, response) => {
+      const modelInputs: Parameters<ToolModel["generate"]>[0][] = [];
+      const s = fixture(async (input) => {
+        modelInputs.push(input);
+        return input.system.startsWith("Independently check")
+          ? say('{"safeGeneralConversation":true}')
+          : say(response);
+      });
+      const r = await s.agent.turn({ ...s.input, text: question });
+      expect(r.kind).toBe("general");
+      expect(r.text).toBe(response);
+      expect(r.accountAction).toBeUndefined();
+      expect(r.handoff).toBeUndefined();
+      expect(s.tools.dispatch).not.toHaveBeenCalled();
+      expect(modelInputs[0].contents.at(-1)!.parts![0].text).toBe(question);
+      expect(
+        modelInputs[0].declarations.some(
+          (d) => d.name === "search_transactions",
+        ),
+      ).toBe(false);
+    },
+  );
+});
+
 describe("savings semantics and verified calendar narration", () => {
   it("renders recorded genuine math explanation formatting as readable verified plain text", () => {
     const c = planSavings(
@@ -290,6 +335,39 @@ describe("savings semantics and verified calendar narration", () => {
 });
 
 describe("native financial narration grounding and follow-ups", () => {
+  it("allows a source narration review to use its 20-second model budget", async () => {
+    vi.useFakeTimers();
+    try {
+      let step = 0;
+      const s = fixture(async (input) => {
+        if (input.system.startsWith("Independently review source-backed")) {
+          await new Promise((resolve) => setTimeout(resolve, 12000));
+          return say('{"grounded":true}');
+        }
+        if (step++ === 0) return call("search_transactions", search);
+        const output = input.contents.at(-1)!.parts![0].functionResponse!
+          .response!.output as { result: { resultId: string } };
+        return call("present_financial", {
+          paragraphs: [
+            {
+              resultIds: [output.result.resultId],
+              text: "Here are {{r0.count}} possible matches. Which one would you like to inspect?",
+            },
+          ],
+        });
+      });
+      const pending = s.agent.turn({
+        ...s.input,
+        accountIds: ["amina-current"],
+      });
+      await vi.advanceTimersByTimeAsync(12000);
+      const r = await pending;
+      expect(r.presentation?.narration).toBe("ai");
+      expect(r.evidence.modelCalls).toBe(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("compiles exact source values into slots before semantic review without authorizing invented values", async () => {
     const s = fixture(async () => say("unused"));
     const review = vi.fn(async (_raw: unknown) => true);
@@ -345,6 +423,34 @@ describe("native financial narration grounding and follow-ups", () => {
     expect(r!.presentation?.explanation.join(" ")).not.toContain(
       "bank confirmed",
     );
+  });
+  it("binds source-backed month labels and dates without a year while still rejecting unknown dates", async () => {
+    const s = fixture(async () => say("unused"));
+    const review = vi.fn(async () => true);
+    const reads = createSecureReads({
+      ...s.options,
+      ctx: s.input.ctx,
+      accountIds: ["amina-current"],
+      selection: null,
+      reviewNarration: review,
+    });
+    await reads.execute("search_transactions", search);
+    const resultIds = [reads.narrationResults[0].resultId];
+    const r = await reads.finish({
+      paragraphs: [
+        {
+          resultIds,
+          text: "In October 2026, I found Ada Obi: ₦7,500 on October 7, and Ada Okafor: ₦5,000 on October 5. Which one would you like to inspect?",
+        },
+      ],
+    });
+    expect(r!.presentation?.narration).toBe("ai");
+    expect(r!.presentation?.explanation.join(" ")).toContain("7 October 2026");
+    const bad = await reads.finish({
+      paragraphs: [{ resultIds, text: "Ada Obi: ₦7,500 on October 8." }],
+    });
+    expect(bad!.presentation?.narration).toBe("factual_fallback");
+    expect(review).toHaveBeenCalledOnce();
   });
   it("uses reviewed natural source narration for the exact ambiguous Ada query", async () => {
     let step = 0;

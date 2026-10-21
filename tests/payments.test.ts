@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHmac, randomBytes, scryptSync } from "node:crypto";
+import sharp from "sharp";
 import { mutate, readState, db, attempts, sessions } from "../src/lib/db";
 import {
   digest,
@@ -489,7 +490,7 @@ describe("authentication, controlled AI, data and uploads", () => {
     process.env.AI_PROVIDER = "openai";
     process.env.AI_API_KEY = "fictional-model-key";
     const plan = {
-      intent: "authorize",
+      intent: "prepare",
       payments: [
         {
           name: "Ada",
@@ -513,7 +514,11 @@ describe("authentication, controlled AI, data and uploads", () => {
         ),
     );
     vi.stubGlobal("fetch", transport);
-    const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+    const bytes = await sharp({
+      create: { width: 8, height: 8, channels: 3, background: "#111111" },
+    })
+      .png()
+      .toBuffer();
     const r = await extractImage(bytes, "image/png", "demo-operator");
     expect(r.requiresReview).toBe(true);
     expect(JSON.stringify(r)).not.toContain("The payout went through.");

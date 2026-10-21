@@ -5,6 +5,29 @@
   font-weight: 100 900;
   font-display: swap;
 }
+.agus-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px solid #30363e;
+  border-radius: 14px;
+  background: #101214;
+  font-size: 12px;
+}
+.agus-image-preview img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.agus-image-preview p {
+  color: #aeb3bb;
+}
+.agus-image-preview > div {
+  flex: 1;
+}
 /* AGUS: black surfaces, restrained blue interaction, neutral source evidence. */
 .agus-workspace {
   --agus-bg: #070809;

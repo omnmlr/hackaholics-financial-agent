@@ -289,6 +289,14 @@ export function PaymentEditor({
           }
         }}
       >
+        {fixtures.length > 0 && (
+          <p className="micro">
+            The demo verifies only the listed fictional recipients. An
+            institution such as OPay being listed does not verify arbitrary
+            accounts or real ownership. Keep your draft details, or explicitly
+            choose demo details below to test a simulation.
+          </p>
+        )}
         {rows.map((r, i) => (
           <fieldset className="recipient-form" key={i} disabled={busy}>
             <legend>Recipient {i + 1}</legend>

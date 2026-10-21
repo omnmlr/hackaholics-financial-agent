@@ -1,4 +1,5 @@
 import type { Bank } from "./paystack";
+import { groundedPaymentAmounts } from "./payment-grounding";
 
 const normalize = (s: string) =>
   s
@@ -45,6 +46,18 @@ export interface DraftEdit {
 }
 export function parseDraftEdit(request: string): DraftEdit | null {
   const text = request.trim().replace(/[.!?]+$/, "");
+  if (
+    /\b(?:daily|weekly|monthly|yearly|savings?|starting|goal|balance)\b/i.test(
+      text,
+    )
+  )
+    return null;
+  if (/^I meant\s+(?:₦|NGN\s*|\d)/i.test(text) && /\bnot\b/i.test(text)) {
+    const amounts = groundedPaymentAmounts(text);
+    return amounts.length === 1
+      ? { amountNaira: amounts[0].toFixed(2) }
+      : { missing: "amount (state the intended amount once)" };
+  }
   const ordinal = text.match(
     /\b(?:the )?(first|second|third|fourth|fifth|[1-9]|10)(?:st|nd|rd|th)? recipient\b/i,
   );

@@ -1,4 +1,10 @@
-import { rememberConversationPayment } from "@/lib/conversation-payment";
+import {
+  rememberConversationPayment,
+  conversationPayment,
+} from "@/lib/conversation-payment";
+import { mutate } from "@/lib/db";
+import type { AgentReply } from "@/lib/financial-agent/agent";
+import type { SavedTurn } from "@/lib/chat-history/store";
 import { z } from "zod";
 import { operator, sameOrigin } from "@/lib/auth";
 import { chatHistory } from "@/lib/chat-history/store";
@@ -57,8 +63,8 @@ export async function POST(req: Request) {
     );
     const history = chatHistory(owner);
     const lease = await history.claim(input.conversationId, input.text);
-    let result;
-    let turn;
+    let result: AgentReply;
+    let turn: SavedTurn;
     try {
       result = await conversationTurn(req, input);
       req.signal.throwIfAborted();
@@ -68,13 +74,27 @@ export async function POST(req: Request) {
         input.text,
         result,
       );
-      if (result.handoff)
+      if (result.paymentDraftId)
+        await mutate((s) => {
+          const message = s.messages.find(
+            (m) => m.id === result.paymentDraftId && m.owner === owner,
+          );
+          if (message) {
+            message.conversationId = input.conversationId;
+            message.turnId = turn.id;
+          }
+        });
+      else if (result.handoff) {
         await rememberConversationPayment(
           owner,
           input.conversationId,
           turn.id,
           input.text,
         );
+        // Preparing editable fields is reversible and grants no verification,
+        // approval or submission. The same owned turn claim prevents duplicates.
+        await conversationPayment(owner, input.conversationId, turn.id);
+      }
     } catch (error) {
       await history.release(input.conversationId, lease);
       throw error;

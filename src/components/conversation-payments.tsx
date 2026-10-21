@@ -237,7 +237,9 @@ export function NativePayment({
   recover?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(
+    !!message?.proposals?.length && !message.batchId,
+  );
   const { snapshot: s } = c;
   if (!s) return null;
   const batch = directBatch ?? s.batches.find((b) => b.id === message?.batchId);
@@ -259,6 +261,13 @@ export function NativePayment({
         amountNaira: p.amountNaira ?? "",
       }));
   if (!batch && !rows.length) return null;
+  if (!batch && message?.supersededBy)
+    return (
+      <p className="agus-history-note">
+        This draft was updated later in the conversation. Review the latest
+        payment card.
+      </p>
+    );
   const common = {
     banks: c.banks,
     bankError: c.bankError,

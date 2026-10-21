@@ -12,6 +12,8 @@ import {
 } from "@/lib/auth";
 import { mutate, readState } from "@/lib/db";
 import { provider, fixtureBeneficiaries } from "@/lib/paystack";
+import { conversationImage } from "@/lib/conversation-image";
+import { financialContext } from "@/lib/financial-integration/service";
 import {
   approveBatch,
   editBatch,
@@ -221,15 +223,16 @@ async function handle(req: Request) {
           "audio/webm",
         ].includes(mimeType)
       )
-        throw new AppError("This browser's audio format is not supported.", 415);
-      return reply(
-        {
-          transcript: await transcribeAudio(
-            Buffer.from(await file.arrayBuffer()),
-            mimeType,
-          ),
-        },
-      );
+        throw new AppError(
+          "This browser's audio format is not supported.",
+          415,
+        );
+      return reply({
+        transcript: await transcribeAudio(
+          Buffer.from(await file.arrayBuffer()),
+          mimeType,
+        ),
+      });
     }
     if (action === "extract" && req.method === "POST") {
       if (Number(req.headers.get("content-length") ?? 0) > 6 * 1024 * 1024)
@@ -240,6 +243,25 @@ async function handle(req: Request) {
       }).formData();
       const file = form.get("image");
       if (!(file instanceof File)) throw new AppError("Image file required");
+      const conversationId = form.get("conversationId"),
+        uploadId = form.get("uploadId");
+      if (conversationId || uploadId) {
+        const ids = z
+          .object({ conversationId: z.uuid(), uploadId: z.uuid() })
+          .parse({ conversationId, uploadId });
+        await financialContext(req);
+        return reply(
+          await conversationImage(
+            actor,
+            ids.conversationId,
+            ids.uploadId,
+            Buffer.from(await file.arrayBuffer()),
+            file.type,
+          ),
+          200,
+          { "Cache-Control": "no-store, private" },
+        );
+      }
       return reply(
         await extractImage(
           Buffer.from(await file.arrayBuffer()),

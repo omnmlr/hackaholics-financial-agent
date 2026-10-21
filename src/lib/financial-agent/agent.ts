@@ -98,6 +98,7 @@ export type AgentReply = {
     };
   };
   handoff?: { kind: "existing_payment_draft" };
+  paymentDraftId?: string;
   accountAction?: "choose_demo_account";
   evidence: {
     modelCalls: number;

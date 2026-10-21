@@ -323,6 +323,7 @@ globalThis.fetch = async (input, init) => {
   }
   if (
     text.startsWith("Prepare 500 to Ada") ||
+    text.startsWith("500 OPay ") ||
     text === "Help me prepare a payment draft"
   )
     return call("prepare_payment_draft", {});

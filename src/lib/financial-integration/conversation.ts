@@ -17,6 +17,8 @@ import { createModelLedAgent } from "../model-led-agent/agent";
 import { createGeminiToolModel } from "../model-led-agent/model";
 import { turnDiagnostic } from "../model-led-agent/diagnostics";
 import { SavingsMemorySchema } from "../model-led-agent/savings";
+import { readState } from "../db";
+import { editConversationDraft } from "../conversation-edits";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -37,6 +39,35 @@ export async function conversationTurn(
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
   const parsed = ConversationInput.parse(input);
+  const owner = await operator(req);
+  const state = await readState();
+  const messages = state.messages.filter(
+    (m) => m.owner === owner && m.conversationId === parsed.conversationId,
+  );
+  const batchIds = new Set(messages.map((m) => m.batchId));
+  if (messages.length) {
+    const edited = await editConversationDraft(
+      owner,
+      parsed.text,
+      {
+        ...state,
+        messages,
+        batches: state.batches.filter(
+          (b) => b.owner === owner && batchIds.has(b.id),
+        ),
+      },
+      true,
+    );
+    if (edited)
+      return {
+        kind: "handoff" as const,
+        text: edited.reply,
+        citations: [],
+        handoff: { kind: "existing_payment_draft" as const },
+        paymentDraftId: edited.messageId,
+        evidence: { modelCalls: 0, toolCalls: 0, resultBytes: 0 },
+      };
+  }
   // Display history can supply dialogue after the short-lived tool context
   // expires. Owner is session-derived; facts/selections are never rehydrated.
   const turns = await chatHistory(await operator(req))

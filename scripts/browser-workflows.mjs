@@ -1,6 +1,7 @@
 /* global document: readonly, window: readonly */
 // Actual production application, disposable PostgreSQL, scripted Gemini only.
 import assert from "node:assert/strict";
+import { Buffer } from "node:buffer";
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { spawn } from "node:child_process";
@@ -9,6 +10,7 @@ import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { createServer } from "node:net";
+import sharp from "sharp";
 const reservation = createServer();
 await new Promise((r) => reservation.listen(0, "127.0.0.1", r));
 const port = reservation.address().port;
@@ -58,7 +60,8 @@ const server = spawn(
   },
 );
 let logs = "",
-  browser;
+  browser,
+  lastPage;
 server.stdout.on("data", (x) => (logs = (logs + x).slice(-15000)));
 server.stderr.on("data", (x) => (logs = (logs + x).slice(-15000)));
 const report = {
@@ -69,7 +72,9 @@ try {
   for (let n = 0; n < 150; n++) {
     try {
       if ((await fetch(base)).ok) break;
-    } catch { /* Server is starting. */ }
+    } catch {
+      /* Server is starting. */
+    }
     if (n === 149) throw Error(logs);
     await new Promise((r) => setTimeout(r, 200));
   }
@@ -89,6 +94,7 @@ try {
     );
     const page = await context.newPage(),
       errors = [];
+    lastPage = page;
     page.on("pageerror", (e) => errors.push(e.message));
     page.setDefaultTimeout(20000);
     const login = await context.request.post(`${base}/api/session`, {
@@ -160,6 +166,94 @@ try {
     assert.equal(reset.savings.periods, 50);
     const slang = await send("Save 5h daily until I become a millionaire");
     assert.equal(slang.savings.periods, 2000);
+    let preparationChecks = 0;
+    if (process.env.WORKFLOW_PHASE !== "foundation") {
+      await page.getByRole("button", { name: "New chat", exact: true }).click();
+      const bare = await send("500 OPay 9812345670");
+      assert.equal(bare.kind, "handoff");
+      const editor = page
+        .getByRole("region", { name: "Payment proposal", exact: true })
+        .last();
+      await editor.waitFor();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(
+            '.agus-payment[open] input[placeholder="Amount required"]',
+          )?.value === "500",
+      );
+      assert.equal(
+        await editor.getByLabel("Amount (NGN)", { exact: true }).inputValue(),
+        "500",
+      );
+      assert.equal(
+        await editor.getByLabel("Account number", { exact: true }).inputValue(),
+        "9812345670",
+      );
+      assert.equal(
+        await editor
+          .getByLabel("Recipient label", { exact: true })
+          .inputValue(),
+        "",
+      );
+      await capture("bare-amount-draft");
+      // The image is a real raster of synthetic instructions. Only recognition
+      // is scripted; decoding, upload, SQL linkage and editing are implemented.
+      const image = await sharp(
+        Buffer.from(
+          '<svg width="900" height="300"><rect width="900" height="300" fill="white"/><g fill="black" font-size="28"><text x="24" y="60">FICTIONAL PAYMENT INSTRUCTIONS</text><text x="24" y="130">Ada: Wema 0000000001, NGN 500</text><text x="24" y="200">Chidi: Access 0000000002, NGN 600</text></g></svg>',
+        ),
+      )
+        .png()
+        .toBuffer();
+      await page
+        .getByLabel("Select payment image", { exact: true })
+        .setInputFiles({
+          name: "synthetic-instructions.png",
+          mimeType: "image/png",
+          buffer: image,
+        });
+      await page.getByAltText("Local payment image preview").waitFor();
+      await capture("image-preview");
+      const upload = page.waitForResponse(
+        (r) =>
+          r.url().endsWith("/api/extract") && r.request().method() === "POST",
+      );
+      await page
+        .getByRole("button", { name: "Send message", exact: true })
+        .click();
+      const uploaded = await (await upload).json();
+      assert.ok(uploaded.turn, JSON.stringify(uploaded));
+      const imageEditor = page
+        .getByRole("region", { name: "Payment proposal", exact: true })
+        .last();
+      await imageEditor.locator("fieldset").nth(1).waitFor();
+      assert.equal(await imageEditor.locator("fieldset").count(), 2);
+      assert.equal(
+        await imageEditor
+          .getByLabel("Amount (NGN)", { exact: true })
+          .nth(0)
+          .inputValue(),
+        "500",
+      );
+      assert.equal(
+        await imageEditor
+          .getByLabel("Amount (NGN)", { exact: true })
+          .nth(1)
+          .inputValue(),
+        "600",
+      );
+      await capture("image-drafts");
+      assert.equal(
+        await page.getByAltText("Local payment image preview").count(),
+        0,
+      );
+      const state = await (
+        await context.request.get(`${base}/api/state`)
+      ).json();
+      assert.equal(state.batches.length, 0);
+      assert.ok(!JSON.stringify(state.messages).includes("data:image"));
+      preparationChecks = 8;
+    }
     const scan = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -172,7 +266,7 @@ try {
     );
     report.widths.push({
       width,
-      checks: 8,
+      checks: 8 + preparationChecks,
       axeViolations: scan.violations.length,
       pageErrors: errors,
       examples: [
@@ -192,6 +286,7 @@ try {
   );
   console.log(JSON.stringify(report, null, 2));
 } catch (error) {
+  await lastPage?.screenshot({ path: join(output, "failure.png") });
   await writeFile(join(output, "failure.log"), `${error.stack}\n${logs}`);
   throw error;
 } finally {

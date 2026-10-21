@@ -1,5 +1,6 @@
 import type { Proposed } from "./intelligence";
 import type { Message, Mode, Status } from "./domain";
+import { paymentSegment, groundedPaymentAmounts } from "./payment-grounding";
 
 // No model-authored prose crosses the narration boundary. Even ordinary
 // conversational intents are untrusted: an intent label cannot certify prose.
@@ -101,16 +102,13 @@ export function groundProposal(
   request: string,
   previous?: Proposed,
 ): Proposed {
+  request = paymentSegment(request, p.accountNumber, p.name);
   const contains = (value: string) =>
     request.toLowerCase().includes(value.toLowerCase());
   const bankCodes = [
     ...request.matchAll(/\bbank(?: code)?\s*[:=]?\s*(\d{3,6})\b/gi),
   ].map((m) => m[1]);
-  const amounts = [
-    ...request.matchAll(
-      /(?:₦|NGN\s*|\bamount\s*[:=]?\s*)(\d+(?:\.\d{1,2})?)(?![\d.])|\b(\d+(?:\.\d{1,2})?)\s+(?:to|for|naira)\b/gi,
-    ),
-  ].map((m) => m[1] ?? m[2]);
+  const amounts = groundedPaymentAmounts(request);
   const missingAccount =
     /(?:haven.t|have not|not|no|missing|without|don.t|do not).{0,35}account|account.{0,25}(?:missing|unknown|not provided)/i.test(
       request,
@@ -140,7 +138,7 @@ export function groundProposal(
     amountNaira:
       !missingAmount &&
       p.amountNaira &&
-      (amounts.some((n) => Number(n) === Number(p.amountNaira)) ||
+      (amounts.some((n) => n === Number(p.amountNaira)) ||
         p.amountNaira === previous?.amountNaira)
         ? p.amountNaira
         : null,

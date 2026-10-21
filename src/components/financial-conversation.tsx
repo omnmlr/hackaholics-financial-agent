@@ -24,6 +24,7 @@ import {
   ShieldCheck,
   ChevronDown,
   X,
+  Paperclip,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
@@ -38,6 +39,7 @@ import {
 } from "./conversation-payments";
 import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
+import { usePaymentImage } from "./use-payment-image";
 import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
@@ -224,6 +226,7 @@ export function FinancialConversation({
     setPassword("");
   }, [discardVoiceCapture, stopSpeech]);
   const payments = useConversationPayments(authenticated, clearPrivate);
+  const image = usePaymentImage(id, authenticated);
   useEffect(() => {
     setAiEnabled(!!payments.snapshot?.aiEnabled);
   }, [payments.snapshot?.aiEnabled]);
@@ -481,7 +484,8 @@ export function FinancialConversation({
       pending.current ||
       loading ||
       unknown ||
-      !(question ?? text).trim() ||
+      (!(question ?? text).trim() && !image.file) ||
+      image.busy ||
       voiceBusy
     )
       return;
@@ -489,6 +493,45 @@ export function FinancialConversation({
     stopSpeech();
     if (!authenticated) {
       openModal(signin.current);
+      return;
+    }
+    if (image.file) {
+      const chatId = id || crypto.randomUUID();
+      pending.current = true;
+      setOperation("image");
+      await image.upload(
+        chatId,
+        (data) => {
+          setId(chatId);
+          setTurns((previous) => [...previous, data.turn]);
+          window.history.replaceState(
+            null,
+            "",
+            `/conversation?chat=${encodeURIComponent(chatId)}`,
+          );
+          void payments
+            .refresh()
+            .catch(() =>
+              setError("Draft saved. Retry loading saved payments to view it."),
+            );
+          void refresh().catch(() =>
+            setHistoryError(
+              "Image review saved; retry loading the conversation list.",
+            ),
+          );
+          setAnnouncement("Image reviewed. Editable details are ready.");
+        },
+        () => {
+          setId(chatId);
+          setUnknown({
+            chat: chatId,
+            count: turns.length,
+            original: "Image review",
+          });
+        },
+      );
+      pending.current = false;
+      setOperation("");
       return;
     }
     pending.current = true;
@@ -548,6 +591,12 @@ export function FinancialConversation({
             `/conversation?chat=${encodeURIComponent(chatId)}`,
           );
         setTurns((previous) => [...previous, data.turn]);
+        if (data.turn.reply.handoff)
+          void payments
+            .refresh()
+            .catch(() =>
+              setError("Draft saved. Retry loading saved payments to view it."),
+            );
         if (
           spokenRepliesEnabled.current &&
           ["general", "financial", "product"].includes(data.turn.reply.kind)
@@ -1236,14 +1285,25 @@ export function FinancialConversation({
             <p role="status">
               {operation === "draft"
                 ? "Opening payment draft…"
-                : operation === "check"
-                  ? "Checking saved conversation…"
-                  : "Updating session…"}
+                : operation === "image"
+                  ? "Reading image details for your review…"
+                  : operation === "check"
+                    ? "Checking saved conversation…"
+                    : "Updating session…"}
             </p>
           )}
           <form
             className="agus-composer"
             aria-busy={busy}
+            onDragOver={(e) => {
+              if (e.dataTransfer.types.includes("Files")) e.preventDefault();
+            }}
+            onDrop={(e) => {
+              if (e.dataTransfer.files.length) {
+                e.preventDefault();
+                if (!busy) image.select(e.dataTransfer.files[0]);
+              }
+            }}
             onSubmit={(e) => {
               e.preventDefault();
               void send();
@@ -1259,6 +1319,15 @@ export function FinancialConversation({
               value={text}
               rows={1}
               maxLength={4000}
+              onPaste={(e) => {
+                const file = [...e.clipboardData.files].find((f) =>
+                  f.type.startsWith("image/"),
+                );
+                if (file) {
+                  e.preventDefault();
+                  if (!busy) image.select(file);
+                }
+              }}
               readOnly={
                 (busy && operation !== "message") || loading || voiceBusy
               }
@@ -1280,6 +1349,28 @@ export function FinancialConversation({
               }}
             />
             <div className="agus-composer-toolbar">
+              <input
+                ref={image.input}
+                className="agus-sr-only"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                aria-label="Select payment image"
+                tabIndex={-1}
+                onChange={(e) => {
+                  image.select(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                className="agus-icon-button"
+                type="button"
+                aria-label="Attach payment image"
+                title="Read payment details from an image"
+                disabled={busy || loading || voiceBusy || !authenticated}
+                onClick={() => image.input.current?.click()}
+              >
+                <Paperclip size={18} />
+              </button>
               <span className="agus-character-count">
                 {text.length >= 3500
                   ? `${text.length}/4000${text.length === 4000 ? " · Message limit reached" : ""}`
@@ -1348,7 +1439,11 @@ export function FinancialConversation({
                   type="submit"
                   aria-label="Send message"
                   disabled={
-                    busy || loading || voiceBusy || !!unknown || !text.trim()
+                    busy ||
+                    loading ||
+                    voiceBusy ||
+                    !!unknown ||
+                    (!text.trim() && !image.file)
                   }
                 >
                   <ArrowUp size={20} />
@@ -1356,6 +1451,30 @@ export function FinancialConversation({
               )}
             </div>
           </form>
+          {image.preview && (
+            <div className="agus-image-preview">
+              <img src={image.preview} alt="Local payment image preview" />
+              <div>
+                <strong>Image ready for review</strong>
+                <p>
+                  Details become editable drafts. The image is not kept in chat
+                  history.
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label={image.busy ? "Cancel image upload" : "Remove image"}
+                onClick={image.busy ? image.cancel : image.clear}
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
+          {image.error && (
+            <p className="agus-error" role="alert">
+              {image.error}
+            </p>
+          )}
           {empty && (
             <div className="agus-suggestions" aria-label="Suggested questions">
               {suggestions.map(({ title, text: prompt }) => (

@@ -21,15 +21,13 @@ import {
   Plus,
   Wallet,
   ArrowUpRight,
-  ChartNoAxesCombined,
-  Search,
   ShieldCheck,
   ChevronDown,
   X,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
-import { AgusSignal } from "./agus-signal";
+import { FinancialBackdrop } from "./financial-backdrop";
 import { FinancialResponse } from "./financial-response";
 import { CopyableMessage } from "./copyable-message";
 import { conversationDrafts as drafts } from "@/lib/chat-history/drafts";
@@ -59,20 +57,14 @@ type DraftSelection = {
 const suggestions = [
   {
     title: "Analyze spending",
-    description: "Find the story in your numbers",
-    icon: ChartNoAxesCombined,
     text: "Show my spending for October 2026",
   },
   {
     title: "Track a payment",
-    description: "Follow the facts, find clarity",
-    icon: Search,
     text: "Find payments to Ada in October 2026",
   },
   {
     title: "Prepare a transfer",
-    description: "A draft you can make your own",
-    icon: ArrowUpRight,
     text: "Help me prepare a payment draft",
   },
 ];
@@ -772,7 +764,6 @@ export function FinancialConversation({
     <>
       <div className="agus-sidebar-brand">
         <span className="agus-brand-pair">
-          <AgusSignal />
           <BrandAsset />
         </span>
         <button
@@ -923,32 +914,35 @@ export function FinancialConversation({
         {sidebar}
       </dialog>
       <section className="agus-main" aria-label="agus. conversation workspace">
+        <FinancialBackdrop />
         <header className="agus-header">
           <div>
             <button
               ref={menu}
-              className="agus-icon-button agus-navigation-toggle"
+              className={
+                empty
+                  ? `agus-wordmark-menu${sidebarOpen ? " sidebar-expanded" : ""}`
+                  : "agus-icon-button agus-navigation-toggle"
+              }
               aria-label="Open conversations"
+              title="Open conversations"
               onClick={() => {
                 if (window.matchMedia("(min-width: 1024px)").matches)
                   toggleSidebar(!sidebarOpen);
                 else openModal(drawer.current);
               }}
             >
-              <PanelLeft size={20} />
+              {empty ? <BrandAsset /> : <PanelLeft size={20} />}
             </button>
-            <span
-              className={
-                sidebarOpen
-                  ? "agus-header-brand sidebar-expanded"
-                  : "agus-header-brand"
-              }
-            >
-              <BrandAsset />
-            </span>
-            {empty && (
-              <span className="agus-header-caption">
-                A little clarity goes a long way.
+            {!empty && (
+              <span
+                className={
+                  sidebarOpen
+                    ? "agus-header-brand sidebar-expanded"
+                    : "agus-header-brand"
+                }
+              >
+                <BrandAsset />
               </span>
             )}
             {!empty && (
@@ -1020,36 +1014,7 @@ export function FinancialConversation({
             <p role="status">Opening conversation…</p>
           ) : empty ? (
             <section className="agus-welcome">
-              <div className="agus-welcome-emblem">
-                <AgusSignal />
-              </div>
-              <p className="agus-eyebrow">YOUR MONEY. A NEW PERSPECTIVE.</p>
               <h1 className="agus-welcome-question">Let's talk money.</h1>
-              <p className="agus-welcome-description">
-                Make sense of your spending.
-                <br className="agus-mobile-break" /> Make room for what’s next.
-              </p>
-              <div className="agus-suggestions">
-                {suggestions.map(
-                  ({ title, description, text: prompt, icon: Icon }) => (
-                    <button
-                      key={title}
-                      disabled={voiceBusy}
-                      onClick={() => choose(prompt)}
-                    >
-                      <Icon size={20} className="agus-suggestion-icon" />
-                      <span>
-                        <strong>{title}</strong>
-                        <small>{description}</small>
-                      </span>
-                      <ArrowUpRight
-                        size={16}
-                        className="agus-suggestion-arrow"
-                      />
-                    </button>
-                  ),
-                )}
-              </div>
             </section>
           ) : (
             <section className="agus-thread" aria-label="Conversation replies">
@@ -1069,8 +1034,7 @@ export function FinancialConversation({
                   </div>
                   <div className="agus-assistant-message">
                     <h2 className="agus-response-heading">
-                      <AgusSignal />
-                      <span>agus.</span>
+                      <BrandAsset />
                       <small>
                         {turn.reply.kind === "financial"
                           ? "Financial insight"
@@ -1180,7 +1144,6 @@ export function FinancialConversation({
                     <p>{pendingText}</p>
                   </div>
                   <div className="agus-thinking" role="status">
-                    <AgusSignal />
                     <span>
                       {longWait
                         ? "Still working on your question…"
@@ -1277,7 +1240,7 @@ export function FinancialConversation({
             <textarea
               ref={composer}
               id="financial-message"
-              placeholder="Ask agus anything…"
+              placeholder="Ask agus anything..."
               value={text}
               rows={1}
               maxLength={4000}
@@ -1378,6 +1341,20 @@ export function FinancialConversation({
               )}
             </div>
           </form>
+          {empty && (
+            <div className="agus-suggestions" aria-label="Suggested questions">
+              {suggestions.map(({ title, text: prompt }) => (
+                <button
+                  key={title}
+                  disabled={voiceBusy}
+                  onClick={() => choose(prompt)}
+                >
+                  <span className="agus-suggestion-dot" aria-hidden="true" />
+                  {title}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="agus-composer-hint">
             <span>
               <ShieldCheck size={12} />

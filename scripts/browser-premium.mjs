@@ -17,7 +17,7 @@ await new Promise((resolve) => reservation.close(resolve));
 const base = `http://127.0.0.1:${port}`;
 const directory = await mkdtemp(join(tmpdir(), "agus-premium-"));
 const outputDir = resolve(
-  process.env.PREMIUM_SCREENSHOTS ?? "docs/premium-experience/after",
+  process.env.PREMIUM_SCREENSHOTS ?? "docs/approved-release/screenshots",
 );
 await mkdir(outputDir, { recursive: true });
 const password = randomBytes(24).toString("hex");
@@ -163,7 +163,8 @@ try {
           documentScroll: window.scrollY,
           shellScroll: document.querySelector(".agus-workspace").scrollTop,
           mainScroll: document.querySelector(".agus-main").scrollTop,
-          mainOverflow: getComputedStyle(document.querySelector(".agus-main")).overflowY,
+          mainOverflow: getComputedStyle(document.querySelector(".agus-main"))
+            .overflowY,
         };
       });
       assert.ok(data.documentWidth <= data.viewport, JSON.stringify(data));
@@ -201,9 +202,42 @@ try {
       .waitFor();
     await page.evaluate(() => document.fonts.ready);
     const initial = await geometry();
-    assert.ok(initial.composer.height <= 76, JSON.stringify(initial));
+    assert.ok(
+      initial.composer.height <= (width > 600 ? 104 : 76),
+      JSON.stringify(initial),
+    );
     await capture("welcome");
     await axe("welcome");
+    assert.equal(
+      await input.getAttribute("placeholder"),
+      "Ask agus anything...",
+    );
+    assert.deepEqual(
+      await page.locator(".agus-suggestions button").allTextContents(),
+      ["Analyze spending", "Track a payment", "Prepare a transfer"],
+    );
+    const welcomeLayout = await page.evaluate(() => ({
+      composerBottom: document
+        .querySelector(".agus-composer")
+        .getBoundingClientRect().bottom,
+      suggestionsTop: document
+        .querySelector(".agus-suggestions")
+        .getBoundingClientRect().top,
+      inventedEmblems: document.querySelectorAll(
+        ".agus-welcome-emblem, .agus-signal",
+      ).length,
+    }));
+    assert.ok(welcomeLayout.suggestionsTop > welcomeLayout.composerBottom);
+    assert.equal(welcomeLayout.inventedEmblems, 0);
+    if (width === 1440) {
+      await page.setViewportSize({ width: 1672, height: 941 });
+      await page.screenshot({
+        path: join(outputDir, "1672-reference-welcome.png"),
+      });
+      await page.setViewportSize({ width: 1440, height: 810 });
+      await capture("welcome-16x9");
+      await page.setViewportSize({ width, height: 1000 });
+    }
     checks.push("Compact empty composer and no horizontal overflow");
     await page
       .getByRole("button", { name: "Sign in to AGUS", exact: true })

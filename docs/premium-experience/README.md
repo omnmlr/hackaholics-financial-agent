@@ -1,3 +1,5 @@
+> Historical visual direction, superseded by the user’s final approved screenshot on October 21, 2026. The current candidate and continuation status are in [the approved release record](../approved-release/README.md). Its engineering is retained; its rejected styling is replaced.
+
 # AGUS — your money, in focus
 
 A working redesign of the AGUS conversation product, based on PR #40 at `c2117ed643790950b6f4af7210e707831fab54db`. Work lives on `ui/agus-premium-experience-20261020`. No deployment or production branch change is part of this work.

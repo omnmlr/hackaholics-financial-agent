@@ -6,9 +6,9 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 export const metadata: Metadata = {
-  title: "agus. · Your money, and what's next.",
+  title: "agus.",
   description:
-    "Your money, and what's next. A financial conversation workspace with clearly labeled fictional demo data.",
+    "A financial conversation workspace with clearly labeled fictional demo data.",
 };
 export default function RootLayout({
   children,

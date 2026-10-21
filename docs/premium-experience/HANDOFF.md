@@ -1,3 +1,5 @@
+> Historical visual direction, superseded by the user’s final approved screenshot on October 21, 2026. The current candidate and continuation status are in [the approved release record](../approved-release/README.md). Its engineering is retained; its rejected styling is replaced.
+
 # Same-task continuation
 
 Status: **complete — implemented, validated and delivered as draft PR #41**.

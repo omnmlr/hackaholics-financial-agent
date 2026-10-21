@@ -5,16 +5,16 @@
   font-weight: 100 900;
   font-display: swap;
 }
-/* AGUS: midnight surfaces, iris interaction, mint source evidence. */
+/* AGUS: black surfaces, restrained blue interaction, neutral source evidence. */
 .agus-workspace {
-  --agus-bg: #090d16;
-  --agus-surface: #111824;
-  --agus-raised: #182334;
-  --agus-line: #283448;
-  --agus-ink: #f0f3fc;
-  --agus-muted: #98a8bc;
-  --agus-accent: #a5afff;
-  --agus-evidence: #8bdbc0;
+  --agus-bg: #070809;
+  --agus-surface: #101214;
+  --agus-raised: #191c20;
+  --agus-line: #2c3035;
+  --agus-ink: #f0f0f0;
+  --agus-muted: #9b9da1;
+  --agus-accent: #6aa8ff;
+  --agus-evidence: #a7bac4;
   container-name: agus-workspace;
   container-type: size;
   display: flex;
@@ -36,8 +36,8 @@
   min-width: 0;
 }
 .agus-workspace ::selection {
-  background: #a5afff;
-  color: #090d16;
+  background: #6aa8ff;
+  color: #070809;
 }
 .agus-workspace button,
 .agus-workspace a,
@@ -55,34 +55,34 @@
 }
 .agus-workspace button:hover,
 .agus-workspace a:hover {
-  background: #182334;
+  background: #191c20;
 }
 .agus-workspace button:disabled {
   opacity: 1;
-  color: #8999b0;
-  background: #141d2b;
+  color: #92969c;
+  background: #151719;
   cursor: not-allowed;
 }
 .agus-workspace :focus-visible {
-  outline: 2px solid #a5afff;
+  outline: 2px solid #6aa8ff;
   outline-offset: 3px;
 }
 .agus-workspace input,
 .agus-workspace select {
   width: 100%;
   min-height: 48px;
-  background: #0b111c;
-  border: 1px solid #40506a;
+  background: #0c0e10;
+  border: 1px solid #41464d;
   border-radius: 10px;
   padding: 10px 12px;
-  color: #f0f3fc;
+  color: #f0f0f0;
   font-size: 16px;
 }
 .agus-workspace input::placeholder {
-  color: #8999b0;
+  color: #92969c;
 }
 .agus-workspace input[type="checkbox"] {
-  accent-color: #a5afff;
+  accent-color: #6aa8ff;
 }
 .agus-workspace p,
 .agus-workspace pre {
@@ -90,7 +90,7 @@
 }
 .agus-workspace small {
   font-size: 12px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-workspace h1 {
   font-size: 36px;
@@ -116,7 +116,7 @@
   overflow: clip;
 }
 .agus-empty .agus-main {
-  background: radial-gradient(ellipse at 50% 31%, #1a22454d, transparent 54%);
+  background: radial-gradient(ellipse at 50% 31%, #11131533, transparent 54%);
   overflow-y: auto;
 }
 .agus-empty .agus-main::before {
@@ -126,8 +126,8 @@
   inset: 0 0 30%;
   z-index: -1;
   background-image:
-    linear-gradient(#7789cd0a 1px, transparent 1px),
-    linear-gradient(90deg, #7789cd0a 1px, transparent 1px);
+    linear-gradient(#77818c08 1px, transparent 1px),
+    linear-gradient(90deg, #77818c08 1px, transparent 1px);
   background-size: 64px 64px;
   mask-image: radial-gradient(ellipse at 50% 20%, #000, transparent 70%);
 }
@@ -150,29 +150,22 @@
   width: 70px;
 }
 .agus-header .agus-icon-button {
-  color: #98a8bc;
-}
-.agus-header-caption {
-  border-left: 1px solid #283448;
-  padding-left: 20px;
-  margin-left: 8px;
-  font-size: 12px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-header-title {
-  border-left: 1px solid #283448;
+  border-left: 1px solid #2c3035;
   padding-left: 16px;
   font-size: 13px;
-  color: #b9c5d8;
+  color: #b7bcc3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 40vw;
 }
 .agus-workspace .agus-account-pill {
-  color: #c6d0e0;
-  border: 1px solid #283448;
-  background: #111824;
+  color: #c1c5cb;
+  border: 1px solid #2c3035;
+  background: #101214;
   border-radius: 10px;
   gap: 8px;
   padding-inline: 12px;
@@ -185,7 +178,7 @@
   text-overflow: ellipsis;
 }
 .agus-workspace .agus-header-signin {
-  color: #c1c8ff;
+  color: #b5d5ff;
 }
 .agus-active-scope {
   width: min(800px, calc(100% - 64px));
@@ -194,18 +187,18 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #b9c5d8;
+  color: #b7bcc3;
   flex-shrink: 0;
 }
 .agus-active-scope > span {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #8bdbc0;
+  background: #a7bac4;
 }
 .agus-active-scope small {
   margin-left: auto;
-  color: #8bdbc0;
+  color: #a7bac4;
 }
 .agus-scroll {
   flex: 1;
@@ -214,7 +207,7 @@
   min-height: 0;
   padding: 28px 32px 16px;
   scrollbar-width: thin;
-  scrollbar-color: #34415b transparent;
+  scrollbar-color: #363f4b transparent;
 }
 .agus-thread,
 .agus-welcome,
@@ -234,65 +227,13 @@
   text-align: center;
   padding: 0 0 28px;
 }
-.agus-welcome-emblem {
-  width: 94px;
-  height: 94px;
-  margin: 0 auto 24px;
-  display: grid;
-  place-items: center;
-  border: 1px solid #6273bb4d;
-  border-radius: 28px;
-  background: radial-gradient(circle at 30% 15%, #6675d654, #111b34 65%);
-  box-shadow:
-    0 16px 60px #394fa924,
-    inset 0 1px 0 #ffffff12;
-  transform: rotate(-6deg);
-}
-.agus-signal {
-  display: inline-flex;
-  width: 32px;
-  height: 32px;
-  color: #a5afff;
-  flex-shrink: 0;
-}
-.agus-signal svg {
-  width: 100%;
-  height: 100%;
-  stroke: currentColor;
-  stroke-width: 2;
-}
-.agus-signal circle {
-  fill: #dce0ff;
-  stroke: none;
-}
-.agus-welcome-emblem .agus-signal {
-  width: 72px;
-  height: 72px;
-  transform: rotate(6deg);
-}
-.agus-eyebrow {
-  color: #a5afff;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2.4px;
-  margin-bottom: 14px;
-}
 .agus-workspace .agus-welcome-question {
-  color: #f0f3fc;
+  color: #f0f0f0;
   font-size: clamp(36px, 4.5vw, 58px);
   line-height: 1.12;
   font-weight: 500;
   letter-spacing: -2.2px;
   margin: 0;
-}
-.agus-welcome-description {
-  color: #98a8bc;
-  font-size: 16px;
-  line-height: 1.6;
-  margin-top: 18px;
-}
-.agus-mobile-break {
-  display: none;
 }
 .agus-suggestions {
   display: grid;
@@ -302,8 +243,8 @@
   text-align: left;
 }
 .agus-workspace .agus-suggestions button {
-  border: 1px solid #283448;
-  background: linear-gradient(130deg, #172035a8, #101722c7);
+  border: 1px solid #2c3035;
+  background: linear-gradient(130deg, #151719a8, #101213c7);
   border-radius: 14px;
   padding: 20px 16px 16px;
   display: flex;
@@ -314,12 +255,12 @@
   text-align: left;
 }
 .agus-workspace .agus-suggestions button:hover {
-  border-color: #6b7bbc;
-  background: #1a2540;
+  border-color: #59626e;
+  background: #1a1e23;
 }
 .agus-suggestions strong {
   display: block;
-  color: #e3e9f7;
+  color: #eeeeef;
   font-size: 14px;
   font-weight: 500;
 }
@@ -328,29 +269,20 @@
   margin-top: 3px;
   font-size: 11px;
 }
-.agus-suggestion-icon {
-  color: #a5afff;
-}
-.agus-suggestion-arrow {
-  position: absolute;
-  right: 16px;
-  top: 22px;
-  color: #7484a0;
-}
 .agus-turn {
   margin-bottom: 32px;
   animation: agus-arrive 180ms ease-out;
 }
 .agus-user-message {
-  background: #1b2740;
-  border: 1px solid #2e3d59;
+  background: #171a1e;
+  border: 1px solid #30353b;
   border-radius: 16px 16px 4px 16px;
   padding: 10px 14px;
   margin: 0 0 24px auto;
   max-width: 84%;
   width: fit-content;
   white-space: pre-wrap;
-  color: #e8edfb;
+  color: #eceef1;
   font-size: 15px;
 }
 .agus-speaker {
@@ -369,10 +301,6 @@
   letter-spacing: -0.5px;
   font-weight: 600;
 }
-.agus-response-heading .agus-signal {
-  width: 28px;
-  height: 28px;
-}
 .agus-response-heading small {
   letter-spacing: 0;
   font-size: 10px;
@@ -385,7 +313,7 @@
 }
 .agus-prose {
   max-width: 74ch;
-  color: #d9e1ef;
+  color: #dadce0;
 }
 .agus-prose p {
   margin: 0 0 12px;
@@ -395,10 +323,10 @@
 .agus-response-time,
 .agus-fallback {
   font-size: 11px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-history-note {
-  border-left: 2px solid #40506a;
+  border-left: 2px solid #41464d;
   padding-left: 12px;
   margin-bottom: 24px;
 }
@@ -406,15 +334,15 @@
   margin-left: 4px;
 }
 .agus-workspace .agus-listen {
-  color: #98a8bc;
+  color: #9b9da1;
   margin-top: 4px;
   vertical-align: middle;
 }
 .agus-result {
   margin-top: 20px;
   font-size: 13px;
-  border: 1px solid #2c3a52;
-  background: linear-gradient(120deg, #151f33, #101823);
+  border: 1px solid #30353b;
+  background: linear-gradient(120deg, #141719, #0e1012);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -424,20 +352,20 @@
   justify-content: space-between;
   gap: 8px;
   padding: 14px 18px;
-  border-bottom: 1px solid #283448;
+  border-bottom: 1px solid #2c3035;
 }
 .agus-result-header > span {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #d7e0f0;
+  color: #d9dce0;
   font-size: 12px;
 }
 .agus-result-header small {
-  color: #8bdbc0;
+  color: #a7bac4;
   font-size: 10px;
-  border: 1px solid #33584f;
-  background: #142b29;
+  border: 1px solid #35434b;
+  background: #172026;
   border-radius: 6px;
   padding: 2px 6px;
   white-space: nowrap;
@@ -452,7 +380,7 @@
   flex: 1;
 }
 .agus-totals dt {
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 11px;
 }
 .agus-totals dd {
@@ -465,25 +393,25 @@
   overflow-wrap: anywhere;
 }
 .agus-totals > div + div {
-  border-left: 1px solid #283448;
+  border-left: 1px solid #2c3035;
   padding-left: 20px;
 }
 .agus-totals > div:first-child dd {
-  color: #c4ccff;
+  color: #b3d3ff;
 }
 .agus-scope {
-  color: #bcc9dd;
+  color: #bdc2ca;
   padding: 0 20px 14px;
   font-size: 12px;
 }
 .agus-limit {
-  color: #98a8bc;
+  color: #9b9da1;
   padding: 0 20px 14px;
   font-size: 11px;
 }
 .agus-record {
   padding: 16px 20px;
-  border-top: 1px solid #283448;
+  border-top: 1px solid #2c3035;
 }
 .agus-record-heading {
   display: flex;
@@ -495,15 +423,15 @@
   height: 34px;
   display: grid;
   place-items: center;
-  border: 1px solid #34435e;
+  border: 1px solid #353d48;
   border-radius: 10px;
-  background: #1b2940;
-  color: #afbcf9;
+  background: #191e24;
+  color: #b3cced;
 }
 .agus-record-direction.credit {
-  color: #8bdbc0;
-  background: #142b29;
-  border-color: #33584f;
+  color: #a7bac4;
+  background: #172026;
+  border-color: #35434b;
 }
 .agus-record-heading > div {
   flex: 1;
@@ -519,7 +447,7 @@
 }
 .agus-record > p {
   font-size: 11px;
-  color: #98a8bc;
+  color: #9b9da1;
   margin-top: 8px;
 }
 .agus-record button {
@@ -529,22 +457,22 @@
 .agus-sources {
   font-size: 12px;
   margin: 10px 0 4px;
-  color: #a9b8cc;
+  color: #aab1bb;
 }
 .agus-sources summary {
   padding: 8px 0;
   cursor: pointer;
 }
 .agus-sources[open] {
-  border-bottom: 1px solid #283448;
+  border-bottom: 1px solid #2c3035;
   padding-bottom: 16px;
 }
 .agus-sources section {
   margin: 16px 0;
   padding: 14px;
-  border: 1px solid #283448;
+  border: 1px solid #2c3035;
   border-radius: 10px;
-  background: #101722;
+  background: #101316;
 }
 .agus-sources p {
   margin-top: 8px;
@@ -554,7 +482,7 @@
   font-family: inherit;
   font-size: 12px;
   line-height: 1.6;
-  color: #98a8bc;
+  color: #9b9da1;
   margin: 12px 0;
   max-height: none;
   overflow: visible;
@@ -566,11 +494,8 @@
   align-items: center;
   gap: 12px;
   padding: 4px 0 12px;
-  color: #c6d0e0;
+  color: #c1c5cb;
   font-size: 14px;
-}
-.agus-thinking .agus-signal {
-  animation: agus-breathe 2s ease-in-out infinite;
 }
 .agus-thinking small {
   display: block;
@@ -589,8 +514,8 @@
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  background: #141d2d;
-  border: 1px solid #3c4a66;
+  background: #111416;
+  border: 1px solid #41464c;
   border-radius: 16px;
   padding: 8px;
   box-shadow:
@@ -601,7 +526,7 @@
     box-shadow 140ms;
 }
 .agus-composer:focus-within {
-  border-color: #98a8eb;
+  border-color: #6aa8ff;
   box-shadow: 0 0 0 3px #a5afff12;
 }
 .agus-composer textarea {
@@ -615,12 +540,12 @@
   line-height: 24px;
   min-height: 44px;
   max-height: min(180px, 25dvh);
-  color: #f0f3fc;
+  color: #f0f0f0;
   padding: 10px 8px;
   scrollbar-width: thin;
 }
 .agus-composer textarea::placeholder {
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-workspace .agus-composer textarea:focus-visible {
   outline: none;
@@ -633,7 +558,7 @@
   flex-wrap: wrap;
 }
 .agus-character-count {
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 10px;
 }
 .agus-character-count:empty {
@@ -644,7 +569,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 10px;
   padding: 10px 4px 0;
 }
@@ -654,9 +579,9 @@
   align-items: center;
 }
 .agus-workspace .agus-send {
-  background: #a5afff;
-  color: #11162b;
-  border: 1px solid #bac2ff;
+  background: #6aa8ff;
+  color: #08111e;
+  border: 1px solid #80b6ff;
   border-radius: 11px;
   width: 44px;
   height: 44px;
@@ -664,25 +589,25 @@
   flex-shrink: 0;
 }
 .agus-workspace .agus-send:hover {
-  background: #c1c8ff;
+  background: #b5d5ff;
 }
 .agus-workspace .agus-send:disabled {
-  background: #26334c;
-  color: #8e9dbb;
-  border-color: #34435e;
+  background: #1c2735;
+  color: #90a8c6;
+  border-color: #353d48;
 }
 .agus-workspace .agus-stop {
-  background: #dde2ff;
+  background: #b6d5ff;
 }
 .agus-workspace .agus-mic {
   flex: 0 0 44px;
-  color: #b9c5d8;
+  color: #b7bcc3;
   border-radius: 11px;
 }
 .agus-workspace .agus-mic.is-recording {
-  color: #bfc8ff;
-  background: #26334c;
-  box-shadow: inset 0 0 0 1px #a5afff;
+  color: #bdd7fa;
+  background: #1c2735;
+  box-shadow: inset 0 0 0 1px #6aa8ff;
 }
 .agus-icon-button {
   width: 44px;
@@ -696,7 +621,7 @@
   padding: 0 16px max(4px, env(safe-area-inset-bottom));
   text-align: center;
   font-size: 10px;
-  color: #98a8bc;
+  color: #9b9da1;
   position: relative;
 }
 .agus-demo-strip summary {
@@ -712,7 +637,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #8bdbc0;
+  background: #a7bac4;
 }
 .agus-demo-strip summary::after {
   content: "⌄";
@@ -725,8 +650,8 @@
   transform: translateX(-50%);
   text-align: left;
   z-index: 4;
-  background: #182334;
-  border: 1px solid #40506a;
+  background: #191c20;
+  border: 1px solid #41464d;
   border-radius: 12px;
   padding: 16px;
   width: min(400px, calc(100% - 24px));
@@ -739,9 +664,9 @@
   font-size: 13px;
   padding: 12px 16px;
   margin-bottom: 12px;
-  border: 1px solid #40506a;
+  border: 1px solid #41464d;
   border-radius: 12px;
-  background: #141e30;
+  background: #15191e;
 }
 .agus-error {
   border-color: #77503f;
@@ -762,17 +687,17 @@
   margin-top: 16px;
 }
 .agus-secondary {
-  border: 1px solid #53658a !important;
-  color: #d0d7ff;
-  background: #1a2740;
+  border: 1px solid #4b607c !important;
+  color: #c4dcff;
+  background: #1a2029;
 }
 .agus-latest {
   position: absolute;
   bottom: 150px;
   left: 50%;
   transform: translateX(-50%);
-  background: #182334;
-  border: 1px solid #53658a !important;
+  background: #191c20;
+  border: 1px solid #4b607c !important;
   box-shadow: 0 4px 20px #0006;
   font-size: 12px !important;
   z-index: 2;
@@ -781,11 +706,11 @@
   width: 260px;
   flex-shrink: 0;
   padding: 24px 16px 16px;
-  background: #0e1522;
+  background: #0c0e10;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-right: 1px solid #283448;
+  border-right: 1px solid #2c3035;
 }
 .agus-sidebar-brand {
   padding: 0 4px;
@@ -805,13 +730,13 @@
   width: 100%;
   justify-content: flex-start;
   gap: 10px;
-  background: #1c2841;
-  border: 1px solid #3a4c73;
-  color: #d9dfff;
+  background: #171d25;
+  border: 1px solid #3b4a5e;
+  color: #dce5f2;
   padding-inline: 14px;
 }
 .agus-history-heading {
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
@@ -822,7 +747,7 @@
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #34415b transparent;
+  scrollbar-color: #363f4b transparent;
 }
 .agus-history > button {
   display: flex;
@@ -832,7 +757,7 @@
   gap: 10px;
   margin-bottom: 4px;
   font-size: 12px;
-  color: #aab9d0;
+  color: #b0b7c2;
 }
 .agus-history > button > span {
   overflow: hidden;
@@ -840,30 +765,30 @@
   white-space: nowrap;
 }
 .agus-history > button.active {
-  background: #1b2942;
-  color: #e3e8ff;
-  box-shadow: inset 2px 0 #a5afff;
+  background: #1a222d;
+  color: #e4edf9;
+  box-shadow: inset 2px 0 #6aa8ff;
 }
 .agus-sidebar-empty {
   padding: 8px;
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 12px;
   line-height: 1.7;
 }
 .agus-sidebar-bottom {
-  border-top: 1px solid #283448;
+  border-top: 1px solid #2c3035;
   padding-top: 16px;
 }
 .agus-sidebar-note {
   display: flex;
   gap: 10px;
   padding: 0 8px 20px;
-  color: #a5afff;
+  color: #6aa8ff;
   font-size: 11px;
   line-height: 1.6;
 }
 .agus-sidebar-note strong {
-  color: #98a8bc;
+  color: #9b9da1;
   font-weight: 400;
 }
 .agus-sidebar-link,
@@ -875,7 +800,7 @@
   gap: 10px;
   font-size: 12px !important;
   padding: 8px;
-  color: #aab9d0;
+  color: #b0b7c2;
 }
 .agus-account-trigger {
   display: flex;
@@ -884,7 +809,7 @@
   text-align: left;
   overflow-wrap: anywhere;
   font-size: 12px !important;
-  border-top: 1px solid #283448;
+  border-top: 1px solid #2c3035;
   margin-top: 12px;
   border-radius: 0 !important;
 }
@@ -908,9 +833,9 @@
   padding: 8px;
 }
 .agus-dialog {
-  color: #f0f3fc;
-  background: #111824;
-  border: 1px solid #3c4a66;
+  color: #f0f0f0;
+  background: #101214;
+  border: 1px solid #41464c;
   border-radius: 20px;
   padding: 24px;
   width: min(720px, calc(100% - 32px));
@@ -922,27 +847,27 @@
     sans-serif;
   box-shadow: 0 24px 100px #0009;
   scrollbar-width: thin;
-  scrollbar-color: #34415b transparent;
+  scrollbar-color: #363f4b transparent;
 }
 .agus-dialog::backdrop {
-  background: #030610d9;
+  background: #030405d9;
 }
 .agus-dialog-heading {
   position: sticky;
   top: -24px;
-  background: #111824;
+  background: #101214;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 8px 0 16px;
   z-index: 2;
-  border-bottom: 1px solid #283448;
+  border-bottom: 1px solid #2c3035;
   margin-bottom: 16px;
 }
 .agus-dialog p {
   margin: 12px 0;
-  color: #b4c1d6;
+  color: #b9bec7;
 }
 .agus-dialog h2 {
   font-size: 22px;
@@ -966,8 +891,8 @@
 }
 .agus-signin form > button {
   width: 100%;
-  background: #a5afff;
-  color: #11162b;
+  background: #6aa8ff;
+  color: #08111e;
   border: 0 !important;
 }
 .agus-plan-grid {
@@ -977,7 +902,7 @@
   margin: 24px 0;
 }
 .agus-plan-grid section {
-  border: 1px solid #40506a;
+  border: 1px solid #41464d;
   border-radius: 12px;
   padding: 16px;
 }
@@ -991,7 +916,7 @@
 }
 .agus-preview {
   font-size: 12px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-drawer {
   position: fixed;
@@ -1002,7 +927,7 @@
   margin: 0;
   border-radius: 0 20px 20px 0;
   padding: 16px;
-  background: #0e1522;
+  background: #0c0e10;
 }
 .agus-drawer[open] {
   display: flex;
@@ -1031,7 +956,7 @@
   z-index: 20;
   padding: 8px;
   background: #fff;
-  color: #090d16;
+  color: #070809;
 }
 .agus-skip:focus {
   transform: none;
@@ -1062,9 +987,6 @@
   }
   .agus-header {
     padding-inline: 20px;
-  }
-  .agus-header-caption {
-    display: none;
   }
   .agus-scroll {
     padding-inline: 24px;
@@ -1119,31 +1041,9 @@
   .agus-welcome {
     padding-bottom: 20px;
   }
-  .agus-welcome-emblem {
-    width: 72px;
-    height: 72px;
-    border-radius: 22px;
-    margin-bottom: 24px;
-  }
-  .agus-welcome-emblem .agus-signal {
-    width: 58px;
-    height: 58px;
-  }
-  .agus-eyebrow {
-    font-size: 8px;
-    letter-spacing: 1.8px;
-    margin-bottom: 12px;
-  }
   .agus-workspace .agus-welcome-question {
     font-size: 36px;
     letter-spacing: -1.4px;
-  }
-  .agus-welcome-description {
-    font-size: 14px;
-    margin-top: 14px;
-  }
-  .agus-mobile-break {
-    display: block;
   }
   .agus-suggestions {
     grid-template-columns: 1fr;
@@ -1163,10 +1063,6 @@
   .agus-suggestions small {
     font-size: 11px;
     margin-top: 1px;
-  }
-  .agus-suggestion-arrow {
-    position: static;
-    margin-left: auto;
   }
   .agus-composer-area {
     width: calc(100% - 24px);
@@ -1229,7 +1125,7 @@
   }
   .agus-totals > div:nth-child(3) {
     padding-left: 16px;
-    border-left: 1px solid #283448;
+    border-left: 1px solid #2c3035;
   }
   .agus-totals dd {
     font-size: 23px;
@@ -1277,11 +1173,6 @@
   }
 }
 @container agus-workspace (max-height: 590px) {
-  .agus-welcome-emblem,
-  .agus-eyebrow,
-  .agus-welcome-description {
-    display: none;
-  }
   .agus-workspace .agus-welcome-question {
     font-size: 28px;
   }
@@ -1336,9 +1227,9 @@
 
 /* Payment content shares the existing chat scroll and palette. */
 .agus-payment {
-  border: 1px solid #283448;
+  border: 1px solid #2c3035;
   border-radius: 18px;
-  background: #111824;
+  background: #101214;
   margin-top: 16px;
   overflow-wrap: anywhere;
 }
@@ -1414,26 +1305,26 @@
 }
 .agus-listen {
   margin-top: 8px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-workspace .agus-mic {
   flex: 0 0 44px;
   border-radius: 50%;
 }
 .agus-workspace .agus-mic.is-recording {
-  color: #a5afff;
-  background: #182334;
-  box-shadow: inset 0 0 0 1px #a5afff;
+  color: #6aa8ff;
+  background: #191c20;
+  box-shadow: inset 0 0 0 1px #6aa8ff;
 }
 .agus-audio-status {
   font-size: 13px;
-  color: #98a8bc;
+  color: #9b9da1;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .agus-live-transcript {
-  color: #c6d0e0;
+  color: #c1c5cb;
   font-size: 14px;
   max-height: 100px;
   overflow-y: auto;
@@ -1449,7 +1340,7 @@
 .agus-voice-setting select {
   max-width: 190px;
   color: inherit;
-  background: #182334;
+  background: #191c20;
   padding: 8px;
   border-radius: 8px;
 }
@@ -1484,7 +1375,7 @@
 }
 .agus-copy-feedback {
   display: block;
-  color: #b8c2ff;
+  color: #bdd8ff;
   font-size: 12px;
 }
 @media (hover: none), (pointer: coarse) {
@@ -1509,7 +1400,7 @@
 }
 .agus-recording-pulse {
   font-size: 12px;
-  color: #98a8bc;
+  color: #9b9da1;
 }
 .agus-recording-pulse::before {
   content: "";
@@ -1558,8 +1449,8 @@
 }
 .agus-payment {
   scroll-margin-top: 8px;
-  border-color: #35486b;
-  background: #111a2b;
+  border-color: #344356;
+  background: #111519;
 }
 .agus-payment > summary {
   display: flex;
@@ -1577,9 +1468,9 @@
   width: 38px;
   height: 38px;
   border-radius: 11px;
-  color: #bdc7ff;
-  background: #243356;
-  border: 1px solid #3e5181;
+  color: #b7d2fa;
+  background: #202a37;
+  border: 1px solid #40546f;
   flex-shrink: 0;
 }
 .agus-payment-summary-title {
@@ -1593,11 +1484,11 @@
   font-weight: 400;
 }
 .agus-payment-chevron {
-  color: #98a8bc;
+  color: #9b9da1;
   transition: transform 140ms;
 }
 .agus-payment[open] > summary {
-  border-bottom: 1px solid #2c3b57;
+  border-bottom: 1px solid #2e3845;
 }
 .agus-payment[open] > summary .agus-payment-chevron {
   transform: rotate(180deg);
@@ -1606,46 +1497,46 @@
   background: transparent;
 }
 .agus-payment .recipient-form {
-  border-color: #354562;
-  background: #0e1625;
+  border-color: #35404f;
+  background: #0e1217;
   border-radius: 12px;
   padding: 16px;
 }
 .agus-payment .recipient-form legend {
-  color: #c6d0e0;
+  color: #c1c5cb;
 }
 .agus-payment .fixture-select {
-  background: #16233a;
-  border: 1px solid #2e4164;
+  background: #171d26;
+  border: 1px solid #324256;
   border-radius: 10px;
 }
 .agus-payment .next-step {
-  background: #1a2841;
-  border-color: #354b76;
-  color: #c3cee3;
+  background: #1a222d;
+  border-color: #364a65;
+  color: #c4ccd9;
 }
 .agus-payment .batch-total {
   padding: 18px 0;
-  border-block: 1px solid #2c3b57;
+  border-block: 1px solid #2e3845;
   margin-block: 12px;
 }
 .agus-payment .request-link {
-  border-left: 2px solid #465c87;
+  border-left: 2px solid #465b77;
   padding-left: 12px;
-  color: #9eafca;
+  color: #a6b4c7;
 }
 .agus-payment .primary {
-  background: #a5afff;
-  color: #11162b;
-  border: 1px solid #bdc6ff;
+  background: #6aa8ff;
+  color: #08111e;
+  border: 1px solid #91beff;
 }
 .agus-payment .primary:hover {
-  background: #c1c8ff;
+  background: #b5d5ff;
 }
 .agus-payment .secondary {
-  background: #18263e;
-  border-color: #425779;
-  color: #d5dded;
+  background: #1a222e;
+  border-color: #445a76;
+  color: #d7e0ee;
 }
 @media (prefers-reduced-motion: reduce) {
   .agus-payment-chevron {
@@ -1676,24 +1567,24 @@
 }
 .agus-cashflow span {
   width: 56px;
-  color: #98a8bc;
+  color: #9b9da1;
   font-size: 10px;
 }
 .agus-cashflow > div > div {
   height: 4px;
   border-radius: 2px;
-  background: #283448;
+  background: #2c3035;
   flex: 1;
   overflow: hidden;
 }
 .agus-cashflow i {
   display: block;
   height: 100%;
-  background: #a5afff;
+  background: #6aa8ff;
   border-radius: 2px;
 }
 .agus-cashflow > div:nth-child(2) i {
-  background: #8bdbc0;
+  background: #a7bac4;
 }
 /* Scroll only the conversation, never the application shell. */
 html:has(.agus-workspace),
@@ -1710,7 +1601,7 @@ body:has(.agus-workspace) {
 }
 /* Use the original wordmark's luminance as a mask, preserving its exact shape. */
 .agus-workspace .brand-asset {
-  background: #f0f3fc;
+  background: #f0f0f0;
   mask: url("/brand/agus-wordmark-dark.png") center / contain no-repeat;
   mask-mode: luminance;
   mix-blend-mode: normal;
@@ -1720,4 +1611,301 @@ body:has(.agus-workspace) {
 }
 .agus-workspace .brand-asset img {
   opacity: 0;
+}
+
+/* Final approved reference: black canvas, original wordmark, quiet blue detail. */
+.agus-main {
+  background: #070809;
+}
+.agus-empty .agus-main {
+  background: #070809;
+}
+.agus-empty .agus-main::before {
+  content: none;
+}
+.agus-financial-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.28;
+}
+.agus-empty .agus-financial-backdrop {
+  opacity: 1;
+}
+.agus-empty .agus-header {
+  height: 112px;
+  min-height: 112px;
+  padding: 24px 3.65% 0;
+  border-bottom: 0;
+}
+.agus-empty .agus-header .brand-asset {
+  width: 76px;
+}
+.agus-empty .agus-header-brand {
+  order: -1;
+}
+.agus-workspace .agus-wordmark-menu {
+  padding: 0;
+  border-radius: 4px;
+  background: none;
+}
+.agus-wordmark-menu .brand-asset {
+  flex-shrink: 0;
+}
+@media (min-width: 1024px) {
+  .agus-wordmark-menu.sidebar-expanded .brand-asset {
+    display: none;
+  }
+}
+/* Controls remain keyboard reachable and reveal together on header interaction. */
+@media (hover: hover) and (pointer: fine) {
+  .agus-empty .agus-header-actions {
+    opacity: 0;
+    transition: opacity 160ms;
+  }
+  .agus-empty .agus-header:hover .agus-header-actions,
+  .agus-empty .agus-header:focus-within .agus-header-actions {
+    opacity: 1;
+  }
+}
+.agus-empty .agus-scroll {
+  margin-top: max(24px, calc(32cqh - 112px));
+  padding: 0 24px;
+}
+.agus-welcome {
+  padding-bottom: clamp(32px, 2.5vw, 42px);
+}
+.agus-workspace .agus-welcome-question {
+  color: #ededee;
+  font-size: clamp(36px, 3.25vw, 54px);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -1.6px;
+  text-shadow: 0 2px 18px #ffffff0a;
+}
+.agus-empty .agus-composer-area {
+  width: min(55.75%, 932px);
+  max-width: 932px;
+  margin-bottom: auto;
+  padding-bottom: 24px;
+}
+.agus-composer {
+  background: linear-gradient(115deg, #111415bf, #111416e8);
+  border-color: #414448;
+  border-radius: 22px;
+  box-shadow:
+    inset 0 1px 0 #ffffff04,
+    0 12px 36px #0000001a;
+}
+.agus-composer:focus-within {
+  border-color: #6aa8ff;
+  box-shadow: 0 0 0 3px #478fff14;
+}
+.agus-composer textarea::placeholder {
+  color: #96999e;
+}
+.agus-empty .agus-composer {
+  padding: clamp(12px, 1.2vw, 20px) clamp(14px, 1.5vw, 25px);
+  border-radius: 28px;
+  gap: 12px;
+  align-items: center;
+}
+.agus-empty .agus-composer textarea {
+  font-size: clamp(18px, 1.4vw, 23px);
+  line-height: 28px;
+  min-height: 48px;
+  padding: 10px 4px;
+}
+.agus-empty .agus-composer-toolbar {
+  gap: 18px;
+}
+.agus-workspace .agus-send,
+.agus-workspace .agus-send:disabled {
+  background: linear-gradient(140deg, #579aff, #347aff);
+  color: #fff;
+  border-color: #619cff80;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 3px #ffffff26,
+    0 4px 24px #2378ff12;
+}
+.agus-workspace .agus-send:hover {
+  background: #579aff;
+}
+.agus-workspace .agus-send:disabled {
+  cursor: not-allowed;
+}
+.agus-empty .agus-send,
+.agus-empty .agus-mic {
+  width: clamp(46px, 3.35vw, 56px);
+  height: clamp(46px, 3.35vw, 56px);
+  min-height: 46px;
+  flex-basis: clamp(46px, 3.35vw, 56px);
+}
+.agus-empty .agus-send svg {
+  width: 25px;
+  height: 25px;
+}
+.agus-workspace .agus-mic,
+.agus-workspace .agus-mic:disabled {
+  background: #ffffff05;
+  color: #e0e2e5;
+}
+.agus-empty .agus-mic svg {
+  width: 23px;
+  height: 23px;
+}
+.agus-empty .agus-composer-hint,
+.agus-empty .agus-demo-strip {
+  display: none;
+}
+.agus-suggestions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(16px, 1.85vw, 31px);
+  margin-top: clamp(28px, 2.5vw, 42px);
+}
+.agus-workspace .agus-suggestions button {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  border: 1px solid #393c40;
+  border-radius: 999px;
+  padding: 12px 24px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #f0f0f0;
+  background: linear-gradient(145deg, #11131480, #0b0d0e80);
+  box-shadow:
+    inset 0 1px 0 #ffffff05,
+    0 4px 16px #0000000a;
+  white-space: nowrap;
+}
+.agus-workspace .agus-suggestions button:hover {
+  background: #171a1e;
+  border-color: #606974;
+}
+.agus-suggestion-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #64a4ff, #2b79f5);
+  box-shadow: 0 0 10px #3d8cff18;
+}
+.agus-workspace .agus-response-heading .brand-asset {
+  width: 44px;
+}
+.agus-thinking::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #6aa8ff;
+  animation: agus-breathe 2s ease-in-out infinite;
+}
+.agus-workspace .brand-asset {
+  background: #f0f0f0;
+}
+@media (max-width: 1023px) {
+  .agus-empty .agus-composer-area {
+    width: min(80%, 800px);
+  }
+  .agus-workspace .agus-suggestions button {
+    font-size: 13px;
+    padding-inline: 18px;
+    gap: 12px;
+  }
+  .agus-suggestions {
+    gap: 14px;
+  }
+}
+@media (max-width: 600px) {
+  .agus-empty .agus-header {
+    height: 88px;
+    min-height: 88px;
+    padding: 0 24px;
+  }
+  .agus-empty .agus-header .brand-asset {
+    width: 66px;
+  }
+  .agus-empty .agus-header .agus-navigation-toggle,
+  .agus-empty .agus-header-actions {
+    color: #92979e;
+  }
+  .agus-empty .agus-scroll {
+    margin-top: max(20px, calc(32.2cqh - 88px));
+    padding-inline: 12px;
+  }
+  .agus-workspace .agus-welcome-question {
+    font-size: clamp(29px, 8.5vw, 36px);
+    letter-spacing: -1.1px;
+  }
+  .agus-welcome {
+    padding-bottom: 32px;
+  }
+  .agus-empty .agus-composer-area {
+    width: calc(100% - 32px);
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .agus-empty .agus-composer {
+    padding: 10px;
+    border-radius: 22px;
+    gap: 2px;
+  }
+  .agus-empty .agus-composer textarea {
+    font-size: 16px;
+    line-height: 24px;
+    padding: 12px 4px;
+  }
+  .agus-empty .agus-composer-toolbar {
+    gap: 4px;
+  }
+  .agus-empty .agus-send,
+  .agus-empty .agus-mic {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    flex-basis: 44px;
+  }
+  .agus-suggestions {
+    margin-top: 24px;
+    gap: 10px;
+  }
+  .agus-workspace .agus-suggestions button {
+    min-height: 44px;
+    padding: 10px 16px;
+    font-size: 12px;
+    gap: 10px;
+  }
+  .agus-suggestion-dot {
+    width: 7px;
+    height: 7px;
+  }
+  .agus-empty .agus-financial-backdrop {
+    width: 180%;
+    left: -40%;
+    opacity: 0.7;
+  }
+}
+@container agus-workspace (max-height: 590px) {
+  .agus-empty .agus-scroll {
+    margin-top: 16px;
+    padding-top: 0;
+  }
+  .agus-welcome {
+    padding-bottom: 20px;
+  }
+  .agus-empty .agus-composer-area {
+    padding-bottom: 16px;
+  }
+  .agus-suggestions {
+    margin-top: 16px;
+    gap: 8px;
+  }
 }

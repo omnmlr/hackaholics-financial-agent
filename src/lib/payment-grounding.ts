@@ -1,5 +1,36 @@
 import { moneyQuantities } from "./model-led-agent/savings";
 
+export function rejectedPaymentField(text: string, index: number) {
+  return /\b(?:not|ignore|rather than|instead of)\s*(?:the\s+)?(?:(?:account|bank)(?:\s+(?:number|code))?\s*)?[:=]?\s*$/i.test(
+    text.slice(0, index),
+  );
+}
+
+/** A ten-digit phone/reference is evidence of that identifier, not an account. */
+export function paymentAccountCandidates(text: string) {
+  return [
+    ...new Set(
+      [...text.matchAll(/(?<![\w])\d{10}(?![\w])/g)]
+        .filter((m) => {
+          const before = text.slice(0, m.index!);
+          return (
+            !rejectedPaymentField(text, m.index!) &&
+            !/\b(?:phone|telephone|tel|mobile|contact|whatsapp|reference|ref|invoice)\b(?:\s+(?:number|no\.?|is))*\s*[:=#-]?\s*[\w-]*\s*$/i.test(
+              before,
+            )
+          );
+        })
+        .map((m) => m[0]),
+    ),
+  ];
+}
+
+export function rejectedPaymentAccount(text: string, account: string) {
+  return [...text.matchAll(/(?<![\w])\d{10}(?![\w])/g)].some(
+    (m) => m[0] === account && rejectedPaymentField(text, m.index!),
+  );
+}
+
 /** Recipient-local evidence. A model's proposed value cannot borrow a different
  * recipient's amount simply because both numbers occur somewhere in a request. */
 export function paymentSegment(

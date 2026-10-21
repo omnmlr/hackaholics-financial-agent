@@ -5,6 +5,9 @@ import {
   groundedPaymentAmounts,
   paymentAmountCandidates,
   rejectedPaymentAmount,
+  paymentAccountCandidates,
+  rejectedPaymentAccount,
+  rejectedPaymentField,
 } from "./payment-grounding";
 
 // No model-authored prose crosses the narration boundary. Even ordinary
@@ -110,12 +113,29 @@ export function groundProposal(
   request = paymentSegment(request, p.accountNumber, p.name);
   const contains = (value: string) =>
     request.toLowerCase().includes(value.toLowerCase());
-  const bankCodes = [
+  const codeEvidence = [
     ...request.matchAll(/\bbank(?: code)?\s*[:=]?\s*(\d{3,6})\b/gi),
-  ].map((m) => m[1]);
+  ];
+  const rejectedBanks = new Set(
+    codeEvidence
+      .filter((m) => rejectedPaymentField(request, m.index!))
+      .map((m) => m[1]),
+  );
+  const bankCodes = codeEvidence
+    .filter((m) => !rejectedPaymentField(request, m.index!))
+    .map((m) => m[1]);
+  for (const [code, pattern] of Object.entries(bankNames)) {
+    const evidence = [...request.matchAll(new RegExp(pattern.source, "gi"))];
+    if (evidence.some((m) => rejectedPaymentField(request, m.index!)))
+      rejectedBanks.add(code);
+    if (evidence.some((m) => !rejectedPaymentField(request, m.index!)))
+      bankCodes.push(code);
+  }
+  const banks = [...new Set(bankCodes)];
+  const accounts = paymentAccountCandidates(request);
   const amounts = groundedPaymentAmounts(request);
   const missingAccount =
-    /(?:haven.t|have not|not|no|missing|without|don.t|do not).{0,35}account|account.{0,25}(?:missing|unknown|not provided)/i.test(
+    /\b(?:haven.t|have not|don.t|do not)\s*(?:have|know)?[^\d.;\n]{0,25}\baccount\b|\b(?:no|missing|without)\b[^\d.;\n]{0,20}\baccount\b|\baccount\s+(?:is\s+)?(?:missing|unknown|not provided)\b/i.test(
       request,
     );
   const missingAmount =
@@ -126,18 +146,19 @@ export function groundProposal(
       p.name && (contains(p.name) || p.name === previous?.name) ? p.name : "",
     bankCode:
       p.bankCode &&
-      (bankCodes.includes(p.bankCode) ||
-        bankNames[p.bankCode]?.test(request) ||
-        p.bankCode === previous?.bankCode)
+      ((banks.length === 1 && banks[0] === p.bankCode) ||
+        (!banks.length &&
+          p.bankCode === previous?.bankCode &&
+          !rejectedBanks.has(p.bankCode)))
         ? p.bankCode
         : null,
     accountNumber:
       !missingAccount &&
       p.accountNumber &&
-      (new RegExp(`(?<![A-Za-z0-9])${p.accountNumber}(?![A-Za-z0-9])`).test(
-        request,
-      ) ||
-        p.accountNumber === previous?.accountNumber)
+      ((accounts.length === 1 && accounts[0] === p.accountNumber) ||
+        (!accounts.length &&
+          p.accountNumber === previous?.accountNumber &&
+          !rejectedPaymentAccount(request, p.accountNumber)))
         ? p.accountNumber
         : null,
     amountNaira:

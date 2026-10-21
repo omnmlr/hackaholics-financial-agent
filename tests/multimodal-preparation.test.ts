@@ -126,6 +126,56 @@ it("text extraction keeps supplied values but never verifies an arbitrary accoun
   expect(p.name).toBe("");
   expect(p.warnings.join(" ")).toMatch(/Unverified/);
 });
+it.each([
+  "phone",
+  "mobile number",
+  "reference",
+  "invoice number",
+  "ref: SYNTHETIC-",
+])("does not interpret a labelled %s as an account", (role) => {
+  const accountNumber = "8031234567";
+  expect(
+    groundProposal(
+      { ...proposal, accountNumber },
+      `500 OPay ${role} ${accountNumber}`,
+    ).accountNumber,
+  ).toBeNull();
+  expect(
+    groundProposal(
+      proposal,
+      `500 OPay account 9812345670 ${role} ${accountNumber}`,
+    ).accountNumber,
+  ).toBe("9812345670");
+});
+it("does not retain an explicitly superseded account or institution", () => {
+  const request =
+    "Use OPay account 0000000002, not account 9812345670; not Wema";
+  expect(groundProposal(proposal, request, proposal).accountNumber).toBeNull();
+  expect(
+    groundProposal(
+      { ...proposal, accountNumber: "0000000002" },
+      request,
+      proposal,
+    ).accountNumber,
+  ).toBe("0000000002");
+  const oldBank = { ...proposal, bankCode: "035" };
+  expect(
+    groundProposal(
+      proposal,
+      "500 OPay account 9812345670 or 0000000002",
+      proposal,
+    ).accountNumber,
+  ).toBeNull();
+  expect(
+    groundProposal(oldBank, "not bank code 035", oldBank).bankCode,
+  ).toBeNull();
+  expect(groundProposal(oldBank, request, oldBank).bankCode).toBeNull();
+  expect(groundProposal(proposal, request, oldBank).bankCode).toBe("999992");
+  expect(
+    groundProposal(proposal, "500 OPay or Wema account 9812345670", proposal)
+      .bankCode,
+  ).toBeNull();
+});
 it("preserves partial fields and keeps missing institution/name/amount empty", () => {
   expect(
     groundProposal(proposal, "Send 500 to account 9812345670"),

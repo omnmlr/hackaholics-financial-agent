@@ -219,7 +219,7 @@ it("preserves server-owned principal bindings and enforces composite evidence fo
   expect(indexed.rows[0].count).toBe(77);
 });
 
-it("calculates exact totals from persisted pages and withholds stale balances", async () => {
+it("calculates exact historical totals and keeps explicitly projected simulation balances usable", async () => {
   const clock = () => FIXTURE_NOW;
   const tools = createReadTools({
     repository: repo,
@@ -259,9 +259,15 @@ it("calculates exact totals from persisted pages and withholds stale balances", 
     args: { accountIds: ["amina-current"] },
   });
   expect(stale.data!.accounts[0]).toMatchObject({
-    availableKobo: null,
-    currentKobo: null,
-    unavailableReason: "stale",
+    availableKobo: 12345678,
+    currentKobo: 12445678,
+    asOf: FIXTURE_NOW,
+    unavailableReason: null,
+    simulation: {
+      openingAsOf: FIXTURE_NOW,
+      changeCount: 0,
+      historicalTransactionsReconciled: false,
+    },
   });
 });
 

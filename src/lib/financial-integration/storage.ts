@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm";
-import { db } from "../db";
+import { db, mutate } from "../db";
+import { captureOpenings, projectDataset } from "./simulation";
+import type { State } from "../domain";
 import {
   MemoryFinancialRepository,
   type FixtureDataset,
@@ -94,7 +96,19 @@ async function initialize() {
   });
 }
 
-async function snapshot(p: Principal) {
+export async function initializeSimulation(p: Principal) {
+  const { data, state } = await readDataset(p);
+  const probe = structuredClone(state);
+  captureOpenings(probe, data);
+  if (
+    JSON.stringify(probe.simulationOpenings) ===
+    JSON.stringify(state.simulationOpenings)
+  )
+    return;
+  await mutate((s) => captureOpenings(s, data));
+}
+
+async function readDataset(p: Principal) {
   const d = await db();
   // A single SQL statement gives one consistent snapshot. Validate all relational and
   // payload invariants on reload; never accept raw JSON as a trusted read model.
@@ -104,13 +118,17 @@ async function snapshot(p: Principal) {
     'transactions', (SELECT coalesce(jsonb_agg(payload ORDER BY account,id), '[]'::jsonb) FROM fm_transactions WHERE tenant=${p.tenantId} AND owner=${p.actorId}),
     'evidence', (SELECT coalesce(jsonb_agg(payload ORDER BY account,id), '[]'::jsonb) FROM fm_evidence WHERE tenant=${p.tenantId} AND owner=${p.actorId}),
     'summaries', (SELECT coalesce(jsonb_agg(payload ORDER BY account), '[]'::jsonb) FROM fm_summaries WHERE tenant=${p.tenantId} AND owner=${p.actorId})
-  ) AS dataset`);
+  ) AS dataset, (SELECT payload FROM workflow_state WHERE id=1) AS workflow`);
   const data = result.rows[0].dataset as FixtureDataset;
   for (const rows of Object.values(data))
     for (const row of rows)
       if (row.tenantId !== p.tenantId || row.ownerId !== p.actorId)
         throw new FinancialDataError("INVALID_PROVIDER_DATA");
-  return new MemoryFinancialRepository(data);
+  return { data, state: result.rows[0].workflow as State };
+}
+async function snapshot(p: Principal) {
+  const { data, state } = await readDataset(p);
+  return new MemoryFinancialRepository(projectDataset(data, state));
 }
 
 /** Server administrative interface. Never export this repository to the browser/model. */

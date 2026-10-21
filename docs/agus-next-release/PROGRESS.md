@@ -2,7 +2,7 @@
 
 Baseline: PR #42 head `ca9994b8c0dedb0ba02e50b9d00308e96a28d277` (verified through GitHub and fetched). Branch: `improve/agus-banking-workspace-20261021`; intended PR base: `improve/agus-intelligence-motion-20261021`. PRs #41/#42 are still draft/open, despite their releases being deployed. Never use the older workspace `work` branch as a baseline.
 
-## Current checkpoint: Phase 1 implementation
+## Current checkpoint: Phase 1 passed; Phase 2 investigation
 
 Investigation: fixed Oct 17 summary is expired independently in fixture.ts and tools.ts. Historical transactions are deliberately partial and do not reconcile to that summary. Durable fm_* storage seeds once with `agus-fictional-ng-v1`; it must remain untouched. Payments use an independent provider wallet, explicit review/approval/submission and CAS workflow_state. Native Gemini preserves bounded dialogue but cannot currently combine financial facts with savings output; unreviewed calculation fallback leaks a questionable result. Previous genuine-provider campaign exhausted its 48-request budget and exposed false narration-review rejections.
 
@@ -12,4 +12,8 @@ Then: validate savings quantities/cadence before execution, retain structured pl
 
 Environment: managed cloud runtime skill read; no configured provider/database secrets reported. Dependency installation uses a disposable /tmp npm cache. Local verification only until genuine-provider credentials and a separately bounded budget exist. No bank calls are authorized.
 
-Next action: implement and test opening-snapshot/payment projections against disposable embedded PostgreSQL, then checkpoint Phase 1. Final acceptance and visual reports will live here.
+Phase 1 gate: 211/211 focused tests across 12 files passed, including real disposable PGlite persistence/restarts, source-integrity/freshness tests, tenant/consent boundaries, duplicate simulated transfers, reserved/posted/failed/reversed/uncertain projections and insufficient funds. Typecheck and lint passed. The initial baseline sandbox run had 1,207 passing and seven environment EPERM failures; rerunning with local networking permission resolved those restrictions. Evidence: validation/phase1-*.log. No production connection, migration, reseed, provider request or real-money operation occurred.
+
+Decision: proceed to Phase 2. The optional workflow JSON extension captures original summaries once. Newly prepared fixture batches bind to the authorized funded demo source; legacy batches stay in their separate provider-wallet scope. Read projections use the same SQL snapshot as the payment workflow. State timestamps remain original/latest-change timestamps; they are not rewritten per read. Successful amounts and confirmed fees debit both balances; pending/unknown holds reserve principal plus fee allowance; failed/reversed entries have no net effect. No historical transactions are asserted to reconcile. Rollback retains optional fields, but pause new payment execution while running an older version that does not enforce fictional source funds. No SQL schema changes.
+
+Next action: implement quantity/cadence validation and source-backed multi-turn savings, then run the complete Phase 2 conversation scenarios before desktop work.

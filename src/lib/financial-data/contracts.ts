@@ -257,7 +257,26 @@ export const AccountSummarySchema = z
     asOf: InstantSchema.nullable(),
     simulated: z.boolean(),
     unavailableReason: z.enum(["not_provided", "stale"]).nullable(),
+    simulation: z
+      .strictObject({
+        basis: z.literal("opening_snapshot_and_authorized_changes"),
+        openingAsOf: InstantSchema,
+        openingAvailableKobo: SignedKoboSchema,
+        openingCurrentKobo: SignedKoboSchema,
+        changeCount: z.number().int().nonnegative(),
+        historicalTransactionsReconciled: z.literal(false),
+      })
+      .optional(),
   })
+  .refine(
+    (v) =>
+      !v.simulation ||
+      (v.simulated &&
+        v.asOf !== null &&
+        v.unavailableReason === null &&
+        Date.parse(v.simulation.openingAsOf) <= Date.parse(v.asOf)),
+    "Invalid simulation state",
+  )
   .refine(
     (v) =>
       (v.availableKobo === null && v.currentKobo === null) || v.asOf !== null,

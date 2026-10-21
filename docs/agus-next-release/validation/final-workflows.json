@@ -1,0 +1,125 @@
+{
+  "transport": "scripted Gemini; zero genuine provider or bank requests",
+  "widths": [
+    {
+      "width": 1440,
+      "checks": 33,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 07ae6325-1b36-4188-9f32-713cb36ce490: fixture/fixture; as of 2026-10-21T14:34:02.390Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    },
+    {
+      "width": 1920,
+      "checks": 33,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦122,106.78, current balance ₦123,756.78; state as of 2026-10-21T14:34:15.228Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source d54a05b2-5c3f-4492-8c9e-4e6fbafe0ba7: fixture/fixture; as of 2026-10-21T14:34:25.235Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦122,106.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦122,106.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦122,106.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦122,106.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    },
+    {
+      "width": 1280,
+      "checks": 33,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦120,756.78, current balance ₦123,056.78; state as of 2026-10-21T14:34:38.395Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 762b054f-b21f-47ee-87f3-59c55085526d: fixture/fixture; as of 2026-10-21T14:34:49.023Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦120,756.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦120,756.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦120,756.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦120,756.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    },
+    {
+      "width": 820,
+      "checks": 41,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦119,406.78, current balance ₦122,356.78; state as of 2026-10-21T14:34:59.937Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 464f48f2-b154-41a4-839d-bc2603c1718d: fixture/fixture; as of 2026-10-21T14:35:09.470Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦119,406.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦119,406.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦119,406.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦119,406.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    },
+    {
+      "width": 390,
+      "checks": 41,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦118,056.78, current balance ₦121,656.78; state as of 2026-10-21T14:35:21.891Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 04a9b9f2-aff3-47f3-af9b-518024b8d724: fixture/fixture; as of 2026-10-21T14:35:32.540Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦118,056.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦118,056.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦118,056.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦118,056.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    },
+    {
+      "width": 320,
+      "checks": 41,
+      "axeViolations": 0,
+      "pageErrors": [],
+      "examples": [
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦116,706.78, current balance ₦120,956.78; state as of 2026-10-21T14:35:41.533Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source ff38433e-a956-4239-9360-14275a8fc3d3: fixture/fixture; as of 2026-10-21T14:35:52.484Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦116,706.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦116,706.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Using your fictional available balance of ₦116,706.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦116,706.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 50 weeks (roughly 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
+        "Saving ₦500 daily, you’ll reach ₦1,000,000 in 2,000 days (roughly 5 years and 6 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals."
+      ],
+      "paymentExamples": [
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nA clearly labelled simulated confirmation is available below for each successful fictional record.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit.",
+        "Here is the current recorded payment status:\n\nADA OKAFOR · ₦700.00 · Simulation · successful. Confirmed fee ₦0.00.\n\nCHIDI NWOSU · ₦600.00 · Simulation · Processing · outcome unresolved. Confirmed fee ₦0.00.\n\nSome outcomes remain unresolved. Use Check provider on the payment card; do not submit the same instructions again.\n\nThese are fictional simulations. No real money moved. Source status does not prove recipient bank credit."
+      ]
+    }
+  ]
+}

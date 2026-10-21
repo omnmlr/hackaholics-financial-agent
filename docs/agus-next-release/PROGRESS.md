@@ -21,16 +21,16 @@ Counts overlap; they must not be added as unique tests. All model transports in 
 
 ## Gate 6 audit
 
-The initial full suite passed 1,274 tests in 54 files. Final audit then added regression coverage for named dates, rejected/ambiguous prior amounts, generic savings cadence and complete daily payment totals beyond the displayed ten-batch limit. Focused quantity/payment regressions passed. Final full-suite rerun is pending completion.
+The initial full suite passed 1,274 tests in 54 files. Final audit then added regression coverage for named dates, rejected/ambiguous prior amounts, generic savings cadence and complete daily payment totals beyond the displayed ten-batch limit. Focused quantity/payment regressions passed. Final full suite passed **1,276 tests/54 files**.
 
 Older browser suites found a real startup navigation regression: the active-conversation effect opened navigation while history was still loading. It now waits for loaded, nonempty conversation content. Harnesses now inspect the automatically prepared draft without pressing the obsolete preparation step or closing already-open details. They retain actual field, recovery and no-execution assertions.
 
-Final integrated campaign passed **222 browser check groups across 1440/1920/1280/820/390/320**, six axe scans, zero violations and zero page errors. It covers actual rendered bare ₦500, image preview and multiple drafts, amount correction, verification, separate approval and submission, processing without success, explicit reconciliation to mixed outcomes, simulated download, current conversational status/receipt/credit enquiries, reload and accumulated balance effects. Final code/build verification and older suites are still completing.
+Final integrated campaign passed **222 browser check groups across 1440/1920/1280/820/390/320**, six axe scans, zero violations and zero page errors. It covers actual rendered bare ₦500, image preview and multiple drafts, amount correction, verification, separate approval and submission, processing without success, explicit reconciliation to mixed outcomes, simulated download, current conversational status/receipt/credit enquiries, reload and accumulated balance effects. Final code/build/typecheck/lint, HTTP, native (14 groups), chat/payment (54), voice submission (36), voice meter (8), premium (28, 24 axe scans) and motion (20, 16 axe scans) all passed. Reports have zero page errors/axe violations. Fresh captures and motion videos were inspected.
 
 Environment-only failures: running server/restart suites without local networking permission produces EPERM. They are rerun with networking enabled for disposable local servers. No application safety check is removed.
 
 ## Exact next task
 
-Finish Gate 6 on the final code: full suite, typecheck/lint/build; HTTP, native, chat-payment, voice, premium and motion browser suites. Save logs and inspect fresh captures. Commit the audited code and evidence, push this branch, create one PR against the exact baseline branch, attach it and inspect Node 22.16/24 CI. Update RELEASE-REPORT.md with actual results and release SHA. Do not merge or deploy.
+Local development is complete at implementation `9954989a0225d718b74eb5367c0af6c7dcb0e273` plus final harness wording/evidence. Commit and push final reports, open one review PR against the exact unchanged baseline branch, attach it, and inspect Node 22.16/24 CI. RELEASE-REPORT.md and GALLERY.md contain results, limitations and rollback instructions. Do not merge or deploy. No optional feature phase is started.
 
 Outstanding external acceptance: genuine model extraction/reasoning with a new explicitly bounded development budget; physical Android Chrome and affected embedded browser, real keyboard/microphone; WebKit/Firefox. See REAL-DEVICE-CHECKLIST.md. These are not established by Chromium emulation or scripted extraction. No production credential should be copied into this environment to obtain them.

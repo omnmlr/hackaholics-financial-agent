@@ -415,7 +415,10 @@ try {
       "if i saved 10k every week, how long until i become a millionaire 👀🥲",
     );
     assert.equal(savings.reply.kind, "general");
-    assert.match(savings.reply.text, /100 weeks, roughly 1 year and 11 months/);
+    assert.match(
+      savings.reply.text,
+      /100 weeks \(roughly 1 year and 11 months\)/,
+    );
     assert.doesNotMatch(savings.reply.text, /Hypothetical|ceil\(/);
     await capture("savings");
     assert.equal(

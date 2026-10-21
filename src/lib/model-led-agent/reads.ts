@@ -425,6 +425,15 @@ export function createSecureReads(options: Options) {
       );
       return successful.length ? narrationContract(successful) : null;
     },
+    get narrationResults() {
+      return [...facts.values()]
+        .filter((f) => successIds.has(f.resultId))
+        .map((f, i) => ({
+          key: `r${i}`,
+          resultId: f.resultId,
+          type: f.presentation.type,
+        }));
+    },
     get selection() {
       return selection;
     },

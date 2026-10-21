@@ -6,6 +6,7 @@ import {
   composeVerified,
   planSavings,
   calculationFallback,
+  normalizeAnswerFormatting,
 } from "../src/lib/model-led-agent/calculate";
 import type { ToolModel } from "../src/lib/model-led-agent/model";
 import { createSecureReads } from "../src/lib/model-led-agent/reads";
@@ -76,6 +77,26 @@ const search = {
 };
 
 describe("savings semantics and verified calendar narration", () => {
+  it("renders recorded genuine math explanation formatting as readable verified plain text", () => {
+    const c = planSavings(
+      {
+        target: 1000000,
+        startingAmount: 0,
+        contribution: 10000,
+        cadence: "weeks",
+      },
+      "c1",
+    );
+    const text = normalizeAnswerFormatting(
+      "Mathematically, $\\frac{₦1,000,000}{₦10,000\\text{ per week}} = {{c1}}$ weeks.\n\n*Assumptions: no interest.*",
+    );
+    expect(composeVerified(text, [c])).toBe(
+      "Mathematically, ₦1,000,000 ÷ ₦10,000 per week = 100 weeks.\n\nAssumptions: no interest.",
+    );
+    expect(normalizeAnswerFormatting("A $5 fee and a $6 deposit.")).toBe(
+      "A $5 fee and a $6 deposit.",
+    );
+  });
   it.each([
     [0, 10000, "100", "1 year and 11 months"],
     [200000, 10000, "80", "1 year and 6 months"],

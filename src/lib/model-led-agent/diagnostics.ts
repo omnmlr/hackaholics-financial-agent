@@ -35,6 +35,9 @@ export function turnDiagnostic(reply: AgentReply, elapsedMs: number) {
     outcome: reply.kind,
     narration: reply.presentation?.narration ?? "none",
     category,
+    ...(/^MODEL_HTTP_[1-5]\d\d$/.test(code ?? "")
+      ? { providerStatus: Number(code!.slice(-3)) }
+      : {}),
     modelCalls: count(reply.evidence.modelCalls, 6),
     toolCalls: count(reply.evidence.toolCalls, 6),
     resultBytes: count(reply.evidence.resultBytes, 65536),

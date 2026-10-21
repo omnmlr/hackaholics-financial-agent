@@ -41,6 +41,19 @@ export type Calculation = {
   savings?: z.infer<typeof SavingsArgs>;
 };
 
+/** The chat renders plain text. Normalize common model formatting without
+ * changing numeric values; arithmetic/output checks run on the result. */
+export function normalizeAnswerFormatting(text: string) {
+  return text
+    .replace(/\$([^$\n]*\\[^$\n]*)\$/g, (_all, math: string) =>
+      math
+        .replace(/\\text\{([^{}]*)\}/g, "$1")
+        .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "$1 ÷ $2"),
+    )
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+    .replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, "$1");
+}
+
 export function calculate(raw: unknown, id: string): Calculation {
   const args = CalculateArgs.parse(raw);
   const tokens = args.expression.match(/\d+(?:\.\d+)?|[A-Za-z_]+|[^\s]/g) ?? [];

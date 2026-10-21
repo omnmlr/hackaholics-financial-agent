@@ -100,7 +100,7 @@ globalThis.fetch = async (input, init) => {
       tool.name === "find_payment_evidence"
     ) {
       const authoring = output.authoring;
-      const ids = [...new Set(authoring.examples.map((e) => e.resultId))];
+      const ids = authoring.results.map((r) => r.resultId);
       return call("present_financial", {
         paragraphs: ids.map((id, i) => ({
           resultIds: [id],
@@ -127,14 +127,15 @@ globalThis.fetch = async (input, init) => {
         );
       const authoring = output.authoring;
       const resultId = output.result.resultId;
-      const example = authoring.examples.find(
-        (e) => e.resultId === resultId && /total spending was/.test(e.text),
-      );
+
       return call("present_financial", {
         paragraphs: [
           {
             resultIds: [resultId],
-            text: [example.text, ...authoring.required].join(" "),
+            text: [
+              "Your total spending was {{r0.expenses}}, while your total income was {{r0.income}}.",
+              ...authoring.required,
+            ].join(" "),
           },
         ],
       });

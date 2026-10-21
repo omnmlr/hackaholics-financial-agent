@@ -232,6 +232,50 @@ try {
           return { x: m.e, y: m.f };
         }),
       );
+    async function recordMotion(name, seconds) {
+      if (width !== 1440 || process.env.CAPTURE_MOTION_VIDEO !== "1") return;
+      const frameDir = join(directory, name);
+      await mkdir(frameDir);
+      const started = Date.now();
+      for (let n = 0; n < seconds * 10; n++) {
+        await page.screenshot({
+          path: join(frameDir, `${String(n).padStart(3, "0")}.png`),
+        });
+        await page.waitForTimeout(
+          Math.max(0, started + (n + 1) * 100 - Date.now()),
+        );
+      }
+      await new Promise((resolve, reject) => {
+        const encoder = spawn(
+          "ffmpeg",
+          [
+            "-y",
+            "-loglevel",
+            "error",
+            "-framerate",
+            "10",
+            "-i",
+            join(frameDir, "%03d.png"),
+            "-vf",
+            "scale=960:-2",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            join(outputDir, `${name}.mp4`),
+          ],
+          { stdio: "ignore" },
+        );
+        encoder.on("error", reject);
+        encoder.on("exit", (code) =>
+          code === 0
+            ? resolve()
+            : reject(new Error("Motion clip encoding failed")),
+        );
+      });
+    }
     const beforeMotion = await pointPositions();
     await capture("motion-t0");
     await page.waitForTimeout(1800); // Deliberately sample observable movement, not a network wait.
@@ -246,6 +290,12 @@ try {
     checks.push(
       "All three existing blue points visibly travel along the existing curves",
     );
+    await recordMotion("welcome-motion", 6);
+    const metricsSession = await context.newCDPSession(page);
+    await metricsSession.send("Performance.enable");
+    if (width === 390)
+      await metricsSession.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+    const metricsBefore = await metricsSession.send("Performance.getMetrics");
     const frames = await page.evaluate(
       () =>
         new Promise((resolve) => {
@@ -261,7 +311,22 @@ try {
         }),
     );
     const sorted = [...frames].sort((a, b) => a - b);
+    const metricsAfter = await metricsSession.send("Performance.getMetrics");
+    if (width === 390)
+      await metricsSession.send("Emulation.setCPUThrottlingRate", { rate: 1 });
+    const performanceDelta = Object.fromEntries(
+      ["TaskDuration", "ScriptDuration", "LayoutCount", "RecalcStyleCount"].map(
+        (name) => [
+          name,
+          metricsAfter.metrics.find((m) => m.name === name).value -
+            metricsBefore.metrics.find((m) => m.name === name).value,
+        ],
+      ),
+    );
+    await metricsSession.detach();
     const frameSample = {
+      cpuThrottle: width === 390 ? 4 : 1,
+      performanceDelta,
       frames: frames.length,
       p95Ms: sorted[Math.floor(sorted.length * 0.95)],
       over50ms: frames.filter((ms) => ms > 50).length,
@@ -425,6 +490,7 @@ try {
       /checking.*bank|verifying.*payment/i,
     );
     await capture("processing");
+    await recordMotion("processing-motion", 2);
     await axe("processing");
     await page.emulateMedia({ reducedMotion: "reduce" });
     assert.equal(

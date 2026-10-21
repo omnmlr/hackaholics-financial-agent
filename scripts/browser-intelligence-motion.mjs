@@ -535,13 +535,10 @@ try {
     await send(
       "Prepare 500 to Ada at Wema account 0000000001 for Lunch and 600 to Chidi at Access account 0000000002 for Books",
     );
-    await page
-      .getByRole("button", { name: "Prepare payment draft", exact: true })
-      .last()
-      .click();
     const card = page.locator(".agus-thread .agus-payment").last();
     await card.waitFor();
-    await card.locator("summary").first().click();
+    if ((await card.getAttribute("open")) === null)
+      await card.locator("summary").first().click();
     await card.getByLabel("Amount (NGN)", { exact: true }).first().waitFor();
     await capture("payment-draft");
     await axe("payment-draft");

@@ -26,10 +26,10 @@ export function paymentSegment(
   return matching.length === 1 ? matching[0] : "";
 }
 
-export function groundedPaymentAmounts(text: string) {
+export function paymentAmountCandidates(text: string) {
   const excluded = [
     ...text.matchAll(
-      /\+\d[\d ()-]{8,}\d|\b\d{10,15}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b|\b(?:account(?:\s+number)?|phone|tel|reference|ref|invoice|bank(?:\s+code)?)\s*[:=#-]?\s*[A-Za-z0-9-]+/gi,
+      /\+\d[\d ()-]{8,}\d|\b\d{10,15}\b|\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}\/\d{2,4}\b|\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}\b|\b(?:account(?:\s+number)?|phone|tel|reference|ref|invoice|bank(?:\s+code)?)\s*[:=#-]?\s*[A-Za-z0-9-]+/gi,
     ),
   ].map((m) => ({ start: m.index!, end: m.index! + m[0].length }));
   const candidates = moneyQuantities(text).filter((q) => {
@@ -60,6 +60,18 @@ export function groundedPaymentAmounts(text: string) {
       );
     return q.amount > 0 && q.amount <= 1000000 && (explicit || payment);
   });
-  const unique = [...new Set(candidates.map((q) => q.amount))];
+  return [...new Set(candidates.map((q) => q.amount))];
+}
+export function groundedPaymentAmounts(text: string) {
+  const unique = paymentAmountCandidates(text);
   return unique.length === 1 ? unique : [];
+}
+export function rejectedPaymentAmount(text: string, amount: number) {
+  return moneyQuantities(text).some(
+    (q) =>
+      q.amount === amount &&
+      /\b(?:not|rather than|instead of)\s*(?:₦|NGN)?\s*$/i.test(
+        text.slice(0, q.index),
+      ),
+  );
 }

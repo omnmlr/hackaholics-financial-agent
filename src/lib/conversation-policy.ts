@@ -1,6 +1,11 @@
 import type { Proposed } from "./intelligence";
 import type { Message, Mode, Status } from "./domain";
-import { paymentSegment, groundedPaymentAmounts } from "./payment-grounding";
+import {
+  paymentSegment,
+  groundedPaymentAmounts,
+  paymentAmountCandidates,
+  rejectedPaymentAmount,
+} from "./payment-grounding";
 
 // No model-authored prose crosses the narration boundary. Even ordinary
 // conversational intents are untrusted: an intent label cannot certify prose.
@@ -139,7 +144,9 @@ export function groundProposal(
       !missingAmount &&
       p.amountNaira &&
       (amounts.some((n) => n === Number(p.amountNaira)) ||
-        p.amountNaira === previous?.amountNaira)
+        (p.amountNaira === previous?.amountNaira &&
+          !paymentAmountCandidates(request).length &&
+          !rejectedPaymentAmount(request, Number(p.amountNaira))))
         ? p.amountNaira
         : null,
     reason: contains(p.reason) ? p.reason : "Payment",

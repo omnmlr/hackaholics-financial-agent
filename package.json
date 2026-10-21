@@ -27,7 +27,8 @@
     "preview:fixture": "node scripts/preview-fixture.mjs",
     "test:browser:native": "node scripts/browser-native-agent.mjs",
     "test:browser:premium": "node scripts/browser-premium.mjs",
-    "test:browser:motion": "node scripts/browser-intelligence-motion.mjs"
+    "test:browser:motion": "node scripts/browser-intelligence-motion.mjs",
+    "test:browser:workflows": "node scripts/browser-workflows.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",

@@ -33,7 +33,7 @@ export function paymentStatusReply(
       .filter((m) => m.owner === owner && m.conversationId === chatId)
       .map((m) => m.batchId),
   );
-  const batches = state.batches
+  const matchingBatches = state.batches
     .filter((b) => b.owner === owner)
     .filter((b) =>
       args.scope === "conversation"
@@ -42,8 +42,12 @@ export function paymentStatusReply(
           ? day(b.approval?.consumedAt ?? b.createdAt) === day(now)
           : true,
     )
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .slice(0, args.scope === "latest" ? 1 : 10);
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const batches = matchingBatches.slice(0, args.scope === "latest" ? 1 : 10);
+  const limited =
+    !args.paymentIndex &&
+    args.scope !== "latest" &&
+    matchingBatches.length > batches.length;
   const selected = args.paymentIndex
     ? batches
         .slice(0, 1)
@@ -72,17 +76,22 @@ export function paymentStatusReply(
       p.status === "successful" &&
       !!b.approval?.consumedAt,
   }));
-  const totalSuccessfulKobo = records
+  const totalSuccessfulKobo = (
+    args.scope === "today" && !args.paymentIndex
+      ? matchingBatches.flatMap((b) => b.payments)
+      : records
+  )
     .filter((p) => p.status === "successful")
     .reduce((sum, p) => sum + p.amountKobo, 0);
   const presentation = PaymentPresentationSchema.parse({
     asOf: now,
     scope:
-      args.scope === "today"
+      (args.scope === "today"
         ? "Payments recorded today (Lagos time)"
         : args.scope === "latest"
           ? "Your latest saved payment batch"
-          : "Payments linked to this conversation",
+          : "Payments linked to this conversation") +
+      (limited ? " (newest 10 batches shown)" : ""),
     records,
     totalSuccessfulKobo,
   });
@@ -91,6 +100,11 @@ export function paymentStatusReply(
         args.scope === "today"
           ? `Successful recorded payment amounts total ${money(totalSuccessfulKobo)} today, excluding fees and unresolved/failed/reversed records.`
           : "Here is the current recorded payment status:",
+        limited
+          ? args.scope === "today"
+            ? "Only the newest 10 batches are listed below; the daily total includes all matching records."
+            : "Only the newest 10 batches linked to this conversation are listed below."
+          : "",
         ...records.map(
           (p) =>
             `${p.verifiedName ?? p.label} · ${money(p.amountKobo)} · ${describePaymentStatus(p.status, p.mode)}.${p.feeKobo === null ? " Confirmed fee unavailable." : ` Confirmed fee ${money(p.feeKobo)}.`}`,

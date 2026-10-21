@@ -242,6 +242,19 @@ it("rejects valid arithmetic based on a wrong model amount or cadence before exe
   );
   expect(bypass.evidence.code).toBe("CALCULATION_QUANTITY_MISMATCH");
   expect(bypass.text).not.toContain("2 days");
+  const cadenceBypass = await s.turn(
+    "Save 10k weekly to 1m",
+    {
+      expression: "1000000/10000",
+      description: "Savings duration",
+      unit: "days",
+      assumptions: [],
+    },
+    [],
+    "calculate",
+  );
+  expect(cadenceBypass.evidence.code).toBe("CALCULATION_QUANTITY_MISMATCH");
+  expect(cadenceBypass.text).not.toContain("100 days");
 });
 
 it("asks about ambiguous time units rather than interpreting them as money", async () => {

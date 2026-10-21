@@ -36,6 +36,7 @@ import {
   SavingsRequestSchema,
   checkedSavings,
   calculationQuantityMismatch,
+  calculationCadenceMismatch,
   type SavingsMemory,
 } from "./savings";
 import { ToolDataSchemas } from "../financial-data/contracts";
@@ -724,7 +725,10 @@ export function createModelLedAgent(
                 });
               } else if (call.name === "calculate") {
                 const args = CalculateArgs.parse(call.args);
-                if (calculationQuantityMismatch(input.text, args.expression))
+                if (
+                  calculationQuantityMismatch(input.text, args.expression) ||
+                  calculationCadenceMismatch(input.text, args.unit)
+                )
                   return await finish(
                     reply(
                       "clarify",

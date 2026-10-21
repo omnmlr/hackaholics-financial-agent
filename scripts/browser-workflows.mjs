@@ -222,6 +222,7 @@ try {
     const slang = await send("Save 5h daily until I become a millionaire");
     assert.equal(slang.savings.periods, 2000);
     let preparationChecks = 0;
+    const paymentExamples = [];
     if (process.env.WORKFLOW_PHASE !== "foundation") {
       await page
         .locator(".agus-header")
@@ -369,7 +370,12 @@ try {
           new URL(await confirmation.getAttribute("href"), base).href,
         );
         assert.equal(receipt.status(), 200);
-        assert.match(await receipt.text(), /SIMULATED.*PAYMENT CONFIRMATION/);
+        const confirmationText = await receipt.text();
+        assert.match(confirmationText, /SIMULATED.*PAYMENT CONFIRMATION/);
+        await writeFile(
+          join(output, `${width}-simulated-confirmation.txt`),
+          confirmationText,
+        );
         const paymentStatus = await send("Did it send?");
         assert.deepEqual(
           paymentStatus.payments.records.map((p) => p.status),
@@ -389,6 +395,12 @@ try {
           .waitFor();
         const afterReload = await send("Was the recipient credited?");
         assert.match(afterReload.text, /does not prove recipient bank credit/);
+        paymentExamples.push(
+          paymentStatus.text,
+          second.text,
+          proof.text,
+          afterReload.text,
+        );
         preparationChecks += 12;
       }
     }
@@ -568,6 +580,7 @@ try {
         reset.text,
         slang.text,
       ],
+      paymentExamples,
     });
     await context.close();
   }

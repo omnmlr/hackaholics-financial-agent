@@ -132,7 +132,8 @@ export function checkedSavings(
     // Time quantities are not money, even if a plausible numeric formula exists.
     if (
       /^\s*(?:hours?|minutes?|hrs?)\b/.test(after) ||
-      (/\bh$/i.test(q.text) && /\b(?:time|hours?|work|study)\b/i.test(text))
+      (/h$/i.test(q.text.trim()) &&
+        /\b(?:time|hours?|work|study)\b/i.test(text))
     ) {
       unresolved = true;
       continue;
@@ -238,4 +239,19 @@ export function calculationQuantityMismatch(text: string, expression: string) {
       /[hkm]\b|hundred|thousand|million|billion|naira|₦|ngn/i.test(q.text) &&
       !literals.includes(q.amount),
   );
+}
+export function calculationCadenceMismatch(text: string, unit: string) {
+  const stated = cadence(text);
+  if (
+    !stated ||
+    !/\b(?:sav(?:e|ed|ing)|millionaire|goal)\b/i.test(text) ||
+    !["days", "weeks", "months", "years"].includes(unit) ||
+    unit === stated
+  )
+    return false;
+  // An explicitly requested conversion still uses the generic reviewed math path.
+  return !new RegExp(
+    `(?:how many|in|into|convert.{0,20})\\s+${unit}\\b`,
+    "i",
+  ).test(text);
 }

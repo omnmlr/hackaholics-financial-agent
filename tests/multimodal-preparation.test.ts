@@ -140,6 +140,17 @@ it("preserves partial fields and keeps missing institution/name/amount empty", (
     ),
   ).toMatchObject({ accountNumber: null, amountNaira: "500" });
 });
+it("separates named dates from amounts and does not retain a rejected or ambiguous old amount", () => {
+  expect(
+    groundProposal(proposal, "Send 500 to OPay 9812345670 on 21 October 2026")
+      .amountNaira,
+  ).toBe("500");
+  expect(
+    groundProposal(proposal, "OPay 9812345670 500 or 1000", proposal)
+      .amountNaira,
+  ).toBeNull();
+  expect(groundProposal(proposal, "not ₦500", proposal).amountNaira).toBeNull();
+});
 it("requires decoded single-frame images and matching MIME, not just signatures", async () => {
   await expect(
     normalizePaymentImage(

@@ -169,6 +169,22 @@ it("does not infer an unknown fee or an amount for an unsaved draft", () => {
     ).kind,
   ).toBe("clarify");
 });
+it("includes every owned daily success in totals while disclosing bounded detail", () => {
+  const { s, b } = setup();
+  for (let i = 0; i < 10; i++) s.batches.push({ ...b, id: randomUUID() });
+  const reply = paymentStatusReply(
+    s,
+    owner,
+    chat,
+    { scope: "today" },
+    banks,
+    now,
+  );
+  expect(reply.payments?.records).toHaveLength(10);
+  expect(reply.payments?.totalSuccessfulKobo).toBe(1100000);
+  expect(reply.payments?.scope).toContain("newest 10 batches shown");
+  expect(reply.text).toContain("includes all matching records");
+});
 it("generates a plainly fictional successful confirmation and rejects every non-success/live state", () => {
   const { b } = setup();
   const text = simulatedConfirmation(b, b.payments[0], banks);

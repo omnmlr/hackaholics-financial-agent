@@ -870,8 +870,15 @@ export function FinancialConversation({
     : "No account selected";
   const empty = !loading && !turns.length && !pendingText;
   useEffect(() => {
-    if (wide && !empty && !sidebarTouched.current) setSidebarOpen(true);
-  }, [wide, empty]);
+    if (
+      wide &&
+      !loading &&
+      !empty &&
+      (turns.length > 0 || pendingText) &&
+      !sidebarTouched.current
+    )
+      setSidebarOpen(true);
+  }, [wide, empty, loading, turns.length, pendingText]);
   const focusTurn = turns.at(-1);
   const focusMessage = payments.snapshot?.messages.find(
     (m) =>
@@ -1440,7 +1447,7 @@ export function FinancialConversation({
             <textarea
               ref={composer}
               id="financial-message"
-              placeholder="Ask agus anything..."
+              placeholder="Ask agus…"
               value={text}
               rows={1}
               maxLength={4000}

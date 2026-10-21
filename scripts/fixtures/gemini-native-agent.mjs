@@ -152,6 +152,21 @@ globalThis.fetch = async (input, init) => {
     throw new Error(`Unexpected native fixture tool: ${tool.name}`);
   }
   const text = last.parts.map((p) => p.text ?? "").join("");
+  if (
+    [
+      "Did it send?",
+      "Who did I just pay?",
+      "Show me the receipt.",
+      "What happened to the second person?",
+      "How much did I pay today?",
+      "Was the recipient credited?",
+    ].includes(text)
+  )
+    return call("get_payment_status", {
+      scope: text.includes("today") ? "today" : "conversation",
+      ...(text.includes("second") ? { paymentIndex: 2 } : {}),
+      receipt: text.includes("receipt"),
+    });
   if (text === "What's my fictional account balance?") {
     const selected = JSON.parse(
       system.match(/Server selected accounts: (\[[^\n]*?\])\./)[1],

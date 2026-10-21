@@ -2,6 +2,7 @@
 // Actual production application, disposable PostgreSQL, scripted Gemini only.
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { URL } from "node:url";
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { spawn } from "node:child_process";
@@ -102,6 +103,9 @@ try {
       headers: { Origin: base },
     });
     assert.equal(login.status(), 200);
+    const initialBatches = (
+      await (await context.request.get(`${base}/api/state`)).json()
+    ).batches.length;
     await page.goto(`${base}/conversation`);
     await page
       .getByRole("button", { name: "Choose records account:", exact: false })
@@ -140,18 +144,40 @@ try {
       .getByRole("button", { name: "Close account", exact: true })
       .click();
     const balance = await send("What's my fictional account balance?");
-    assert.match(balance.text, /123,456\.78/);
-    assert.match(balance.text, /124,456\.78/);
+    const expectedAvailable = 12345678 - initialBatches * 135000,
+      expectedCurrent = 12445678 - initialBatches * 70000;
+    assert.ok(
+      balance.text.includes(
+        (expectedAvailable / 100).toLocaleString("en-NG", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      ),
+    );
+    assert.ok(
+      balance.text.includes(
+        (expectedCurrent / 100).toLocaleString("en-NG", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
+      ),
+    );
     await capture("account");
     const zero = await send("If I save 10k weekly to 1m");
     assert.equal(zero.savings.periods, 100);
     const existing = await send(
       "Use my existing balance as the starting point",
     );
-    assert.equal(existing.savings.periods, 88);
-    assert.equal(existing.savings.startingAmount, 123456.78);
+    assert.equal(
+      existing.savings.periods,
+      Math.ceil((100000000 - expectedAvailable) / 1000000),
+    );
+    assert.equal(existing.savings.startingAmount, expectedAvailable / 100);
     const corrected = await send("Make it 20k weekly instead");
-    assert.equal(corrected.savings.periods, 44);
+    assert.equal(
+      corrected.savings.periods,
+      Math.ceil((100000000 - expectedAvailable) / 2000000),
+    );
     await capture("savings");
     await page.reload();
     await input.waitFor();
@@ -250,9 +276,89 @@ try {
       const state = await (
         await context.request.get(`${base}/api/state`)
       ).json();
-      assert.equal(state.batches.length, 0);
+      assert.equal(state.batches.length, initialBatches);
       assert.ok(!JSON.stringify(state.messages).includes("data:image"));
       preparationChecks = 8;
+      if (process.env.WORKFLOW_PHASE === "outcomes") {
+        await imageEditor
+          .getByLabel("Amount (NGN)", { exact: true })
+          .first()
+          .fill("700");
+        await imageEditor
+          .getByRole("button", { name: "Save draft", exact: true })
+          .click();
+        const card = page.locator(".agus-thread .agus-payment").last();
+        await card
+          .getByRole("button", { name: "Verify beneficiaries", exact: true })
+          .click();
+        await card.getByRole("checkbox").check();
+        await card
+          .getByLabel("Password to approve reviewed batch")
+          .fill(password);
+        await card
+          .getByRole("button", { name: "Approve reviewed batch", exact: true })
+          .click();
+        const beforeSubmit = await (
+          await context.request.get(`${base}/api/state`)
+        ).json();
+        assert.ok(!beforeSubmit.batches[0].approval.consumedAt);
+        await card
+          .getByRole("button", {
+            name: "Submit simulated transfers",
+            exact: true,
+          })
+          .click();
+        const outcome = page.getByRole("region", {
+          name: "Recorded payment outcome",
+        });
+        await outcome.waitFor();
+        assert.ok((await outcome.innerText()).includes("awaiting outcome"));
+        assert.equal(await outcome.getByRole("link").count(), 0);
+        await capture("payment-processing");
+        await outcome
+          .getByRole("button", {
+            name: "Check recorded provider outcome",
+            exact: true,
+          })
+          .click();
+        await page.waitForFunction(() =>
+          document
+            .querySelector(".agus-payment-outcome")
+            ?.textContent.includes("Successful"),
+        );
+        assert.match(await outcome.innerText(), /No real money moved/);
+        assert.match(await outcome.innerText(), /Processing/);
+        await outcome.locator("summary").first().click();
+        await capture("payment-outcomes");
+        const confirmation = outcome.getByRole("link", {
+          name: "Download simulated confirmation",
+        });
+        const receipt = await context.request.get(
+          new URL(await confirmation.getAttribute("href"), base).href,
+        );
+        assert.equal(receipt.status(), 200);
+        assert.match(await receipt.text(), /SIMULATED.*PAYMENT CONFIRMATION/);
+        const paymentStatus = await send("Did it send?");
+        assert.deepEqual(
+          paymentStatus.payments.records.map((p) => p.status),
+          ["successful", "processing"],
+        );
+        const second = await send("What happened to the second person?");
+        assert.equal(second.payments.records[0].status, "processing");
+        const proof = await send("Show me the receipt.");
+        assert.equal(
+          proof.payments.records.filter((p) => p.canConfirm).length,
+          1,
+        );
+        await capture("payment-status");
+        await page.reload();
+        await page
+          .getByRole("region", { name: "Recorded payment outcome" })
+          .waitFor();
+        const afterReload = await send("Was the recipient credited?");
+        assert.match(afterReload.text, /does not prove recipient bank credit/);
+        preparationChecks += 12;
+      }
     }
     const scan = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])

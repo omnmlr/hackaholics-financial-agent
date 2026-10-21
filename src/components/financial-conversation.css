@@ -28,6 +28,104 @@
 .agus-image-preview > div {
   flex: 1;
 }
+.agus-payment-outcome {
+  margin: 20px 0 12px;
+  padding: 22px;
+  border: 1px solid #394655;
+  border-radius: 18px;
+  background: #10151a;
+}
+.agus-payment-outcome.is-success {
+  border-color: #517baf;
+  background: #101923;
+}
+.agus-outcome-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #bed7f8;
+  margin-bottom: 10px;
+}
+.agus-payment-outcome p {
+  font-size: 13px;
+  color: #bac0c9;
+  line-height: 1.65;
+}
+.agus-outcome-record {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #303a46;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 16px;
+}
+.agus-outcome-record > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.agus-outcome-record span,
+.agus-outcome-record small {
+  color: #aeb8c5;
+  font-size: 12px;
+}
+.agus-outcome-record details,
+.agus-outcome-record small {
+  grid-column: 1/-1;
+}
+.agus-outcome-record b {
+  color: #d7e6fa;
+  font-variant-numeric: tabular-nums;
+}
+.agus-safe-reference,
+.agus-payment .payment-reference code {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.agus-simulated-confirmation {
+  border: 1px dashed #7191b8;
+  padding: 14px;
+  margin-top: 12px;
+  border-radius: 10px;
+}
+.agus-simulated-confirmation strong {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: #bad5f5;
+}
+.agus-simulated-confirmation a,
+.agus-status-record a {
+  color: #a9ceff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.agus-status-record {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid #2c333d;
+}
+.agus-status-record code,
+.agus-status-record a {
+  grid-column: 1/-1;
+}
+.agus-payment-status-result {
+  margin-top: 20px;
+}
+.agus-payment-status-result > small {
+  display: block;
+  color: #aeb6c2;
+  margin-top: 12px;
+}
 /* AGUS: black surfaces, restrained blue interaction, neutral source evidence. */
 .agus-workspace {
   --agus-bg: #070809;
@@ -1285,6 +1383,9 @@
 .agus-payment .payment-row {
   grid-template-columns: 24px minmax(0, 1fr);
 }
+.agus-payment .recipient-details {
+  grid-column: 2;
+}
 .agus-payment .payment-value {
   grid-column: 2;
   align-items: flex-start;
@@ -2075,4 +2176,31 @@ body:has(.agus-workspace) {
   font-size: 12px;
   margin: 8px 0;
   line-height: 1.6;
+}
+
+/* Payment details must not inherit the legacy mobile 24px number column. */
+@media (max-width: 600px) {
+  .agus-payment .payment-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .agus-payment .recipient-details,
+  .agus-payment .payment-value {
+    grid-column: 1;
+    grid-row: auto;
+    width: 100%;
+    max-width: none;
+  }
+  .agus-payment .payment-value {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+  }
+  .agus-outcome-record {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .agus-outcome-record > b {
+    grid-row: 2;
+  }
 }

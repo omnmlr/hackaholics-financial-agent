@@ -296,6 +296,7 @@ describe("native model-directed conversation (scripted model)", () => {
   });
   it("exposes financial authoring only after facts and private reads only with selected accounts", () => {
     expect(declarationsForTurn(false, false).map((d) => d.name)).toEqual([
+      "get_payment_status",
       "plan_savings",
       "calculate",
       "request_account",

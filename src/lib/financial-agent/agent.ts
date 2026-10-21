@@ -99,6 +99,7 @@ export type AgentReply = {
   };
   handoff?: { kind: "existing_payment_draft" };
   paymentDraftId?: string;
+  payments?: import("./presentation").PaymentPresentation;
   accountAction?: "choose_demo_account";
   evidence: {
     modelCalls: number;
@@ -121,6 +122,7 @@ export type AgentOptions = {
   // selections, tool results or other financial authority after context expiry.
   dialogue?: ConversationContext["messages"];
   savingsHint?: import("../model-led-agent/savings").SavingsMemory;
+  paymentStatus?: (args: unknown) => Promise<AgentReply>;
 };
 const inputSchema = z.strictObject({
   ctx: PermissionContextSchema,

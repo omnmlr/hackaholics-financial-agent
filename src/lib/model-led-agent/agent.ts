@@ -39,6 +39,7 @@ import {
   type SavingsMemory,
 } from "./savings";
 import { ToolDataSchemas } from "../financial-data/contracts";
+import { PaymentStatusArgs } from "../payment-status";
 
 export const NATIVE_LIMITS = Object.freeze({
   models: 6,
@@ -141,6 +142,11 @@ function declaration(
   };
 }
 export const DECLARATIONS: FunctionDeclaration[] = [
+  declaration(
+    "get_payment_status",
+    "Read current persisted payments for this conversation, your latest saved batch, or today in Lagos time. Use for did it send, last transfer, who was paid, fees, failures and receipt requests. paymentIndex is the explicit 1-based recipient position. This does not submit, retry, reconcile or prove recipient bank credit. Backend finishes with source-grounded status and safe confirmation links.",
+    PaymentStatusArgs,
+  ),
   declaration(
     "plan_savings",
     "Plan a savings goal, including revisions of the ongoing plan. Supply target, startingAmount (zero unless stated), contribution and cadence. For an explicitly requested account starting point, set startingBalance to available (default money usable for saving) or current only when explicitly contrasted/switched; the backend reads it and ignores startingAmount. Preserve prior parameters on corrections. Nigerian money h=hundreds, k=thousands, m=millions in monetary context; never confuse time units. Backend independently validates quantities and cadence before computing, reads selected accounts, rounds up deposits and finishes the reply. No interest, fees or withdrawals. Use calculate for interest/other formulas.",
@@ -598,7 +604,15 @@ export function createModelLedAgent(
             seen.add(signature);
             let result: unknown;
             try {
-              if (call.name === "plan_savings") {
+              if (call.name === "get_payment_status") {
+                if (!options.paymentStatus)
+                  throw new AgentError("PAYMENT_STATUS_UNAVAILABLE");
+                return await finish(
+                  await bounded(10000, () =>
+                    options.paymentStatus!(PaymentStatusArgs.parse(call.args)),
+                  ),
+                );
+              } else if (call.name === "plan_savings") {
                 const checked = checkedSavings(
                   call.args,
                   input.text,

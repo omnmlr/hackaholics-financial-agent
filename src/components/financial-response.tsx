@@ -1,5 +1,8 @@
 import type { AgentReply } from "@/lib/financial-agent";
-import { FinancialPresentationSchema } from "@/lib/financial-agent/presentation";
+import {
+  FinancialPresentationSchema,
+  PaymentPresentationSchema,
+} from "@/lib/financial-agent/presentation";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -54,6 +57,49 @@ export function FinancialResponse({
   reply: AgentReply;
   choose: (text: string) => void;
 }) {
+  const payment = PaymentPresentationSchema.safeParse(reply.payments);
+  if (payment.success)
+    return (
+      <>
+        <div className="agus-prose">
+          {reply.text.split(/\n\n/).map((text, i) => (
+            <p key={i}>{text}</p>
+          ))}
+        </div>
+        <section
+          className="agus-payment-status-result"
+          aria-label="Saved payment status"
+        >
+          <p className="agus-scope">
+            {payment.data.scope} · Checked {date(payment.data.asOf, true)} WAT
+          </p>
+          {payment.data.records.map((p) => (
+            <div className="agus-status-record" key={p.paymentId}>
+              <strong>{p.verifiedName ?? p.label}</strong>
+              <span>{p.status.replaceAll("_", " ")}</span>
+              <b>
+                {new Intl.NumberFormat("en-NG", {
+                  style: "currency",
+                  currency: "NGN",
+                }).format(p.amountKobo / 100)}
+              </b>
+              <code className="agus-safe-reference">{p.reference}</code>
+              {p.canConfirm && (
+                <a
+                  href={`/api/batches/${p.batchId}/confirmation?payment=${encodeURIComponent(p.paymentId)}`}
+                >
+                  Download SIMULATED confirmation
+                </a>
+              )}
+            </div>
+          ))}
+          <small>
+            Saved response reflects the check time above. Ask again for the
+            current recorded state.
+          </small>
+        </section>
+      </>
+    );
   const parsed = FinancialPresentationSchema.safeParse(reply.presentation);
   const presentation =
     parsed.success &&

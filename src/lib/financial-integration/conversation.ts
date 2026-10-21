@@ -19,6 +19,8 @@ import { turnDiagnostic } from "../model-led-agent/diagnostics";
 import { SavingsMemorySchema } from "../model-led-agent/savings";
 import { readState } from "../db";
 import { editConversationDraft } from "../conversation-edits";
+import { currentPaymentStatus } from "../payment-status";
+import { provider } from "../paystack";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -60,10 +62,15 @@ export async function conversationTurn(
     );
     if (edited)
       return {
-        kind: "handoff" as const,
+        kind:
+          edited.proposals.length || edited.batchId
+            ? ("handoff" as const)
+            : ("clarify" as const),
         text: edited.reply,
         citations: [],
-        handoff: { kind: "existing_payment_draft" as const },
+        ...(edited.proposals.length || edited.batchId
+          ? { handoff: { kind: "existing_payment_draft" as const } }
+          : {}),
         paymentDraftId: edited.messageId,
         evidence: { modelCalls: 0, toolCalls: 0, resultBytes: 0 },
       };
@@ -89,6 +96,13 @@ export async function conversationTurn(
     },
   ]);
   const options = {
+    paymentStatus: async (args: unknown) =>
+      currentPaymentStatus(
+        owner,
+        parsed.conversationId,
+        args,
+        await provider().banks(),
+      ),
     // Owner-scoped server history restores parameters after tool context expiry.
     // Never restore an old balance value as authority: source plans keep only
     // the account/field hint, and the next turn must read current sources.

@@ -40,6 +40,7 @@ import {
 import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
 import { usePaymentImage } from "./use-payment-image";
+import { currentPaymentReply } from "./payment-outcome";
 import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
@@ -1083,119 +1084,137 @@ export function FinancialConversation({
                   account to check current records.
                 </p>
               )}
-              {turns.map((turn) => (
-                <article key={turn.id} className="agus-turn">
-                  <div className="agus-user-message">
-                    <span className="agus-speaker">You</span>
-                    <CopyableMessage label="user message">
-                      <p>{turn.text}</p>
-                    </CopyableMessage>
-                  </div>
-                  <div className="agus-assistant-message">
-                    <h2 className="agus-response-heading">
-                      <BrandAsset />
-                      <small>
-                        {turn.reply.kind === "financial"
-                          ? "Financial insight"
-                          : turn.reply.handoff
-                            ? "Payment planning"
-                            : ""}
-                      </small>
-                    </h2>
-                    {turn.reply.kind === "conflict" && (
-                      <p className="agus-reply-notice">
-                        Your financial context changed. Choose an account and
-                        check the records again.
-                      </p>
-                    )}
-                    <CopyableMessage label="AGUS response">
-                      <FinancialResponse reply={turn.reply} choose={choose} />
-                    </CopyableMessage>
-                    {turn.reply.accountAction === "choose_demo_account" && (
-                      <button
-                        className="agus-secondary"
-                        disabled={busy || !!unknown}
-                        onClick={() => {
-                          setAccountQuestion({ chat: id, text: turn.text });
-                          openModal(accountDialog.current);
-                          void loadAccounts();
-                        }}
-                      >
-                        Choose demo account
-                      </button>
-                    )}
-                    {turn.reply.handoff &&
-                      (() => {
-                        const message = payments.snapshot?.messages.find(
-                          (m) =>
-                            m.turnId === turn.id &&
-                            m.conversationId === id &&
-                            (!!m.proposals?.length || !!m.batchId),
-                        );
-                        return message ? (
-                          <NativePayment
-                            controller={payments}
-                            message={message}
-                            recover={() => openModal(paymentHistory.current)}
-                          />
-                        ) : (
-                          <div className="agus-handoff">
-                            <PaymentNotice
+              {turns.map((turn) => {
+                const linkedMessage = payments.snapshot?.messages.find(
+                  (m) => m.turnId === turn.id && m.conversationId === id,
+                );
+                const linkedBatch = payments.snapshot?.batches.find(
+                  (b) => b.id === linkedMessage?.batchId,
+                );
+                const shownReply = linkedMessage?.supersededBy
+                  ? {
+                      ...turn.reply,
+                      text: "This draft was continued later in the conversation. Review its latest payment card.",
+                    }
+                  : turn.reply.handoff
+                    ? currentPaymentReply(turn.reply, linkedBatch)
+                    : turn.reply;
+                return (
+                  <article key={turn.id} className="agus-turn">
+                    <div className="agus-user-message">
+                      <span className="agus-speaker">You</span>
+                      <CopyableMessage label="user message">
+                        <p>{turn.text}</p>
+                      </CopyableMessage>
+                    </div>
+                    <div className="agus-assistant-message">
+                      <h2 className="agus-response-heading">
+                        <BrandAsset />
+                        <small>
+                          {turn.reply.kind === "financial"
+                            ? "Financial insight"
+                            : turn.reply.handoff
+                              ? "Payment planning"
+                              : ""}
+                        </small>
+                      </h2>
+                      {turn.reply.kind === "conflict" && (
+                        <p className="agus-reply-notice">
+                          Your financial context changed. Choose an account and
+                          check the records again.
+                        </p>
+                      )}
+                      <CopyableMessage label="AGUS response">
+                        <FinancialResponse reply={shownReply} choose={choose} />
+                      </CopyableMessage>
+                      {turn.reply.accountAction === "choose_demo_account" && (
+                        <button
+                          className="agus-secondary"
+                          disabled={busy || !!unknown}
+                          onClick={() => {
+                            setAccountQuestion({ chat: id, text: turn.text });
+                            openModal(accountDialog.current);
+                            void loadAccounts();
+                          }}
+                        >
+                          Choose demo account
+                        </button>
+                      )}
+                      {turn.reply.handoff &&
+                        (() => {
+                          const message = payments.snapshot?.messages.find(
+                            (m) =>
+                              m.turnId === turn.id &&
+                              m.conversationId === id &&
+                              (!!m.proposals?.length || !!m.batchId),
+                          );
+                          return message ? (
+                            <NativePayment
                               controller={payments}
-                              scope={`turn:${turn.id}`}
+                              message={message}
                               recover={() => openModal(paymentHistory.current)}
                             />
-                            <button
-                              className="agus-secondary"
-                              disabled={
-                                busy ||
-                                payments.busy ||
-                                !!unknown ||
-                                !payments.snapshot
-                              }
-                              onClick={() => void draft(turn.id)}
-                            >
-                              Prepare payment draft
-                            </button>
-                          </div>
-                        );
-                      })()}
-                    <button
-                      className="agus-listen agus-icon-button"
-                      aria-label={
-                        speech.playing === turn.id
-                          ? "Stop reading response"
-                          : "Listen to response"
-                      }
-                      title={
-                        speech.playing === turn.id ? "Stop reading" : "Listen"
-                      }
-                      aria-pressed={speech.playing === turn.id}
-                      onClick={() =>
-                        speech.speak(turn.id, responseSpeechText(turn.reply))
-                      }
-                    >
-                      {speech.playing === turn.id ? (
-                        <VolumeX size={16} />
-                      ) : (
-                        <Volume2 size={16} />
-                      )}
-                    </button>
-                    <span className="agus-response-time">
-                      Saved{" "}
-                      {new Date(turn.createdAt).toLocaleString("en-NG", {
-                        timeZone: "Africa/Lagos",
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}{" "}
-                      WAT
-                    </span>
-                  </div>
-                </article>
-              ))}
+                          ) : (
+                            <div className="agus-handoff">
+                              <PaymentNotice
+                                controller={payments}
+                                scope={`turn:${turn.id}`}
+                                recover={() =>
+                                  openModal(paymentHistory.current)
+                                }
+                              />
+                              <button
+                                className="agus-secondary"
+                                disabled={
+                                  busy ||
+                                  payments.busy ||
+                                  !!unknown ||
+                                  !payments.snapshot
+                                }
+                                onClick={() => void draft(turn.id)}
+                              >
+                                Prepare payment draft
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      <button
+                        className="agus-listen agus-icon-button"
+                        aria-label={
+                          speech.playing === turn.id
+                            ? "Stop reading response"
+                            : "Listen to response"
+                        }
+                        title={
+                          speech.playing === turn.id ? "Stop reading" : "Listen"
+                        }
+                        aria-pressed={speech.playing === turn.id}
+                        onClick={() =>
+                          speech.speak(turn.id, responseSpeechText(shownReply))
+                        }
+                      >
+                        {speech.playing === turn.id ? (
+                          <VolumeX size={16} />
+                        ) : (
+                          <Volume2 size={16} />
+                        )}
+                      </button>
+                      <span className="agus-response-time">
+                        Saved{" "}
+                        {new Date(turn.createdAt).toLocaleString("en-NG", {
+                          timeZone: "Africa/Lagos",
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}{" "}
+                        WAT
+                      </span>
+                    </div>
+                  </article>
+                );
+              })}
               {pendingText && (
                 <article className="agus-turn">
                   <div className="agus-user-message">

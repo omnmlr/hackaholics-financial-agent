@@ -696,6 +696,11 @@ export function BatchCard({
               });
             }}
           >
+            <p className="micro">
+              Use your AGUS operator credential. This is separate from any
+              personal bank, Wema or OPay password. Never send a password in
+              chat.
+            </p>
             <label className="checkbox-label">
               <input
                 type="checkbox"

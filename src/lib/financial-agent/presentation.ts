@@ -1,5 +1,30 @@
 import { z } from "zod";
 
+export const PaymentPresentationSchema = z.object({
+  asOf: z.iso.datetime(),
+  scope: z.string().max(120),
+  totalSuccessfulKobo: z.number().int().nonnegative().safe(),
+  records: z
+    .array(
+      z.object({
+        batchId: z.uuid(),
+        paymentId: z.uuid(),
+        reference: z.string().max(100),
+        label: z.string().max(100),
+        verifiedName: z.string().max(100).nullable(),
+        institution: z.string().max(150),
+        amountKobo: z.number().int().positive().safe(),
+        feeKobo: z.number().int().nonnegative().safe().nullable(),
+        status: z.string().max(50),
+        mode: z.enum(["fixture", "test", "live"]),
+        recordedAt: z.iso.datetime(),
+        canConfirm: z.boolean(),
+      }),
+    )
+    .max(100),
+});
+export type PaymentPresentation = z.infer<typeof PaymentPresentationSchema>;
+
 const Metric = z.object({
   label: z.string().min(1),
   value: z.string().regex(/^(?:-?₦[\d,]+\.\d{2}|Unavailable)$/),

@@ -16,6 +16,7 @@ export type Fact = {
   text: string;
   modelData: unknown;
   presentation: PresentedResult;
+  searchQuery?: string;
 };
 export const canonical = (v: unknown): string => {
   if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
@@ -254,6 +255,9 @@ export function makeFact(
         meta: { ...result.meta, warnings: undefined, nextCursor: undefined },
       },
       presentation: present(call, result, `${text}\n${header}`),
+      ...(call.name === "search_transactions"
+        ? { searchQuery: scrub(call.args.query) }
+        : {}),
     },
   };
 }

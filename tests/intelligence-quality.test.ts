@@ -1,5 +1,6 @@
 /** Scripted protocol acceptance and deterministic math; never real Gemini evidence. */
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { createModelLedAgent } from "../src/lib/model-led-agent/agent";
 import {
   calculate,
@@ -348,6 +349,74 @@ describe("savings semantics and verified calendar narration", () => {
 });
 
 describe("native financial narration grounding and follow-ups", () => {
+  it("proves the recorded genuine candidate list without depending on its false-positive reviewer", async () => {
+    const recorded = JSON.parse(
+      readFileSync(
+        new URL(
+          "../docs/intelligence-motion/genuine-review.json",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    const original =
+      recorded.responses[1][0].functionCall.args.paragraphs[0].text;
+    let step = 0;
+    const generate = vi.fn(
+      async (input: Parameters<ToolModel["generate"]>[0]) => {
+        if (step++ === 0)
+          return call(
+            "search_transactions",
+            recorded.responses[0][0].functionCall.args,
+          );
+        if (step > 2)
+          throw new Error("A fully proved list must not require model review");
+        const output = input.contents.at(-1)!.parts![0].functionResponse!
+          .response!.output as { result: { resultId: string } };
+        return call("present_financial", {
+          paragraphs: [{ resultIds: [output.result.resultId], text: original }],
+        });
+      },
+    );
+    const s = fixture(generate);
+    const r = await s.agent.turn({
+      ...s.input,
+      text: "Find payments to Ada in October 2026",
+      accountIds: ["amina-current"],
+    });
+    expect(r.kind).toBe("clarify");
+    expect(r.presentation?.narration).toBe("ai");
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(r.presentation?.explanation.join(" ")).toContain(
+      "Which one would you like to inspect?",
+    );
+    expect(r.presentation?.explanation.join(" ")).toContain(
+      "Coverage is partial",
+    );
+    expect(r.presentation?.explanation.join(" ")).toContain("does not confirm");
+  });
+  it.each([
+    "I found 2 possible matches for Ada in October 2026: Ada Obi for ₦5,000.00 on 7 October 2026, and Ada Okafor for ₦7,500.00 on 5 October 2026. Which one would you like to inspect?",
+    "I found 2 possible matches for Ada in October 2026: Ada Obi for ₦7,500.00 on 7 October 2026, and Ada Okafor for ₦5,000.00 on 5 October 2026. Both recipients were credited.",
+    "I found 2 possible matches for Ada in November 2026: Ada Obi for ₦7,500.00 on 7 October 2026, and Ada Okafor for ₦5,000.00 on 5 October 2026. Which one would you like to inspect?",
+  ])("does not prove mutated source claims: %s", async (text) => {
+    const s = fixture(async () => say("unused"));
+    const reads = createSecureReads({
+      ...s.options,
+      ctx: s.input.ctx,
+      accountIds: ["amina-current"],
+      selection: null,
+      reviewNarration: async () => false,
+    });
+    await reads.execute("search_transactions", search);
+    const r = await reads.finish({
+      paragraphs: [{ resultIds: [reads.narrationResults[0].resultId], text }],
+    });
+    expect(r!.presentation?.narration).toBe("factual_fallback");
+    expect(r!.presentation?.explanation.join(" ")).not.toContain(
+      "Both recipients were credited",
+    );
+  });
   it.each([false, true])(
     "rejects an explicit recipient-credit review reason even when approval is %s",
     async (grounded) => {
@@ -433,13 +502,7 @@ describe("native financial narration grounding and follow-ups", () => {
       ],
     });
     expect(r!.presentation?.narration).toBe("ai");
-    expect(review.mock.calls[0][0]).toMatchObject({
-      paragraphs: [
-        {
-          text: "I found {{r0.count}} possible matches. {{r0.name0}}: {{r0.amount0}} on {{r0.date0}}. {{r0.name1}}: {{r0.amount1}} on {{r0.date1}}. Which one would you like to inspect?",
-        },
-      ],
-    });
+    expect(review).not.toHaveBeenCalled();
     expect(r!.presentation?.explanation.join(" ")).toContain(
       "Ada Obi (fictional): ₦7,500.00",
     );

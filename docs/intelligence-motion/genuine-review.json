@@ -1,0 +1,92 @@
+{
+  "commit": "b886bb9ee711c2f4e6b09e5e0786561142b4ff42",
+  "priorHttpAttempts": 45,
+  "maximumAdditionalAttempts": 3,
+  "aggregateMaximum": 48,
+  "genuineProvider": true,
+  "syntheticRecords": true,
+  "turns": [
+    {
+      "question": "Find payments to Ada in October 2026",
+      "kind": "clarify",
+      "narration": "factual_fallback",
+      "explanation": [
+        "I found 2 possible matches in the selected records.\n\nAda Obi (fictional): ₦7,500.00 on 7 October 2026.\n\nAda Okafor (fictional): ₦5,000.00 on 5 October 2026.\n\nWhich one would you like to inspect?"
+      ],
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 2,
+        "resultBytes": 2248,
+        "narrationCode": "NARRATION_REVIEW_SELECTED_AMBIGUOUS_CANDIDATE",
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "literal_value",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "colon",
+            "text",
+            "comma",
+            "text",
+            "period"
+          ]
+        }
+      }
+    }
+  ],
+  "status": "complete_requires_human_review",
+  "attempts": 3,
+  "httpStatuses": [
+    200,
+    200,
+    200
+  ],
+  "responses": [
+    [
+      {
+        "functionCall": {
+          "name": "search_transactions",
+          "args": {
+            "limit": 25,
+            "statuses": [
+              "posted"
+            ],
+            "from": "2026-10-01",
+            "query": "Ada",
+            "toExclusive": "2026-11-01",
+            "accountIds": [
+              "amina-current"
+            ],
+            "cursor": null
+          },
+          "id": "call_855819"
+        }
+      }
+    ],
+    [
+      {
+        "functionCall": {
+          "name": "present_financial",
+          "args": {
+            "paragraphs": [
+              {
+                "text": "I found 2 possible matches for Ada in October 2026: Ada Obi for ₦7,500.00 on 7 October 2026, and Ada Okafor for ₦5,000.00 on 5 October 2026. Which one would you like to inspect?",
+                "resultIds": [
+                  "7e8aab49-7479-4bfd-8f62-2bfd899a73c8"
+                ]
+              }
+            ]
+          },
+          "id": "call_669474"
+        }
+      }
+    ],
+    [
+      {
+        "text": "{\"grounded\":false,\"reason\":\"selected_ambiguous_candidate\"}"
+      }
+    ]
+  ]
+}

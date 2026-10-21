@@ -93,7 +93,7 @@ function structure(text: string): NarrationDiagnostic["structure"] {
           | "scope_slot"
           | "count_slot";
       if (/^\{\{r\d+\.limit\d+\}\}$/.test(token)) return "limit_slot";
-      return /^\{\{r\d+\.(?:(?:name|amount|direction|status|date)\d+|monthYear)\}\}$/.test(
+      return /^\{\{r\d+\.(?:(?:name|amount|direction|status|date)\d+|monthYear|query)\}\}$/.test(
         token,
       )
         ? "record_slot"
@@ -262,6 +262,33 @@ export function narrationContract(facts: Fact[]) {
           `The source lists the record for ${slot(`name${n}`)} as ${slot(`status${n}`)}.`,
         );
       });
+      if (r.type === "search_transactions" && r.records.length) {
+        const query = fact.searchQuery
+          ? `(?: for ${token("query", fact.searchQuery)})?`
+          : "";
+        const month =
+          months.length === 1 ? `(?: in ${literal(slot("monthYear"))})?` : "";
+        const rows = r.records.map(
+          (_, n) =>
+            `${literal(slot(`name${n}`))}(?: for|:) ${literal(slot(`amount${n}`))} on ${literal(slot(`date${n}`))}`,
+        );
+        const list = rows
+          .map(
+            (row, n) =>
+              `${n === 0 ? "" : n === rows.length - 1 ? "(?:,? and |, )" : ", "}${row}`,
+          )
+          .join("");
+        allow(
+          r.resultId,
+          `I found ${literal(slot("count"))} (?:possible|matching|candidate) (?:matches|records)${query}${month}(?:: ${list})?\\.`,
+        );
+      }
+      if (r.records.length > 1)
+        allow(
+          r.resultId,
+          "Which (?:one|candidate) (?:would you like|do you want) to inspect\\?",
+          "Which one would you like to inspect?",
+        );
       if (r.records.length > 1)
         allow(
           r.resultId,
@@ -285,7 +312,11 @@ export function narrationContract(facts: Fact[]) {
   return { slots, sentences, required, examples };
 }
 
-export function acceptNarration(raw: unknown, facts: Fact[]): string[] {
+export function acceptNarration(
+  raw: unknown,
+  facts: Fact[],
+  options: { appendLimits?: boolean } = {},
+): string[] {
   const parsed = NarrationSchema.safeParse(raw);
   if (!parsed.success)
     throw new NarrationError("NARRATION_SCHEMA", {
@@ -295,6 +326,25 @@ export function acceptNarration(raw: unknown, facts: Fact[]): string[] {
     });
   const answer = parsed.data,
     contract = narrationContract(facts);
+  if (options.appendLimits) {
+    // Native prose does not author the caveats. Insert missing server-owned
+    // limit slots before proving every clause, retaining reference checks.
+    for (const t of contract.required) {
+      if (answer.paragraphs.some((p) => p.text.includes(t))) continue;
+      const index = Number(t.match(/^\{\{r(\d+)\./)?.[1]);
+      const paragraph = answer.paragraphs.find((p) =>
+        p.resultIds.includes(facts[index]?.resultId),
+      );
+      if (paragraph) {
+        if (
+          !/[.!?]$/.test(paragraph.text) &&
+          !/\.limit\d+\}\}$/.test(paragraph.text)
+        )
+          paragraph.text += ".";
+        paragraph.text += ` ${t}`;
+      }
+    }
+  }
   const allowedIds = new Set(facts.map((f) => f.resultId)),
     used = new Set<string>(),
     referenced = new Set<string>();

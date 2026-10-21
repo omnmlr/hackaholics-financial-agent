@@ -351,7 +351,9 @@ export function createSecureReads(options: Options) {
     if (presentation && narration !== undefined) {
       try {
         try {
-          presentation.explanation = acceptNarration(narration, successful);
+          presentation.explanation = acceptNarration(narration, successful, {
+            appendLimits: true,
+          });
         } catch (error) {
           if (!(error instanceof NarrationError)) throw error;
           narrationDiagnostic = error.diagnostic;
@@ -359,20 +361,29 @@ export function createSecureReads(options: Options) {
           // slots and references remain deterministically checked beforehand.
           const bound = bindSourceValues(narration, successful);
           const candidate = prepareReviewedNarration(bound, successful);
-          if (
-            !options.reviewNarration ||
-            !(await options.reviewNarration(
-              bound,
-              narrationContract(successful),
-              successful.map((f) => ({
-                resultId: f.resultId,
-                ...(f.modelData as object),
-              })),
-            ))
-          )
-            throw new AgentError("NARRATION_REVIEW_REJECTED");
-          await recheck();
-          presentation.explanation = candidate.render();
+          let proved: string[] | undefined;
+          try {
+            proved = acceptNarration(bound, successful, { appendLimits: true });
+          } catch {
+            /* Broader prose still requires independent review below. */
+          }
+          if (proved) presentation.explanation = proved;
+          else {
+            if (
+              !options.reviewNarration ||
+              !(await options.reviewNarration(
+                bound,
+                narrationContract(successful),
+                successful.map((f) => ({
+                  resultId: f.resultId,
+                  ...(f.modelData as object),
+                })),
+              ))
+            )
+              throw new AgentError("NARRATION_REVIEW_REJECTED");
+            await recheck();
+            presentation.explanation = candidate.render();
+          }
         }
         presentation.narration = "ai";
       } catch (error) {

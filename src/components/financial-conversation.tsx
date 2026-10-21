@@ -24,7 +24,6 @@ import {
   ShieldCheck,
   ChevronDown,
   X,
-  Paperclip,
   PanelRight,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
@@ -41,6 +40,7 @@ import {
 import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
 import { usePaymentImage } from "./use-payment-image";
+import { AttachmentMenu } from "./attachment-menu";
 import { currentPaymentReply } from "./payment-outcome";
 import { FinancialWorkspace } from "./financial-workspace";
 import { workspaceViewport } from "@/lib/workspace-viewport";
@@ -1441,6 +1441,12 @@ export function FinancialConversation({
               void send();
             }}
           >
+            <AttachmentMenu
+              key={`${id}:${authenticated}`}
+              input={image.input}
+              select={image.select}
+              disabled={busy || loading || voiceBusy || !authenticated}
+            />
             <label className="agus-sr-only" htmlFor="financial-message">
               Message AGUS
             </label>
@@ -1481,28 +1487,6 @@ export function FinancialConversation({
               }}
             />
             <div className="agus-composer-toolbar">
-              <input
-                ref={image.input}
-                className="agus-sr-only"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                aria-label="Select payment image"
-                tabIndex={-1}
-                onChange={(e) => {
-                  image.select(e.target.files?.[0]);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                className="agus-icon-button"
-                type="button"
-                aria-label="Attach payment image"
-                title="Read payment details from an image"
-                disabled={busy || loading || voiceBusy || !authenticated}
-                onClick={() => image.input.current?.click()}
-              >
-                <Paperclip size={18} />
-              </button>
               <span className="agus-character-count">
                 {text.length >= 3500
                   ? `${text.length}/4000${text.length === 4000 ? " · Message limit reached" : ""}`

@@ -8,7 +8,7 @@ Use synthetic details and the authorized fictional workspace. Live transfers mus
 2. Sign in with the **AGUS operator** credential. Open/close navigation and select the fictional current account. Check header controls do not overlap.
 3. Ask for balance, then 10k weekly to 1m; use the account balance and change to 20k. Check the plan and source label.
 4. Open/close the keyboard with a long unsent draft. Scroll a long chat while focused, rotate, dismiss the keyboard and switch conversations. Confirm the composer stays reachable and the draft survives.
-5. Select a synthetic payment screenshot from the gallery, paste an image where supported, remove it, then upload. Confirm preview, progress and editable fields; reopen after reload.
+5. Open the far-left + menu. Choose a synthetic payment screenshot; on a supported mobile browser try Take photo with the native camera picker, including permission denial/cancellation. Confirm no unsupported actions appear, Escape restores focus and Tab reaches the message input. Paste an image where supported, remove it, then upload. Confirm preview, progress and editable fields; reopen after reload.
 6. Interrupt an upload with airplane mode, then restore connectivity and use **Check saved conversation**. Confirm it recovers or permits an explicit new attempt, without duplicate payment operations.
 7. Dictate a synthetic instruction (including “5h” or “500 naira”), review the transcript and send manually. Check permission denial and stop-recording states. Never dictate personal banking credentials.
 8. Save a draft for a listed fictional recipient, verify, review amounts/fees and approve with the separate AGUS credential. Confirm approval alone does not submit.

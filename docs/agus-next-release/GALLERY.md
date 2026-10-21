@@ -15,6 +15,10 @@ Actual production-build application in a disposable fictional workspace. Model t
 
 The rail and optional In focus panel keep current supporting information beside the conversation. The figures derive from the authorized fictional source. [1920px conversation](screenshots/1920-conversation.png), [1280px savings](screenshots/1280-savings.png), [inline tablet plan](screenshots/820-savings.png).
 
+## Composer attachment refinement
+
+[Desktop + menu](screenshots/1440-attachment-menu.png), [390px + menu](screenshots/390-attachment-menu.png), [320px + menu](screenshots/320-attachment-menu.png). The arrangement is **[+] [message input] [microphone] [send]**. Choosing an image opens the existing preview and review workflow. Take photo appears only for a mobile browser with the capture API; the mobile menu captures emulate that capability in desktop Chromium. They do not show a physical camera. Actual gallery pickers, empty-selection cancellation, preview/removal, keyboard dismissal/focus, and the unchanged financial workflow were exercised.
+
 ## Instructions to outcomes
 
 ![Bare amount retained](screenshots/390-bare-amount-draft.png)

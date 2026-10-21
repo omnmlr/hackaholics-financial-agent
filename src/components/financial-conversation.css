@@ -5,6 +5,85 @@
   font-weight: 100 900;
   font-display: swap;
 }
+.agus-composer textarea {
+  min-width: 0;
+}
+.agus-attachment {
+  position: relative;
+  flex: 0 0 44px;
+  height: 44px;
+  align-self: flex-end;
+}
+.agus-empty .agus-attachment {
+  align-self: center;
+}
+.agus-workspace .agus-attachment-trigger {
+  border: 1px solid transparent;
+  border-radius: 50%;
+  color: #aeb6c2;
+  background: transparent;
+}
+.agus-workspace .agus-attachment-trigger:hover,
+.agus-workspace .agus-attachment-trigger[aria-expanded="true"] {
+  color: #bed8ff;
+  background: #1a2738;
+  border-color: #405b7c;
+}
+.agus-attachment-menu {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 0;
+  z-index: 30;
+  width: 248px;
+  max-width: calc(100vw - 48px);
+  max-height: min(240px, calc(var(--agus-viewport-height, 100dvh) - 120px));
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #3a4554;
+  border-radius: 16px;
+  background: #11161d;
+  box-shadow:
+    0 16px 48px #0009,
+    inset 0 1px 0 #ffffff06;
+}
+.agus-attachment-menu > p {
+  padding: 6px 10px 8px;
+  color: #a7b5c8;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+.agus-workspace .agus-attachment-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  color: #e1e8f2;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+}
+.agus-attachment-menu button > span {
+  text-align: left;
+}
+.agus-attachment-menu button svg {
+  flex-shrink: 0;
+  color: #9ac4ff;
+}
+.agus-attachment-menu small {
+  display: block;
+  margin-top: 2px;
+  color: #a4adba;
+  font-size: 11px;
+}
+.agus-workspace .agus-attachment-menu button:hover,
+.agus-workspace .agus-attachment-menu button:focus-visible {
+  background: #1c293b;
+  border-color: #405b7c;
+}
 .agus-image-preview {
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-/* global document: readonly, window: readonly, Event: readonly */
+/* global document: readonly, window: readonly, Event: readonly, HTMLInputElement: readonly */
 // Actual production application, disposable PostgreSQL, scripted Gemini only.
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
@@ -90,6 +90,12 @@ try {
       viewport: { width, height: width > 600 ? 1000 : 844 },
       isMobile: width < 600,
       hasTouch: width < 600,
+      ...(width < 600
+        ? {
+            userAgent:
+              "Mozilla/5.0 (Linux; Android 13; Synthetic Test Device) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Mobile Safari/537.36",
+          }
+        : {}),
       reducedMotion: "reduce",
     });
     await context.route("**/*", (r) =>
@@ -97,6 +103,11 @@ try {
     );
     const page = await context.newPage(),
       errors = [];
+    let imageRequests = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && request.url().endsWith("/api/extract"))
+        imageRequests++;
+    });
     lastPage = page;
     page.on("pageerror", (e) => errors.push(e.message));
     page.setDefaultTimeout(20000);
@@ -116,6 +127,99 @@ try {
     const capture = async (name) => {
       await page.screenshot({ path: join(output, `${width}-${name}.png`) });
     };
+    const attachment = page.getByRole("button", {
+      name: "Add attachment",
+      exact: true,
+    });
+    const attachmentMenu = page.getByRole("menu", {
+      name: "Add attachment",
+      exact: true,
+    });
+    const chooseImage = page.getByRole("menuitem", {
+      name: "Choose image",
+      exact: false,
+    });
+    const bounds = await Promise.all(
+      [
+        attachment,
+        input,
+        page.getByRole("button", { name: "Start recording", exact: true }),
+        page.getByRole("button", { name: "Send message", exact: true }),
+      ].map((el) => el.boundingBox()),
+    );
+    for (let i = 0; i < bounds.length - 1; i++)
+      assert.ok(bounds[i].x + bounds[i].width <= bounds[i + 1].x + 1);
+    await attachment.focus();
+    await attachment.press("Enter");
+    await attachmentMenu.waitFor();
+    assert.equal(
+      await chooseImage.evaluate((el) => el === document.activeElement),
+      true,
+    );
+    const takePhoto = page.getByRole("menuitem", {
+      name: "Take photo",
+      exact: false,
+    });
+    const nativeCapture = await page.evaluate(
+      () => "capture" in document.createElement("input"),
+    );
+    assert.equal(await takePhoto.count(), width < 600 && nativeCapture ? 1 : 0);
+    // Desktop Chromium lacks Android's capture API even with a mobile UA.
+    // Exercise that capability branch explicitly; this is not a hardware test.
+    const captureEmulated = width < 600 && !nativeCapture;
+    if (captureEmulated) {
+      await page.keyboard.press("Escape");
+      const emulateCapture = () =>
+        Object.defineProperty(HTMLInputElement.prototype, "capture", {
+          configurable: true,
+          get() {
+            return this.getAttribute("capture") ?? "";
+          },
+        });
+      await context.addInitScript(emulateCapture);
+      await page.evaluate(emulateCapture);
+      await attachment.click();
+      await takePhoto.waitFor();
+    }
+    if (width < 600) {
+      await chooseImage.press("ArrowDown");
+      assert.equal(
+        await takePhoto.evaluate((el) => el === document.activeElement),
+        true,
+      );
+    }
+    await page.keyboard.press("Home");
+    assert.equal(
+      await chooseImage.evaluate((el) => el === document.activeElement),
+      true,
+    );
+    await capture("attachment-menu");
+    const menuScan = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    assert.deepEqual(menuScan.violations, []);
+    const menuBox = await attachmentMenu.boundingBox();
+    assert.ok(
+      menuBox.x >= 0 && menuBox.y >= 0 && menuBox.x + menuBox.width <= width,
+    );
+    await page.keyboard.press("Escape");
+    assert.equal(await attachment.getAttribute("aria-expanded"), "false");
+    assert.equal(
+      await attachment.evaluate((el) => el === document.activeElement),
+      true,
+    );
+    await attachment.press("ArrowDown");
+    await chooseImage.waitFor();
+    await page.keyboard.press("Tab");
+    assert.equal(
+      await input.evaluate((el) => el === document.activeElement),
+      true,
+    );
+    assert.equal(await attachment.getAttribute("aria-expanded"), "false");
+    await attachment.click();
+    await input.click();
+    assert.equal(await attachment.getAttribute("aria-expanded"), "false");
+    await input.blur();
     const send = async (text) => {
       await input.fill(text);
       const pending = page.waitForResponse(
@@ -264,14 +368,59 @@ try {
       )
         .png()
         .toBuffer();
-      await page
-        .getByLabel("Select payment image", { exact: true })
-        .setInputFiles({
-          name: "synthetic-instructions.png",
-          mimeType: "image/png",
-          buffer: image,
-        });
+      const imageFile = {
+        name: "synthetic-instructions.png",
+        mimeType: "image/png",
+        buffer: image,
+      };
+      await input.fill("Keep this unsent draft");
+      await attachment.click();
+      const [cancelledPicker] = await Promise.all([
+        page.waitForEvent("filechooser"),
+        chooseImage.click(),
+      ]);
+      await cancelledPicker.setFiles([]);
+      assert.equal(await input.inputValue(), "Keep this unsent draft");
+      assert.equal(
+        await page.getByAltText("Local payment image preview").count(),
+        0,
+      );
+      await input.fill("");
+      if (width < 600) {
+        await attachment.click();
+        const [picker] = await Promise.all([
+          page.waitForEvent("filechooser"),
+          takePhoto.click(),
+        ]);
+        assert.equal(
+          await picker.element().getAttribute("capture"),
+          "environment",
+        );
+        await picker.setFiles(imageFile);
+        await page.getByAltText("Local payment image preview").waitFor();
+        await page
+          .getByRole("button", { name: "Remove image", exact: true })
+          .click();
+        await page
+          .getByAltText("Local payment image preview")
+          .waitFor({ state: "hidden" });
+        assert.equal(
+          await page.getByAltText("Local payment image preview").count(),
+          0,
+        );
+      }
+      await attachment.click();
+      const [imagePicker] = await Promise.all([
+        page.waitForEvent("filechooser"),
+        chooseImage.click(),
+      ]);
+      await imagePicker.setFiles(imageFile);
       await page.getByAltText("Local payment image preview").waitFor();
+      assert.equal(
+        imageRequests,
+        0,
+        "Choosing, cancelling or removing an image never uploads it",
+      );
       await capture("image-preview");
       const upload = page.waitForResponse(
         (r) =>
@@ -575,8 +724,16 @@ try {
     );
     report.widths.push({
       width,
-      checks: 9 + preparationChecks + (width >= 1280 ? 4 : 0) + viewportChecks,
+      checks:
+        9 +
+        preparationChecks +
+        (width >= 1280 ? 4 : 0) +
+        viewportChecks +
+        12 +
+        (width < 600 ? 3 : 0),
       axeViolations: scan.violations.length,
+      attachmentMenuAxeViolations: menuScan.violations.length,
+      cameraCaptureEmulated: captureEmulated,
       pageErrors: errors,
       examples: [
         balance.text,

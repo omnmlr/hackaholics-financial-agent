@@ -3,11 +3,13 @@
   "widths": [
     {
       "width": 1440,
-      "checks": 33,
+      "checks": 45,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": false,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 4ba00ac5-57c0-40f5-923e-53ed22fb1f78: fixture/fixture; as of 2026-10-21T14:55:37.714Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source c7aaf694-3a4a-4e43-bec9-b91f8fe5cb21: fixture/fixture; as of 2026-10-21T18:33:28.291Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦123,456.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦123,456.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
@@ -23,11 +25,13 @@
     },
     {
       "width": 1920,
-      "checks": 33,
+      "checks": 45,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": false,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦122,106.78, current balance ₦123,756.78; state as of 2026-10-21T14:55:43.778Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source b9919b5e-6376-44cf-91ca-0de5aa1c193f: fixture/fixture; as of 2026-10-21T14:55:47.957Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦122,106.78, current balance ₦123,756.78; state as of 2026-10-21T18:33:34.018Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 072920bf-539f-4861-8408-22660993f7ab: fixture/fixture; as of 2026-10-21T18:33:39.304Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦122,106.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦122,106.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦122,106.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦122,106.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
@@ -43,11 +47,13 @@
     },
     {
       "width": 1280,
-      "checks": 33,
+      "checks": 45,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": false,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦120,756.78, current balance ₦123,056.78; state as of 2026-10-21T14:55:52.965Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 697d1849-9a95-451a-8dfa-dddbc661c627: fixture/fixture; as of 2026-10-21T14:55:56.863Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦120,756.78, current balance ₦123,056.78; state as of 2026-10-21T18:33:45.355Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 5cb7f9a0-e757-4148-862c-5de5db876840: fixture/fixture; as of 2026-10-21T18:33:50.607Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦120,756.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 88 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦120,756.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦120,756.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 44 weeks (roughly 10 months).\n\nThat assumes you start with ₦120,756.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
@@ -63,11 +69,13 @@
     },
     {
       "width": 820,
-      "checks": 41,
+      "checks": 53,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": false,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦119,406.78, current balance ₦122,356.78; state as of 2026-10-21T14:56:02.017Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 7d09dbb2-6ec7-494b-84fa-4b1dd8be3d5e: fixture/fixture; as of 2026-10-21T14:56:06.142Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦119,406.78, current balance ₦122,356.78; state as of 2026-10-21T18:33:56.188Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 6b8eb647-a83c-42bd-bd48-a0a578d534cb: fixture/fixture; as of 2026-10-21T18:34:01.341Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦119,406.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦119,406.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦119,406.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦119,406.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
@@ -83,11 +91,13 @@
     },
     {
       "width": 390,
-      "checks": 41,
+      "checks": 56,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": true,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦118,056.78, current balance ₦121,656.78; state as of 2026-10-21T14:56:10.941Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 601f7313-a936-4f90-94e4-12814930c476: fixture/fixture; as of 2026-10-21T14:56:15.696Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦118,056.78, current balance ₦121,656.78; state as of 2026-10-21T18:34:07.357Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 9df98f97-6634-41b9-acc6-34844619e82f: fixture/fixture; as of 2026-10-21T18:34:13.623Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦118,056.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦118,056.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦118,056.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦118,056.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
@@ -103,11 +113,13 @@
     },
     {
       "width": 320,
-      "checks": 41,
+      "checks": 56,
       "axeViolations": 0,
+      "attachmentMenuAxeViolations": 0,
+      "cameraCaptureEmulated": true,
       "pageErrors": [],
       "examples": [
-        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦116,706.78, current balance ₦120,956.78; state as of 2026-10-21T14:56:20.574Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source f16eeff3-2f7f-439e-9bc0-c6cb8a20f768: fixture/fixture; as of 2026-10-21T14:56:25.102Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
+        "The available source details are shown below.\n\nFictional balance, maintained separately from the historical demonstration records. No real bank connection.\n\nFictional demo records; no real bank account data.\n\nAccount amina-current: available balance ₦116,706.78, current balance ₦120,956.78; state as of 2026-10-21T18:34:18.827Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source 047f0ce2-3146-451a-8dde-619f2bf09c2e: fixture/fixture; as of 2026-10-21T18:34:24.800Z; SIMULATED FICTIONAL DATA; coverage not supplied]",
         "Saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 100 weeks (roughly 1 year and 11 months).\n\nThat assumes you start from zero, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦116,706.78 as the starting point, saving ₦10,000 weekly, you’ll reach ₦1,000,000 in 89 weeks (roughly 1 year and 8 months).\n\nThat assumes you start with ₦116,706.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",
         "Using your fictional available balance of ₦116,706.78 as the starting point, saving ₦20,000 weekly, you’ll reach ₦1,000,000 in 45 weeks (roughly 10 months).\n\nThat assumes you start with ₦116,706.78, save consistently at the end of each period and earn no interest, with no fees or withdrawals.",

@@ -1,0 +1,13 @@
+
+> hackaholics-financial-agent@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  49 passed (49)
+      Tests  1214 passed (1214)
+   Start at  04:34:33
+   Duration  60.07s (tests 89%, import 10%)
+

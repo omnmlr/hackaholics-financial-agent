@@ -1,0 +1,135 @@
+{
+  "baseline": "6ff095cd05b6d119c9275450f0caa1e9548e6e2f",
+  "applicationCommit": "09ba50035fae5bbdf5e6998794339cca1174cc32",
+  "applicationSnapshotSha256": "65594fefe5bd4247a47b6d9a39d276a95324bd3e4975a4793bd3f35464ffcb10",
+  "branch": "improve/agus-intelligence-motion-20261021",
+  "pullRequest": "https://github.com/omnmlr/hackaholics-financial-agent/pull/42",
+  "node": "24.19.0",
+  "typecheck": "passed",
+  "lint": "passed",
+  "productionBuild": "passed",
+  "tests": {
+    "passed": 1214,
+    "files": 49,
+    "failed": 0
+  },
+  "browserGroups": {
+    "chatPayments": 54,
+    "voiceSubmission": 36,
+    "microphoneLifecycle": 8,
+    "nativeAgent": 14,
+    "approvedVisual": 28,
+    "motionIntelligence": 20
+  },
+  "widths": [
+    1440,
+    820,
+    390,
+    320
+  ],
+  "referenceResolution": [
+    1672,
+    941
+  ],
+  "axeScans": 40,
+  "axeViolations": 0,
+  "pageErrors": 0,
+  "motionFrameSamples": [
+    {
+      "width": 1440,
+      "cpuThrottle": 1,
+      "performanceDelta": {
+        "TaskDuration": 0.079679,
+        "ScriptDuration": 0.001822,
+        "LayoutCount": 91,
+        "RecalcStyleCount": 91
+      },
+      "frames": 90,
+      "p95Ms": 16.700000000000728,
+      "over50ms": 0
+    },
+    {
+      "width": 820,
+      "cpuThrottle": 1,
+      "performanceDelta": {
+        "TaskDuration": 0.070957,
+        "ScriptDuration": 0.001553,
+        "LayoutCount": 91,
+        "RecalcStyleCount": 91
+      },
+      "frames": 90,
+      "p95Ms": 16.700000000000728,
+      "over50ms": 0
+    },
+    {
+      "width": 390,
+      "cpuThrottle": 4,
+      "performanceDelta": {
+        "TaskDuration": 0.149764,
+        "ScriptDuration": 0.000921,
+        "LayoutCount": 92,
+        "RecalcStyleCount": 92
+      },
+      "frames": 90,
+      "p95Ms": 16.700000000000728,
+      "over50ms": 0
+    },
+    {
+      "width": 320,
+      "cpuThrottle": 1,
+      "performanceDelta": {
+        "TaskDuration": 0.031404999999999995,
+        "ScriptDuration": 0.000676,
+        "LayoutCount": 91,
+        "RecalcStyleCount": 91
+      },
+      "frames": 90,
+      "p95Ms": 16.700000000000273,
+      "over50ms": 0
+    }
+  ],
+  "genuineProvider": {
+    "requests": 48,
+    "allHttp200": true,
+    "campaigns": [
+      {
+        "artifact": "genuine-initial.json",
+        "commit": "a989ce40ff4f502388e07a37f822643bee130e85",
+        "httpRequests": 21
+      },
+      {
+        "artifact": "genuine-repair.json",
+        "commit": "dcba6382eec737863f49e3d4447346124e4f8c94",
+        "httpRequests": 16
+      },
+      {
+        "artifact": "genuine-final.json",
+        "commit": "b4a455b97dc0dce38e1df70e0093fd5d796e7212",
+        "httpRequests": 2
+      },
+      {
+        "artifact": "genuine-dates.json",
+        "commit": "8e95f116c622b884da5379769aaf54aeb223649b",
+        "httpRequests": 6
+      },
+      {
+        "artifact": "genuine-review.json",
+        "commit": "b886bb9ee711c2f4e6b09e5e0786561142b4ff42",
+        "httpRequests": 3
+      }
+    ],
+    "finalLiveSearch": "reviewer falsely rejected listing both candidates as selecting one",
+    "finalRepair": "recorded response replay with fresh authorized fixtures; not another genuine generation"
+  },
+  "startupSha256": "74f29e366a0e9ac461a9beeee6d64a8ba55c18302f6800e34b5c44aadebf8cbf",
+  "schemaChanges": false,
+  "productionChanges": false,
+  "merged": false,
+  "deployed": false,
+  "realPayments": false,
+  "limitations": [
+    "Final deterministic candidate-list proof not fresh-provider retested after the bounded 48-request campaign.",
+    "Actual production UI blocked by environment network policy; production SHA/start command verified through read-only Railway metadata.",
+    "Physical Android/iOS keyboards, real-device speech, sustained GPU and battery performance untested."
+  ]
+}

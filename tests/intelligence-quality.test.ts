@@ -348,6 +348,38 @@ describe("savings semantics and verified calendar narration", () => {
 });
 
 describe("native financial narration grounding and follow-ups", () => {
+  it.each([false, true])(
+    "rejects an explicit recipient-credit review reason even when approval is %s",
+    async (grounded) => {
+      let step = 0;
+      const s = fixture(async (input) => {
+        if (input.system.startsWith("Independently review source-backed"))
+          return say(JSON.stringify({ grounded, reason: "recipient_credit" }));
+        if (step++ === 0) return call("search_transactions", search);
+        const output = input.contents.at(-1)!.parts![0].functionResponse!
+          .response!.output as { result: { resultId: string } };
+        return call("present_financial", {
+          paragraphs: [
+            {
+              resultIds: [output.result.resultId],
+              text: "{{r0.name0}} received {{r0.amount0}} and the bank credited it.",
+            },
+          ],
+        });
+      });
+      const r = await s.agent.turn({
+        ...s.input,
+        accountIds: ["amina-current"],
+      });
+      expect(r.presentation?.narration).toBe("factual_fallback");
+      expect(r.evidence.narrationCode).toBe(
+        "NARRATION_REVIEW_RECIPIENT_CREDIT",
+      );
+      expect(r.presentation?.explanation.join(" ")).not.toContain(
+        "bank credited it",
+      );
+    },
+  );
   it("allows a source narration review to use its 20-second model budget", async () => {
     vi.useFakeTimers();
     try {

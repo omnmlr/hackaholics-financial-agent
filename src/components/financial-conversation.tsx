@@ -97,6 +97,13 @@ export function FinancialConversation({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [longWait, setLongWait] = useState(false);
   const [announcement, setAnnouncement] = useState("");
+  const [pageVisible, setPageVisible] = useState(true);
+  useEffect(() => {
+    const update = () => setPageVisible(!document.hidden);
+    update();
+    document.addEventListener("visibilitychange", update);
+    return () => document.removeEventListener("visibilitychange", update);
+  }, []);
   const [unknown, setUnknown] = useState<{
     chat: string;
     count: number;
@@ -884,7 +891,10 @@ export function FinancialConversation({
     </>
   );
   return (
-    <main className={`agus-workspace ${empty ? "agus-empty" : ""}`}>
+    <main
+      className={`agus-workspace ${empty ? "agus-empty" : ""}`}
+      data-page-visible={pageVisible}
+    >
       {!empty && <h1 className="agus-sr-only">Conversation</h1>}
       <a className="agus-skip" href="#financial-message">
         Skip to message
@@ -914,7 +924,7 @@ export function FinancialConversation({
         {sidebar}
       </dialog>
       <section className="agus-main" aria-label="agus. conversation workspace">
-        <FinancialBackdrop />
+        <FinancialBackdrop active={empty} />
         <header className="agus-header">
           <div>
             <button
@@ -1144,14 +1154,19 @@ export function FinancialConversation({
                     <p>{pendingText}</p>
                   </div>
                   <div className="agus-thinking" role="status">
+                    <span className="agus-processing-mark" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
                     <span>
                       {longWait
                         ? "Still working on your question…"
-                        : "Thinking it through…"}
+                        : "Preparing your response…"}
                       <small>
                         {longWait
                           ? "You can stop this response at any time."
-                          : "Checking the next step"}
+                          : "You can keep typing while you wait."}
                       </small>
                     </span>
                   </div>

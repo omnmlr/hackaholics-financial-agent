@@ -8,7 +8,14 @@ export const NarrationSchema = z.strictObject({
     .array(
       z.strictObject({
         resultIds: z.array(z.string()).min(1).max(5),
-        text: z.string().trim().min(1).max(2400),
+        text: z
+          .string()
+          .trim()
+          .min(1)
+          .max(2400)
+          .describe(
+            "Natural explanation. Use supplied {{r0.name0}}, {{r0.amount0}}, {{r0.date0}}, {{r0.count}}, etc. for source facts, never literal numbers, names, amounts or dates. Cite the corresponding resultIds.",
+          ),
       }),
     )
     .min(1)
@@ -86,7 +93,9 @@ function structure(text: string): NarrationDiagnostic["structure"] {
           | "scope_slot"
           | "count_slot";
       if (/^\{\{r\d+\.limit\d+\}\}$/.test(token)) return "limit_slot";
-      return /^\{\{r\d+\.(?:name|amount|direction|status)\d+\}\}$/.test(token)
+      return /^\{\{r\d+\.(?:(?:name|amount|direction|status|date)\d+|monthYear|query)\}\}$/.test(
+        token,
+      )
         ? "record_slot"
         : "unknown_slot";
     });
@@ -195,6 +204,20 @@ export function narrationContract(facts: Fact[]) {
       );
     }
     if (r.type === "search_transactions" || r.type === "get_transaction") {
+      const months = [
+        ...new Set(
+          r.records
+            .filter((record) => record.date)
+            .map((record) =>
+              new Date(record.date!).toLocaleDateString("en-NG", {
+                timeZone: "Africa/Lagos",
+                month: "long",
+                year: "numeric",
+              }),
+            ),
+        ),
+      ];
+      if (months.length === 1) token("monthYear", months[0]);
       if (r.records.length)
         allow(
           r.resultId,
@@ -212,6 +235,22 @@ export function narrationContract(facts: Fact[]) {
           amount = token(`amount${n}`, record.amount),
           direction = token(`direction${n}`, record.direction),
           status = token(`status${n}`, record.status);
+        const date = token(
+          `date${n}`,
+          record.date
+            ? new Date(record.date).toLocaleDateString("en-NG", {
+                timeZone: "Africa/Lagos",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "an unavailable date",
+        );
+        allow(
+          r.resultId,
+          `${name}: ${amount} on ${date}\\.`,
+          `${slot(`name${n}`)}: ${slot(`amount${n}`)} on ${slot(`date${n}`)}.`,
+        );
         allow(
           r.resultId,
           `${name} has a ${direction} record of ${amount}\\.`,
@@ -223,6 +262,33 @@ export function narrationContract(facts: Fact[]) {
           `The source lists the record for ${slot(`name${n}`)} as ${slot(`status${n}`)}.`,
         );
       });
+      if (r.type === "search_transactions" && r.records.length) {
+        const query = fact.searchQuery
+          ? `(?: for ${token("query", fact.searchQuery)})?`
+          : "";
+        const month =
+          months.length === 1 ? `(?: in ${literal(slot("monthYear"))})?` : "";
+        const rows = r.records.map(
+          (_, n) =>
+            `${literal(slot(`name${n}`))}(?: for|:) ${literal(slot(`amount${n}`))} on ${literal(slot(`date${n}`))}`,
+        );
+        const list = rows
+          .map(
+            (row, n) =>
+              `${n === 0 ? "" : n === rows.length - 1 ? "(?:,? and |, )" : ", "}${row}`,
+          )
+          .join("");
+        allow(
+          r.resultId,
+          `I found ${literal(slot("count"))} (?:possible|matching|candidate) (?:matches|records)${query}${month}(?:: ${list})?\\.`,
+        );
+      }
+      if (r.records.length > 1)
+        allow(
+          r.resultId,
+          "Which (?:one|candidate) (?:would you like|do you want) to inspect\\?",
+          "Which one would you like to inspect?",
+        );
       if (r.records.length > 1)
         allow(
           r.resultId,
@@ -246,7 +312,11 @@ export function narrationContract(facts: Fact[]) {
   return { slots, sentences, required, examples };
 }
 
-export function acceptNarration(raw: unknown, facts: Fact[]): string[] {
+export function acceptNarration(
+  raw: unknown,
+  facts: Fact[],
+  options: { appendLimits?: boolean } = {},
+): string[] {
   const parsed = NarrationSchema.safeParse(raw);
   if (!parsed.success)
     throw new NarrationError("NARRATION_SCHEMA", {
@@ -256,6 +326,25 @@ export function acceptNarration(raw: unknown, facts: Fact[]): string[] {
     });
   const answer = parsed.data,
     contract = narrationContract(facts);
+  if (options.appendLimits) {
+    // Native prose does not author the caveats. Insert missing server-owned
+    // limit slots before proving every clause, retaining reference checks.
+    for (const t of contract.required) {
+      if (answer.paragraphs.some((p) => p.text.includes(t))) continue;
+      const index = Number(t.match(/^\{\{r(\d+)\./)?.[1]);
+      const paragraph = answer.paragraphs.find((p) =>
+        p.resultIds.includes(facts[index]?.resultId),
+      );
+      if (paragraph) {
+        if (
+          !/[.!?]$/.test(paragraph.text) &&
+          !/\.limit\d+\}\}$/.test(paragraph.text)
+        )
+          paragraph.text += ".";
+        paragraph.text += ` ${t}`;
+      }
+    }
+  }
   const allowedIds = new Set(facts.map((f) => f.resultId)),
     used = new Set<string>(),
     referenced = new Set<string>();
@@ -407,19 +496,98 @@ export function prepareReviewedNarration(raw: unknown, facts: Fact[]) {
     throw new AgentError("NARRATION_REFERENCE");
   return {
     render: () => [
-      ...paragraphs.map((p) =>
-        p.text.replace(/\{\{[^}]+\}\}/g, (token) => contract.slots[token]),
-      ),
-      // Qualifications are never delegated to model compliance.
-      ...contract.required
-        .filter((token) => !paragraphs.some((p) => p.text.includes(token)))
-        .map((token) => contract.slots[token]),
-      ...(facts.some((f) =>
-        f.presentation.sources.some((s) => s.mode === "fixture"),
-      )
-        ? ["Fictional demo records; no real bank account data."]
-        : []),
+      ...new Set([
+        ...paragraphs.map((p) =>
+          p.text.replace(/\{\{[^}]+\}\}/g, (token) => contract.slots[token]),
+        ),
+        // Qualifications are never delegated to model compliance.
+        ...contract.required
+          .filter((token) => !paragraphs.some((p) => p.text.includes(token)))
+          .map((token) => contract.slots[token]),
+        ...(facts.some((f) =>
+          f.presentation.sources.some((s) => s.mode === "fixture"),
+        )
+          ? ["Fictional demo records; no real bank account data."]
+          : []),
+      ]),
     ],
+  };
+}
+
+/** Compile exact current-source literals into slots for the reviewed path only.
+ * This does not authorize prose: unknown/ambiguous values still fail validation
+ * and independent semantic review must check the roles of every inserted slot. */
+export function bindSourceValues(raw: unknown, facts: Fact[]) {
+  const parsed = NarrationSchema.parse(raw);
+  const contract = narrationContract(facts);
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return {
+    paragraphs: parsed.paragraphs.map((p) => {
+      const aliases = new Map<string, Set<string>>();
+      const add = (value: string, slot: string) => {
+        if (!value || (value.length < 2 && !/\.count\}\}$/.test(slot))) return;
+        const slots = aliases.get(value) ?? new Set<string>();
+        slots.add(slot);
+        aliases.set(value, slots);
+      };
+      for (const [slot, value] of Object.entries(contract.slots)) {
+        const index = Number(slot.match(/^\{\{r(\d+)\./)?.[1]);
+        if (
+          !facts[index] ||
+          !p.resultIds.includes(facts[index].resultId) ||
+          /\.limit\d+/.test(slot)
+        )
+          continue;
+        add(value, slot);
+        if (/\.name\d+/.test(slot))
+          add(value.replace(/\s+\(fictional\)$/i, ""), slot);
+        if (/^-?₦[\d,]+\.\d{2}$/.test(value)) {
+          add(value.replace(/\.00$/, ""), slot);
+          add(value.replaceAll(",", ""), slot);
+          add(value.replaceAll(",", "").replace(/\.00$/, ""), slot);
+        }
+        const n = slot.match(/\.date(\d+)/)?.[1];
+        const record =
+          n === undefined ? null : facts[index].presentation.records[Number(n)];
+        if (record?.date) {
+          const d = new Date(record.date);
+          for (const locale of ["en-NG", "en-US"])
+            for (const month of ["short", "long"] as const)
+              for (const includeYear of [true, false])
+                add(
+                  d.toLocaleDateString(locale, {
+                    timeZone: "Africa/Lagos",
+                    day: "numeric",
+                    month,
+                    ...(includeYear ? { year: "numeric" } : {}),
+                  }),
+                  slot,
+                );
+        }
+      }
+      const unique = [...aliases]
+        .filter(([, slots]) => slots.size === 1)
+        .sort((a, b) => b[0].length - a[0].length);
+      if (!unique.length) return p;
+      const tokens = new Map(
+        unique.map(([value, slots]) => [value, [...slots][0]]),
+      );
+      const pattern = new RegExp(
+        `(?<![\\p{L}\\p{N}_])(?:${unique.map(([value]) => escape(value)).join("|")})(?![\\p{L}\\p{N}_])`,
+        "gu",
+      );
+      return {
+        ...p,
+        text: p.text
+          .split(/(\{\{[^}]+\}\})/g)
+          .map((part) =>
+            part.startsWith("{{")
+              ? part
+              : part.replace(pattern, (value) => tokens.get(value)!),
+          )
+          .join(""),
+      };
+    }),
   };
 }
 
@@ -433,11 +601,21 @@ export function factualPresentation(facts: Fact[]): FinancialPresentation {
         return `In the available records, expenses total ${r.metrics[0].value} and income totals ${r.metrics[1].value}. The ${r.metrics[2].label.toLowerCase()} is ${r.metrics[2].value}.`;
       if (r.type === "search_transactions")
         return r.records.length
-          ? `${r.records.length} candidate records are shown. Choose a candidate to inspect its details.`
+          ? `I found ${r.records.length === 1 ? "one possible match" : `${r.records.length} possible matches`} in the selected records.\n\n${r.records.map((record) => `${record.name}: ${record.amount}${record.date ? ` on ${new Date(record.date).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" })}` : " (date unavailable)"}.`).join("\n\n")}\n\n${r.records.length > 1 ? "Which one would you like to inspect?" : "You can inspect its details below."}`
           : "No matching records were found in the available data.";
       if (r.type === "get_transaction")
-        return "The source record is shown below. Its status does not confirm recipient bank credit.";
-      return f.text;
+        return r.records
+          .map(
+            (record) =>
+              `${record.name}: ${record.amount}${record.date ? ` on ${new Date(record.date).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" })}` : " (date unavailable)"}. The source lists this as ${record.status}. This does not confirm recipient bank credit.`,
+          )
+          .join("\n\n");
+      if (r.type === "find_payment_evidence") return r.limits.join(" ");
+      if (r.type === "get_account_summary")
+        return r.metrics.length
+          ? r.metrics.map((m) => `${m.label}: ${m.value}.`).join(" ")
+          : "Balance information is unavailable in the selected source records. An unavailable balance is unknown, not zero.";
+      return "The available source details are shown below.";
     }),
     results: facts.map((f) => f.presentation),
   };

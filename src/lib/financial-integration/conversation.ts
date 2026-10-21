@@ -15,6 +15,7 @@ import { operator } from "../auth";
 import { AppError } from "../domain";
 import { createModelLedAgent } from "../model-led-agent/agent";
 import { createGeminiToolModel } from "../model-led-agent/model";
+import { turnDiagnostic } from "../model-led-agent/diagnostics";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -77,10 +78,16 @@ export async function conversationTurn(
           ...options,
           model: model ?? createConfiguredModel(),
         });
-  return agent.turn({
+  const started = performance.now();
+  const reply = await agent.turn({
     ...parsed,
     ctx: capability.context,
     // Requested IDs confer no permission. B checks ownership, consent and source
     // revisions before planning/reads; education never resolves account grants.
   });
+  if (!model && process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini")
+    console.info(
+      JSON.stringify(turnDiagnostic(reply, performance.now() - started)),
+    );
+  return reply;
 }

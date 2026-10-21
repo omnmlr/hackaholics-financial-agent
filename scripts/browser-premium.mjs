@@ -266,9 +266,9 @@ try {
     await capture("financial");
     await axe("financial");
     const sources = page.locator(".agus-sources").last();
-    await sources.locator("summary").click();
+    await sources.locator(":scope > summary").click();
     await sources.getByRole("heading", { name: "Source snapshot" }).waitFor();
-    await sources.locator("summary").click();
+    await sources.locator(":scope > summary").click();
     checks.push(
       "Authorized fictional source metrics and expandable calculation evidence",
     );

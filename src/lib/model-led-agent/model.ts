@@ -74,6 +74,8 @@ export function createGeminiToolModel(
         const candidate = response.candidates?.[0];
         if (response.promptFeedback?.blockReason)
           throw new AgentError("MODEL_REFUSAL");
+        if (candidate?.finishReason === "MAX_TOKENS")
+          throw new AgentError("MODEL_OUTPUT_BUDGET");
         if (candidate?.finishReason !== "STOP" || !candidate.content?.parts)
           throw new AgentError("MODEL_COMPLETION");
         const content = candidate.content;
@@ -111,12 +113,15 @@ export function createGeminiToolModel(
         // Provider exception messages can contain request details. Fixed codes
         // only cross the application boundary.
         const status = (error as { status?: number }).status;
+        const name = (error as { name?: string }).name;
         throw new AgentError(
           signal.aborted
             ? "MODEL_INTERRUPTED"
-            : status && Number.isInteger(status)
-              ? `MODEL_HTTP_${status}`
-              : "MODEL_NETWORK",
+            : name === "TimeoutError" || name === "AbortError"
+              ? "MODEL_TIMEOUT"
+              : status && Number.isInteger(status)
+                ? `MODEL_HTTP_${status}`
+                : "MODEL_NETWORK",
         );
       }
     },

@@ -1,0 +1,52 @@
+name: AGUS intelligence bounded Gemini acceptance
+on:
+  push:
+    branches: [improve/agus-intelligence-motion-20261021]
+    paths:
+      - scripts/verify-intelligence-gemini.ts
+      - .github/workflows/agus-intelligence-genuine.yml
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: agus-intelligence-genuine-20261021
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PAYMENT_MODE: fixture
+      FINANCIAL_DEMO_ENABLED: "true"
+      LIVE_TRANSFERS_ENABLED: "false"
+      PAYSTACK_TRANSFERS_ENABLED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Guard one campaign before exposing the existing CI provider secret
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/agus-intelligence-genuine.yml/runs?branch=improve%2Fagus-intelligence-motion-20261021&per_page=100`, {headers:{Authorization:`Bearer ${process.env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
+          if (!r.ok) throw new Error('Cannot establish campaign ledger');
+          const data = await r.json();
+          if (Number(process.env.GITHUB_RUN_ATTEMPT) !== 1 || data.workflow_runs.some(run => String(run.id) !== process.env.GITHUB_RUN_ID && run.run_number < Number(process.env.GITHUB_RUN_NUMBER))) throw new Error('Campaign already started; no automatic repeat permitted');
+          NODE
+      - run: npm ci
+      - name: At most 24 actual HTTP generation attempts, including reviews and retries
+        env:
+          AI_PROVIDER: gemini
+          AI_MODEL: gemini-3.5-flash-lite
+          AI_API_KEY: ${{ secrets.AGUS_GEMINI_API_KEY }}
+          NODE_USE_ENV_PROXY: "1"
+        run: node --import=tsx scripts/verify-intelligence-gemini.ts "${RUNNER_TEMP}/agus-intelligence-genuine.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agus-intelligence-genuine
+          path: ${{ runner.temp }}/agus-intelligence-genuine.json
+          retention-days: 30

@@ -26,7 +26,8 @@
     "test:browser:legacy": "node scripts/browser-safety.mjs && node scripts/browser-chat-first.mjs && node scripts/browser-chat-ux.mjs && node scripts/browser-conversation.mjs && node scripts/browser-demo-polish.mjs",
     "preview:fixture": "node scripts/preview-fixture.mjs",
     "test:browser:native": "node scripts/browser-native-agent.mjs",
-    "test:browser:premium": "node scripts/browser-premium.mjs"
+    "test:browser:premium": "node scripts/browser-premium.mjs",
+    "test:browser:motion": "node scripts/browser-intelligence-motion.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",

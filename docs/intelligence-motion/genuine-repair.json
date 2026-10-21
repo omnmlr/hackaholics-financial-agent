@@ -1,0 +1,366 @@
+{
+  "commit": "dcba6382eec737863f49e3d4447346124e4f8c94",
+  "genuineProvider": true,
+  "syntheticRecords": true,
+  "maximumHttpAttempts": 19,
+  "priorHttpAttempts": 21,
+  "aggregateMaximum": 40,
+  "status": "complete_requires_human_review",
+  "attempts": [
+    {
+      "status": 200,
+      "elapsedMs": 756,
+      "finishReason": "STOP",
+      "inputTokens": 1555,
+      "outputTokens": 40,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "plan_savings",
+          "args": {
+            "contribution": 10000,
+            "target": 1000000,
+            "cadence": "weeks",
+            "startingAmount": 0
+          },
+          "id": "call_1287476"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 882,
+      "finishReason": "STOP",
+      "inputTokens": 1777,
+      "outputTokens": 78,
+      "responseText": "If you save ₦10,000 every week with no interest or withdrawals, it will take you 100 weeks—which is roughly 1 year and 11 months—to hit your first million.   *Assumptions: Consistent weekly deposits of ₦10,000 starting from zero, with no interest, fees, or withdrawals.*",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 758,
+      "finishReason": "STOP",
+      "inputTokens": 720,
+      "outputTokens": 20,
+      "responseText": "{   \"safeGeneralConversation\": true,   \"calculationMatchesQuestion\": true }",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 1670,
+      "finishReason": "STOP",
+      "inputTokens": 1640,
+      "outputTokens": 67,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "calculate",
+          "args": {
+            "description": "Weeks to reach one million naira saving 10k weekly",
+            "unit": "weeks",
+            "expression": "1000000 / 10000",
+            "assumptions": [
+              "1 million target divided by 10k weekly deposit"
+            ]
+          },
+          "id": "call_1044862"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 865,
+      "finishReason": "STOP",
+      "inputTokens": 1852,
+      "outputTokens": 124,
+      "responseText": "To find out how long it takes, we divide your target amount of ₦1,000,000 by your regular weekly savings contribution of ₦10,000.   Mathematically, $\\frac{₦1,000,000}{₦10,000\\text{ per week}} = {{c1}}$ weeks. Converting that total into calendar time gives roughly 1 year and 11 months.  *Assumptions: Simple division of target by the periodic deposit, assuming zero starting balance and no interest, fees, or withdrawals.*",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 836,
+      "finishReason": "STOP",
+      "inputTokens": 834,
+      "outputTokens": 20,
+      "responseText": "{   \"safeGeneralConversation\": true,   \"calculationMatchesQuestion\": true }",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 686,
+      "finishReason": "STOP",
+      "inputTokens": 2990,
+      "outputTokens": 65,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "search_transactions",
+          "args": {
+            "cursor": null,
+            "accountIds": [
+              "amina-current"
+            ],
+            "toExclusive": "2026-11-01",
+            "limit": 10,
+            "from": "2026-10-01",
+            "query": "Ada"
+          },
+          "id": "call_915512"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 900,
+      "finishReason": "STOP",
+      "inputTokens": 5592,
+      "outputTokens": 176,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "present_financial",
+          "args": {
+            "paragraphs": [
+              {
+                "resultIds": [
+                  "0431e45c-44af-4add-ac1b-0a5d5e096c18"
+                ],
+                "text": "These records cover {{r0.scope}}. I found {{r0.count}} matching records. {{r0.name0}}: {{r0.amount0}} on {{r0.date0}}. The source lists the record for {{r0.name0}} as {{r0.status0}}. {{r0.name1}}: {{r0.amount1}} on {{r0.date1}}. The source lists the record for {{r0.name1}} as {{r0.status1}}. {{r0.limit0}} {{r0.limit1}}"
+              }
+            ]
+          },
+          "id": "call_1206146"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 561,
+      "finishReason": "STOP",
+      "inputTokens": 3311,
+      "outputTokens": 29,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "get_transaction",
+          "args": {
+            "accountId": "amina-current",
+            "transactionId": "ada-obi-oct"
+          },
+          "id": "call_915679"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 948,
+      "finishReason": "STOP",
+      "inputTokens": 4852,
+      "outputTokens": 145,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "present_financial",
+          "args": {
+            "paragraphs": [
+              {
+                "text": "These records cover {{r0.scope}}. {{r0.name0}}: {{r0.amount0}} on {{r0.date0}}. {{r0.name0}} has a {{r0.direction0}} record of {{r0.amount0}}. The source lists the record for {{r0.name0}} as {{r0.status0}}. {{r0.limit0}} {{r0.limit1}}",
+                "resultIds": [
+                  "78cb6693-bc81-4faa-b1b6-a70dd8ce9b94"
+                ]
+              }
+            ]
+          },
+          "id": "call_753301"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 599,
+      "finishReason": "STOP",
+      "inputTokens": 3331,
+      "outputTokens": 29,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "get_transaction",
+          "args": {
+            "accountId": "amina-current",
+            "transactionId": "ada-obi-oct"
+          },
+          "id": "call_1020419"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 697,
+      "finishReason": "STOP",
+      "inputTokens": 4920,
+      "outputTokens": 31,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "find_payment_evidence",
+          "args": {
+            "accountId": "amina-current",
+            "transactionId": "ada-obi-oct"
+          },
+          "id": "call_1041871"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 837,
+      "finishReason": "STOP",
+      "inputTokens": 6656,
+      "outputTokens": 145,
+      "responseText": "",
+      "functionCalls": [
+        {
+          "name": "present_financial",
+          "args": {
+            "paragraphs": [
+              {
+                "text": "The transaction for {{r0.name0}} on {{r0.date0}} is listed as {{r0.status0}} in the source records, but no evidence or receipt is available to confirm that the recipient's bank was credited.",
+                "resultIds": [
+                  "07ab5f37-d59e-4a4c-ac33-966a56c7ad18",
+                  "[long number withheld]-a0b2-42b0-9b80-775542fea047"
+                ]
+              }
+            ]
+          },
+          "id": "call_1090984"
+        }
+      ]
+    },
+    {
+      "status": 200,
+      "elapsedMs": 722,
+      "finishReason": "STOP",
+      "inputTokens": 2169,
+      "outputTokens": 6,
+      "responseText": "{\"grounded\": true}",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 1031,
+      "finishReason": "STOP",
+      "inputTokens": 1546,
+      "outputTokens": 70,
+      "responseText": "Na true you talk, my bro. The way things dey cost for market and transport these days, person just need extra carefulness with money.   If you want make we look at your budget, plan small savings, or break down any financial stress make e lighter, just let me know how you want am. We fit reason am together.",
+      "functionCalls": []
+    },
+    {
+      "status": 200,
+      "elapsedMs": 649,
+      "finishReason": "STOP",
+      "inputTokens": 574,
+      "outputTokens": 7,
+      "responseText": "{\"safeGeneralConversation\": true}",
+      "functionCalls": []
+    }
+  ],
+  "turns": [
+    {
+      "id": "weekly-savings",
+      "question": "if i saved 10k every week, how long until i become a millionaire 👀🥲",
+      "kind": "general",
+      "text": "If you save ₦10,000 every week with no interest or withdrawals, it will take you 100 weeks—which is roughly 1 year and 11 months—to hit your first million.   *Assumptions: Consistent weekly deposits of ₦10,000 starting from zero, with no interest, fees, or withdrawals.*",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 13815
+    },
+    {
+      "id": "explain-savings",
+      "question": "Explain how you calculated that.",
+      "kind": "general",
+      "text": "To find out how long it takes, we divide your target amount of ₦1,000,000 by your regular weekly savings contribution of ₦10,000.   Mathematically, $\\frac{₦1,000,000}{₦10,000\\text{ per week}} = 100$ weeks. Converting that total into calendar time gives roughly 1 year and 11 months.  *Assumptions: Simple division of target by the periodic deposit, assuming zero starting balance and no interest, fees, or withdrawals.*",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 19581
+    },
+    {
+      "id": "ada-search",
+      "question": "Find payments to Ada in October 2026",
+      "kind": "clarify",
+      "text": "These records cover Fictional amina-current · •0042 · 1 Oct 2026–31 Oct 2026 (WAT). I found 2 matching records. Ada Obi (fictional): ₦7,500.00 on 7 October 2026. The source lists the record for Ada Obi (fictional) as posted. Ada Okafor (fictional): ₦5,000.00 on 5 October 2026. The source lists the record for Ada Okafor (fictional) as posted. Available records only · Coverage is partial. Source status does not confirm the recipient’s bank was credited.",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 2226
+      },
+      "elapsedMs": 13076
+    },
+    {
+      "id": "ada-detail",
+      "question": "Show details for the first candidate",
+      "kind": "financial",
+      "text": "These records cover Available source records. Ada Obi (fictional): ₦7,500.00 on 7 October 2026. Ada Obi (fictional) has a debit record of ₦7,500.00. The source lists the record for Ada Obi (fictional) as posted. Coverage not supplied. Source status does not confirm the recipient’s bank was credited.",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 1027
+      },
+      "elapsedMs": 13049
+    },
+    {
+      "id": "recipient-credit",
+      "question": "Was the recipient actually credited?",
+      "kind": "financial",
+      "text": "The transaction for Ada Obi (fictional) on 7 October 2026 is listed as posted in the source records, but no evidence or receipt is available to confirm that the recipient's bank was credited.  Coverage not supplied.  Source status does not confirm the recipient’s bank was credited.  No evidence is available. A receipt or recipient bank credit cannot be confirmed.  Fictional demo records; no real bank account data.",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 4,
+        "toolCalls": 3,
+        "resultBytes": 1400,
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "unsupported_structure",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "record_slot",
+            "text",
+            "unknown_slot",
+            "text",
+            "record_slot",
+            "text",
+            "comma",
+            "text",
+            "period"
+          ]
+        }
+      },
+      "elapsedMs": 25785
+    },
+    {
+      "id": "pidgin-economy",
+      "question": "Omo, this economy no funny again 😭",
+      "kind": "general",
+      "text": "Na true you talk, my bro. The way things dey cost for market and transport these days, person just need extra carefulness with money.   If you want make we look at your budget, plan small savings, or break down any financial stress make e lighter, just let me know how you want am. We fit reason am together.",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 0,
+        "resultBytes": 0
+      },
+      "elapsedMs": 12924
+    }
+  ]
+}

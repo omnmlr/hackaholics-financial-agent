@@ -20,18 +20,18 @@ const run = (
   );
 
 describe("generic decimal calculator", () => {
-  it("retains a grounded explanation while rejecting an unverified secondary derivation", () => {
+  it("retains a grounded explanation with an independently computed calendar equivalent", () => {
     const computed = run("900000/18000", "months");
     const result = composeVerified(
       "Divide the 900,000 target by the 18,000 monthly deposit: {{c1}} months.\n\nThat is 4 years and 2 months.",
       [computed],
     );
     expect(result).toBe(
-      "Divide the 900,000 target by the 18,000 monthly deposit: 50 months.",
+      "Divide the 900,000 target by the 18,000 monthly deposit: 50 months.\n\nThat is 4 years and 2 months.",
     );
     expect(
       composeVerified("The result is {{unknown}}.\n\nLooks good.", [computed]),
-    ).toContain("Hypothetical result: 50 months");
+    ).toContain("That comes to 50 months");
   });
   it("verifies ordinary monetary subtraction and decimal precision without phrase templates", () => {
     expect(run("150000-80000-25000", "naira").value).toBe("45000");

@@ -20,6 +20,10 @@ import {
   acceptNarration,
   factualPresentation,
   narrationContract,
+  prepareReviewedNarration,
+  bindSourceValues,
+  NarrationError,
+  type NarrationDiagnostic,
 } from "../financial-agent/narration";
 import { AgentError, bytes, scrub } from "../financial-agent/protocol";
 import { lagosDateInterval } from "../financial-data/core";
@@ -31,6 +35,11 @@ type Options = {
   ctx: PermissionContext;
   accountIds: string[];
   selection: ConversationContext["selection"];
+  reviewNarration?: (
+    raw: unknown,
+    authoring: ReturnType<typeof narrationContract>,
+    facts: unknown[],
+  ) => Promise<boolean>;
 };
 
 /** Native function calls request reads; they never supply authority. Results use
@@ -338,14 +347,53 @@ export function createSecureReads(options: Options) {
       ? factualPresentation(successful)
       : undefined;
     let narrationCode: string | undefined;
+    let narrationDiagnostic: NarrationDiagnostic | undefined;
     if (presentation && narration !== undefined) {
       try {
-        presentation.explanation = acceptNarration(narration, successful);
+        try {
+          presentation.explanation = acceptNarration(narration, successful, {
+            appendLimits: true,
+          });
+        } catch (error) {
+          if (!(error instanceof NarrationError)) throw error;
+          narrationDiagnostic = error.diagnostic;
+          // Flexible wording needs independent semantic review. Literal values,
+          // slots and references remain deterministically checked beforehand.
+          const bound = bindSourceValues(narration, successful);
+          const candidate = prepareReviewedNarration(bound, successful);
+          let proved: string[] | undefined;
+          try {
+            proved = acceptNarration(bound, successful, { appendLimits: true });
+          } catch {
+            /* Broader prose still requires independent review below. */
+          }
+          if (proved) presentation.explanation = proved;
+          else {
+            if (
+              !options.reviewNarration ||
+              !(await options.reviewNarration(
+                bound,
+                narrationContract(successful),
+                successful.map((f) => ({
+                  resultId: f.resultId,
+                  ...(f.modelData as object),
+                })),
+              ))
+            )
+              throw new AgentError("NARRATION_REVIEW_REJECTED");
+            await recheck();
+            presentation.explanation = candidate.render();
+          }
+        }
         presentation.narration = "ai";
-      } catch {
-        narrationCode = "NARRATION_FALLBACK";
+      } catch (error) {
+        if (error instanceof NarrationError)
+          narrationDiagnostic = error.diagnostic;
+        narrationCode =
+          error instanceof AgentError ? error.code : "NARRATION_FALLBACK";
+        await recheck();
       }
-    }
+    } else if (presentation) narrationCode = "NARRATION_NOT_REQUESTED";
     const canonicalText = selected.map((fact) => fact.text).join("\n\n");
     const reply: AgentReply = {
       kind: successful.length
@@ -364,6 +412,7 @@ export function createSecureReads(options: Options) {
         resultBytes,
         ...(lastToolError ? { code: lastToolError } : {}),
         ...(narrationCode ? { narrationCode } : {}),
+        ...(narrationDiagnostic ? { narrationDiagnostic } : {}),
       },
       ...(presentation ? { presentation } : {}),
     };
@@ -386,6 +435,40 @@ export function createSecureReads(options: Options) {
         successIds.has(fact.resultId),
       );
       return successful.length ? narrationContract(successful) : null;
+    },
+    get narrationResults() {
+      return [...facts.values()]
+        .filter((f) => successIds.has(f.resultId))
+        .map((f, i) => ({
+          key: `r${i}`,
+          resultId: f.resultId,
+          type: f.presentation.type,
+        }));
+    },
+    get narrationExamples() {
+      return [...facts.values()]
+        .filter((f) => successIds.has(f.resultId))
+        .map((f, i) => {
+          const r = f.presentation;
+          const slot = (key: string) => `{{r${i}.${key}}}`;
+          const text =
+            r.type === "calculate_spending"
+              ? `Your spending came to ${slot("expenses")}, and income came to ${slot("income")}.`
+              : r.records.length
+                ? `${r.type === "search_transactions" ? `I found ${slot("count")} possible matches. ` : ""}${r.records
+                    .slice(0, 2)
+                    .map(
+                      (_, n) =>
+                        `${slot(`name${n}`)}: ${slot(`amount${n}`)} on ${slot(`date${n}`)}.`,
+                    )
+                    .join(
+                      " ",
+                    )}${r.records.length > 1 ? " Which one would you like to inspect?" : ""}`
+                : r.type === "find_payment_evidence"
+                  ? "The available evidence cannot confirm recipient bank credit."
+                  : "The available source details are shown below.";
+          return { resultIds: [f.resultId], text };
+        });
     },
     get selection() {
       return selection;

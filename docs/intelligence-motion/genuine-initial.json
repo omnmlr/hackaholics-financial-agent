@@ -1,0 +1,300 @@
+{
+  "commit": "a989ce40ff4f502388e07a37f822643bee130e85",
+  "genuineProvider": true,
+  "syntheticRecords": true,
+  "maximumHttpAttempts": 24,
+  "status": "complete_requires_human_review",
+  "attempts": [
+    {
+      "status": 200,
+      "elapsedMs": 695,
+      "finishReason": "STOP",
+      "inputTokens": 1496,
+      "outputTokens": 18
+    },
+    {
+      "status": 200,
+      "elapsedMs": 587,
+      "finishReason": "STOP",
+      "inputTokens": 1500,
+      "outputTokens": 47
+    },
+    {
+      "status": 200,
+      "elapsedMs": 853,
+      "finishReason": "STOP",
+      "inputTokens": 1645,
+      "outputTokens": 11
+    },
+    {
+      "status": 200,
+      "elapsedMs": 816,
+      "finishReason": "STOP",
+      "inputTokens": 500,
+      "outputTokens": 20
+    },
+    {
+      "status": 200,
+      "elapsedMs": 606,
+      "finishReason": "STOP",
+      "inputTokens": 1510,
+      "outputTokens": 40
+    },
+    {
+      "status": 200,
+      "elapsedMs": 967,
+      "finishReason": "STOP",
+      "inputTokens": 1732,
+      "outputTokens": 94
+    },
+    {
+      "status": 200,
+      "elapsedMs": 788,
+      "finishReason": "STOP",
+      "inputTokens": 671,
+      "outputTokens": 20
+    },
+    {
+      "status": 200,
+      "elapsedMs": 693,
+      "finishReason": "STOP",
+      "inputTokens": 1557,
+      "outputTokens": 45
+    },
+    {
+      "status": 200,
+      "elapsedMs": 794,
+      "finishReason": "STOP",
+      "inputTokens": 1790,
+      "outputTokens": 63
+    },
+    {
+      "status": 200,
+      "elapsedMs": 710,
+      "finishReason": "STOP",
+      "inputTokens": 700,
+      "outputTokens": 20
+    },
+    {
+      "status": 200,
+      "elapsedMs": 719,
+      "finishReason": "STOP",
+      "inputTokens": 1631,
+      "outputTokens": 45
+    },
+    {
+      "status": 200,
+      "elapsedMs": 940,
+      "finishReason": "STOP",
+      "inputTokens": 1860,
+      "outputTokens": 58
+    },
+    {
+      "status": 200,
+      "elapsedMs": 990,
+      "finishReason": "STOP",
+      "inputTokens": 778,
+      "outputTokens": 20
+    },
+    {
+      "status": 200,
+      "elapsedMs": 869,
+      "finishReason": "STOP",
+      "inputTokens": 2945,
+      "outputTokens": 65
+    },
+    {
+      "status": 200,
+      "elapsedMs": 2294,
+      "finishReason": "STOP",
+      "inputTokens": 5488,
+      "outputTokens": 256
+    },
+    {
+      "status": 200,
+      "elapsedMs": 632,
+      "finishReason": "STOP",
+      "inputTokens": 3266,
+      "outputTokens": 29
+    },
+    {
+      "status": 200,
+      "elapsedMs": 787,
+      "finishReason": "STOP",
+      "inputTokens": 4780,
+      "outputTokens": 121
+    },
+    {
+      "status": 200,
+      "elapsedMs": 647,
+      "finishReason": "STOP",
+      "inputTokens": 3286,
+      "outputTokens": 29
+    },
+    {
+      "status": 200,
+      "elapsedMs": 604,
+      "finishReason": "STOP",
+      "inputTokens": 4800,
+      "outputTokens": 31
+    },
+    {
+      "status": 200,
+      "elapsedMs": 681,
+      "finishReason": "STOP",
+      "inputTokens": 6522,
+      "outputTokens": 126
+    },
+    {
+      "status": 200,
+      "elapsedMs": 672,
+      "finishReason": "STOP",
+      "inputTokens": 2133,
+      "outputTokens": 10
+    }
+  ],
+  "turns": [
+    {
+      "id": "greeting",
+      "question": "How are you doing?",
+      "kind": "general",
+      "text": "I'm doing well, thank you for asking! How can I help you today?",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "resultBytes": 0
+      },
+      "elapsedMs": 754
+    },
+    {
+      "id": "multiplication",
+      "question": "10 times 20 is what??",
+      "kind": "general",
+      "text": "10 times 20 is 200.",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 19618
+    },
+    {
+      "id": "weekly-savings",
+      "question": "if i saved 10k every week, how long until i become a millionaire 👀🥲",
+      "kind": "clarify",
+      "text": "The arithmetic gives 100 weeks, but I couldn’t confirm that the formula matches your question. Please confirm the figures and what you want to find.",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0,
+        "code": "CALCULATION_INTERPRETATION_UNCERTAIN"
+      },
+      "elapsedMs": 19476
+    },
+    {
+      "id": "starting-savings",
+      "question": "What if I already have ₦200k?",
+      "kind": "general",
+      "text": "With ₦200,000 already in your corner and adding ₦10,000 every week without interest or fees, it will take you 80 weeks—which is roughly 1 year and 6 months—to hit that ₦1 million mark! 👀✨",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 19430
+    },
+    {
+      "id": "corrected-contribution",
+      "question": "Actually make it ₦15k weekly.",
+      "kind": "general",
+      "text": "With your ₦200,000 starting amount and bumping your weekly contribution to ₦15,000 (with no interest or fees), you'll reach your ₦1 million goal in 54 weeks—roughly 1 year! 🚀💰",
+      "narration": null,
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 19784
+    },
+    {
+      "id": "ada-search",
+      "question": "Find payments to Ada in October 2026",
+      "kind": "clarify",
+      "text": "I found 2 possible matches in the selected records.  Ada Obi (fictional): ₦7,500.00 on 7 October 2026.  Ada Okafor (fictional): ₦5,000.00 on 5 October 2026.  Which one would you like to inspect?",
+      "narration": "factual_fallback",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 2226,
+        "narrationCode": "NARRATION_VALUE",
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "literal_value",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "period"
+          ]
+        }
+      },
+      "elapsedMs": 14318
+    },
+    {
+      "id": "ada-detail",
+      "question": "Show details for the first candidate",
+      "kind": "financial",
+      "text": "Ada Obi (fictional): ₦7,500.00 on 7 October 2026. The source lists this as posted. This does not confirm recipient bank credit.",
+      "narration": "factual_fallback",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 1027,
+        "narrationCode": "NARRATION_VALUE",
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "literal_value",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "comma",
+            "text",
+            "period"
+          ]
+        }
+      },
+      "elapsedMs": 11489
+    },
+    {
+      "id": "recipient-credit",
+      "question": "Was the recipient actually credited?",
+      "kind": "financial",
+      "text": "The source lists the record for Ada Obi (fictional) as posted.  The available evidence cannot confirm recipient bank credit.  Coverage not supplied.  Source status does not confirm the recipient’s bank was credited.  Coverage not supplied.  No evidence is available. A receipt or recipient bank credit cannot be confirmed.  Fictional demo records; no real bank account data.",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 4,
+        "toolCalls": 3,
+        "resultBytes": 1400,
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "unsupported_structure",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "period"
+          ]
+        }
+      },
+      "elapsedMs": 25895
+    }
+  ]
+}

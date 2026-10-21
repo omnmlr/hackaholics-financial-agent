@@ -6,11 +6,18 @@ import { AgentError } from "../financial-agent/protocol";
 // Decimal arithmetic keeps everyday monetary subtraction exact. This verifies
 // evaluation of the supplied expression; semantic interpretation remains fallible.
 const D = Decimal.clone({ precision: 120, rounding: Decimal.ROUND_HALF_UP });
+export const SavingsArgs = z.strictObject({
+  target: z.number().finite().positive().max(1e12),
+  startingAmount: z.number().finite().nonnegative().max(1e12),
+  contribution: z.number().finite().positive().max(1e12),
+  cadence: z.enum(["weeks", "months", "days", "years"]),
+});
 export const CalculateArgs = z.strictObject({
   expression: z.string().trim().min(1).max(400),
   description: z.string().trim().min(1).max(160),
   unit: z.enum([
     "months",
+    "weeks",
     "years",
     "naira",
     "percent",
@@ -30,7 +37,22 @@ export type Calculation = {
   displayValue: string;
   assumptions: string[];
   approximate: boolean;
+  duration?: { text: string; values: string[] };
+  savings?: z.infer<typeof SavingsArgs>;
 };
+
+/** The chat renders plain text. Normalize common model formatting without
+ * changing numeric values; arithmetic/output checks run on the result. */
+export function normalizeAnswerFormatting(text: string) {
+  return text
+    .replace(/\$([^$\n]*\\[^$\n]*)\$/g, (_all, math: string) =>
+      math
+        .replace(/\\text\{([^{}]*)\}/g, "$1")
+        .replace(/\\frac\{([^{}]*)\}\{([^{}]*)\}/g, "$1 ÷ $2"),
+    )
+    .replace(/\*\*([^*\n]+)\*\*/g, "$1")
+    .replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, "$1");
+}
 
 export function calculate(raw: unknown, id: string): Calculation {
   const args = CalculateArgs.parse(raw);
@@ -129,7 +151,61 @@ export function calculate(raw: unknown, id: string): Calculation {
   const displayValue =
     whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
     (fraction ? `.${fraction}` : "");
-  return { id, ...args, value, displayValue, approximate };
+  // Calendar equivalents are estimates, not exact deposit schedules. Compute
+  // them here so narration never has to invent secondary arithmetic.
+  let duration: Calculation["duration"];
+  if (["weeks", "months", "days"].includes(args.unit) && rounded.gte(0)) {
+    const months =
+      args.unit === "months"
+        ? rounded
+        : rounded
+            .mul(args.unit === "weeks" ? 7 : 1)
+            .mul(12)
+            .div("365.2425");
+    const total = months.round();
+    const years = total.div(12).floor();
+    const remainder = total.mod(12);
+    const parts = [
+      ...(years.gt(0)
+        ? [`${years.toFixed()} ${years.eq(1) ? "year" : "years"}`]
+        : []),
+      ...(remainder.gt(0)
+        ? [`${remainder.toFixed()} ${remainder.eq(1) ? "month" : "months"}`]
+        : []),
+    ];
+    if ((parts.length && args.unit !== "months") || years.gt(0))
+      duration = {
+        text: `roughly ${parts.join(" and ")}`,
+        values: [years.toFixed(), remainder.toFixed()],
+      };
+  }
+  return {
+    id,
+    ...args,
+    value,
+    displayValue,
+    approximate,
+    ...(duration ? { duration } : {}),
+  };
+}
+
+/** Fixed savings formula, with deposits at the end of each stated period.
+ * Inputs are user figures, never inferred account balances or live rates. */
+export function planSavings(raw: unknown, id: string): Calculation {
+  const args = SavingsArgs.parse(raw);
+  const expression = `ceil((${new D(args.target).toFixed()}-${new D(args.startingAmount).toFixed()})/${new D(args.contribution).toFixed()})`;
+  const result = calculate(
+    {
+      expression: args.startingAmount >= args.target ? "0" : expression,
+      description: "Time to reach your savings goal",
+      unit: args.cadence,
+      assumptions: [
+        "Consistent deposits at the end of each period; no interest, fees or withdrawals.",
+      ],
+    },
+    id,
+  );
+  return { ...result, savings: args };
 }
 
 /** Model writes the explanation; backend inserts exact values into explicit slots. */
@@ -146,6 +222,14 @@ export function composeVerified(text: string, calculations: Calculation[]) {
       .flatMap((c) => [
         ...(c.expression.match(/\d+(?:\.\d+)?/g) ?? []),
         c.value,
+        ...(c.duration?.values ?? []),
+        ...(c.savings
+          ? [
+              String(c.savings.target),
+              String(c.savings.startingAmount),
+              String(c.savings.contribution),
+            ]
+          : []),
       ])
       .map((n) => new D(n).toString()),
   );
@@ -179,9 +263,19 @@ export function composeVerified(text: string, calculations: Calculation[]) {
 
 export function calculationFallback(calculations: Calculation[]) {
   return calculations
-    .map(
-      (c) =>
-        `Hypothetical result: ${c.approximate ? "approximately " : ""}${c.displayValue}${c.unit === "number" ? "" : ` ${c.unit}`} (${c.expression}).`,
-    )
+    .map((c) => {
+      const value = `${c.approximate ? "approximately " : ""}${c.displayValue}${c.unit === "number" ? "" : ` ${c.unit}`}${c.duration ? ` (${c.duration.text})` : ""}`;
+      if (c.savings) {
+        const money = (n: number) => {
+          const [whole, fraction] = new D(n).toFixed().split(".");
+          return `₦${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${fraction ? `.${fraction}` : ""}`;
+        };
+        const s = c.savings;
+        if (s.startingAmount >= s.target)
+          return `With ${money(s.startingAmount)} saved, you’ve already reached your ${money(s.target)} goal.`;
+        return `Saving ${money(s.contribution)} ${s.cadence === "days" ? "daily" : s.cadence === "weeks" ? "weekly" : s.cadence === "months" ? "monthly" : "yearly"}, you’ll reach ${money(s.target)} in ${value}.\n\nThat assumes ${s.startingAmount ? `you start with ${money(s.startingAmount)}` : "you start from zero"}, save consistently at the end of each period and earn no interest, with no fees or withdrawals.`;
+      }
+      return `That comes to ${value}.`;
+    })
     .join("\n\n");
 }

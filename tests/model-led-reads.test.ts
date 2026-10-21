@@ -345,7 +345,7 @@ describe("native financial read boundary", () => {
     });
     expect(reply).toMatchObject({
       kind: "financial",
-      evidence: { narrationCode: "NARRATION_FALLBACK" },
+      evidence: { narrationCode: "NARRATION_REFERENCE" },
     });
     expect(reply!.text).toContain("19,751.51");
     expect(reply!.text).not.toContain("doubled");

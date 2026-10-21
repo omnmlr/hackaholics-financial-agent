@@ -2047,3 +2047,9 @@ body:has(.agus-workspace) {
     scroll-behavior: auto !important;
   }
 }
+.agus-answer-limit {
+  color: #a7bac4;
+  font-size: 12px;
+  margin: 8px 0;
+  line-height: 1.6;
+}

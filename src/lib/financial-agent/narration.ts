@@ -8,7 +8,14 @@ export const NarrationSchema = z.strictObject({
     .array(
       z.strictObject({
         resultIds: z.array(z.string()).min(1).max(5),
-        text: z.string().trim().min(1).max(2400),
+        text: z
+          .string()
+          .trim()
+          .min(1)
+          .max(2400)
+          .describe(
+            "Natural explanation. Use supplied {{r0.name0}}, {{r0.amount0}}, {{r0.date0}}, {{r0.count}}, etc. for source facts, never literal numbers, names, amounts or dates. Cite the corresponding resultIds.",
+          ),
       }),
     )
     .min(1)
@@ -423,19 +430,97 @@ export function prepareReviewedNarration(raw: unknown, facts: Fact[]) {
     throw new AgentError("NARRATION_REFERENCE");
   return {
     render: () => [
-      ...paragraphs.map((p) =>
-        p.text.replace(/\{\{[^}]+\}\}/g, (token) => contract.slots[token]),
-      ),
-      // Qualifications are never delegated to model compliance.
-      ...contract.required
-        .filter((token) => !paragraphs.some((p) => p.text.includes(token)))
-        .map((token) => contract.slots[token]),
-      ...(facts.some((f) =>
-        f.presentation.sources.some((s) => s.mode === "fixture"),
-      )
-        ? ["Fictional demo records; no real bank account data."]
-        : []),
+      ...new Set([
+        ...paragraphs.map((p) =>
+          p.text.replace(/\{\{[^}]+\}\}/g, (token) => contract.slots[token]),
+        ),
+        // Qualifications are never delegated to model compliance.
+        ...contract.required
+          .filter((token) => !paragraphs.some((p) => p.text.includes(token)))
+          .map((token) => contract.slots[token]),
+        ...(facts.some((f) =>
+          f.presentation.sources.some((s) => s.mode === "fixture"),
+        )
+          ? ["Fictional demo records; no real bank account data."]
+          : []),
+      ]),
     ],
+  };
+}
+
+/** Compile exact current-source literals into slots for the reviewed path only.
+ * This does not authorize prose: unknown/ambiguous values still fail validation
+ * and independent semantic review must check the roles of every inserted slot. */
+export function bindSourceValues(raw: unknown, facts: Fact[]) {
+  const parsed = NarrationSchema.parse(raw);
+  const contract = narrationContract(facts);
+  const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return {
+    paragraphs: parsed.paragraphs.map((p) => {
+      const aliases = new Map<string, Set<string>>();
+      const add = (value: string, slot: string) => {
+        if (!value || (value.length < 2 && !/\.count\}\}$/.test(slot))) return;
+        const slots = aliases.get(value) ?? new Set<string>();
+        slots.add(slot);
+        aliases.set(value, slots);
+      };
+      for (const [slot, value] of Object.entries(contract.slots)) {
+        const index = Number(slot.match(/^\{\{r(\d+)\./)?.[1]);
+        if (
+          !facts[index] ||
+          !p.resultIds.includes(facts[index].resultId) ||
+          /\.limit\d+/.test(slot)
+        )
+          continue;
+        add(value, slot);
+        if (/\.name\d+/.test(slot))
+          add(value.replace(/\s+\(fictional\)$/i, ""), slot);
+        if (/^-?₦[\d,]+\.\d{2}$/.test(value)) {
+          add(value.replace(/\.00$/, ""), slot);
+          add(value.replaceAll(",", ""), slot);
+          add(value.replaceAll(",", "").replace(/\.00$/, ""), slot);
+        }
+        const n = slot.match(/\.date(\d+)/)?.[1];
+        const record =
+          n === undefined ? null : facts[index].presentation.records[Number(n)];
+        if (record?.date) {
+          const d = new Date(record.date);
+          for (const locale of ["en-NG", "en-US"])
+            for (const month of ["short", "long"] as const)
+              add(
+                d.toLocaleDateString(locale, {
+                  timeZone: "Africa/Lagos",
+                  day: "numeric",
+                  month,
+                  year: "numeric",
+                }),
+                slot,
+              );
+        }
+      }
+      const unique = [...aliases]
+        .filter(([, slots]) => slots.size === 1)
+        .sort((a, b) => b[0].length - a[0].length);
+      if (!unique.length) return p;
+      const tokens = new Map(
+        unique.map(([value, slots]) => [value, [...slots][0]]),
+      );
+      const pattern = new RegExp(
+        `(?<![\\p{L}\\p{N}_])(?:${unique.map(([value]) => escape(value)).join("|")})(?![\\p{L}\\p{N}_])`,
+        "gu",
+      );
+      return {
+        ...p,
+        text: p.text
+          .split(/(\{\{[^}]+\}\})/g)
+          .map((part) =>
+            part.startsWith("{{")
+              ? part
+              : part.replace(pattern, (value) => tokens.get(value)!),
+          )
+          .join(""),
+      };
+    }),
   };
 }
 
@@ -459,7 +544,11 @@ export function factualPresentation(facts: Fact[]): FinancialPresentation {
           )
           .join("\n\n");
       if (r.type === "find_payment_evidence") return r.limits.join(" ");
-      return f.text;
+      if (r.type === "get_account_summary")
+        return r.metrics.length
+          ? r.metrics.map((m) => `${m.label}: ${m.value}.`).join(" ")
+          : "Balance information is unavailable in the selected source records. An unavailable balance is unknown, not zero.";
+      return "The available source details are shown below.";
     }),
     results: facts.map((f) => f.presentation),
   };

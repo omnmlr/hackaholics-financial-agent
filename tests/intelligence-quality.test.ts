@@ -269,6 +269,62 @@ describe("savings semantics and verified calendar narration", () => {
 });
 
 describe("native financial narration grounding and follow-ups", () => {
+  it("compiles exact source values into slots before semantic review without authorizing invented values", async () => {
+    const s = fixture(async () => say("unused"));
+    const review = vi.fn(async (_raw: unknown) => true);
+    const reads = createSecureReads({
+      ...s.options,
+      ctx: s.input.ctx,
+      accountIds: ["amina-current"],
+      selection: null,
+      reviewNarration: review,
+    });
+    await reads.execute("search_transactions", search);
+    const r = await reads.finish({
+      paragraphs: [
+        {
+          resultIds: [reads.authoring!.examples[0].resultId],
+          text: "I found 2 possible matches. Ada Obi: ₦7,500 on 7 October 2026. Ada Okafor: ₦5,000 on 5 October 2026. Which one would you like to inspect?",
+        },
+      ],
+    });
+    expect(r!.presentation?.narration).toBe("ai");
+    expect(review.mock.calls[0][0]).toMatchObject({
+      paragraphs: [
+        {
+          text: "I found {{r0.count}} possible matches. {{r0.name0}}: {{r0.amount0}} on {{r0.date0}}. {{r0.name1}}: {{r0.amount1}} on {{r0.date1}}. Which one would you like to inspect?",
+        },
+      ],
+    });
+    expect(r!.presentation?.explanation.join(" ")).toContain(
+      "Ada Obi (fictional): ₦7,500.00",
+    );
+  });
+  it("does not treat slot compilation as proof that a recipient was credited", async () => {
+    const s = fixture(async () => say("unused"));
+    const review = vi.fn(async () => false);
+    const reads = createSecureReads({
+      ...s.options,
+      ctx: s.input.ctx,
+      accountIds: ["amina-current"],
+      selection: null,
+      reviewNarration: review,
+    });
+    await reads.execute("search_transactions", search);
+    const r = await reads.finish({
+      paragraphs: [
+        {
+          resultIds: [reads.authoring!.examples[0].resultId],
+          text: "Ada Obi received ₦7,500 and her bank confirmed credit.",
+        },
+      ],
+    });
+    expect(review).toHaveBeenCalledOnce();
+    expect(r!.presentation?.narration).toBe("factual_fallback");
+    expect(r!.presentation?.explanation.join(" ")).not.toContain(
+      "bank confirmed",
+    );
+  });
   it("uses reviewed natural source narration for the exact ambiguous Ada query", async () => {
     let step = 0;
     const s = fixture(async (input) => {

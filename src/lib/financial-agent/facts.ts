@@ -373,6 +373,24 @@ function present(
     if (d.evidence.some((e) => e.simulated))
       value.limits.push("Fictional synthetic evidence, not a bank receipt.");
   }
+  if (call.name === "get_account_summary") {
+    const d = ToolDataSchemas.get_account_summary.parse(result.data);
+    value.metrics = d.accounts.flatMap((a, i) => [
+      {
+        label: `Available balance${d.accounts.length > 1 ? ` · Account ${i + 1}` : ""}`,
+        value:
+          a.availableKobo === null ? "Unavailable" : money(a.availableKobo),
+      },
+      {
+        label: `Current balance${d.accounts.length > 1 ? ` · Account ${i + 1}` : ""}`,
+        value: a.currentKobo === null ? "Unavailable" : money(a.currentKobo),
+      },
+    ]);
+    if (
+      d.accounts.some((a) => a.availableKobo === null || a.currentKobo === null)
+    )
+      value.limits.push("An unavailable balance is unknown, not zero.");
+  }
   return value;
 }
 function period(from: string, to: string) {

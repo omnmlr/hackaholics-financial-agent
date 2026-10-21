@@ -27,6 +27,8 @@ globalThis.fetch = async (input, init) => {
   const body = JSON.parse(init.body);
   const system =
     body.systemInstruction?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  if (system.startsWith("Independently review source-backed AGUS narration."))
+    return say('{"grounded":true}');
   if (system.startsWith("Independently check a proposed AGUS answer."))
     return say(
       JSON.stringify({
@@ -66,6 +68,10 @@ globalThis.fetch = async (input, init) => {
       throw new Error("Native model content/signature was not preserved");
     const tool = toolResponses.at(-1).functionResponse;
     const output = tool.response.output;
+    if (tool.name === "plan_savings")
+      return say(
+        `Saving ₦${output.savings.contribution.toLocaleString("en-NG")} weekly, you’ll reach ₦1,000,000 in {{c1}} weeks${output.duration ? `, ${output.duration.text}` : ""}. That assumes consistent end-of-week deposits, no interest, fees or withdrawals.`,
+      );
     if (tool.name === "calculate")
       return say(
         output.unit === "naira"
@@ -75,18 +81,33 @@ globalThis.fetch = async (input, init) => {
     if (tool.name === "search_transactions") {
       const authoring = output.authoring;
       const resultId = output.result.resultId;
-      const example = authoring.examples.find(
-        (e) =>
-          e.resultId === resultId &&
-          /candidate records|No matching records/.test(e.text),
-      );
       return call("present_financial", {
         paragraphs: [
           {
             resultIds: [resultId],
-            text: [example.text, ...authoring.required].join(" "),
+            text: authoring.slots["{{r0.count}}"]
+              ? "I found {{r0.count}} possible matches for Ada in the selected records. {{r0.name0}}: {{r0.amount0}} on {{r0.date0}}. {{r0.name1}}: {{r0.amount1}} on {{r0.date1}}. Which one would you like to inspect?"
+              : [
+                  "No matching records were found in the available data.",
+                  ...authoring.required,
+                ].join(" "),
           },
         ],
+      });
+    }
+    if (
+      tool.name === "get_transaction" ||
+      tool.name === "find_payment_evidence"
+    ) {
+      const authoring = output.authoring;
+      const ids = [...new Set(authoring.examples.map((e) => e.resultId))];
+      return call("present_financial", {
+        paragraphs: ids.map((id, i) => ({
+          resultIds: [id],
+          text: authoring.slots[`{{r${i}.name0}}`]
+            ? `This record is for {{r${i}.name0}}: {{r${i}.amount0}} on {{r${i}.date0}}. Its source status is {{r${i}.status0}}.`
+            : "The available evidence cannot confirm recipient bank credit.",
+        })),
       });
     }
     if (tool.name === "calculate_spending") {
@@ -121,6 +142,40 @@ globalThis.fetch = async (input, init) => {
     throw new Error(`Unexpected native fixture tool: ${tool.name}`);
   }
   const text = last.parts.map((p) => p.text ?? "").join("");
+  if (text === "10 times 20 is what??")
+    return call("calculate", {
+      expression: "10*20",
+      description: "Multiplication",
+      unit: "number",
+      assumptions: [],
+    });
+  if (
+    [
+      "if i saved 10k every week, how long until i become a millionaire 👀🥲",
+      "What if I already have ₦200k?",
+      "Actually make it ₦15k weekly.",
+    ].includes(text)
+  )
+    return call("plan_savings", {
+      target: 1000000,
+      startingAmount: text.startsWith("if i saved") ? 0 : 200000,
+      contribution: text.startsWith("Actually") ? 15000 : 10000,
+      cadence: "weeks",
+    });
+  if (
+    text === "Show details for the first candidate" ||
+    text === "Was the recipient actually credited?"
+  ) {
+    const hint = contents
+      .flatMap((c) => c.parts ?? [])
+      .find((p) => p.text?.includes('"untrustedSelectionHints"'));
+    const selected = JSON.parse(hint.text).untrustedSelectionHints
+      .candidates[0];
+    return call(
+      text.startsWith("Was") ? "find_payment_evidence" : "get_transaction",
+      { accountId: selected.accountId, transactionId: selected.transactionId },
+    );
+  }
   if (text === "Simulate an unavailable provider while discussing lizards")
     return Response.json(
       {

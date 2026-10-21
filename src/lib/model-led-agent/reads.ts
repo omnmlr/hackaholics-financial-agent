@@ -21,6 +21,7 @@ import {
   factualPresentation,
   narrationContract,
   prepareReviewedNarration,
+  bindSourceValues,
   NarrationError,
   type NarrationDiagnostic,
 } from "../financial-agent/narration";
@@ -356,11 +357,12 @@ export function createSecureReads(options: Options) {
           narrationDiagnostic = error.diagnostic;
           // Flexible wording needs independent semantic review. Literal values,
           // slots and references remain deterministically checked beforehand.
-          const candidate = prepareReviewedNarration(narration, successful);
+          const bound = bindSourceValues(narration, successful);
+          const candidate = prepareReviewedNarration(bound, successful);
           if (
             !options.reviewNarration ||
             !(await options.reviewNarration(
-              narration,
+              bound,
               narrationContract(successful),
               successful.map((f) => ({
                 resultId: f.resultId,

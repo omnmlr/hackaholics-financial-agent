@@ -87,6 +87,15 @@ export function FinancialResponse({
           Source summary · AI explanation unavailable
         </p>
       )}
+      {[...new Set(presentation.results.flatMap((r) => r.limits))]
+        .filter(
+          (limit) => !presentation.explanation.some((p) => p.includes(limit)),
+        )
+        .map((limit) => (
+          <p className="agus-answer-limit" key={limit}>
+            {limit}
+          </p>
+        ))}
       {presentation.results.map((r) => (
         <section
           className="agus-result"
@@ -121,16 +130,6 @@ export function FinancialResponse({
           )}
           {r.type === "calculate_spending" && <Cashflow metrics={r.metrics} />}
           <p className="agus-scope">{r.scope}</p>
-          {r.limits
-            .filter(
-              (limit) =>
-                !presentation.explanation.some((p) => p.includes(limit)),
-            )
-            .map((limit, i) => (
-              <p className="agus-limit" key={i}>
-                {limit}
-              </p>
-            ))}
           {r.records.map((record, i) => (
             <section className="agus-record" key={i}>
               <div className="agus-record-heading">

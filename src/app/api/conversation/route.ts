@@ -61,6 +61,7 @@ export async function POST(req: Request) {
     let turn;
     try {
       result = await conversationTurn(req, input);
+      req.signal.throwIfAborted();
       turn = await history.finish(
         input.conversationId,
         lease,

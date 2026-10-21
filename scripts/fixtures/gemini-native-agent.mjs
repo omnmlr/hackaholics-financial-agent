@@ -72,6 +72,23 @@ globalThis.fetch = async (input, init) => {
           ? "Your hypothetical remainder is ₦{{c1}}."
           : "That comes to {{c1}}.",
       );
+    if (tool.name === "search_transactions") {
+      const authoring = output.authoring;
+      const resultId = output.result.resultId;
+      const example = authoring.examples.find(
+        (e) =>
+          e.resultId === resultId &&
+          /candidate records|No matching records/.test(e.text),
+      );
+      return call("present_financial", {
+        paragraphs: [
+          {
+            resultIds: [resultId],
+            text: [example.text, ...authoring.required].join(" "),
+          },
+        ],
+      });
+    }
     if (tool.name === "calculate_spending") {
       if (
         currentQuestion ===
@@ -186,7 +203,25 @@ globalThis.fetch = async (input, init) => {
         })
       : call("request_account", {});
   }
-  if (text.startsWith("Prepare 500 to Ada"))
+  if (text === "Find payments to Ada in October 2026") {
+    const selected = JSON.parse(
+      system.match(/Server selected accounts: (\[[^\n]*?\])\./)[1],
+    );
+    return selected.length
+      ? call("search_transactions", {
+          accountIds: selected,
+          from: "2026-10-01",
+          toExclusive: "2026-11-01",
+          query: "Ada",
+          limit: 10,
+          cursor: null,
+        })
+      : call("request_account", {});
+  }
+  if (
+    text.startsWith("Prepare 500 to Ada") ||
+    text === "Help me prepare a payment draft"
+  )
     return call("prepare_payment_draft", {});
   throw new Error("Unexpected native browser fixture request");
 };

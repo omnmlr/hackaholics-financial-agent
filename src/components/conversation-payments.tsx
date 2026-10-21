@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Wallet, ChevronDown } from "lucide-react";
 import {
   executionRecoveryPending,
   type ExecutionAttempt,
@@ -272,20 +273,36 @@ export function NativePayment({
     <details
       className="agus-payment"
       open={expanded}
-      onToggle={(e) => setExpanded(e.currentTarget.open)}
+      onToggle={(e) => {
+        const card = e.currentTarget;
+        setExpanded(card.open);
+        if (card.open)
+          requestAnimationFrame(() => {
+            const container = card.closest<HTMLElement>(".agus-scroll, dialog");
+            if (container)
+              container.scrollTop +=
+                card.getBoundingClientRect().top -
+                container.getBoundingClientRect().top -
+                (container.tagName === "DIALOG" ? 80 : 8);
+          });
+      }}
     >
       <summary>
-        <span>
+        <span className="agus-payment-symbol">
+          <Wallet size={18} />
+        </span>
+        <span className="agus-payment-summary-title">
           {s.mode === "fixture" ? "Simulated payment" : "Payment"} ·{" "}
           {batch
             ? money(batch.payments.reduce((n, p) => n + p.amountKobo, 0))
             : "Editable draft"}
+          <small>
+            {batch
+              ? batch.status.replaceAll("_", " ")
+              : `${rows.length} recipient${rows.length === 1 ? "" : "s"} · Unverified`}
+          </small>
         </span>
-        <small>
-          {batch
-            ? batch.status.replaceAll("_", " ")
-            : `${rows.length} recipient${rows.length === 1 ? "" : "s"} · Unverified`}
-        </small>
+        <ChevronDown size={16} className="agus-payment-chevron" />
       </summary>
       <div className="agus-payment-body">
         <PaymentNotice controller={c} scope={scope} recover={recover} />

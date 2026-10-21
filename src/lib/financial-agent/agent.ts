@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cancellable } from "../request-cancellation";
 import { performance } from "node:perf_hooks";
 import {
   PermissionContextSchema,
@@ -94,6 +95,7 @@ export type AgentReply = {
   };
 };
 export type AgentOptions = {
+  signal?: AbortSignal;
   model: AgentModel;
   tools: ReadToolDispatcher;
   access: AccessResolver;
@@ -147,7 +149,13 @@ export function createFinancialAgent(options: AgentOptions) {
         let timer: ReturnType<typeof setTimeout> | undefined;
         try {
           const value = await Promise.race([
-            Promise.resolve().then(() => operation(controller.signal)),
+            cancellable(options.signal, () =>
+              operation(
+                options.signal
+                  ? AbortSignal.any([controller.signal, options.signal])
+                  : controller.signal,
+              ),
+            ),
             new Promise<never>((_, reject) => {
               timer = setTimeout(() => {
                 controller.abort();
@@ -814,6 +822,7 @@ export function createFinancialAgent(options: AgentOptions) {
           );
         throw new AgentError("MODEL_BUDGET");
       } catch (error) {
+        if (options.signal?.aborted) throw error;
         const code =
           error instanceof AgentError
             ? error.code

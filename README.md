@@ -1,5 +1,7 @@
 # Agus — Hackaholics 7.0
 
+The current PR #41 candidate follows the final approved black AGUS screenshot. See [the approved release candidate](docs/approved-release/README.md) for the screenshot gallery, integrated validation, exact Railway startup contract, native Gemini configuration and database-preserving rollback instructions. Earlier visual directions below are historical. No merge or deployment has been performed.
+
 The consolidated October 20 finals candidate, isolated fixture preview, UI integration contracts, verification and Railway release/rollback gates are in [the release handoff](docs/finals-release/HANDOFF.md). Start the local scripted preview with `npm run preview:fixture` after building; genuine provider campaigns remain closed pending a new bounded allocation.
 
 The October 20 conversation and voice repair is documented in [the architectural investigation](docs/agent-reconstruction/REPORT.md), including the new source-linked calculator, conversational memory, grounded explanations, real microphone waveform, validation evidence and outstanding live acceptance checks. Run `npm run evaluate:agent` with a privately configured model for the genuine conversation evaluation, or `npm run test:browser:voice` for the synthetic-microphone browser regression.

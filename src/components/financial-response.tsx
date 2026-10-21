@@ -1,5 +1,44 @@
 import type { AgentReply } from "@/lib/financial-agent";
 import { FinancialPresentationSchema } from "@/lib/financial-agent/presentation";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChartNoAxesCombined,
+  FileSearch,
+  ShieldCheck,
+} from "lucide-react";
+const resultTitles = {
+  calculate_spending: "Your spending, in focus",
+  search_transactions: "Transaction matches",
+  get_transaction: "Transaction details",
+  find_payment_evidence: "Payment evidence",
+  get_account_summary: "Account overview",
+};
+function Cashflow({
+  metrics,
+}: {
+  metrics: { label: string; value: string }[];
+}) {
+  if (metrics.slice(0, 2).some((metric) => metric.value === "Unavailable"))
+    return null;
+  const values = metrics
+    .slice(0, 2)
+    .map((m) => Math.abs(Number(m.value.replace(/[^\d.-]/g, ""))));
+  const largest = Math.max(...values);
+  if (!values.every(Number.isFinite) || !largest) return null;
+  return (
+    <div className="agus-cashflow" aria-hidden="true">
+      {metrics.slice(0, 2).map((metric, i) => (
+        <div key={metric.label}>
+          <span>{metric.label}</span>
+          <div>
+            <i style={{ width: `${(values[i] / largest) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 const date = (value: string, time = false) =>
   new Date(value).toLocaleString("en-NG", {
     timeZone: "Africa/Lagos",
@@ -52,6 +91,22 @@ export function FinancialResponse({
           key={r.resultId}
           aria-label="Financial result"
         >
+          <div className="agus-result-header">
+            <span>
+              {r.type === "calculate_spending" ? (
+                <ChartNoAxesCombined size={16} />
+              ) : (
+                <FileSearch size={16} />
+              )}
+              {resultTitles[r.type]}
+            </span>
+            <small>
+              <ShieldCheck size={11} />{" "}
+              {r.sources.some((s) => /fixture|demo|fictional/i.test(s.mode))
+                ? "Fictional records"
+                : "Source records"}
+            </small>
+          </div>
           {r.metrics.length > 0 && (
             <dl className="agus-totals" aria-label="Financial totals">
               {r.metrics.map((m) => (
@@ -62,6 +117,7 @@ export function FinancialResponse({
               ))}
             </dl>
           )}
+          {r.type === "calculate_spending" && <Cashflow metrics={r.metrics} />}
           <p className="agus-scope">{r.scope}</p>
           {r.limits
             .filter(
@@ -75,11 +131,25 @@ export function FinancialResponse({
             ))}
           {r.records.map((record, i) => (
             <section className="agus-record" key={i}>
-              <h3>{record.name}</h3>
-              <strong>
-                {record.amount} ·{" "}
-                {record.direction === "debit" ? "Debit" : "Credit"}
-              </strong>
+              <div className="agus-record-heading">
+                <span
+                  className={`agus-record-direction ${record.direction}`}
+                  aria-hidden="true"
+                >
+                  {record.direction === "debit" ? (
+                    <ArrowUpRight size={16} />
+                  ) : (
+                    <ArrowDownLeft size={16} />
+                  )}
+                </span>
+                <div>
+                  <h3>{record.name}</h3>
+                  <small>
+                    {record.direction === "debit" ? "Money out" : "Money in"}
+                  </small>
+                </div>
+                <strong>{record.amount}</strong>
+              </div>
               <p>
                 {record.date ? date(record.date) : "Date unavailable"} ·{" "}
                 {record.status === "posted"

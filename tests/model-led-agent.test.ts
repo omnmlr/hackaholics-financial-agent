@@ -111,6 +111,44 @@ function setup(...steps: Array<Generated | Error>) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("native model-directed conversation (scripted model)", () => {
+  it("cancels an in-flight model even when it ignores abort, without saving a reply", async () => {
+    const s = setup();
+    const controller = new AbortController();
+    let started!: () => void;
+    const ready = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    let modelSignal: AbortSignal | undefined;
+    s.options.model.generate = async ({ signal }) => {
+      modelSignal = signal;
+      started();
+      return new Promise(() => {});
+    };
+    const save = vi.spyOn(s.options.store, "compareAndSwap");
+    const turn = createModelLedAgent({
+      ...s.options,
+      signal: controller.signal,
+    }).turn(s.input);
+    const rejection = expect(turn).rejects.toThrow("Stopped by operator");
+    await ready;
+    controller.abort(new Error("Stopped by operator"));
+    await rejection;
+    expect(modelSignal?.aborted).toBe(true);
+    expect(s.tools.dispatch).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
+  it("does not start a model or financial read for an already cancelled request", async () => {
+    const s = setup(answer("Hello"));
+    const controller = new AbortController();
+    controller.abort(new Error("Already stopped"));
+    await expect(
+      createModelLedAgent({ ...s.options, signal: controller.signal }).turn(
+        s.input,
+      ),
+    ).rejects.toThrow("Already stopped");
+    expect(s.generate).not.toHaveBeenCalled();
+    expect(s.tools.dispatch).not.toHaveBeenCalled();
+  });
   it("preserves explicit calendar dates through model input and Lagos read dispatch", async () => {
     const s = setup(
       call("calculate_spending", {

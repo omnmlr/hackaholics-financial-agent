@@ -1,0 +1,99 @@
+{
+  "recordedAtUtc": "2026-10-21T02:44:10.925348+00:00",
+  "branch": "ui/agus-premium-experience-20261020",
+  "pr": 41,
+  "startingPr41Sha": "3485513cffbf4cd7c9183e51610484dcbd822530",
+  "inheritedPr40Sha": "c2117ed643790950b6f4af7210e707831fab54db",
+  "runtimeSourceSha256": "f91c3c4fd5b181b036bc4ad76e4e65e25ea23de07329e8abbe2f62edd29d6b14",
+  "digestMethod": "Sorted files under src/ and scripts/ plus package.json, package-lock.json, next.config.ts; SHA256 of relative path + NUL + bytes + NUL.",
+  "environment": {
+    "node": "v22.16.0",
+    "browser": "/usr/bin/chromium",
+    "database": "isolated PGlite (embedded PostgreSQL)",
+    "paymentMode": "fixture",
+    "financialData": "fictional",
+    "genuineProviderCalls": 0
+  },
+  "preserved": {
+    "backendAndSchemaUnchanged": true,
+    "dependenciesUnchanged": true,
+    "nextConfigurationUnchanged": true,
+    "railwayStartupUnchanged": true,
+    "railwayStartupSha256": "74f29e366a0e9ac461a9beeee6d64a8ba55c18302f6800e34b5c44aadebf8cbf"
+  },
+  "results": {
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "productionBuild": "PASS",
+    "unitIntegration": {
+      "passed": 1170,
+      "files": 48
+    },
+    "httpPaymentSafety": "PASS",
+    "chatPaymentBrowserGroups": 54,
+    "voiceSubmissionGroups": 36,
+    "microphoneLifecycleChecks": 8,
+    "nativeBrowserGroups": 14,
+    "approvedUiBrowserGroups": 28,
+    "axeScans": 24,
+    "axeViolations": 0,
+    "approvedUiPageErrors": 0,
+    "approvedUiApprovalRequests": 0,
+    "approvedUiExecutionRequests": 0,
+    "widths": [
+      1440,
+      820,
+      390,
+      320
+    ]
+  },
+  "visualReview": {
+    "method": "Human inspection of actual production screenshots against the user-supplied approved reference; no pixel-difference score claimed.",
+    "referenceSize": [
+      1672,
+      941
+    ],
+    "additionalDesktopSize": [
+      1440,
+      810
+    ],
+    "reviewed": [
+      "1440 welcome",
+      "820 welcome",
+      "390 welcome and financial result",
+      "320 welcome and editable payment draft",
+      "1672 reference-size welcome"
+    ],
+    "corrected": [
+      "heading size",
+      "composer height",
+      "wordmark placement",
+      "background contrast",
+      "composer and suggestions vertical offset"
+    ],
+    "screenshots": "screenshots/"
+  },
+  "ci": {
+    "workflow": ".github/workflows/agus-approved-release.yml",
+    "nodeVersions": [
+      "22.16.0",
+      "24"
+    ],
+    "checkout": "exact pull request head SHA",
+    "evidence": "GitHub Actions run/checks attached to the final PR head; this file records local results."
+  },
+  "release": {
+    "status": "Reviewable integrated release candidate; no merge or deployment performed.",
+    "instructions": "README.md",
+    "architectureSetting": "AGUS_AGENT_ARCHITECTURE=native-gemini",
+    "startCommand": "node scripts/render-preview-start.mjs",
+    "productionDatabaseAccessed": false,
+    "railwayConfigurationChanged": false
+  },
+  "limits": [
+    "Scripted model and speech transport; synthetic microphone lifecycle checks.",
+    "No configured Gemini credential or Railway management connection in this workspace.",
+    "Actual service availability, deployed SHA/configuration and backup not independently verified.",
+    "Genuine Gemini date/correction acceptance and physical-device keyboard/speech remain manual release checks."
+  ]
+}

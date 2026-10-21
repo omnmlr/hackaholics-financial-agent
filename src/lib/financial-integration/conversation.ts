@@ -16,6 +16,7 @@ import { AppError } from "../domain";
 import { createModelLedAgent } from "../model-led-agent/agent";
 import { createGeminiToolModel } from "../model-led-agent/model";
 import { turnDiagnostic } from "../model-led-agent/diagnostics";
+import { SavingsMemorySchema } from "../model-led-agent/savings";
 
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
@@ -57,6 +58,27 @@ export async function conversationTurn(
     },
   ]);
   const options = {
+    // Owner-scoped server history restores parameters after tool context expiry.
+    // Never restore an old balance value as authority: source plans keep only
+    // the account/field hint, and the next turn must read current sources.
+    savingsHint: (() => {
+      const saved = [...turns].reverse().find((t) => t.reply.savings)
+        ?.reply.savings;
+      if (!saved) return undefined;
+      const parsed = SavingsMemorySchema.safeParse({
+        target: saved.target,
+        contribution: saved.contribution,
+        cadence: saved.cadence,
+        starting: saved.source
+          ? {
+              kind: "balance",
+              accountId: saved.source.accountId,
+              field: saved.source.field,
+            }
+          : { kind: "amount", value: saved.startingAmount },
+      });
+      return parsed.success ? parsed.data : undefined;
+    })(),
     tools: capability.tools,
     access: createRepositoryAccess(createDurableRepository(), clock),
     store: createContextPersistence(

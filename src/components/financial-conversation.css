@@ -1909,3 +1909,141 @@ body:has(.agus-workspace) {
     gap: 8px;
   }
 }
+
+/* Follow-up polish: preserve the approved composition; animate existing detail. */
+.agus-financial-backdrop {
+  transition: opacity 550ms ease;
+}
+.agus-financial-backdrop[data-motion="active"] .agus-data-bars {
+  animation: agus-data-illuminate 9s ease-in-out infinite alternate;
+}
+@keyframes agus-data-illuminate {
+  from {
+    opacity: 0.68;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.agus-welcome {
+  animation: agus-settle 500ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+.agus-turn {
+  animation: agus-settle 320ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+.agus-result {
+  animation: agus-settle 380ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+}
+@keyframes agus-settle {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.agus-workspace:not(.agus-empty) .agus-composer-area {
+  animation: agus-settle 280ms ease-out both;
+}
+.agus-thinking::before {
+  content: none;
+}
+.agus-processing-mark {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-shrink: 0;
+  height: 24px;
+}
+.agus-processing-mark i {
+  display: block;
+  width: 3px;
+  height: 13px;
+  border-radius: 3px;
+  background: #6aa8ff;
+  transform-origin: center;
+  animation: agus-working 1200ms ease-in-out infinite;
+}
+.agus-processing-mark i:nth-child(2) {
+  animation-delay: 140ms;
+}
+.agus-processing-mark i:nth-child(3) {
+  animation-delay: 280ms;
+}
+@keyframes agus-working {
+  0%,
+  100% {
+    transform: scaleY(0.45);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+.agus-workspace .agus-suggestions button,
+.agus-workspace .agus-secondary,
+.agus-workspace .agus-send,
+.agus-sources summary {
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+@media (hover: hover) {
+  .agus-workspace .agus-suggestions button:hover,
+  .agus-workspace .agus-secondary:hover {
+    transform: translateY(-2px);
+  }
+}
+.agus-workspace .agus-suggestions button:active,
+.agus-workspace .agus-secondary:active,
+.agus-workspace .agus-send:active {
+  transform: scale(0.97);
+}
+.agus-workspace .agus-stop svg {
+  animation: agus-settle 160ms ease-out both;
+}
+.agus-sources[open] > section {
+  animation: agus-settle 220ms ease-out both;
+}
+.agus-technical-sources {
+  margin-top: 10px;
+}
+.agus-technical-sources summary {
+  font-size: 11px;
+}
+.agus-record strong {
+  font-variant-numeric: tabular-nums;
+}
+.agus-empty .agus-composer {
+  padding-block: clamp(10px, 0.85vw, 14px);
+}
+.agus-empty .agus-composer textarea {
+  min-height: 44px;
+  padding-block: 8px;
+}
+@media (max-width: 600px) {
+  .agus-empty .agus-composer {
+    padding-block: 8px;
+  }
+  .agus-empty .agus-composer textarea {
+    padding-block: 10px;
+  }
+}
+.agus-workspace[data-page-visible="false"] *,
+.agus-financial-backdrop[data-motion="paused"] * {
+  animation-play-state: paused !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .agus-workspace *,
+  .agus-workspace *::before,
+  .agus-workspace *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

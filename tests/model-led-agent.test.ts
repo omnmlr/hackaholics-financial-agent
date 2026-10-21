@@ -218,7 +218,8 @@ describe("native model-directed conversation (scripted model)", () => {
     expect(reply.text).toContain("50 equal monthly deposits");
     expect(reply.text).not.toContain("4 years");
     expect(
-      s.generate.mock.calls[2][0].contents[0].parts?.[0].text,
+      JSON.parse(s.generate.mock.calls[2][0].contents[0].parts![0].text!)
+        .answer,
     ).not.toContain("4 years");
   });
   it("releases only one answer when native turns race on the same context revision", async () => {
@@ -295,6 +296,7 @@ describe("native model-directed conversation (scripted model)", () => {
   });
   it("exposes financial authoring only after facts and private reads only with selected accounts", () => {
     expect(declarationsForTurn(false, false).map((d) => d.name)).toEqual([
+      "plan_savings",
       "calculate",
       "request_account",
       "prepare_payment_draft",
@@ -496,7 +498,7 @@ describe("native model-directed conversation (scripted model)", () => {
       answer("The result is ₦46,000."),
     );
     const reply = await s.agent.turn(s.input);
-    expect(reply.kind).toBe("general");
+    expect(reply.kind).toBe("clarify");
     expect(reply.text).toContain("45,000 naira");
     expect(reply.text).not.toContain("46,000");
   });
@@ -508,7 +510,7 @@ describe("native model-directed conversation (scripted model)", () => {
     );
     const reply = await s.agent.turn(s.input);
     expect(reply).toMatchObject({
-      kind: "general",
+      kind: "clarify",
       evidence: { modelCalls: 2, code: "MODEL_HTTP_429" },
     });
     expect(reply.text).toContain("45,000 naira");
@@ -667,11 +669,11 @@ describe("native model-directed conversation (scripted model)", () => {
       new AgentError("MODEL_HTTP_429"),
     );
     const reply = await s.agent.turn(s.input);
-    expect(reply.kind).toBe("general");
+    expect(reply.kind).toBe("clarify");
     expect(reply.text).toContain("45,000 naira");
     expect(reply.text).not.toContain("999,999");
     expect(reply.text).not.toContain("transfer");
-    expect(reply.text).toMatch(/^Hypothetical result:/);
+    expect(reply.text).not.toMatch(/Hypothetical result|150000-80000/);
   });
 
   it("distinguishes rejected interpretation from a rejected explanation", async () => {
@@ -866,7 +868,7 @@ describe("native model-directed conversation (scripted model)", () => {
     const reply = await s.agent.turn(s.input);
     expect(reply).toMatchObject({
       kind: "unavailable",
-      evidence: { code: "MODEL_BUDGET", modelCalls: NATIVE_LIMITS.models },
+      evidence: { code: "TOOL_BUDGET", modelCalls: NATIVE_LIMITS.models },
     });
     expect(s.generate).toHaveBeenCalledTimes(NATIVE_LIMITS.models);
     expect(s.tools.dispatch).not.toHaveBeenCalled();
@@ -1060,7 +1062,7 @@ describe("official Gemini adapter (mocked HTTP; not real-provider evidence)", ()
       ),
     );
     await expect(model().generate(input())).rejects.toMatchObject({
-      code: "MODEL_COMPLETION",
+      code: "MODEL_OUTPUT_BUDGET",
     });
   });
 });

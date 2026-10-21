@@ -212,6 +212,22 @@ export function narrationContract(facts: Fact[]) {
           amount = token(`amount${n}`, record.amount),
           direction = token(`direction${n}`, record.direction),
           status = token(`status${n}`, record.status);
+        const date = token(
+          `date${n}`,
+          record.date
+            ? new Date(record.date).toLocaleDateString("en-NG", {
+                timeZone: "Africa/Lagos",
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })
+            : "an unavailable date",
+        );
+        allow(
+          r.resultId,
+          `${name}: ${amount} on ${date}\\.`,
+          `${slot(`name${n}`)}: ${slot(`amount${n}`)} on ${slot(`date${n}`)}.`,
+        );
         allow(
           r.resultId,
           `${name} has a ${direction} record of ${amount}\\.`,
@@ -433,10 +449,16 @@ export function factualPresentation(facts: Fact[]): FinancialPresentation {
         return `In the available records, expenses total ${r.metrics[0].value} and income totals ${r.metrics[1].value}. The ${r.metrics[2].label.toLowerCase()} is ${r.metrics[2].value}.`;
       if (r.type === "search_transactions")
         return r.records.length
-          ? `${r.records.length} candidate records are shown. Choose a candidate to inspect its details.`
+          ? `I found ${r.records.length === 1 ? "one possible match" : `${r.records.length} possible matches`} in the selected records.\n\n${r.records.map((record) => `${record.name}: ${record.amount}${record.date ? ` on ${new Date(record.date).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" })}` : " (date unavailable)"}.`).join("\n\n")}\n\n${r.records.length > 1 ? "Which one would you like to inspect?" : "You can inspect its details below."}`
           : "No matching records were found in the available data.";
       if (r.type === "get_transaction")
-        return "The source record is shown below. Its status does not confirm recipient bank credit.";
+        return r.records
+          .map(
+            (record) =>
+              `${record.name}: ${record.amount}${record.date ? ` on ${new Date(record.date).toLocaleDateString("en-NG", { timeZone: "Africa/Lagos", day: "numeric", month: "long", year: "numeric" })}` : " (date unavailable)"}. The source lists this as ${record.status}. This does not confirm recipient bank credit.`,
+          )
+          .join("\n\n");
+      if (r.type === "find_payment_evidence") return r.limits.join(" ");
       return f.text;
     }),
     results: facts.map((f) => f.presentation),

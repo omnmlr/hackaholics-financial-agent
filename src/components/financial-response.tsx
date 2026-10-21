@@ -75,16 +75,18 @@ export function FinancialResponse({
   );
   return (
     <>
+      <div className="agus-prose">
+        {presentation.explanation
+          .flatMap((p) => p.split(/\n\s*\n/))
+          .map((p, i) => (
+            <p key={i}>{p}</p>
+          ))}
+      </div>
       {presentation.narration === "factual_fallback" && (
         <p className="agus-fallback">
-          AI explanation unavailable · Factual summary
+          Source summary · AI explanation unavailable
         </p>
       )}
-      <div className="agus-prose">
-        {presentation.explanation.map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
-      </div>
       {presentation.results.map((r) => (
         <section
           className="agus-result"
@@ -179,18 +181,23 @@ export function FinancialResponse({
           <section key={r.resultId}>
             <h3>Source snapshot</h3>
             <p>
-              {r.sources.map((s) => `${s.provider}/${s.mode}`).join(", ") ||
-                "Source unavailable"}
+              {r.sources.some((s) => s.mode === "fixture")
+                ? "Fictional demo records"
+                : "Authorized source records"}
             </p>
             <p>
               As of {date(r.asOf, true)} WAT · Coverage {r.coverage}
             </p>
-            <p>Result reference: {r.resultId}</p>
-            <pre>{r.originalText}</pre>
+            <details className="agus-technical-sources">
+              <summary>Technical references</summary>
+              <p>Result reference: {r.resultId}</p>
+              <p>
+                {r.sources.map((s) => `${s.provider}/${s.mode}`).join(", ")}
+              </p>
+              <pre>{r.originalText}</pre>
+            </details>
           </section>
         ))}
-        <h3>Original response</h3>
-        <pre>{reply.text}</pre>
       </details>
     </>
   );

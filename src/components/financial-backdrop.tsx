@@ -1,7 +1,35 @@
-/** Decorative data texture from the approved reference, never financial output. */
-export function FinancialBackdrop() {
+import { useEffect, useRef, useState } from "react";
+
+const leftCurve =
+  "M-20 702C120 596 192 592 290 626S425 708 505 721S650 757 720 714S820 616 923 588";
+const rightCurve =
+  "M1055 414C1158 319 1182 317 1259 319S1371 271 1478 178S1601 80 1690 53";
+
+/** Decorative data texture from the approved reference, never financial output.
+ * Browser-native SVG motion: no animation loop, external asset or per-frame React work. */
+export function FinancialBackdrop({ active = true }: { active?: boolean }) {
+  const svg = useRef<SVGSVGElement>(null);
+  const [animate, setAnimate] = useState(false);
+  useEffect(() => {
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      setAnimate(!preference.matches);
+      if (document.hidden || !active || preference.matches)
+        svg.current?.pauseAnimations();
+      else svg.current?.unpauseAnimations();
+    };
+    sync();
+    preference.addEventListener("change", sync);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      preference.removeEventListener("change", sync);
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [active]);
   return (
     <svg
+      ref={svg}
+      data-motion={animate && active ? "active" : "paused"}
       className="agus-financial-backdrop"
       viewBox="0 0 1672 941"
       preserveAspectRatio="none"
@@ -66,7 +94,7 @@ export function FinancialBackdrop() {
         mask="url(#agus-data-mask)"
         d="M0 0h1672v941H0z"
       />
-      <g fill="url(#agus-data-bars)">
+      <g className="agus-data-bars" fill="url(#agus-data-bars)">
         {[
           62, 100, 145, 172, 198, 176, 131, 232, 187, 125, 105, 82, 66, 80, 54,
           96, 63, 42, 29, 20, 48, 24, 35, 15,
@@ -95,11 +123,7 @@ export function FinancialBackdrop() {
         ))}
       </g>
       <g fill="none" stroke="#596c80" strokeWidth="1">
-        <path
-          opacity="0.32"
-          stroke="url(#agus-data-left-line)"
-          d="M-20 702C120 596 192 592 290 626S425 708 505 721S650 757 720 714S820 616 923 588"
-        />
+        <path opacity="0.32" stroke="url(#agus-data-left-line)" d={leftCurve} />
         <path
           opacity="0.12"
           d="M430 697C570 674 646 727 743 724S874 664 1017 634"
@@ -107,7 +131,7 @@ export function FinancialBackdrop() {
         <path
           opacity="0.32"
           stroke="url(#agus-data-right-line)"
-          d="M1055 414C1158 319 1182 317 1259 319S1371 271 1478 178S1601 80 1690 53"
+          d={rightCurve}
         />
         <path opacity="0.19" d="M1275 455C1403 416 1501 278 1690 253" />
       </g>
@@ -115,17 +139,31 @@ export function FinancialBackdrop() {
         [268, 620],
         [495, 720],
         [1478, 178],
-      ].map(([cx, cy]) => (
-        <g key={cx}>
+      ].map(([cx, cy], i) => (
+        <g key={`${cx}-${animate}`} className="agus-data-point">
+          {animate && (
+            <animateMotion
+              path={i === 2 ? rightCurve : leftCurve}
+              dur={i === 2 ? "34s" : "46s"}
+              begin={i === 0 ? "-14s" : i === 1 ? "-25s" : "-23s"}
+              repeatCount="indefinite"
+              calcMode="paced"
+            />
+          )}
           <circle
-            cx={cx}
-            cy={cy}
+            cx={animate ? 0 : cx}
+            cy={animate ? 0 : cy}
             r="6"
             fill="#3289ff"
             opacity="0.4"
             filter="url(#agus-data-glow)"
           />
-          <circle cx={cx} cy={cy} r="2.6" fill="#5aa5ff" />
+          <circle
+            cx={animate ? 0 : cx}
+            cy={animate ? 0 : cy}
+            r="2.6"
+            fill="#5aa5ff"
+          />
         </g>
       ))}
     </svg>

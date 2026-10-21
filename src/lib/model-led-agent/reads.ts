@@ -20,6 +20,9 @@ import {
   acceptNarration,
   factualPresentation,
   narrationContract,
+  prepareReviewedNarration,
+  NarrationError,
+  type NarrationDiagnostic,
 } from "../financial-agent/narration";
 import { AgentError, bytes, scrub } from "../financial-agent/protocol";
 import { lagosDateInterval } from "../financial-data/core";
@@ -31,6 +34,11 @@ type Options = {
   ctx: PermissionContext;
   accountIds: string[];
   selection: ConversationContext["selection"];
+  reviewNarration?: (
+    raw: unknown,
+    authoring: ReturnType<typeof narrationContract>,
+    facts: unknown[],
+  ) => Promise<boolean>;
 };
 
 /** Native function calls request reads; they never supply authority. Results use
@@ -338,14 +346,41 @@ export function createSecureReads(options: Options) {
       ? factualPresentation(successful)
       : undefined;
     let narrationCode: string | undefined;
+    let narrationDiagnostic: NarrationDiagnostic | undefined;
     if (presentation && narration !== undefined) {
       try {
-        presentation.explanation = acceptNarration(narration, successful);
+        try {
+          presentation.explanation = acceptNarration(narration, successful);
+        } catch (error) {
+          if (!(error instanceof NarrationError)) throw error;
+          narrationDiagnostic = error.diagnostic;
+          // Flexible wording needs independent semantic review. Literal values,
+          // slots and references remain deterministically checked beforehand.
+          const candidate = prepareReviewedNarration(narration, successful);
+          if (
+            !options.reviewNarration ||
+            !(await options.reviewNarration(
+              narration,
+              narrationContract(successful),
+              successful.map((f) => ({
+                resultId: f.resultId,
+                ...(f.modelData as object),
+              })),
+            ))
+          )
+            throw new AgentError("NARRATION_REVIEW_REJECTED");
+          await recheck();
+          presentation.explanation = candidate.render();
+        }
         presentation.narration = "ai";
-      } catch {
-        narrationCode = "NARRATION_FALLBACK";
+      } catch (error) {
+        if (error instanceof NarrationError)
+          narrationDiagnostic = error.diagnostic;
+        narrationCode =
+          error instanceof AgentError ? error.code : "NARRATION_FALLBACK";
+        await recheck();
       }
-    }
+    } else if (presentation) narrationCode = "NARRATION_NOT_REQUESTED";
     const canonicalText = selected.map((fact) => fact.text).join("\n\n");
     const reply: AgentReply = {
       kind: successful.length
@@ -364,6 +399,7 @@ export function createSecureReads(options: Options) {
         resultBytes,
         ...(lastToolError ? { code: lastToolError } : {}),
         ...(narrationCode ? { narrationCode } : {}),
+        ...(narrationDiagnostic ? { narrationDiagnostic } : {}),
       },
       ...(presentation ? { presentation } : {}),
     };

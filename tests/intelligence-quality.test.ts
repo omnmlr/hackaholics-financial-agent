@@ -211,6 +211,19 @@ describe("savings semantics and verified calendar narration", () => {
       ).value,
     ).toBe("4");
   });
+  it("keeps fractional hypothetical money readable without grouping fractional digits", () => {
+    const c = planSavings(
+      {
+        target: 1234.5678,
+        startingAmount: 0,
+        contribution: 100.1234,
+        cadence: "weeks",
+      },
+      "c1",
+    );
+    expect(calculationFallback([c])).toContain("₦1,234.5678");
+    expect(calculationFallback([c])).toContain("₦100.1234");
+  });
   it.each([0, -1, Infinity, NaN])(
     "rejects invalid savings contribution %s",
     (contribution) => {

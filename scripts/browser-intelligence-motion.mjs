@@ -202,9 +202,33 @@ try {
       return data;
     }
     async function axe(state) {
+      await page.evaluate(async () => {
+        await Promise.all(
+          document
+            .getAnimations()
+            .filter(
+              (a) => a.effect?.getComputedTiming().iterations !== Infinity,
+            )
+            .map((a) => a.finished.catch(() => {})),
+        );
+      });
       const scan = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
         .analyze();
+      assert.equal(
+        scan.violations.length,
+        0,
+        JSON.stringify(
+          scan.violations.map((v) => ({
+            id: v.id,
+            impact: v.impact,
+            nodes: v.nodes.map((n) => ({
+              target: n.target,
+              summary: n.failureSummary,
+            })),
+          })),
+        ),
+      );
       accessibility.push({
         state,
         violations: scan.violations.map((v) => ({
@@ -234,47 +258,52 @@ try {
       );
     async function recordMotion(name, seconds) {
       if (width !== 1440 || process.env.CAPTURE_MOTION_VIDEO !== "1") return;
-      const frameDir = join(directory, name);
-      await mkdir(frameDir);
-      const started = Date.now();
-      for (let n = 0; n < seconds * 10; n++) {
-        await page.screenshot({
-          path: join(frameDir, `${String(n).padStart(3, "0")}.png`),
+      // Keep encoder frames outside the disposable Postgres data directory:
+      // initdb requires that directory to be empty on the first sign-in.
+      const frameDir = await mkdtemp(join(tmpdir(), "agus-motion-frames-"));
+      try {
+        const started = Date.now();
+        for (let n = 0; n < seconds * 10; n++) {
+          await page.screenshot({
+            path: join(frameDir, `${String(n).padStart(3, "0")}.png`),
+          });
+          await page.waitForTimeout(
+            Math.max(0, started + (n + 1) * 100 - Date.now()),
+          );
+        }
+        await new Promise((resolve, reject) => {
+          const encoder = spawn(
+            "ffmpeg",
+            [
+              "-y",
+              "-loglevel",
+              "error",
+              "-framerate",
+              "10",
+              "-i",
+              join(frameDir, "%03d.png"),
+              "-vf",
+              "scale=960:-2",
+              "-c:v",
+              "libx264",
+              "-pix_fmt",
+              "yuv420p",
+              "-movflags",
+              "+faststart",
+              join(outputDir, `${name}.mp4`),
+            ],
+            { stdio: "ignore" },
+          );
+          encoder.on("error", reject);
+          encoder.on("exit", (code) =>
+            code === 0
+              ? resolve()
+              : reject(new Error("Motion clip encoding failed")),
+          );
         });
-        await page.waitForTimeout(
-          Math.max(0, started + (n + 1) * 100 - Date.now()),
-        );
+      } finally {
+        await rm(frameDir, { recursive: true, force: true });
       }
-      await new Promise((resolve, reject) => {
-        const encoder = spawn(
-          "ffmpeg",
-          [
-            "-y",
-            "-loglevel",
-            "error",
-            "-framerate",
-            "10",
-            "-i",
-            join(frameDir, "%03d.png"),
-            "-vf",
-            "scale=960:-2",
-            "-c:v",
-            "libx264",
-            "-pix_fmt",
-            "yuv420p",
-            "-movflags",
-            "+faststart",
-            join(outputDir, `${name}.mp4`),
-          ],
-          { stdio: "ignore" },
-        );
-        encoder.on("error", reject);
-        encoder.on("exit", (code) =>
-          code === 0
-            ? resolve()
-            : reject(new Error("Motion clip encoding failed")),
-        );
-      });
     }
     const beforeMotion = await pointPositions();
     await capture("motion-t0");

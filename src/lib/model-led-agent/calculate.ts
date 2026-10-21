@@ -266,8 +266,10 @@ export function calculationFallback(calculations: Calculation[]) {
     .map((c) => {
       const value = `${c.approximate ? "approximately " : ""}${c.displayValue}${c.unit === "number" ? "" : ` ${c.unit}`}${c.duration ? ` (${c.duration.text})` : ""}`;
       if (c.savings) {
-        const money = (n: number) =>
-          `₦${new D(n).toFixed().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+        const money = (n: number) => {
+          const [whole, fraction] = new D(n).toFixed().split(".");
+          return `₦${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}${fraction ? `.${fraction}` : ""}`;
+        };
         const s = c.savings;
         if (s.startingAmount >= s.target)
           return `With ${money(s.startingAmount)} saved, you’ve already reached your ${money(s.target)} goal.`;

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cancellable } from "../request-cancellation";
 import type { Content, FunctionDeclaration, Part } from "@google/genai";
 import { performance } from "node:perf_hooks";
 import {
@@ -215,7 +216,13 @@ export function createModelLedAgent(
         let timer: ReturnType<typeof setTimeout> | undefined;
         try {
           return await Promise.race([
-            run(controller.signal),
+            cancellable(options.signal, () =>
+              run(
+                options.signal
+                  ? AbortSignal.any([controller.signal, options.signal])
+                  : controller.signal,
+              ),
+            ),
             new Promise<never>((_, reject) => {
               timer = setTimeout(() => {
                 controller.abort();
@@ -585,6 +592,7 @@ export function createModelLedAgent(
           );
         throw new AgentError("MODEL_BUDGET");
       } catch (error) {
+        if (options.signal?.aborted) throw error;
         const code =
           error instanceof AgentError
             ? error.code

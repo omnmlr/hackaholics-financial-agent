@@ -66,6 +66,7 @@ export async function conversationTurn(
     ),
     clock,
     dialogue,
+    signal: req.signal,
   };
   // Explicit server flag keeps the repaired baseline available throughout
   // evaluation/rollback. Client input never selects a provider or architecture.

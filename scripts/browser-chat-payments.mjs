@@ -196,7 +196,7 @@ try {
     await page.waitForFunction(
       () =>
         window.getComputedStyle(document.querySelector(".agus-composer"))
-          .borderColor === "rgb(84, 132, 173)",
+          .borderColor === "rgb(152, 168, 235)",
     );
     const focus = await input.evaluate((el) => ({
       outline: window.getComputedStyle(el).outlineStyle,
@@ -204,7 +204,7 @@ try {
       shadow: window.getComputedStyle(el.closest("form")).boxShadow,
     }));
     assert.equal(focus.outline, "none");
-    assert.equal(focus.border, "rgb(84, 132, 173)");
+    assert.equal(focus.border, "rgb(152, 168, 235)");
     assert.notEqual(focus.shadow, "none");
     if (viewport.width === 1440) {
       await page

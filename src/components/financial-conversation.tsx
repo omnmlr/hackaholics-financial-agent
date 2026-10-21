@@ -20,10 +20,16 @@ import {
   MessageSquare,
   Plus,
   Wallet,
+  ArrowUpRight,
+  ChartNoAxesCombined,
+  Search,
+  ShieldCheck,
+  ChevronDown,
   X,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
+import { AgusSignal } from "./agus-signal";
 import { FinancialResponse } from "./financial-response";
 import { CopyableMessage } from "./copyable-message";
 import { conversationDrafts as drafts } from "@/lib/chat-history/drafts";
@@ -53,14 +59,20 @@ type DraftSelection = {
 const suggestions = [
   {
     title: "Analyze spending",
+    description: "Find the story in your numbers",
+    icon: ChartNoAxesCombined,
     text: "Show my spending for October 2026",
   },
   {
     title: "Track a payment",
+    description: "Follow the facts, find clarity",
+    icon: Search,
     text: "Find payments to Ada in October 2026",
   },
   {
     title: "Prepare a transfer",
+    description: "A draft you can make your own",
+    icon: ArrowUpRight,
     text: "Help me prepare a payment draft",
   },
 ];
@@ -97,11 +109,18 @@ export function FinancialConversation({
     chat: string;
     count: number;
     payment?: boolean;
+    original?: string;
+    stopped?: boolean;
   } | null>(null);
   const pending = useRef(false);
+  const activeRequest = useRef<{
+    controller: AbortController;
+    original: string;
+    chat: string;
+    count: number;
+  } | null>(null);
   const composer = useRef<HTMLTextAreaElement>(null);
   const scroll = useRef<HTMLDivElement>(null);
-  const end = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLButtonElement>(null);
   const drawer = useRef<HTMLDialogElement>(null);
   const plans = useRef<HTMLDialogElement>(null);
@@ -184,6 +203,8 @@ export function FinancialConversation({
     spokenRepliesEnabled.current = false;
     ++privacyVersion.current;
     ++requestVersion.current;
+    activeRequest.current?.controller.abort();
+    activeRequest.current = null;
     drafts.clear();
     selections.current.clear();
     editorId.current = "";
@@ -212,9 +233,14 @@ export function FinancialConversation({
     modalSelection.current = selections.current.get(editorId.current);
     const active = document.activeElement as HTMLElement;
     modalReturn.current = active?.closest("dialog") ? menu.current : active;
-    [drawer, plans, signin, accountDialog, paymentHistory].forEach((r) =>
-      r.current?.close(),
-    );
+    [
+      drawer,
+      plans,
+      signin,
+      accountDialog,
+      paymentHistory,
+      voiceSettings,
+    ].forEach((r) => r.current?.close());
     target?.showModal();
   }
   function restoreFocus() {
@@ -269,6 +295,10 @@ export function FinancialConversation({
   }, [clearPrivate]);
   const openChat = useCallback(
     async (next: string, push = true) => {
+      activeRequest.current?.controller.abort();
+      activeRequest.current = null;
+      pending.current = false;
+      setOperation("");
       discardVoiceCapture();
       stopSpeech();
       rememberSelection();
@@ -342,15 +372,19 @@ export function FinancialConversation({
       );
     window.addEventListener("popstate", pop);
     const versions = requestVersion;
+    const active = activeRequest;
     return () => {
       live = false;
       ++versions.current;
+      active.current?.controller.abort();
+      active.current = null;
       window.removeEventListener("popstate", pop);
     };
   }, [refresh, openChat]);
   useEffect(() => {
     if (follow.current) {
-      end.current?.scrollIntoView({ block: "end", behavior: "instant" });
+      if (scroll.current)
+        scroll.current.scrollTop = scroll.current.scrollHeight;
       setShowLatest(false);
     } else if (turns.length) setShowLatest(true);
   }, [turns, pendingText]);
@@ -470,6 +504,12 @@ export function FinancialConversation({
     drafts.set(id, "");
     const controller = new AbortController(),
       timeout = setTimeout(() => controller.abort(), 65000);
+    activeRequest.current = {
+      controller,
+      original,
+      chat: chatId,
+      count: turns.length,
+    };
     try {
       const response = await fetch("/api/conversation", {
         method: "POST",
@@ -498,8 +538,10 @@ export function FinancialConversation({
       }
       if (data.turn) {
         setId(chatId);
+        const nextDraft = drafts.get(id) ?? "";
         drafts.delete(id);
-        drafts.set(chatId, "");
+        drafts.set(chatId, nextDraft);
+        setText(nextDraft);
         if (!id)
           window.history.replaceState(
             null,
@@ -520,15 +562,16 @@ export function FinancialConversation({
             );
         });
       } else {
-        setText(original);
-        drafts.set(id, original);
+        const retained = drafts.get(id) || original;
+        setText(retained);
+        drafts.set(id, retained);
         setError(
           response.status === 409
             ? "A response is already in progress. Check the saved conversation before trying again."
             : "Your message wasn’t completed. Review it and try again.",
         );
         if (response.status === 409 || response.status >= 500)
-          setUnknown({ chat: chatId, count: turns.length });
+          setUnknown({ chat: chatId, count: turns.length, original });
       }
     } catch {
       if (
@@ -536,20 +579,52 @@ export function FinancialConversation({
         request !== requestVersion.current
       )
         return;
-      setText(original);
-      drafts.set(id, original);
-      setUnknown({ chat: chatId, count: turns.length });
+      const retained = drafts.get(id) || original;
+      setText(retained);
+      drafts.set(id, retained);
+      setUnknown({ chat: chatId, count: turns.length, original });
       setError(
         "The response could not be confirmed. Check this conversation before trying again.",
       );
     } finally {
       clearTimeout(timeout);
-      pending.current = false;
-      if (version === privacyVersion.current) {
+      if (activeRequest.current?.controller === controller)
+        activeRequest.current = null;
+      if (
+        version === privacyVersion.current &&
+        request === requestVersion.current
+      ) {
+        pending.current = false;
         setOperation("");
         setPendingText("");
       }
     }
+  }
+  function stopGeneration() {
+    const active = activeRequest.current;
+    if (!active) return;
+    ++requestVersion.current;
+    active.controller.abort();
+    activeRequest.current = null;
+    pending.current = false;
+    setOperation("");
+    setPendingText("");
+    const retained = drafts.get(id) || active.original;
+    setText(retained);
+    drafts.set(id, retained);
+    // A response may have committed just before the connection was aborted.
+    // Reconcile that race before allowing another POST to the same chat.
+    setUnknown({
+      chat: active.chat,
+      count: active.count,
+      original: active.original,
+      stopped: true,
+    });
+    setError(
+      "Response stopped. Your draft is editable. Check saved state before sending again.",
+    );
+    setAnnouncement("Response stopped. Draft preserved.");
+    composer.current?.focus({ preventScroll: true });
   }
   async function checkSaved() {
     if (!unknown || voice.isVoiceLocked()) return;
@@ -575,9 +650,14 @@ export function FinancialConversation({
       if (data?.turns.length > unknown.count) {
         setTurns(data.turns);
         setId(unknown.chat);
-        setText("");
+        const currentDraft = drafts.get(id) ?? "";
+        const retained =
+          !unknown.stopped && currentDraft === unknown.original
+            ? ""
+            : currentDraft;
+        setText(retained);
         drafts.delete(id);
-        drafts.set(unknown.chat, "");
+        drafts.set(unknown.chat, retained);
         window.history.replaceState(
           null,
           "",
@@ -691,7 +771,10 @@ export function FinancialConversation({
   const sidebar = (
     <>
       <div className="agus-sidebar-brand">
-        <BrandAsset />
+        <span className="agus-brand-pair">
+          <AgusSignal />
+          <BrandAsset />
+        </span>
         <button
           className="agus-icon-button agus-collapse"
           aria-label="Collapse navigation"
@@ -747,6 +830,14 @@ export function FinancialConversation({
         )}
       </nav>
       <div className="agus-sidebar-bottom">
+        <div className="agus-sidebar-note">
+          <ShieldCheck size={16} />
+          <span>
+            Your next move.
+            <br />
+            <strong>Always in your hands.</strong>
+          </span>
+        </div>
         <button
           className="agus-sidebar-link"
           onClick={() => openModal(voiceSettings.current)}
@@ -855,6 +946,11 @@ export function FinancialConversation({
             >
               <BrandAsset />
             </span>
+            {empty && (
+              <span className="agus-header-caption">
+                A little clarity goes a long way.
+              </span>
+            )}
             {!empty && (
               <span
                 className="agus-header-title"
@@ -864,17 +960,50 @@ export function FinancialConversation({
               </span>
             )}
           </div>
-          <button
-            className="agus-icon-button"
-            aria-label="New chat"
-            title="New chat"
-            disabled={busy}
-            onClick={() => void openChat("")}
-          >
-            <SquarePen size={20} />
-          </button>
+          <div className="agus-header-actions">
+            {authenticated ? (
+              <button
+                className="agus-account-pill"
+                aria-label={`Choose records account: ${scope}`}
+                disabled={busy}
+                onClick={() => {
+                  openModal(accountDialog.current);
+                  void loadAccounts();
+                }}
+              >
+                <Wallet size={15} />
+                <span>
+                  {selected ? selected.displayName : "Choose account"}
+                </span>
+                <ChevronDown size={14} />
+              </button>
+            ) : (
+              <button
+                className="agus-header-signin"
+                aria-label="Sign in to AGUS"
+                onClick={() => openModal(signin.current)}
+              >
+                Sign in <ArrowUpRight size={15} />
+              </button>
+            )}
+            <button
+              className="agus-icon-button"
+              aria-label="New chat"
+              title="New chat"
+              disabled={busy}
+              onClick={() => void openChat("")}
+            >
+              <SquarePen size={20} />
+            </button>
+          </div>
         </header>
-        {selected && <p className="agus-active-scope">{scope}</p>}
+        {selected && (
+          <p className="agus-active-scope">
+            <span />
+            {scope}
+            <small>Fictional records</small>
+          </p>
+        )}
         <div
           className="agus-scroll"
           ref={scroll}
@@ -891,7 +1020,36 @@ export function FinancialConversation({
             <p role="status">Opening conversation…</p>
           ) : empty ? (
             <section className="agus-welcome">
+              <div className="agus-welcome-emblem">
+                <AgusSignal />
+              </div>
+              <p className="agus-eyebrow">YOUR MONEY. A NEW PERSPECTIVE.</p>
               <h1 className="agus-welcome-question">Let's talk money.</h1>
+              <p className="agus-welcome-description">
+                Make sense of your spending.
+                <br className="agus-mobile-break" /> Make room for what’s next.
+              </p>
+              <div className="agus-suggestions">
+                {suggestions.map(
+                  ({ title, description, text: prompt, icon: Icon }) => (
+                    <button
+                      key={title}
+                      disabled={voiceBusy}
+                      onClick={() => choose(prompt)}
+                    >
+                      <Icon size={20} className="agus-suggestion-icon" />
+                      <span>
+                        <strong>{title}</strong>
+                        <small>{description}</small>
+                      </span>
+                      <ArrowUpRight
+                        size={16}
+                        className="agus-suggestion-arrow"
+                      />
+                    </button>
+                  ),
+                )}
+              </div>
             </section>
           ) : (
             <section className="agus-thread" aria-label="Conversation replies">
@@ -910,7 +1068,17 @@ export function FinancialConversation({
                     </CopyableMessage>
                   </div>
                   <div className="agus-assistant-message">
-                    <h2 className="agus-response-heading">agus.</h2>
+                    <h2 className="agus-response-heading">
+                      <AgusSignal />
+                      <span>agus.</span>
+                      <small>
+                        {turn.reply.kind === "financial"
+                          ? "Financial insight"
+                          : turn.reply.handoff
+                            ? "Payment planning"
+                            : ""}
+                      </small>
+                    </h2>
                     {turn.reply.kind === "conflict" && (
                       <p className="agus-reply-notice">
                         Your financial context changed. Choose an account and
@@ -1008,35 +1176,41 @@ export function FinancialConversation({
               {pendingText && (
                 <article className="agus-turn">
                   <div className="agus-user-message">
-                    <span className="agus-speaker">You · Sending</span>
+                    <span className="agus-speaker">You</span>
                     <p>{pendingText}</p>
                   </div>
-                  <p className="agus-thinking" role="status">
-                    Working on your question…
-                    {longWait && " This is taking longer than usual."}
-                  </p>
+                  <div className="agus-thinking" role="status">
+                    <AgusSignal />
+                    <span>
+                      {longWait
+                        ? "Still working on your question…"
+                        : "Thinking it through…"}
+                      <small>
+                        {longWait
+                          ? "You can stop this response at any time."
+                          : "Checking the next step"}
+                      </small>
+                    </span>
+                  </div>
                 </article>
               )}
-              <div ref={end} />
             </section>
           )}
         </div>
-        {showLatest && (
-          <button
-            className="agus-latest"
-            onClick={() => {
-              follow.current = true;
-              end.current?.scrollIntoView({
-                block: "end",
-                behavior: "instant",
-              });
-              setShowLatest(false);
-            }}
-          >
-            Latest response
-          </button>
-        )}
         <div className="agus-composer-area">
+          {showLatest && (
+            <button
+              className="agus-latest"
+              onClick={() => {
+                follow.current = true;
+                if (scroll.current)
+                  scroll.current.scrollTop = scroll.current.scrollHeight;
+                setShowLatest(false);
+              }}
+            >
+              Latest response
+            </button>
+          )}
           {speech.error && (
             <p className="agus-audio-status" role="status">
               {speech.error}
@@ -1103,11 +1277,13 @@ export function FinancialConversation({
             <textarea
               ref={composer}
               id="financial-message"
-              placeholder="Ask agus..."
+              placeholder="Ask agus anything…"
               value={text}
               rows={1}
               maxLength={4000}
-              readOnly={busy || loading || voiceBusy}
+              readOnly={
+                (busy && operation !== "message") || loading || voiceBusy
+              }
               onSelect={rememberSelection}
               onBlur={rememberSelection}
               onScroll={rememberSelection}
@@ -1129,9 +1305,7 @@ export function FinancialConversation({
               <span className="agus-character-count">
                 {text.length >= 3500
                   ? `${text.length}/4000${text.length === 4000 ? " · Message limit reached" : ""}`
-                  : busy
-                    ? "Wait for this request before sending another."
-                    : ""}
+                  : ""}
               </span>
               {voice.listening &&
                 (voice.waveform === null ? (
@@ -1180,31 +1354,37 @@ export function FinancialConversation({
               >
                 {voice.listening ? <Square size={17} /> : <Mic size={19} />}
               </button>
-              <button
-                className="agus-send"
-                type="submit"
-                aria-label="Send message"
-                disabled={
-                  busy || loading || voiceBusy || !!unknown || !text.trim()
-                }
-              >
-                <ArrowUp size={20} />
-              </button>
+              {operation === "message" ? (
+                <button
+                  className="agus-send agus-stop"
+                  type="button"
+                  aria-label="Stop response"
+                  title="Stop response"
+                  onClick={stopGeneration}
+                >
+                  <Square size={16} fill="currentColor" />
+                </button>
+              ) : (
+                <button
+                  className="agus-send"
+                  type="submit"
+                  aria-label="Send message"
+                  disabled={
+                    busy || loading || voiceBusy || !!unknown || !text.trim()
+                  }
+                >
+                  <ArrowUp size={20} />
+                </button>
+              )}
             </div>
           </form>
-          {empty && (
-            <div className="agus-suggestions">
-              {suggestions.map(({ title, text: prompt }) => (
-                <button
-                  key={title}
-                  disabled={voiceBusy}
-                  onClick={() => choose(prompt)}
-                >
-                  <span>{title}</span>
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="agus-composer-hint">
+            <span>
+              <ShieldCheck size={12} />
+              You stay in control of every payment.
+            </span>
+            <span>Shift + Enter for a new line</span>
+          </div>
         </div>
         <details className="agus-demo-strip">
           <summary>

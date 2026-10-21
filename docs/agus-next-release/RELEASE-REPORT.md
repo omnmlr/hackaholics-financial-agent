@@ -4,6 +4,8 @@ Baseline: PR #42, `ca9994b8c0dedb0ba02e50b9d00308e96a28d277`. Branch: `improve/a
 
 Audited implementation revision: `c4c173f44d3afa82f61276bf051c9a2a782c8501`. Documentation/evidence commits may follow. PROGRESS.md records the exact checkpoint.
 
+Real-model acceptance preflight for the completed `869b5b9` candidate: **BLOCKED** on October 21, 2026. No separate development Gemini key is configured and enforced egress excludes the Gemini API; zero genuine calls, responses, tokens or cost. Final Node 22.16/24 CI for that candidate was rechecked green. See [actual results and secure setup](REAL-MODEL-ACCEPTANCE.md) and the [isolated Railway preview plan](RAILWAY-PREVIEW-PLAN.md). No feature changes or deployment occurred; genuine-model and physical-device acceptance remain open.
+
 ## Resumption and financial intelligence
 
 The paused checkpoint had already implemented fictional balance projection and contextual savings, with focused unit verification. This assignment retained those commits, closed their browser gate, and added multimodal drafts, outcome continuity, simulated confirmations, desktop composition and mobile recovery/layout work. Existing native Gemini orchestration, Neon-compatible PostgreSQL/CAS workflow persistence and explicit payment controls remain the architecture.

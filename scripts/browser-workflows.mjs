@@ -1,4 +1,4 @@
-/* global document: readonly, window: readonly */
+/* global document: readonly, window: readonly, Event: readonly */
 // Actual production application, disposable PostgreSQL, scripted Gemini only.
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
@@ -392,6 +392,159 @@ try {
         preparationChecks += 12;
       }
     }
+    let viewportChecks = 0;
+    if (process.env.MOBILE_VIEWPORT_CHECKS === "1" && width <= 820) {
+      await input.fill(
+        "A draft to preserve while the keyboard changes. ".repeat(12),
+      );
+      await input.focus();
+      await page.setViewportSize({ width, height: 420 });
+      await page.waitForFunction(
+        () =>
+          Math.abs(
+            document.querySelector(".agus-workspace").getBoundingClientRect()
+              .height - 420,
+          ) < 2,
+      );
+      const composer = await page.locator(".agus-composer").boundingBox();
+      assert.ok(composer.y >= 0 && composer.y + composer.height <= 421);
+      await capture("keyboard-focus");
+      await page.setViewportSize({ width, height: 844 });
+      await input.fill("");
+      await page.evaluate(() => {
+        const vv = window.visualViewport;
+        Object.defineProperties(vv, {
+          height: { configurable: true, value: 420, writable: true },
+          offsetTop: { configurable: true, value: 80, writable: true },
+          scale: { configurable: true, value: 1, writable: true },
+        });
+        vv.dispatchEvent(new Event("resize"));
+      });
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector(".agus-workspace")
+            .style.getPropertyValue("--workspace-top") === "80px",
+      );
+      const panned = await page.locator(".agus-workspace").boundingBox();
+      assert.equal(panned.y, 80);
+      assert.equal(panned.height, 420);
+      assert.equal(await page.evaluate(() => window.scrollY), 0);
+      await capture("visual-viewport-pan");
+      await page.evaluate(() => {
+        window.visualViewport.height = 844;
+        window.visualViewport.dispatchEvent(new Event("resize"));
+      });
+      await page.waitForFunction(
+        () =>
+          document
+            .querySelector(".agus-workspace")
+            .style.getPropertyValue("--workspace-top") === "0px",
+      );
+      await page.evaluate(() => {
+        window.visualViewport.height = 420;
+        window.visualViewport.scale = 2;
+        window.visualViewport.dispatchEvent(new Event("resize"));
+      });
+      assert.equal(
+        await page
+          .locator(".agus-workspace")
+          .evaluate((el) => el.getBoundingClientRect().height),
+        844,
+      );
+      await page.evaluate(() => {
+        delete window.visualViewport.height;
+        delete window.visualViewport.offsetTop;
+        delete window.visualViewport.scale;
+        window.visualViewport.dispatchEvent(new Event("resize"));
+      });
+      await page
+        .locator(".agus-header")
+        .getByRole("button", { name: "New chat", exact: true })
+        .click();
+      await page.setViewportSize({ width, height: 420 });
+      await input.focus();
+      await page.waitForFunction(
+        () =>
+          document.querySelector(".agus-workspace").getBoundingClientRect()
+            .height === 420,
+      );
+      const welcomeComposer = await page
+        .locator(".agus-composer")
+        .boundingBox();
+      assert.ok(
+        welcomeComposer.y >= 0 &&
+          welcomeComposer.y + welcomeComposer.height <= 421,
+      );
+      await capture("welcome-short");
+      await page.setViewportSize({ width, height: 844 });
+      await page
+        .getByRole("button", { name: "Open conversations", exact: true })
+        .click();
+      await page
+        .getByRole("dialog", { name: "Conversations", exact: true })
+        .waitFor();
+      await capture("mobile-navigation");
+      await page
+        .getByRole("button", { name: "Close conversations", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Choose records account:", exact: false })
+        .click();
+      await page.getByLabel("Account (optional)").selectOption("amina-current");
+      await capture("mobile-account");
+      await page
+        .getByRole("button", { name: "Close account", exact: true })
+        .click();
+      const headerRects = await page
+        .locator(".agus-header button")
+        .evaluateAll((buttons) =>
+          buttons
+            .map((b) => b.getBoundingClientRect())
+            .filter((r) => r.width && r.height)
+            .map((r) => ({
+              left: r.left,
+              right: r.right,
+              top: r.top,
+              bottom: r.bottom,
+            })),
+        );
+      for (let n = 1; n < headerRects.length; n++)
+        assert.ok(headerRects[n].left >= headerRects[n - 1].right - 1);
+      assert.ok(headerRects.every((r) => r.left >= 0 && r.right <= width + 1));
+      const interrupted = await sharp({
+        create: { width: 20, height: 20, channels: 3, background: "#333333" },
+      })
+        .png()
+        .toBuffer();
+      await page
+        .getByLabel("Select payment image", { exact: true })
+        .setInputFiles({
+          name: "synthetic-cancel.png",
+          mimeType: "image/png",
+          buffer: interrupted,
+        });
+      await page.route("**/api/extract", (route) => route.abort("failed"));
+      await page
+        .getByRole("button", { name: "Send message", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Check saved conversation", exact: true })
+        .waitFor();
+      await capture("image-interrupted");
+      await page
+        .getByRole("button", { name: "Check saved conversation", exact: true })
+        .click();
+      await page.unroute("**/api/extract");
+      await input.fill("A recovered draft");
+      assert.ok(
+        await page
+          .getByRole("button", { name: "Send message", exact: true })
+          .isEnabled(),
+      );
+      await input.fill("");
+      viewportChecks = 12;
+    }
     const scan = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -404,7 +557,7 @@ try {
     );
     report.widths.push({
       width,
-      checks: 9 + preparationChecks + (width >= 1280 ? 4 : 0),
+      checks: 9 + preparationChecks + (width >= 1280 ? 4 : 0) + viewportChecks,
       axeViolations: scan.violations.length,
       pageErrors: errors,
       examples: [

@@ -44,6 +44,21 @@ export async function conversationPayment(
   );
   if (!turn?.reply.handoff)
     throw new AppError("Payment preparation not found", 404);
+  const linked = (await readState()).messages.find(
+    (m) =>
+      m.id !== turnId &&
+      m.owner === owner &&
+      m.conversationId === chatId &&
+      m.turnId === turnId &&
+      (m.proposals?.length || m.batchId),
+  );
+  if (linked)
+    return {
+      ...linked,
+      sourceRequest: linked.sourceRequest
+        ? scrubCredentials(linked.sourceRequest)
+        : undefined,
+    };
   const initial: NonNullable<Message["proposals"]> = [
     {
       name: "",

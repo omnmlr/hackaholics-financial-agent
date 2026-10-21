@@ -8,6 +8,7 @@ import {
 } from "../src/lib/intelligence";
 import { normalizePaymentImage } from "../src/lib/image-validation";
 import { conversationImage } from "../src/lib/conversation-image";
+import { conversationPayment } from "../src/lib/conversation-payment";
 import { readState } from "../src/lib/db";
 import { chatHistory } from "../src/lib/chat-history/store";
 const proposal = {
@@ -207,6 +208,9 @@ it("uses the same draft fields for image/text, persists only proposals and reope
     "image/png",
   );
   expect(reopened.turn.id).toBe(result.turn.id);
+  const recoveredDraft = await conversationPayment(owner, chat, result.turn.id);
+  expect(recoveredDraft.id).toBe(upload);
+  expect(recoveredDraft.proposals).toHaveLength(2);
   expect(fetch).toHaveBeenCalledTimes(2);
   await expect(
     conversationImage(owner, randomUUID(), upload, await png(), "image/png"),

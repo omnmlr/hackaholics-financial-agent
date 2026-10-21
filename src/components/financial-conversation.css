@@ -139,8 +139,11 @@
   container-name: agus-workspace;
   container-type: size;
   display: flex;
+  position: fixed;
+  inset-inline: 0;
+  top: var(--workspace-top, 0px);
   height: var(--workspace-height, 100dvh);
-  margin-top: var(--workspace-top, 0px);
+  margin: 0;
   background: var(--agus-bg);
   color: var(--agus-ink);
   font:
@@ -155,6 +158,11 @@
 }
 .agus-workspace * {
   min-width: 0;
+}
+body:has(.agus-workspace) {
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: #08090b;
 }
 .agus-workspace ::selection {
   background: #6aa8ff;
@@ -2599,4 +2607,22 @@ body:has(.agus-workspace) {
   font-size: 14px;
   color: #c2ccd9;
   line-height: 1.8;
+}
+
+/* Top-layer forms use the same visible area as the fixed conversation shell. */
+.agus-dialog {
+  max-height: calc(var(--workspace-height, 100dvh) - 32px);
+}
+@media (max-width: 600px) {
+  .agus-dialog:not(.agus-drawer) {
+    top: calc(var(--workspace-top, 0px) + 8px);
+    bottom: auto;
+    margin-block: 0;
+    max-height: calc(var(--workspace-height, 100dvh) - 16px);
+  }
+  .agus-drawer {
+    top: var(--workspace-top, 0px);
+    height: var(--workspace-height, 100dvh);
+    max-height: var(--workspace-height, 100dvh);
+  }
 }

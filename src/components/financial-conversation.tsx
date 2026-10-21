@@ -43,6 +43,7 @@ import { useResponseSpeech } from "./use-response-speech";
 import { usePaymentImage } from "./use-payment-image";
 import { currentPaymentReply } from "./payment-outcome";
 import { FinancialWorkspace } from "./financial-workspace";
+import { workspaceViewport } from "@/lib/workspace-viewport";
 import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
@@ -431,23 +432,35 @@ export function FinancialConversation({
   }, [busy]);
   useEffect(() => {
     const viewport = window.visualViewport;
+    let frame = 0;
     const fit = () => {
+      frame = 0;
+      const size = workspaceViewport({
+        innerHeight: window.innerHeight,
+        visualHeight: viewport?.height,
+        offsetTop: viewport?.offsetTop,
+        scale: viewport?.scale,
+      });
+      if (!size) return;
       const el = document.querySelector<HTMLElement>(".agus-workspace");
-      el?.style.setProperty(
-        "--workspace-height",
-        `${viewport?.height ?? window.innerHeight}px`,
-      );
-      el?.style.setProperty("--workspace-top", `${viewport?.offsetTop ?? 0}px`);
+      el?.style.setProperty("--workspace-height", `${size.height}px`);
+      el?.style.setProperty("--workspace-top", `${size.top}px`);
       resizeComposer();
     };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(fit);
+    };
     fit();
-    viewport?.addEventListener("resize", fit);
-    viewport?.addEventListener("scroll", fit);
-    window.addEventListener("resize", fit);
+    viewport?.addEventListener("resize", schedule);
+    viewport?.addEventListener("scroll", schedule);
+    window.addEventListener("resize", schedule);
+    window.addEventListener("orientationchange", schedule);
     return () => {
-      viewport?.removeEventListener("resize", fit);
-      viewport?.removeEventListener("scroll", fit);
-      window.removeEventListener("resize", fit);
+      if (frame) cancelAnimationFrame(frame);
+      viewport?.removeEventListener("resize", schedule);
+      viewport?.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      window.removeEventListener("orientationchange", schedule);
     };
   }, [resizeComposer]);
   useEffect(() => {
@@ -552,6 +565,9 @@ export function FinancialConversation({
         },
         () => {
           setId(chatId);
+          setError(
+            "The image response is unconfirmed. Check the saved conversation before selecting it again.",
+          );
           setUnknown({
             chat: chatId,
             count: turns.length,
@@ -727,6 +743,13 @@ export function FinancialConversation({
       if (!response.ok && response.status !== 404) throw new Error();
       if (data?.turns.length > unknown.count) {
         setTurns(data.turns);
+        void payments
+          .refresh()
+          .catch(() =>
+            setError(
+              "Saved conversation recovered. Retry loading saved payments to view its current card.",
+            ),
+          );
         setId(unknown.chat);
         const currentDraft = drafts.get(id) ?? "";
         const retained =

@@ -1,5 +1,23 @@
 import { z } from "zod";
 
+export const SavingsPresentationSchema = z.object({
+  target: z.number().positive().max(1e12),
+  startingAmount: z.number().nonnegative().max(1e12),
+  contribution: z.number().positive().max(1e12),
+  cadence: z.enum(["days", "weeks", "months", "years"]),
+  periods: z.number().int().nonnegative().safe(),
+  duration: z.string().max(100).optional(),
+  source: z
+    .object({
+      accountId: z.string().max(128),
+      field: z.enum(["available", "current"]),
+      asOf: z.iso.datetime(),
+      simulated: z.boolean(),
+    })
+    .optional(),
+});
+export type SavingsPresentation = z.infer<typeof SavingsPresentationSchema>;
+
 export const PaymentPresentationSchema = z.object({
   asOf: z.iso.datetime(),
   scope: z.string().max(120),
@@ -63,6 +81,7 @@ export const FinancialPresentationSchema = z.object({
           ),
           asOf: z.string().datetime(),
           coverage: z.string(),
+          balanceUnavailable: z.enum(["stale", "not_provided"]).optional(),
           originalText: z.string(),
         })
         .refine(

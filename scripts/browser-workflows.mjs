@@ -83,7 +83,9 @@ try {
     executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium",
     args: ["--no-sandbox"],
   });
-  for (const width of [1440, 820, 390, 320]) {
+  for (const width of (process.env.WORKFLOW_WIDTHS ?? "1440,820,390,320")
+    .split(",")
+    .map(Number)) {
     const context = await browser.newContext({
       viewport: { width, height: width > 600 ? 1000 : 844 },
       isMobile: width < 600,
@@ -136,6 +138,10 @@ try {
       return data.turn.reply;
     };
     await capture("welcome");
+    const ordinary = await send("Tell me a short joke about robots");
+    assert.equal(ordinary.kind, "general");
+    assert.doesNotMatch(ordinary.text, /bank|balance|payment/i);
+    await capture("conversation");
     await page
       .getByRole("button", { name: "Choose records account:", exact: false })
       .click();
@@ -179,6 +185,29 @@ try {
       Math.ceil((100000000 - expectedAvailable) / 2000000),
     );
     await capture("savings");
+    if (width >= 1280) {
+      const workspace = page.getByRole("complementary", {
+        name: "Financial workspace",
+        exact: true,
+      });
+      await workspace.waitFor();
+      assert.match(await workspace.innerText(), /weekly deposits/);
+      await workspace
+        .getByRole("button", { name: "Close financial workspace", exact: true })
+        .click();
+      assert.equal(await workspace.count(), 0);
+      await page
+        .getByRole("button", { name: "Show financial workspace", exact: true })
+        .click();
+      await workspace
+        .getByRole("button", { name: "Close financial workspace", exact: true })
+        .focus();
+      await page.keyboard.press("Escape");
+      assert.equal(await workspace.count(), 0);
+      await page
+        .getByRole("button", { name: "Show financial workspace", exact: true })
+        .click();
+    }
     await page.reload();
     await input.waitFor();
     await page
@@ -194,7 +223,10 @@ try {
     assert.equal(slang.savings.periods, 2000);
     let preparationChecks = 0;
     if (process.env.WORKFLOW_PHASE !== "foundation") {
-      await page.getByRole("button", { name: "New chat", exact: true }).click();
+      await page
+        .locator(".agus-header")
+        .getByRole("button", { name: "New chat", exact: true })
+        .click();
       const bare = await send("500 OPay 9812345670");
       assert.equal(bare.kind, "handoff");
       const editor = page
@@ -372,7 +404,7 @@ try {
     );
     report.widths.push({
       width,
-      checks: 8 + preparationChecks,
+      checks: 9 + preparationChecks + (width >= 1280 ? 4 : 0),
       axeViolations: scan.violations.length,
       pageErrors: errors,
       examples: [

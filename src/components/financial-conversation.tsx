@@ -25,6 +25,7 @@ import {
   ChevronDown,
   X,
   Paperclip,
+  PanelRight,
 } from "lucide-react";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
@@ -41,6 +42,7 @@ import { useVoiceInput } from "./use-voice-input";
 import { useResponseSpeech } from "./use-response-speech";
 import { usePaymentImage } from "./use-payment-image";
 import { currentPaymentReply } from "./payment-outcome";
+import { FinancialWorkspace } from "./financial-workspace";
 import { responseSpeechText } from "@/lib/response-speech";
 import type { Mode } from "@/lib/domain";
 import "./financial-conversation.css";
@@ -98,6 +100,28 @@ export function FinancialConversation({
   const [signinError, setSigninError] = useState("");
   const [showLatest, setShowLatest] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [wide, setWide] = useState(false),
+    [workspaceOpen, setWorkspaceOpen] = useState(true);
+  const [liveResult, setLiveResult] = useState<{
+    turnId: string;
+    account: string;
+  } | null>(null);
+  const workspaceButton = useRef<HTMLButtonElement>(null),
+    sidebarTouched = useRef(false);
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1280px)");
+    const update = () => {
+      if (
+        !query.matches &&
+        document.activeElement?.closest(".agus-context-workspace")
+      )
+        composer.current?.focus({ preventScroll: true });
+      setWide(query.matches);
+    };
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [longWait, setLongWait] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const [pageVisible, setPageVisible] = useState(true);
@@ -217,6 +241,7 @@ export function FinancialConversation({
     setLoading(false);
     setAuthenticated(false);
     setTurns([]);
+    setLiveResult(null);
     setChats([]);
     setAccounts([]);
     setAccount("");
@@ -257,6 +282,7 @@ export function FinancialConversation({
     });
   }
   function toggleSidebar(open: boolean) {
+    sidebarTouched.current = true;
     setSidebarOpen(open);
     requestAnimationFrame(() => {
       document
@@ -313,6 +339,7 @@ export function FinancialConversation({
       setAccountQuestion(null);
       setAccounts([]);
       setTurns([]);
+      setLiveResult(null);
       setId(next);
       setUnknown(null);
       setPendingText("");
@@ -505,6 +532,7 @@ export function FinancialConversation({
         (data) => {
           setId(chatId);
           setTurns((previous) => [...previous, data.turn]);
+          setLiveResult({ turnId: data.turn.id, account });
           window.history.replaceState(
             null,
             "",
@@ -592,6 +620,7 @@ export function FinancialConversation({
             `/conversation?chat=${encodeURIComponent(chatId)}`,
           );
         setTurns((previous) => [...previous, data.turn]);
+        setLiveResult({ turnId: data.turn.id, account });
         if (data.turn.reply.handoff)
           void payments
             .refresh()
@@ -817,6 +846,33 @@ export function FinancialConversation({
     ? `${selected.displayName}${selected.maskedNumber ? ` · •${selected.maskedNumber}` : ""}`
     : "No account selected";
   const empty = !loading && !turns.length && !pendingText;
+  useEffect(() => {
+    if (wide && !empty && !sidebarTouched.current) setSidebarOpen(true);
+  }, [wide, empty]);
+  const focusTurn = turns.at(-1);
+  const focusMessage = payments.snapshot?.messages.find(
+    (m) =>
+      m.turnId === focusTurn?.id && m.conversationId === id && !m.supersededBy,
+  );
+  const focusBatch = payments.snapshot?.batches.find(
+    (b) => b.id === focusMessage?.batchId,
+  );
+  const freshSource =
+    liveResult?.turnId === focusTurn?.id && liveResult?.account === account;
+  const hasWorkspace =
+    !!focusTurn &&
+    (!!focusBatch ||
+      !!focusTurn.reply.payments ||
+      (!focusTurn.reply.savings?.source && !!focusTurn.reply.savings) ||
+      (freshSource &&
+        (!!focusTurn.reply.presentation || !!focusTurn.reply.savings)));
+  const showWorkspace = wide && workspaceOpen && hasWorkspace && !empty;
+  const closeWorkspace = () => {
+    setWorkspaceOpen(false);
+    requestAnimationFrame(() =>
+      workspaceButton.current?.focus({ preventScroll: true }),
+    );
+  };
   const sidebar = (
     <>
       <div className="agus-sidebar-brand">
@@ -942,7 +998,7 @@ export function FinancialConversation({
   );
   return (
     <main
-      className={`agus-workspace ${empty ? "agus-empty" : ""}`}
+      className={`agus-workspace ${empty ? "agus-empty" : "agus-active"} ${showWorkspace ? "has-context-workspace" : ""}`}
       data-page-visible={pageVisible}
     >
       {!empty && <h1 className="agus-sr-only">Conversation</h1>}
@@ -1015,6 +1071,23 @@ export function FinancialConversation({
             )}
           </div>
           <div className="agus-header-actions">
+            {wide && hasWorkspace && !empty && (
+              <button
+                ref={workspaceButton}
+                className="agus-icon-button agus-workspace-toggle"
+                type="button"
+                aria-label={
+                  showWorkspace
+                    ? "Hide financial workspace"
+                    : "Show financial workspace"
+                }
+                aria-expanded={showWorkspace}
+                aria-controls="agus-context-workspace"
+                onClick={() => setWorkspaceOpen((value) => !value)}
+              >
+                <PanelRight size={18} />
+              </button>
+            )}
             {authenticated ? (
               <button
                 className="agus-account-pill"
@@ -1100,7 +1173,11 @@ export function FinancialConversation({
                     ? currentPaymentReply(turn.reply, linkedBatch)
                     : turn.reply;
                 return (
-                  <article key={turn.id} className="agus-turn">
+                  <article
+                    key={turn.id}
+                    id={`agus-turn-${turn.id}`}
+                    className="agus-turn"
+                  >
                     <div className="agus-user-message">
                       <span className="agus-speaker">You</span>
                       <CopyableMessage label="user message">
@@ -1125,7 +1202,13 @@ export function FinancialConversation({
                         </p>
                       )}
                       <CopyableMessage label="AGUS response">
-                        <FinancialResponse reply={shownReply} choose={choose} />
+                        <FinancialResponse
+                          reply={shownReply}
+                          choose={choose}
+                          workspaceOpen={
+                            showWorkspace && focusTurn?.id === turn.id
+                          }
+                        />
                       </CopyableMessage>
                       {turn.reply.accountAction === "choose_demo_account" && (
                         <button
@@ -1513,7 +1596,9 @@ export function FinancialConversation({
               <ShieldCheck size={12} />
               You stay in control of every payment.
             </span>
-            <span>Shift + Enter for a new line</span>
+            <span title="Shift + Enter for a new line">
+              Text, voice or a payment image
+            </span>
           </div>
         </div>
         <details className="agus-demo-strip">
@@ -1531,6 +1616,24 @@ export function FinancialConversation({
           </p>
         </details>
       </section>
+      {showWorkspace && focusTurn && (
+        <FinancialWorkspace
+          reply={focusTurn.reply}
+          batch={focusBatch}
+          close={closeWorkspace}
+          review={() =>
+            document
+              .getElementById(`agus-turn-${focusTurn.id}`)
+              ?.scrollIntoView({
+                behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
+                  .matches
+                  ? "auto"
+                  : "smooth",
+                block: "start",
+              })
+          }
+        />
+      )}
       <div className="agus-sr-only" role="status" aria-live="polite">
         {announcement}
       </div>

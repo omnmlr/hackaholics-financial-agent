@@ -379,9 +379,19 @@ function present(
   }
   if (call.name === "get_account_summary") {
     const d = ToolDataSchemas.get_account_summary.parse(result.data);
+    if (
+      d.accounts.every(
+        (a) => a.availableKobo === null && a.currentKobo === null,
+      )
+    )
+      value.balanceUnavailable = d.accounts.some(
+        (a) => a.unavailableReason === "stale",
+      )
+        ? "stale"
+        : "not_provided";
     if (d.accounts.some((a) => a.simulation))
       value.limits.push(
-        "Current fictional simulation from an opening snapshot and authorized changes. Historical transactions are outside balance reconciliation; no bank refresh.",
+        "Fictional balance, maintained separately from the historical demonstration records. No real bank connection.",
       );
     value.metrics = d.accounts.flatMap((a, i) => [
       {

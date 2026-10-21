@@ -32,6 +32,8 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
+      - name: Install motion recording encoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - name: Select Chromium
         run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, "CHROMIUM_PATH=" + chromium.executablePath() + String.fromCharCode(10))'
       - run: npm run test:http

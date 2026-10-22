@@ -1,0 +1,508 @@
+{
+  "date": "2026-10-22",
+  "genuineInference": true,
+  "syntheticFinancialData": true,
+  "productionWrites": false,
+  "mergedOrDeployed": false,
+  "publishedNetlify": {
+    "id": "6ada1aa358e288da5818c039",
+    "commit_ref": "869b5b9b488299007ece130e78d76cf5fc102d45",
+    "branch": "deploy/agus-netlify-emergency-20261022",
+    "context": "production",
+    "published_at": "2026-10-22T14:17:01.038Z",
+    "database_branch_id": null
+  },
+  "site": {
+    "id": "fee8fc4a-b59d-4c8c-894b-599cf6d5a1e6",
+    "name": "askagus",
+    "has_database": false
+  },
+  "diagnosticHarness": {
+    "gemini-3.6-flash": {
+      "directRest": 200,
+      "sdk": 200,
+      "agus": 200,
+      "sdkValidated": true,
+      "adapterValidated": true
+    },
+    "gemini-3.5-flash-lite": {
+      "directRest": 200,
+      "sdk": 200,
+      "agus": 200,
+      "sdkValidated": true,
+      "adapterValidated": true
+    }
+  },
+  "quotaObservation": {
+    "model": "gemini-3.6-flash",
+    "httpStatus": 429,
+    "providerStatus": "RESOURCE_EXHAUSTED",
+    "freeTierRequestsPerDay": 20,
+    "retryDelaySeconds": 38829,
+    "productionCredentialIdentityConfirmed": false
+  },
+  "campaigns": [
+    {
+      "id": "genuine-recovery",
+      "model": "gemini-3.6-flash",
+      "status": "FAIL",
+      "failureStage": null,
+      "completedHttpResponses": 7,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        },
+        {
+          "status": 200,
+          "attempt": 3
+        },
+        {
+          "status": 200,
+          "attempt": 4
+        },
+        {
+          "status": 200,
+          "attempt": 5
+        },
+        {
+          "status": 200,
+          "attempt": 6
+        },
+        {
+          "status": 200,
+          "attempt": 7
+        }
+      ],
+      "results": [
+        {
+          "id": "ordinary",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 2546,
+          "text": "Why did the robot go on a diet?\n\nIt had too many megabytes!",
+          "passed": true
+        },
+        {
+          "id": "education",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 5408,
+          "text": "Compound interest is earning interest on both your original money and the interest that has already accumulated over time. This creates a snowball effect, causing your savings or investment to grow faster and faster as time goes on.",
+          "passed": true
+        },
+        {
+          "id": "account-permission",
+          "httpStatus": 200,
+          "kind": "clarify",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 1,
+            "resultBytes": 0
+          },
+          "elapsedMs": 2552,
+          "text": "Choose a demo account so I can read its current records.",
+          "passed": true
+        },
+        {
+          "id": "authorized-spending",
+          "httpStatus": 200,
+          "kind": "financial",
+          "narration": "factual_fallback",
+          "evidence": {
+            "modelCalls": 3,
+            "toolCalls": 2,
+            "resultBytes": 1303,
+            "narrationCode": "NARRATION_REVIEW_SCOPE_OR_COVERAGE",
+            "narrationDiagnostic": {
+              "version": 1,
+              "stage": "claim",
+              "category": "unsupported_structure",
+              "paragraphIndex": 0,
+              "clauseIndex": 0,
+              "structure": ["text", "expenses_slot", "period"]
+            }
+          },
+          "elapsedMs": 18685,
+          "text": "Available records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses \u20a619,751.51; income \u20a60.00; filtered difference -\u20a619,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation eb92f09f-61dd-42e7-af5f-76a82b8ce057.\nSource groups (labels are literal data):\n\"all\": expenses \u20a619,751.51, income \u20a60.00, difference -\u20a619,751.51, 65 records.\n[Source 21284369-78b4-44b5-931b-9c2e913cb1aa: fixture/fixture; as of 2026-10-22T20:06:35.481Z; SIMULATED FICTIONAL DATA; coverage partial]",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "genuine-spending-trace",
+      "model": "gemini-3.6-flash",
+      "status": "FAIL",
+      "failureStage": null,
+      "completedHttpResponses": 3,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        },
+        {
+          "status": 200,
+          "attempt": 3
+        }
+      ],
+      "results": [
+        {
+          "id": "authorized-spending",
+          "httpStatus": 200,
+          "kind": "financial",
+          "narration": "factual_fallback",
+          "evidence": {
+            "modelCalls": 3,
+            "toolCalls": 2,
+            "resultBytes": 1569,
+            "narrationCode": "NARRATION_REVIEW_UNSUPPORTED_CLAIM",
+            "narrationDiagnostic": {
+              "version": 1,
+              "stage": "claim",
+              "category": "unsupported_structure",
+              "paragraphIndex": 0,
+              "clauseIndex": 0,
+              "structure": [
+                "text",
+                "expenses_slot",
+                "comma",
+                "text",
+                "income_slot",
+                "comma",
+                "text",
+                "difference_slot",
+                "period"
+              ]
+            }
+          },
+          "elapsedMs": 21247,
+          "text": "Available records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction both, category all, statuses posted. Expenses \u20a619,751.51; income \u20a6250,000.00; net \u20a6230,248.49. Included 66 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 1, undated 1. Calculation 01f6f780-8ec1-41ca-8165-f4cfb41d39de.\nSource groups (labels are literal data):\n\"food\": expenses \u20a61,250.50, income \u20a60.00, difference -\u20a61,250.50, 1 records.\n\"salary\": expenses \u20a60.00, income \u20a6250,000.00, difference \u20a6250,000.00, 1 records.\n\"services\": expenses \u20a612,500.00, income \u20a60.00, difference -\u20a612,500.00, 2 records.\n\"shopping\": expenses \u20a66,001.01, income \u20a60.00, difference -\u20a66,001.01, 62 records.\n[Source f2bb7c51-a7b7-41a1-8fd7-52dcc815e26c: fixture/fixture; as of 2026-10-22T20:07:59.082Z; SIMULATED FICTIONAL DATA; coverage partial]",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "genuine-repaired",
+      "model": "gemini-3.6-flash",
+      "status": "FAIL",
+      "failureStage": null,
+      "completedHttpResponses": 3,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        },
+        {
+          "status": 429,
+          "attempt": 3
+        }
+      ],
+      "results": [
+        {
+          "id": "authorized-spending",
+          "httpStatus": 200,
+          "kind": "financial",
+          "narration": "ai",
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 2,
+            "resultBytes": 1303
+          },
+          "elapsedMs": 11160,
+          "text": "Your spending came to \u20a619,751.51, and income came to \u20a60.00. Available records only \u00b7 Coverage is partial. Difference is income less expenses, not an account balance.\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses \u20a619,751.51; income \u20a60.00; filtered difference -\u20a619,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation e03c0ccb-cef6-40e7-8c5d-eb1dd7c2898a.\nSource groups (labels are literal data):\n\"all\": expenses \u20a619,751.51, income \u20a60.00, difference -\u20a619,751.51, 65 records.\n[Source b38be64e-0aa1-4b9f-95a5-5fac23e4006b: fixture/fixture; as of 2026-10-22T20:10:19.846Z; SIMULATED FICTIONAL DATA; coverage partial]",
+          "passed": true
+        },
+        {
+          "id": "authorized-search",
+          "httpStatus": 503,
+          "kind": "unavailable",
+          "code": "MODEL_HTTP_429",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0,
+            "code": "MODEL_HTTP_429"
+          },
+          "elapsedMs": 600,
+          "text": "I couldn\u2019t safely complete that request. Please try again.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "genuine-search-payment-persistence",
+      "model": "gemini-3.6-flash",
+      "status": "FAIL",
+      "failureStage": null,
+      "completedHttpResponses": 1,
+      "providerRequests": [
+        {
+          "status": 429,
+          "attempt": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "ordinary",
+          "httpStatus": 503,
+          "kind": "unavailable",
+          "code": "MODEL_HTTP_429",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0,
+            "code": "MODEL_HTTP_429"
+          },
+          "elapsedMs": 568,
+          "text": "I couldn\u2019t safely complete that request. Please try again.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "genuine-lite-search-payment-persistence",
+      "model": "gemini-3.5-flash-lite",
+      "status": "FAIL",
+      "failureStage": null,
+      "completedHttpResponses": 5,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        },
+        {
+          "status": 200,
+          "attempt": 3
+        },
+        {
+          "status": 200,
+          "attempt": 4
+        },
+        {
+          "status": 200,
+          "attempt": 5
+        }
+      ],
+      "results": [
+        {
+          "id": "ordinary",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 10211,
+          "text": "Why do robots never panic before a big test?\n\nBecause they always keep their cool under carriage!",
+          "passed": true
+        },
+        {
+          "id": "authorized-search",
+          "httpStatus": 200,
+          "kind": "clarify",
+          "narration": "ai",
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 2,
+            "resultBytes": 2226
+          },
+          "elapsedMs": 27086,
+          "text": "I found 2 possible matches. Ada Obi (fictional): \u20a67,500.00 on 7 October 2026. Ada Okafor (fictional): \u20a65,000.00 on 5 October 2026. Which one would you like to inspect? Available records only \u00b7 Coverage is partial. Source status does not confirm the recipient\u2019s bank was credited.\n\n2 candidate record(s) in the requested interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos.\nada-obi-oct; source counterparty label (untrusted literal) \"Ada Obi \\(fictional\\)\" on account amina-current: \u20a67,500.00, debit, source status posted; date 2026-10-07T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nada-okafor-oct; source counterparty label (untrusted literal) \"Ada Okafor \\(fictional\\)\" on account amina-current: \u20a65,000.00, debit, source status posted; date 2026-10-05T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nWhich candidate do you mean? Please choose one or refine the search.\n[Source c9d17d8f-9cad-4027-874b-af5cf0c2c747: fixture/fixture; as of 2026-10-22T20:14:31.861Z; SIMULATED FICTIONAL DATA; coverage partial]",
+          "passed": true
+        },
+        {
+          "id": "payment-preparation",
+          "httpStatus": 200,
+          "kind": "handoff",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 1,
+            "resultBytes": 0
+          },
+          "elapsedMs": 24277,
+          "text": "Here\u2019s an editable payment draft. Review the details and verify beneficiaries before approving and submitting separately.",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "genuine-lite-persistence",
+      "model": "gemini-3.5-flash-lite",
+      "status": "PASS",
+      "failureStage": null,
+      "completedHttpResponses": 1,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        }
+      ],
+      "results": [
+        {
+          "id": "ordinary",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 1025,
+          "text": "Why do robots never panic? Because they have good nerve systems!",
+          "passed": true
+        },
+        {
+          "id": "process-restart-and-browser-reload",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "id": "genuine-final",
+      "model": "gemini-3.5-flash-lite",
+      "status": "FAIL",
+      "failureStage": "authorized-spending",
+      "completedHttpResponses": 4,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        },
+        {
+          "status": 200,
+          "attempt": 3
+        },
+        {
+          "status": 200,
+          "attempt": 4
+        }
+      ],
+      "results": [
+        {
+          "id": "ordinary",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 10905,
+          "text": "Why do robots never panic before a big test?\n\nBecause they know they have hardware-backed confidence and zero anxiety algorithms.",
+          "passed": true
+        },
+        {
+          "id": "education",
+          "httpStatus": 200,
+          "kind": "general",
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 0,
+            "resultBytes": 0
+          },
+          "elapsedMs": 16407,
+          "text": "Compound interest is when you earn interest not only on your original money, but also on the accumulated interest from previous periods. Over time, this creates a snowball effect that helps your wealth grow much faster than simple interest.",
+          "passed": true
+        },
+        {
+          "id": "account-permission",
+          "httpStatus": 200,
+          "kind": "clarify",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 1,
+            "resultBytes": 0
+          },
+          "elapsedMs": 13039,
+          "text": "Choose a demo account so I can read its current records.",
+          "passed": true
+        },
+        {
+          "id": "authorized-spending",
+          "httpStatus": 503,
+          "kind": "unavailable",
+          "code": "TIMEOUT",
+          "evidence": {
+            "modelCalls": 1,
+            "toolCalls": 0,
+            "resultBytes": 0,
+            "code": "TIMEOUT"
+          },
+          "elapsedMs": 20080,
+          "text": "I couldn\u2019t safely complete that request. Please try again.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "genuine-lite-spending",
+      "model": "gemini-3.5-flash-lite",
+      "status": "PASS",
+      "failureStage": null,
+      "completedHttpResponses": 2,
+      "providerRequests": [
+        {
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "status": 200,
+          "attempt": 2
+        }
+      ],
+      "results": [
+        {
+          "id": "authorized-spending",
+          "httpStatus": 200,
+          "kind": "financial",
+          "narration": "ai",
+          "evidence": {
+            "modelCalls": 2,
+            "toolCalls": 2,
+            "resultBytes": 1297
+          },
+          "elapsedMs": 19369,
+          "text": "Your spending came to \u20a619,751.51, and income came to \u20a6250,000.00. Available records only \u00b7 Coverage is partial. Difference is income less expenses, not an account balance.\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction both, category all, statuses posted. Expenses \u20a619,751.51; income \u20a6250,000.00; net \u20a6230,248.49. Included 66 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 1, undated 1. Calculation af2228c6-7211-41da-a7aa-39635d76ca2d.\nSource groups (labels are literal data):\n\"all\": expenses \u20a619,751.51, income \u20a6250,000.00, difference \u20a6230,248.49, 66 records.\n[Source d08f442b-3ce9-4094-8e02-86204a4c7ca6: fixture/fixture; as of 2026-10-22T20:20:56.492Z; SIMULATED FICTIONAL DATA; coverage partial]",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Focused scenario passes span separate campaigns. Failed runs are retained.",
+    "Old campaign request lists contain completed HTTP responses only; the timed-out in-flight request is not in that older list. Final harness records starts and results separately.",
+    "Persistence used disposable PGlite, not production PostgreSQL.",
+    "Historic production 401 provider reason remains unavailable; production key is concealed by Netlify."
+  ]
+}

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { NarrationSchema } from "./narration";
 import { instructionsFor } from "./instructions";
+import { diagnoseProviderFailure } from "../provider-diagnostics";
 import {
   RouteSchema,
   GeneralSchema,
@@ -87,7 +88,10 @@ export function createConfiguredModel(
         );
       });
       if (!response.ok) {
-        await response.body?.cancel();
+        await diagnoseProviderFailure(
+          response,
+          openai ? "openai-rest" : "gemini-rest",
+        );
         throw new AgentError(`MODEL_HTTP_${response.status}`);
       }
       const reader = response.body?.getReader();

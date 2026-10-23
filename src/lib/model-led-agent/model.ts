@@ -4,6 +4,7 @@ import {
   type FunctionDeclaration,
 } from "@google/genai";
 import { AgentError } from "../financial-agent/protocol";
+import { diagnoseProviderFailure } from "../provider-diagnostics";
 
 export type ToolModel = {
   provider: string;
@@ -48,10 +49,33 @@ export function createGeminiToolModel(
       client ??= new GoogleGenAI({
         apiKey: key,
         httpOptions: {
+          // AI_API_KEY authenticates directly to Google. Hosting platforms may
+          // inject a Gemini gateway URL requiring a different credential.
+          baseUrl: "https://generativelanguage.googleapis.com",
           retryOptions: { attempts: 1 },
           timeout: 20000,
           // Resolve dynamically so isolated evaluations can count every request.
-          fetch: (url, init) => globalThis.fetch(url, init),
+          fetch: async (url, init) => {
+            const response = await globalThis.fetch(url, init);
+            if (response.ok) return response;
+            const details = await diagnoseProviderFailure(
+              response,
+              "gemini-sdk",
+            );
+            return new Response(
+              JSON.stringify({
+                error: {
+                  code: response.status,
+                  status: details.providerStatus ?? "UNKNOWN",
+                  message: "Provider request failed",
+                },
+              }),
+              {
+                status: response.status,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+          },
         },
       });
       try {

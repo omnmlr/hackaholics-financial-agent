@@ -178,7 +178,7 @@ export const DECLARATIONS: FunctionDeclaration[] = [
   ),
   declaration(
     "present_financial",
-    "Finish from current read results. Write natural paragraphs using ONLY the supplied authoring slots for all numbers/labels/dates/statuses; cite their resultIds. Backend validates prose and renders authoritative factual cards. Never infer bank credit or payment success.",
+    "Finish from current read results. Prefer a concise supplied authoring example that answers the question; keep its wording and slot roles. For other wording use ONLY supplied slots for numbers/labels/dates/statuses and cite their resultIds. Do not add total/complete-coverage claims or restate the requested period: source cards and server caveats retain the exact scope. Never infer bank credit or payment success.",
     NarrationSchema,
   ),
   declaration(
@@ -786,7 +786,7 @@ export function createModelLedAgent(
                         results: reads.narrationResults,
                         examples: reads.narrationExamples,
                         guidance:
-                          "Use slots for source values. Write only the details useful to this question; cards already show the full source fields. Do not repeat caveats: the server retains them. Ask which candidate to inspect when the result is ambiguous.",
+                          "Prefer a concise supplied example that answers the question, keeping its wording and slot roles. Do not embellish it with total/complete-coverage or requested-period claims. Use slots for source values. Cards already show the full source fields and the server retains caveats. Ask which candidate to inspect when the result is ambiguous.",
                       }
                     : null,
                 };

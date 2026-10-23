@@ -49,6 +49,9 @@ export function createGeminiToolModel(
       client ??= new GoogleGenAI({
         apiKey: key,
         httpOptions: {
+          // AI_API_KEY authenticates directly to Google. Hosting platforms may
+          // inject a Gemini gateway URL requiring a different credential.
+          baseUrl: "https://generativelanguage.googleapis.com",
           retryOptions: { attempts: 1 },
           timeout: 20000,
           // Resolve dynamically so isolated evaluations can count every request.

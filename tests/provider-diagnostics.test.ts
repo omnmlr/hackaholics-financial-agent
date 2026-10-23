@@ -137,7 +137,7 @@ describe("provider diagnostics", () => {
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
     );
   });
-  it("demonstrates that the installed SDK honors an ambient Gemini gateway", async () => {
+  it("keeps the configured Google credential off an ambient Gemini gateway", async () => {
     vi.stubEnv("GOOGLE_GEMINI_BASE_URL", "https://synthetic-gateway.invalid");
     const fetch = vi.fn(async (_url: unknown) => failure());
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -145,8 +145,8 @@ describe("provider diagnostics", () => {
     await expect(
       createGeminiToolModel(env).generate(input()),
     ).rejects.toMatchObject({ code: "MODEL_HTTP_401" });
-    expect(String(fetch.mock.calls[0][0])).toMatch(
-      /^https:\/\/synthetic-gateway\.invalid\//,
+    expect(String(fetch.mock.calls[0][0])).toBe(
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
     );
   });
 });

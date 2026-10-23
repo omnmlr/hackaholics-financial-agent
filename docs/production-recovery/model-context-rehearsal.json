@@ -1,0 +1,9 @@
+{
+  "scratchSiteId": "b058078c-1904-4f49-92e1-4cdb5438ce6d",
+  "productionOverrideExpandsAllContext": true,
+  "automaticExpansionOmitsDevServer": true,
+  "explicitDevServerRetainsOldValue": true,
+  "wholeValueRestoreRecoversAllContext": true,
+  "restorePreservesScopesAndSecretFlag": true,
+  "noProductionMutationInRehearsal": true
+}

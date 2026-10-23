@@ -1,0 +1,37 @@
+{
+  "siteId": "fee8fc4a-b59d-4c8c-894b-599cf6d5a1e6",
+  "productionDeployId": "6adb19bb9eac1794dc5909d0",
+  "releaseCommit": "6fbbcf66fb5233e4b554f91cbde1508ad72a369d",
+  "model": "gemini-3.5-flash-lite",
+  "state": "ready",
+  "context": "production",
+  "locked": true,
+  "productionKeySecret": true,
+  "productionKeyScopes": [
+    "builds",
+    "functions",
+    "runtime"
+  ],
+  "nonProductionKeyContextsUnchanged": true,
+  "nonProductionModelEffectiveValuesUnchanged": true,
+  "modelAllContextExpandedByNetlify": true,
+  "allOtherVariablesUnchanged": true,
+  "productionDatabaseBindingUnchanged": true,
+  "operatorIdentityAndHashUnchanged": true,
+  "paymentSettingsUnchanged": true,
+  "stagingOperatorPasswordNotReused": true,
+  "publicScriptResponsesScanned": 8,
+  "publicCredentialDerivedLeaks": 0,
+  "preExistingVendorTextOverlapExcludedByExactFileEquality": true,
+  "availableLogRowsScanned": 69,
+  "logCredentialMatches": 0,
+  "closedDiagnosticCounts": {
+    "AUTHENTICATION_ERROR": 0,
+    "UNAUTHENTICATED": 0,
+    "API_KEY_INVALID": 0,
+    "RESOURCE_EXHAUSTED": 0,
+    "NARRATION_REFERENCE": 0,
+    "missing_required_limit": 0
+  },
+  "oldDeploymentRetained": true
+}

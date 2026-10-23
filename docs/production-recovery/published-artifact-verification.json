@@ -1,0 +1,13 @@
+{
+  "localArchiveSha256": "d0e182668971031117791054441ddde406741fc34d54b6063dbef6362b081458",
+  "publishedName": "___netlify-server-handler",
+  "publishedRuntime": "nodejs22.x",
+  "publishedGenerator": "@netlify/plugin-nextjs@5.16.3",
+  "publishedArchiveBytes": 32437529,
+  "localArchiveBytes": 32437529,
+  "archiveSizeMatches": true,
+  "publishedFieldsMatchingArchiveSha256": [
+    "d"
+  ],
+  "functionIdentityNotAssumedToBeArchiveHash": true
+}

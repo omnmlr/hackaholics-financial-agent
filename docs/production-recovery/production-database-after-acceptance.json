@@ -1,0 +1,16 @@
+[
+  {
+    "accounts": "3",
+    "transactions": "77",
+    "fixture_seed_present": "1",
+    "principal_bindings": "1",
+    "chats": "27",
+    "turns": "70",
+    "account_fingerprint": "d0e2f49c8f3f9d4d7c3ee98089a03bcf",
+    "transaction_fingerprint": "a2b16a53ebd4e749d38da8959de92472",
+    "consent_fingerprint": "53e842a89654ac3a19c3baaef43954c1",
+    "payment_batches": 1,
+    "payment_batch_fingerprint": "d08950a0aaa7aeaeaadde0105ef1e405",
+    "simulation_openings_present": true
+  }
+]

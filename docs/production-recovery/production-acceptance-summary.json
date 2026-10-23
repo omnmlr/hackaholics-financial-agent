@@ -1,0 +1,90 @@
+{
+  "url": "https://askagus.netlify.app",
+  "productionDeployId": "6adb19bb9eac1794dc5909d0",
+  "releaseCommit": "6fbbcf66fb5233e4b554f91cbde1508ad72a369d",
+  "model": "gemini-3.5-flash-lite",
+  "status": "PASS",
+  "acceptedAt": "2026-10-23T08:35:34.514140+00:00",
+  "genuineModelCalls": 9,
+  "maximumConcurrentGenerations": 1,
+  "minimumPauseBetweenTurnsMs": 15000,
+  "capacityEstablished": false,
+  "results": [
+    {
+      "id": "public-ui-sign-in",
+      "passed": true
+    },
+    {
+      "id": "fixture-accounts-and-disabled-transfers",
+      "passed": true,
+      "accountCount": 2
+    },
+    {
+      "id": "ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 3507
+    },
+    {
+      "id": "sequential-ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 2,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 5619
+    },
+    {
+      "id": "account-permission-gate",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 1,
+      "kind": "clarify",
+      "elapsedMs": 2835
+    },
+    {
+      "id": "authorized-financial-search",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 3,
+      "toolCalls": 3,
+      "kind": "clarify",
+      "narration": "ai",
+      "elapsedMs": 13920
+    },
+    {
+      "id": "genuine-screenshot-editable-payment-draft",
+      "passed": true,
+      "modelCalls": 2,
+      "proposals": 2,
+      "idempotentReopen": true
+    },
+    {
+      "id": "saved-chats-browser-reload-and-fresh-session",
+      "passed": true,
+      "turns": 5,
+      "browserErrors": 0
+    }
+  ],
+  "newChats": 2,
+  "newSavedTurns": 5,
+  "syntheticPaymentProposals": 2,
+  "paymentDraftUnverified": true,
+  "recipientNamesBanksAccountsAmountsVerified": true,
+  "paymentExecution": false,
+  "paymentBatchCountBefore": 1,
+  "paymentBatchCountAfter": 1,
+  "financialFingerprintsUnchanged": true,
+  "railwayTouched": false,
+  "productionPaymentSettingsUnchanged": true,
+  "mergePerformed": false,
+  "pr44Draft": true,
+  "locked": true,
+  "previousDeploymentRetained": "6ada1aa358e288da5818c039",
+  "databaseBindingUnchanged": true,
+  "databaseMigrationsRun": false
+}

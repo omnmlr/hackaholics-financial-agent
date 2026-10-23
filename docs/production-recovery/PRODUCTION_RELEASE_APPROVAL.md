@@ -1,4 +1,10 @@
-# AGUS production release — awaiting final approval
+# AGUS production release — approved preparation record
+
+Execution update: the owner subsequently approved this release and its normal
+application test records. Production deployment and genuine public acceptance
+passed; see [PRODUCTION_ACCEPTANCE.md](PRODUCTION_ACCEPTANCE.md). The sections
+below retain the preparation record. The execution report documents Netlify's
+model-context canonicalization and the corrected whole-value model rollback.
 
 Prepared 23 October 2026 (Africa/Lagos). No production configuration, deployment,
 database, payment settings or Railway resources were changed during preparation.

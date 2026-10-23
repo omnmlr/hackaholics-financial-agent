@@ -38,12 +38,14 @@ def key_metadata(current):
  assert [{k:x for k,x in v.items() if k!='value'} for v in new['values']]==[{k:x for k,x in v.items() if k!='value'} for v in original['values']]
  assert [v for v in new['values'] if v['context']!='production']==[v for v in original['values'] if v['context']!='production']
 def remove_model_override():
- var=api(path('AI_MODEL'))
- prod=[v for v in var['values'] if v['context']=='production']
- assert not any(v['context']=='production' for v in next(v for v in BASE if v['key']=='AI_MODEL')['values'])
- for v in prod:
-  req=urllib.request.Request('https://api.netlify.com/api/v1/accounts/'+ACCOUNT+'/env/AI_MODEL/value/'+v['id']+'?site_id='+SITE,method='DELETE',headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN']})
-  with urllib.request.urlopen(req,timeout=30) as r:r.read()
+ # Netlify expands an all-context value when a production override is set.
+ # Merely deleting production would lose the old production default. Restore
+ # the original non-secret model values as a whole; retain scopes/secret flag.
+ old=next(v for v in BASE if v['key']=='AI_MODEL')
+ values=[{k:x for k,x in v.items() if k in ['context','context_parameter','value']} for v in old['values']]
+ restored=api(path('AI_MODEL'),'PUT',{'key':'AI_MODEL','values':values})
+ assert restored['scopes']==old['scopes'] and restored['is_secret']==old['is_secret']
+ assert [(v['context'],v['value']) for v in restored['values']]==[(v['context'],v['value']) for v in values]
 def restore_runtime(reason):
  restored=api('/sites/'+SITE+'/deploys/'+OLD+'/restore','POST')
  assert restored['id']==OLD

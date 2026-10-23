@@ -1,0 +1,17 @@
+{
+  "siteId": "b058078c-1904-4f49-92e1-4cdb5438ce6d",
+  "origin": "https://agus-rollback-rehearsal-20261023.netlify.app",
+  "firstDeploy": "6adb14e314dbf9ffbc2b5262",
+  "secondDeploy": "6adb14f3335450ea84440a84",
+  "restoredDeploy": "6adb14e314dbf9ffbc2b5262",
+  "oldDeployRetainsOriginalEnvironment": true,
+  "restoringDeployRestoresFunctionEnvironment": true,
+  "siteEnvironmentStillHasNewValue": true,
+  "valueOnlyPatchPreservedMetadata": true,
+  "noCredentialsOrDatabaseBound": true,
+  "productionUnchanged": true,
+  "acceptedStagingUnchanged": true,
+  "rollbackDeployLockVerified": true,
+  "restoreWhileCurrentDeployLocked": "supported",
+  "guardedUnlockRestoreLockRehearsed": true
+}

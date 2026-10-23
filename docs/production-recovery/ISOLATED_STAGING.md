@@ -136,6 +136,14 @@ No automatic rotation or production credential change was performed.
 
 ## Minimal production proposal and rollback — approval required
 
+The subsequently prepared release, exact production-context changes, protected
+configuration backup, independent package verification, rehearsed runtime rollback
+and required approval for normal test records are documented in
+[PRODUCTION_RELEASE_APPROVAL.md](PRODUCTION_RELEASE_APPROVAL.md). Production has
+not been changed. That document supersedes the preliminary rollback assumptions
+below: the retained deploy restores its captured runtime environment, while the
+site-level key binding is a separate setting.
+
 The essential 401 fix is the explicit Google SDK `baseUrl` in
 `src/lib/model-led-agent/model.ts`. The final PR contains five application and
 diagnostic-test files, retaining the earlier narration instructions and bounded

@@ -1,0 +1,19 @@
+{
+  "commit": "6fbbcf66fb5233e4b554f91cbde1508ad72a369d",
+  "trackedFilesMatch": 1013,
+  "productionContextOfflineBuild": "passed",
+  "nodeVersion": "22.23.4",
+  "packageFilesScanned": 2231,
+  "functionArchiveEntries": 2194,
+  "functionArchiveSymlinks": 0,
+  "credentialMatches": 0,
+  "stagingBindingsInPackage": 0,
+  "investigationDirectoryInRelease": false,
+  "testedKeyMatchesAcceptedStaging": true,
+  "existingProductionPaymentMode": "fixture",
+  "existingLiveFlagsAllFalse": true,
+  "noPaymentSettingsChangesRequired": true,
+  "noDatabaseMigrationRequired": true,
+  "productionPublishedUnchanged": true,
+  "manifestSha256": "766020e4cd21a789ae63e513ac69915eee10e80ad83f0b9aee60bbdebc58ac9a"
+}

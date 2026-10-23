@@ -1,0 +1,58 @@
+{
+  "capturedAt": "2026-10-23T08:00:21.429679+00:00",
+  "productionSiteId": "fee8fc4a-b59d-4c8c-894b-599cf6d5a1e6",
+  "productionUrl": "https://askagus.netlify.app",
+  "publishedDeployId": "6ada1aa358e288da5818c039",
+  "publishedCommit": "869b5b9b488299007ece130e78d76cf5fc102d45",
+  "deployState": "ready",
+  "releaseCommit": "6fbbcf66fb5233e4b554f91cbde1508ad72a369d",
+  "existingModel": [
+    "gemini-3.6-flash"
+  ],
+  "proposedModel": "gemini-3.5-flash-lite",
+  "keyProtection": {
+    "secret": true,
+    "scopes": [
+      "builds",
+      "functions",
+      "runtime"
+    ],
+    "contexts": [
+      "dev",
+      "branch-deploy",
+      "deploy-preview",
+      "production",
+      "dev-server"
+    ],
+    "oldValueConcealed": true
+  },
+  "secretValuesAreNotUsedOrPrinted": true,
+  "environmentKeys": [
+    "AGUS_AGENT_ARCHITECTURE",
+    "AI_API_KEY",
+    "AI_MODEL",
+    "AI_PROVIDER",
+    "APP_ORIGIN",
+    "APP_TIMEZONE",
+    "DATABASE_URL",
+    "FINANCIAL_DEMO_ENABLED",
+    "LIVE_OWNER_AUTHORIZED",
+    "LIVE_RECONCILIATION_VALIDATED",
+    "LIVE_TRANSFERS_ENABLED",
+    "LIVE_WEBHOOK_VALIDATED",
+    "NODE_VERSION",
+    "OPERATOR_ID",
+    "OPERATOR_PASSWORD_HASH",
+    "PAYMENT_MODE",
+    "PAYSTACK_TRANSFERS_ENABLED"
+  ],
+  "sharedVariableCount": 0,
+  "snapshotSha256": {
+    "site.json": "a4bf0b3890f33fcc8c75b66ea639b04986749420fe375ca355455fbcc6456a27",
+    "published-deploy.json": "715987a3072d21be563ea55d23c01d82615fa89b60e35d249eef203cc04c6fe8",
+    "site-environment.json": "e8052f0ea1a0818ad531b8300668f233dab901e1905083c4fddc2ed8c89a892c",
+    "account-environment.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "backupPermission": "directory 0700, files 0600; no Git",
+  "secretBackupLimitation": "Netlify omits secret values. Snapshot preserves metadata and all retrievable values, not old AI key/database/password hash plaintext."
+}

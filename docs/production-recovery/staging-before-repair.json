@@ -1,0 +1,43 @@
+{
+  "origin": "https://staging--agus-ai-isolated-staging-20261023.netlify.app",
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "maximumConcurrentGenerations": 1,
+  "providerCallBudget": 16,
+  "minimumPauseBetweenTurnsMs": 15000,
+  "capacityEstablished": false,
+  "paymentExecution": false,
+  "results": [
+    {
+      "id": "public-ui-sign-in",
+      "passed": true
+    },
+    {
+      "id": "synthetic-accounts-and-disabled-transfers",
+      "passed": true,
+      "accountCount": 2
+    }
+  ],
+  "attempts": [
+    {
+      "id": "ordinary-conversation",
+      "httpStatus": 503,
+      "reply": {
+        "kind": "unavailable",
+        "text": "I couldn’t safely complete that request. Please try again.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 0,
+          "resultBytes": 0,
+          "code": "MODEL_HTTP_401"
+        }
+      }
+    }
+  ],
+  "saved": [],
+  "status": "FAIL",
+  "failureType": "AssertionError",
+  "failureStage": "ordinary-conversation",
+  "observedModelCalls": 0
+}

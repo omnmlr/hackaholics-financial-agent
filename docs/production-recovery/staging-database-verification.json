@@ -1,0 +1,20 @@
+{
+  "project": "empty-bonus-20525410",
+  "branch": "br-plain-hat-baqksqhi",
+  "initialUserTables": 0,
+  "initialForeignServers": 0,
+  "productionStagingRoleCount": 0,
+  "afterRedeployment": [
+    {
+      "database": "agus_staging",
+      "role": "agus_staging_owner",
+      "chats": "3",
+      "turns": "7",
+      "fixture_accounts": "3",
+      "nonfixture_accounts": "0",
+      "nonfixture_transactions": "0",
+      "payment_batches": 0,
+      "foreign_servers": "0"
+    }
+  ]
+}

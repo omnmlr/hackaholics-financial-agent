@@ -1,0 +1,20 @@
+{
+  "production": {
+    "id": "6ada1aa358e288da5818c039",
+    "commit_ref": "869b5b9b488299007ece130e78d76cf5fc102d45",
+    "context": "production",
+    "branch": "deploy/agus-netlify-emergency-20261022",
+    "published_at": "2026-10-22T14:17:01.038Z"
+  },
+  "staging": {
+    "id": "6adadb8cfea84740643b6c42",
+    "site_id": "b9f8d2af-8aba-494b-a012-4d0424df33c8",
+    "context": "deploy-preview",
+    "branch": "staging",
+    "state": "ready",
+    "deploy_ssl_url": "https://staging--agus-ai-isolated-staging-20261023.netlify.app"
+  },
+  "stagingPrimaryPublished": false,
+  "productionConfigurationWritten": false,
+  "railwayModified": false
+}

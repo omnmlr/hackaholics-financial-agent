@@ -1,0 +1,9 @@
+{
+  "productionGatewayReadOnlyProbe": true,
+  "credentialSent": false,
+  "generationRequested": false,
+  "httpStatus": 401,
+  "contentType": null,
+  "netlifyServed": false,
+  "aiHeaderNames": []
+}

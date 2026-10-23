@@ -1,0 +1,17 @@
+{
+  "origin": "https://staging--agus-ai-isolated-staging-20261023.netlify.app",
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "maximumConcurrentGenerations": 1,
+  "providerCallBudget": 16,
+  "minimumPauseBetweenTurnsMs": 15000,
+  "capacityEstablished": false,
+  "paymentExecution": false,
+  "results": [],
+  "attempts": [],
+  "saved": [],
+  "status": "FAIL",
+  "failureType": "TimeoutError",
+  "failureStage": "public-authentication-boundary",
+  "observedModelCalls": 0
+}

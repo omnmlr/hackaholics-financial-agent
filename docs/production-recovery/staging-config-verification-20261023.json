@@ -1,0 +1,18 @@
+{
+  "siteId": "b9f8d2af-8aba-494b-a012-4d0424df33c8",
+  "context": "deploy-preview",
+  "newGeminiKeyMatches": true,
+  "isolatedDatabaseMatches": true,
+  "noPublicEnvironmentNames": true,
+  "paymentMode": "fixture",
+  "allTransfersDisabled": true,
+  "clientFilesScanned": 62,
+  "credentialLeaks": 0,
+  "configurationPassed": true,
+  "publicHtmlScanned": true,
+  "publicScriptResponsesScanned": 8,
+  "trackedSourceCredentialLeaks": 0,
+  "availableLogRowsScanned": 100,
+  "logCredentialMatches": 0,
+  "evidenceBranchCredentialLeaks": 0
+}

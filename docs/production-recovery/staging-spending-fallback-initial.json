@@ -1,0 +1,208 @@
+{
+  "origin": "https://staging--agus-ai-isolated-staging-20261023.netlify.app",
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "maximumConcurrentGenerations": 1,
+  "providerCallBudget": 16,
+  "minimumPauseBetweenTurnsMs": 15000,
+  "capacityEstablished": false,
+  "paymentExecution": false,
+  "results": [
+    {
+      "id": "public-ui-sign-in",
+      "passed": true
+    },
+    {
+      "id": "synthetic-accounts-and-disabled-transfers",
+      "passed": true,
+      "accountCount": 2
+    },
+    {
+      "id": "ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 3588
+    },
+    {
+      "id": "sequential-ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 2,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 3764
+    },
+    {
+      "id": "account-permission-gate",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 1,
+      "kind": "clarify",
+      "elapsedMs": 3018
+    }
+  ],
+  "attempts": [
+    {
+      "id": "ordinary-conversation",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "general",
+        "text": "Why did the robot cross the road? Because it was programmed by a chicken.\n\nWhen it reached the other side, it looked back, powered down, and announced it had successfully completed a pointless pedestrian algorithm.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 0,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "sequential-ordinary-conversation",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "general",
+        "text": "Compound interest is when you earn interest not only on your original money, but also on the interest that money has already accumulated over time. This creates a snowball effect, helping your savings grow faster and faster the longer you leave them invested.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 2,
+          "toolCalls": 0,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "account-permission-gate",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "clarify",
+        "text": "Choose a demo account so I can read its current records.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 1,
+          "resultBytes": 0
+        },
+        "accountAction": "choose_demo_account"
+      }
+    },
+    {
+      "id": "authorized-spending",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "financial",
+        "text": "Account amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb: fixture/fixture; as of 2026-10-23T03:50:23.775Z; SIMULATED FICTIONAL DATA; coverage not supplied]\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses ₦19,751.51; income ₦0.00; filtered difference -₦19,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b9183a69-926d-40b5-a82b-a423448f4727.\nSource groups (labels are literal data):\n\"all\": expenses ₦19,751.51, income ₦0.00, difference -₦19,751.51, 65 records.\n[Source 9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d: fixture/fixture; as of 2026-10-23T03:50:27.695Z; SIMULATED FICTIONAL DATA; coverage partial]",
+        "citations": [
+          "e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb",
+          "9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d"
+        ],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 3,
+          "resultBytes": 2135,
+          "narrationCode": "NARRATION_REFERENCE",
+          "narrationDiagnostic": {
+            "version": 1,
+            "stage": "limits",
+            "category": "missing_required_limit"
+          }
+        },
+        "presentation": {
+          "version": 1,
+          "narration": "factual_fallback",
+          "explanation": [
+            "Available balance: ₦123,456.78. Current balance: ₦124,456.78.",
+            "In the available records, expenses total ₦19,751.51 and income totals ₦0.00. The filtered difference is -₦19,751.51."
+          ],
+          "results": [
+            {
+              "resultId": "e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb",
+              "type": "get_account_summary",
+              "metrics": [
+                {
+                  "label": "Available balance",
+                  "value": "₦123,456.78"
+                },
+                {
+                  "label": "Current balance",
+                  "value": "₦124,456.78"
+                }
+              ],
+              "records": [],
+              "scope": "Available source records",
+              "limits": [
+                "Fictional balance, maintained separately from the historical demonstration records. No real bank connection."
+              ],
+              "sources": [
+                {
+                  "provider": "fixture",
+                  "mode": "fixture"
+                }
+              ],
+              "asOf": "2026-10-23T03:50:23.775Z",
+              "coverage": "not supplied",
+              "originalText": "Account amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb: fixture/fixture; as of 2026-10-23T03:50:23.775Z; SIMULATED FICTIONAL DATA; coverage not supplied]"
+            },
+            {
+              "resultId": "9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d",
+              "type": "calculate_spending",
+              "metrics": [
+                {
+                  "label": "Expenses",
+                  "value": "₦19,751.51"
+                },
+                {
+                  "label": "Income",
+                  "value": "₦0.00"
+                },
+                {
+                  "label": "Filtered difference",
+                  "value": "-₦19,751.51"
+                }
+              ],
+              "records": [],
+              "scope": "Fictional amina-current · •0042 · 1 Oct 2026–31 Oct 2026 (WAT) · Posted records · debit only",
+              "limits": [
+                "Available records only · Coverage is partial",
+                "Difference is income less expenses, not an account balance."
+              ],
+              "sources": [
+                {
+                  "provider": "fixture",
+                  "mode": "fixture"
+                }
+              ],
+              "asOf": "2026-10-23T03:50:27.695Z",
+              "coverage": "partial",
+              "originalText": "Available records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses ₦19,751.51; income ₦0.00; filtered difference -₦19,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b9183a69-926d-40b5-a82b-a423448f4727.\nSource groups (labels are literal data):\n\"all\": expenses ₦19,751.51, income ₦0.00, difference -₦19,751.51, 65 records.\n[Source 9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d: fixture/fixture; as of 2026-10-23T03:50:27.695Z; SIMULATED FICTIONAL DATA; coverage partial]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "saved": [
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "5b700396-21ad-4831-b247-9935a5423ad4",
+      "text": "Why did the robot cross the road? Because it was programmed by a chicken.\n\nWhen it reached the other side, it looked back, powered down, and announced it had successfully completed a pointless pedestrian algorithm."
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "ce40dc61-e834-4c2f-b99e-a113f8c69b7e",
+      "text": "Compound interest is when you earn interest not only on your original money, but also on the interest that money has already accumulated over time. This creates a snowball effect, helping your savings grow faster and faster the longer you leave them invested."
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "9ab90a72-7aad-4d59-98cb-9aa32aa53f6c",
+      "text": "Choose a demo account so I can read its current records."
+    }
+  ],
+  "status": "FAIL",
+  "failureType": "AssertionError",
+  "failureStage": "authorized-spending",
+  "observedModelCalls": 10
+}

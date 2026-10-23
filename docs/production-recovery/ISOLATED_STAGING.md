@@ -1,115 +1,164 @@
-# Isolated staging release — 2026-10-23
+# Isolated AGUS staging — verified 2026-10-23
 
-## Current status
+The isolated release is deployed and its functional acceptance checks passed.
+Production approval and user acceptance are still pending; PR #44 remains draft.
 
-**Prepared, not deployed or accepted.** The application compiled and the Netlify
-Next.js adapter packaged successfully under Node 22.23.4. The function manifest
-targets `nodejs22.x`; adapter version is 5.16.3. Source is application commit
-`97c0dcf`, whose final diff contains five application/diagnostic-test files.
+- Public URL: https://staging--agus-ai-isolated-staging-20261023.netlify.app
+- Netlify site: `b9f8d2af-8aba-494b-a012-4d0424df33c8`
+- Final deployment: `6adadb8cfea84740643b6c42`, `deploy-preview`, alias `staging`
+- Application source: `6fbbcf6`; model `gemini-3.5-flash-lite`; Node 22
+- Build runtime: Node 22.23.4; hosted diagnostic observed Node 22.23.2
+- Next.js adapter: 5.16.3; packaged function runtime: `nodejs22.x`
+- Private operator login is in the protected workspace file, not this branch.
 
-Google model-list access returned HTTP 200 and listed `gemini-3.5-flash-lite`.
-Netlify authenticated access returned HTTP 200 for both sites. No secrets were
-printed. Exact Google administrative quotas remain unknown. The owner explicitly
-waived that prerequisite for a small, sequential staging trial; previous 24/24
-genuine responses establish neither maximum capacity nor a guaranteed quota.
+## Verified 401 mechanism and essential repair
 
-Automatic approval review rejected transfer of the new database connection string
-through terminal stdin, because the tool record would contain a credential.
-That transfer did not execute. The configuration script now requires a secure
-`STAGING_DATABASE_URL` cloud binding; it does not accept secret terminal input.
-Deployment and genuine public acceptance remain pending that binding. No hosted
-acceptance success is claimed, and the undeployed site currently returns 404.
+With the same tested key, model, site and runtime, direct Gemini REST generation
+returned HTTP 200. The unpinned official SDK instead requested:
 
-## Resources and isolation
+`https://staging--agus-ai-isolated-staging-20261023.netlify.app/.netlify/ai/v1beta/models/gemini-3.5-flash-lite:generateContent`
 
-| Resource | Staging value |
+The SDK sent the configured Google key in `x-goog-api-key`; the Netlify gateway
+returned 401. It honored the platform-injected `GOOGLE_GEMINI_BASE_URL` instead
+of using Google's endpoint. Pinning `httpOptions.baseUrl` to
+`https://generativelanguage.googleapis.com` fixed genuine application calls.
+The installed-SDK regression now proves an ambient gateway cannot redirect this
+configured credential. No financial validator or payment authority was relaxed.
+
+[REST control](staging-rest-auth-probe.json), [SDK request metadata](staging-sdk-gateway-probe.json),
+[before repair](staging-before-repair.json), [after repair](staging-acceptance-20261023.json).
+The temporary, authenticated probe returned only request metadata and allowlisted
+status/reason codes. It was removed from the final deployed application.
+
+This is a hosted reproduction of the production failure mechanism. Production
+still runs the same unpinned client at commit `869b5b9`; its runtime destination
+was not instrumented because production deployment is prohibited. Its old key
+is different and concealed; its validity against Google remains unverified.
+Do not claim the old key is revoked, expired or quota-limited. The new key's
+nonstandard prefix also did not establish invalidity: direct generation succeeded.
+
+## Genuine public acceptance
+
+| Check | Result |
 | --- | --- |
-| Netlify site | `agus-ai-isolated-staging-20261023` |
-| Site ID | `b9f8d2af-8aba-494b-a012-4d0424df33c8` |
-| Planned draft alias | `https://staging--agus-ai-isolated-staging-20261023.netlify.app` |
-| Neon project | `empty-bonus-20525410` |
-| Branch | `staging`, `br-plain-hat-baqksqhi` |
-| Database | `agus_staging` |
-| Role | `agus_staging_owner` |
-| Pooled hostname | `ep-square-sky-bazwbdb9-pooler.c-8.eu-central-1.aws.neon.tech` |
+| Operator sign-in and unauthenticated API boundary | Passed in actual Chromium UI |
+| Two ordinary conversational turns | HTTP 200, genuine model replies |
+| No selected records account | Asked for explicit account selection |
+| Authorized October spending | Correct authoritative ₦19,751.51; safe factual fallback |
+| Authorized Ada search | Genuine AI narration, two cited fictional candidates |
+| Screenshot payment preparation | Two independent real image readings; editable Ada/Wema ₦500 and Chidi/Access ₦600 fields |
+| Duplicate payment draft reopening | Same stored draft ID and proposals; no repeated extraction |
+| Saved chats and browser reload | Six successful turns retained; fresh session also passed |
+| Replacement deployment | Same six turns and image draft retained; zero further model calls |
+| Payment execution | Zero batches; no beneficiary verification, approval or submission |
 
-The Neon project was created independently, not branched from production or the
-old preview. Before initialization it had zero user tables and zero foreign
-servers. Its database list contained only `agus_staging` and `postgres`. A
-read-only production metadata check found no `agus_staging_owner` role. The
-Netlify account has no shared environment variables; the new site has no Git
-repository connection. The configuration script asserts the exact staging site,
-database, role and endpoint before writing environment settings.
+[Acceptance JSON](staging-acceptance-20261023.json), [redeployment persistence](staging-persistence-20261023.json),
+[real payment-preparation screenshot](staging-screenshots/payment-preparation.png).
 
-The application will initialize only its built-in fictional fixtures. Settings
-use fixture payments, no Paystack credential, all live flags false, and an
-environment-level emergency switch disabling every transfer submission. The
-operator password is random and independent of production. The private local
-acceptance configuration is mode 0600 and is never committed.
+The campaign made **14 generation attempts**: two initial gateway 401 failures,
+one successful direct REST diagnostic, and eleven calls across the repaired
+application scenarios. One generating request was in flight at a time; there
+were at least 15 seconds between application turns. Calls within a native tool
+round and the two image readings were sequential. The initial ceiling of 16 was
+raised to 18 for conservative per-turn reservations; observed use remained 14.
+No successful inference was repeated when resuming the unfinished checks.
+Persistence verification made zero model calls. Exact active Google quotas are
+unknown, and this trial establishes neither maximum capacity nor concurrency.
+The owner explicitly waived exact quota confirmation for this conservative trial.
 
-The previously created, unused `agus_staging_20261023` role on the **old preview**
-is left unchanged, as explicitly requested by the owner. It will not be used.
-No existing database was deleted, reset or retargeted.
+### Remaining quality issue and preserved failures
 
-## Acceptance prepared
+The spending answer used authoritative factual cards after model narration failed
+`NARRATION_REFERENCE` / `missing_required_limit`. Its amount and source scope were
+correct; the validator retained its safety boundary. This is functional financial
+retrieval, not a pass for AI-authored spending prose. Ada search did pass genuine
+AI narration. All earlier FAIL artifacts are retained, including the stricter
+spending-narration check. The runner resumed completed spending from its saved
+turn rather than calling the model again.
 
-`scripts/verify-isolated-staging.mjs` operates against the exact public draft alias,
-uses Chromium with TLS verification and real Gemini responses, and records only
-synthetic content. It is prepared but **not yet run**. No mocks or production
-financial credentials are injected. It checks:
+Initial deployment preflight also exposed the CLI's raw `.next` publish directory;
+the corrected manual deploy uses `.netlify/static`. The initial UI preflight had
+zero model calls. Later fresh-browser retries exposed an automation hydration
+race: the runner now waits for the application's initial history response and
+idle composer before clicking sign-in. These fixes affect staging packaging and
+the evidence runner, not application authority or test fixtures. The first failed
+401 run's aggregate counter omitted its failed call; campaign totals above count
+that attempt from the retained reply evidence.
 
-- Actual UI sign-in and unauthenticated API rejection.
-- Two sequential ordinary conversations and the account-selection permission gate.
-- Authorized narrated spending of ₦19,751.51 and cited Ada searches over fixtures.
-- A genuine PNG screenshot containing two synthetic payment instructions; editable
-  amounts and account fields; idempotent draft reopening; no payment execution.
-- Saved chats and turns through API reads, browser reload, and a fresh session.
-- A separate `--persistence-only` mode after a second deployment of the same
-  artifact, without further generation, to verify records survive replacement.
+## Database and payment isolation
 
-It allows one generating application request at a time, waits at least 15 seconds
-after each turn before the next, reserves the application's six-call native
-limit before each text turn, and has a 16-provider-call budget with two reserved
-for image extraction. Any failed status or quality assertion stops the campaign;
-there is no whole-suite retry. Calls inside a native tool round remain sequential
-and may be closer together than the interval between application turns. This
-is a conservative functional trial, not a concurrency or maximum-capacity test.
+Staging uses the independently created project `empty-bonus-20525410`, branch
+`br-plain-hat-baqksqhi` (`staging`), database `agus_staging`, role
+`agus_staging_owner`, pooled host
+`ep-square-sky-bazwbdb9-pooler.c-8.eu-central-1.aws.neon.tech`.
+It was not branched or copied from production or the previous preview. Before
+initialization it had zero user tables and zero foreign servers. Its role is
+absent from the production branch. No production credential is bound to this site.
 
-## Next authorized actions once bound
+After acceptance, read-only verification found three fictional accounts, zero
+non-fixture accounts or transactions, three saved chats, seven turns (including
+the preserved initial failure), zero payment batches and zero foreign servers.
+The built-in fixture schema also constrains financial provenance to `fixture`.
+Only two accounts are visible to the authenticated fictional account owner.
 
-1. Run `scripts/configure-isolated-staging.py` with the secure cloud binding. It
-   copies the tested injected Gemini key to **only** the new site's function
-   environment, selects Flash-Lite and applies the isolation settings above.
-2. Verify remote setting metadata and non-secret flags, then deploy the prepared
-   Node 22 package with explicit staging site ID and `--alias staging`; never
-   target `askagus`. The Netlify config in this directory is staging-only.
-3. Run acceptance once, inspect the new project's saved rows read-only, replace
-   the staging deployment with the identical artifact, then run persistence-only.
-4. Recheck production's published deployment and record actual results here.
+`PAYMENT_MODE=fixture`; all five live/Paystack enablement flags are false;
+`PAYMENTS_EMERGENCY_DISABLED=true`; Paystack credentials are empty. No transfers
+were submitted. Existing production and preview databases were not reset, deleted
+or retargeted. The unused old-preview role is left unchanged as requested.
+Railway was not accessed or modified.
 
-## Conditional production change and rollback plan
+## Credential handling and rotation
 
-Production remains outside current authorization. After staging acceptance and
-explicit approval, the proposed minimal change is the five-file repair from PR
-#44 plus Netlify production function bindings `AI_API_KEY` = the tested new key
-and `AI_MODEL` = `gemini-3.5-flash-lite`. Retain the existing Node 22, native Gemini
-architecture, production database binding and payment settings. No migration,
-database retarget, Railway operation or real-money setting change is required.
-The historical 401 cause is still unproven: successful calls with the new key do
-not authenticate the withheld old key.
+The owner explicitly approved standard Netlify environment variables after the
+account rejected narrower secret scopes. Every variable value is restricted to
+this new site and `deploy-preview`; none is `NEXT_PUBLIC_*`. The new site has no
+Git connection, and the account had no shared variables. Netlify's preview SSO
+was disabled on this site only so the public URL reaches AGUS's own operator login.
 
-Before an approved production change, securely preserve prior model/key bindings
-and the published deploy `6ada1aa358e288da5818c039` (commit
-`869b5b9b488299007ece130e78d76cf5fc102d45`). The old key cannot be recovered from
-Netlify's concealed API value, so credential rollback requires an owner-held
-secure copy. On failure, restore the prior bindings and republish the saved
-deployment, then verify sign-in, an ordinary genuine response and saved history.
-Restoring the previously failing key can restore the old 401 behavior; keep the
-tested key if the failure is isolated to application code or the new model.
-No rollback step changes databases, Railway or payment authority. Confirm the
-platform's environment snapshot behavior before relying on deploy rollback alone.
+[Configuration and exposure checks](staging-config-verification-20261023.json)
+cover local client files, public HTML and scripts, tracked application/evidence
+source and available hosted log records without printing their contents. A full
+build scan also found zero credential matches in 2,310 files. Raw hosted log
+output was blocked by automatic review; protected status-only diagnostics and
+non-printing credential-match scans provided the safer alternative.
 
-PR #44 remains draft. Investigation scripts, this runbook and test artifacts live
-only on `investigation/agus-ai-recovery-evidence-20261023`; all original commits
-and work are preserved. See the existing Flash-Lite evaluation for prior genuine
-results and their limits.
+Both credentials remain independently replaceable. To rotate after testing:
+
+1. Reset only `agus_staging_owner` in the new Neon project, then replace the
+   existing staging `DATABASE_URL` value for `deploy-preview` with its new pooled
+   URI. Preserve the host, database and role checks.
+2. Replace only the staging `AI_API_KEY` value for that same context with the
+   replacement Google key. Do not revoke a key used elsewhere without approval.
+3. Redeploy only this site and alias using the validated package. Recheck login,
+   a genuine reply and saved history. Keep `OPERATOR_ID` stable to retain ownership.
+
+No automatic rotation or production credential change was performed.
+
+## Minimal production proposal and rollback — approval required
+
+The essential 401 fix is the explicit Google SDK `baseUrl` in
+`src/lib/model-led-agent/model.ts`. The final PR contains five application and
+diagnostic-test files, retaining the earlier narration instructions and bounded
+provider diagnostics. Investigation documents and runners remain on this separate
+branch and will not enter the application tree through PR #44.
+
+For the exact combination accepted here, deploy application commit `6fbbcf6` and
+change only the existing production `AI_API_KEY` and `AI_MODEL` values to the
+tested new key and `gemini-3.5-flash-lite`. Preserve their existing secret flags
+and scopes; do not assume the staging downgrade approval applies to production.
+Retain the production database URL, Node 22, native architecture, payment flags
+and Railway. No database migration or branch switch is required.
+
+Before that separately approved release, securely retain the previous model/key
+bindings and production deploy `6ada1aa358e288da5818c039` (commit
+`869b5b9b488299007ece130e78d76cf5fc102d45`). Netlify conceals the old key, so an
+owner-held secure copy is required if its binding must be restored. On a material
+regression, restore the prior bindings and republish that saved deployment, then
+verify login, an ordinary response and saved history. Restoring the old unpinned
+client can restore its original 401; prefer retaining the endpoint fix if the
+regression is isolated to a model/key change. Do not rely on deploy rollback alone
+to restore edited environment values without confirming the platform behavior.
+No rollback step alters databases, Railway or payment authority.
+
+Production is still on the saved deploy. Nothing has been merged or deployed to
+production, and all prior work and commits are preserved.

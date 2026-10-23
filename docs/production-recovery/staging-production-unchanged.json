@@ -1,0 +1,12 @@
+{
+  "production": {
+    "siteId": "fee8fc4a-b59d-4c8c-894b-599cf6d5a1e6",
+    "publishedDeploy": "6ada1aa358e288da5818c039",
+    "ssoLogin": true
+  },
+  "staging": {
+    "siteId": "b9f8d2af-8aba-494b-a012-4d0424df33c8",
+    "publishedDeploy": null,
+    "ssoLogin": false
+  }
+}

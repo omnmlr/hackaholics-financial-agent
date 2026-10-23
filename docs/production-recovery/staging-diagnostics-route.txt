@@ -1,0 +1,72 @@
+// Temporary staging-only probe. Never included in the application PR.
+import { operator, sameOrigin } from "@/lib/auth";
+import { AppError } from "@/lib/domain";
+import { readProviderError } from "@/lib/provider-diagnostics";
+import { GoogleGenAI } from "@google/genai";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export async function POST(req: Request) {
+  const headers = { "Cache-Control": "no-store, private", Vary: "Cookie, Origin" };
+  try {
+    const database = new URL(process.env.DATABASE_URL ?? "");
+    if (
+      database.hostname !== "ep-square-sky-bazwbdb9-pooler.c-8.eu-central-1.aws.neon.tech" ||
+      database.pathname !== "/agus_staging" ||
+      database.username !== "agus_staging_owner" ||
+      process.env.APP_ORIGIN !== "https://staging--agus-ai-isolated-staging-20261023.netlify.app" ||
+      process.env.PAYMENT_MODE !== "fixture"
+    ) return Response.json({ code: "ISOLATION_REQUIRED" }, { status: 503, headers });
+    sameOrigin(req);
+    await operator(req);
+    const input = await req.json();
+    if (input?.operation === "generate-sdk") {
+      const attempts: object[] = [];
+      const client = new GoogleGenAI({ apiKey: process.env.AI_API_KEY, httpOptions: {
+        timeout: 15000, retryOptions: { attempts: 1 },
+        fetch: async (url, init) => {
+          const parsed = new URL(String(url));
+          const h = new Headers(init?.headers);
+          const record = { host: parsed.hostname, path: parsed.pathname,
+            apiKeyHeaderPresent: h.has("x-goog-api-key"),
+            apiKeyMatchesConfigured: h.get("x-goog-api-key") === process.env.AI_API_KEY,
+            authorizationHeaderPresent: h.has("authorization"),
+          };
+          const response = await globalThis.fetch(url, init);
+          const details = response.ok ? {} : await readProviderError(response.clone());
+          attempts.push({ ...record, httpStatus: response.status, ...details });
+          return response;
+        },
+      }});
+      let succeeded = false;
+      try {
+        const answer = await client.models.generateContent({ model: "gemini-3.5-flash-lite", contents: "Reply with exactly OK.", config: { maxOutputTokens: 16, temperature: 0 } });
+        succeeded = !!answer.candidates?.[0]?.content?.parts?.some((part) => !!part.text);
+      } catch { /* Return only the bounded request metadata, never exceptions. */ }
+      return Response.json({ runtime: process.version, model: process.env.AI_MODEL, operation: input.operation, succeeded, attempts }, { headers });
+    }
+    const generate = input?.operation === "generate-rest";
+    if (input?.operation !== "generate-rest" && input?.operation !== "list")
+      return Response.json({ code: "INVALID_OPERATION" }, { status: 400, headers });
+    const response = await fetch(generate
+      ? "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent"
+      : "https://generativelanguage.googleapis.com/v1beta/models", {
+      method: generate ? "POST" : "GET",
+      headers: { "x-goog-api-key": process.env.AI_API_KEY ?? "", "Content-Type": "application/json" },
+      ...(generate ? { body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply with exactly OK." }] }], generationConfig: { maxOutputTokens: 16, temperature: 0 } }) } : {}),
+      signal: AbortSignal.timeout(15000),
+      cache: "no-store",
+    });
+    const details = response.ok ? {} : await readProviderError(response);
+    if (response.ok) await response.body?.cancel();
+    return Response.json({
+      runtime: process.version,
+      model: process.env.AI_MODEL,
+      googleApiKeyFormat: /^AIza[A-Za-z0-9_-]{30,}$/.test(process.env.AI_API_KEY ?? ""),
+      operation: input.operation,
+      providerHttpStatus: response.status,
+      ...details,
+    }, { headers });
+  } catch (error) {
+    return Response.json({ code: error instanceof AppError ? "AUTH_REQUIRED" : "DIAGNOSTIC_UNAVAILABLE" }, { status: error instanceof AppError ? error.status : 503, headers });
+  }
+}

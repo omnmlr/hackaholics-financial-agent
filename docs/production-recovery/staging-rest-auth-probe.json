@@ -1,0 +1,26 @@
+{
+  "diagnosticStatus": 200,
+  "diagnostic": {
+    "runtime": "v22.23.2",
+    "model": "gemini-3.5-flash-lite",
+    "googleApiKeyFormat": false,
+    "operation": "generate-rest",
+    "providerHttpStatus": 200
+  },
+  "state": {
+    "mode": "fixture",
+    "aiEnabled": true,
+    "aiProvider": "gemini",
+    "liveEnabled": false,
+    "emergencyDisabled": true,
+    "batchCount": 0
+  },
+  "savedChats": 1,
+  "savedTurnsAfterDeploymentReplacement": [
+    {
+      "id": "46040b82-e093-4bfd-87c4-71c929bfd3c2",
+      "kind": "unavailable",
+      "code": "MODEL_HTTP_401"
+    }
+  ]
+}

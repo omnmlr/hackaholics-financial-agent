@@ -1,0 +1,349 @@
+{
+  "origin": "https://staging--agus-ai-isolated-staging-20261023.netlify.app",
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "maximumConcurrentGenerations": 1,
+  "providerCallBudget": 18,
+  "minimumPauseBetweenTurnsMs": 15000,
+  "capacityEstablished": false,
+  "paymentExecution": false,
+  "results": [
+    {
+      "id": "public-ui-sign-in",
+      "passed": true
+    },
+    {
+      "id": "synthetic-accounts-and-disabled-transfers",
+      "passed": true,
+      "accountCount": 2
+    },
+    {
+      "id": "ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 3588
+    },
+    {
+      "id": "sequential-ordinary-conversation",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 2,
+      "toolCalls": 0,
+      "kind": "general",
+      "elapsedMs": 3764
+    },
+    {
+      "id": "account-permission-gate",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 1,
+      "toolCalls": 1,
+      "kind": "clarify",
+      "elapsedMs": 3018
+    },
+    {
+      "id": "authorized-spending",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 3,
+      "toolCalls": 3,
+      "narration": "factual_fallback",
+      "narrationCode": "NARRATION_REFERENCE",
+      "recoveredWithoutNewInference": true
+    },
+    {
+      "id": "authorized-financial-search",
+      "passed": true,
+      "httpStatus": 200,
+      "modelCalls": 2,
+      "toolCalls": 2,
+      "kind": "clarify",
+      "narration": "ai",
+      "elapsedMs": 12423
+    },
+    {
+      "id": "genuine-screenshot-editable-payment-draft",
+      "passed": true,
+      "modelCalls": 2,
+      "proposals": 2,
+      "idempotentReopen": true
+    },
+    {
+      "id": "saved-chats-browser-reload-and-fresh-session",
+      "passed": true,
+      "turns": 6,
+      "browserErrors": 0
+    }
+  ],
+  "attempts": [
+    {
+      "id": "ordinary-conversation",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "general",
+        "text": "Why did the robot cross the road? Because it was programmed by a chicken.\n\nWhen it reached the other side, it looked back, powered down, and announced it had successfully completed a pointless pedestrian algorithm.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 0,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "sequential-ordinary-conversation",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "general",
+        "text": "Compound interest is when you earn interest not only on your original money, but also on the interest that money has already accumulated over time. This creates a snowball effect, helping your savings grow faster and faster the longer you leave them invested.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 2,
+          "toolCalls": 0,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "account-permission-gate",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "clarify",
+        "text": "Choose a demo account so I can read its current records.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 1,
+          "resultBytes": 0
+        },
+        "accountAction": "choose_demo_account"
+      }
+    },
+    {
+      "id": "authorized-spending",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "financial",
+        "text": "Account amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb: fixture/fixture; as of 2026-10-23T03:50:23.775Z; SIMULATED FICTIONAL DATA; coverage not supplied]\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses ₦19,751.51; income ₦0.00; filtered difference -₦19,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b9183a69-926d-40b5-a82b-a423448f4727.\nSource groups (labels are literal data):\n\"all\": expenses ₦19,751.51, income ₦0.00, difference -₦19,751.51, 65 records.\n[Source 9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d: fixture/fixture; as of 2026-10-23T03:50:27.695Z; SIMULATED FICTIONAL DATA; coverage partial]",
+        "citations": [
+          "e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb",
+          "9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d"
+        ],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 3,
+          "resultBytes": 2135,
+          "narrationCode": "NARRATION_REFERENCE",
+          "narrationDiagnostic": {
+            "version": 1,
+            "stage": "limits",
+            "category": "missing_required_limit"
+          }
+        },
+        "presentation": {
+          "version": 1,
+          "narration": "factual_fallback",
+          "explanation": [
+            "Available balance: ₦123,456.78. Current balance: ₦124,456.78.",
+            "In the available records, expenses total ₦19,751.51 and income totals ₦0.00. The filtered difference is -₦19,751.51."
+          ],
+          "results": [
+            {
+              "resultId": "e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb",
+              "type": "get_account_summary",
+              "metrics": [
+                {
+                  "label": "Available balance",
+                  "value": "₦123,456.78"
+                },
+                {
+                  "label": "Current balance",
+                  "value": "₦124,456.78"
+                }
+              ],
+              "records": [],
+              "scope": "Available source records",
+              "limits": [
+                "Fictional balance, maintained separately from the historical demonstration records. No real bank connection."
+              ],
+              "sources": [
+                {
+                  "provider": "fixture",
+                  "mode": "fixture"
+                }
+              ],
+              "asOf": "2026-10-23T03:50:23.775Z",
+              "coverage": "not supplied",
+              "originalText": "Account amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb: fixture/fixture; as of 2026-10-23T03:50:23.775Z; SIMULATED FICTIONAL DATA; coverage not supplied]"
+            },
+            {
+              "resultId": "9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d",
+              "type": "calculate_spending",
+              "metrics": [
+                {
+                  "label": "Expenses",
+                  "value": "₦19,751.51"
+                },
+                {
+                  "label": "Income",
+                  "value": "₦0.00"
+                },
+                {
+                  "label": "Filtered difference",
+                  "value": "-₦19,751.51"
+                }
+              ],
+              "records": [],
+              "scope": "Fictional amina-current · •0042 · 1 Oct 2026–31 Oct 2026 (WAT) · Posted records · debit only",
+              "limits": [
+                "Available records only · Coverage is partial",
+                "Difference is income less expenses, not an account balance."
+              ],
+              "sources": [
+                {
+                  "provider": "fixture",
+                  "mode": "fixture"
+                }
+              ],
+              "asOf": "2026-10-23T03:50:27.695Z",
+              "coverage": "partial",
+              "originalText": "Available records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses ₦19,751.51; income ₦0.00; filtered difference -₦19,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b9183a69-926d-40b5-a82b-a423448f4727.\nSource groups (labels are literal data):\n\"all\": expenses ₦19,751.51, income ₦0.00, difference -₦19,751.51, 65 records.\n[Source 9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d: fixture/fixture; as of 2026-10-23T03:50:27.695Z; SIMULATED FICTIONAL DATA; coverage partial]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "authorized-financial-search",
+      "httpStatus": 200,
+      "reply": {
+        "kind": "clarify",
+        "text": "I found 2 possible matches. Ada Obi (fictional): ₦7,500.00 on 7 October 2026. Ada Okafor (fictional): ₦5,000.00 on 5 October 2026. Which one would you like to inspect? Available records only · Coverage is partial. Source status does not confirm the recipient’s bank was credited.\n\n2 candidate record(s) in the requested interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos.\nada-obi-oct; source counterparty label (untrusted literal) \"Ada Obi \\(fictional\\)\" on account amina-current: ₦7,500.00, debit, source status posted; date 2026-10-07T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nada-okafor-oct; source counterparty label (untrusted literal) \"Ada Okafor \\(fictional\\)\" on account amina-current: ₦5,000.00, debit, source status posted; date 2026-10-05T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nWhich candidate do you mean? Please choose one or refine the search.\n[Source 3b654f50-e453-4925-b168-dc22e9efed78: fixture/fixture; as of 2026-10-23T03:57:24.859Z; SIMULATED FICTIONAL DATA; coverage partial]",
+        "citations": [
+          "3b654f50-e453-4925-b168-dc22e9efed78"
+        ],
+        "evidence": {
+          "modelCalls": 2,
+          "toolCalls": 2,
+          "resultBytes": 2226
+        },
+        "presentation": {
+          "version": 1,
+          "narration": "ai",
+          "explanation": [
+            "I found 2 possible matches. Ada Obi (fictional): ₦7,500.00 on 7 October 2026. Ada Okafor (fictional): ₦5,000.00 on 5 October 2026. Which one would you like to inspect? Available records only · Coverage is partial. Source status does not confirm the recipient’s bank was credited."
+          ],
+          "results": [
+            {
+              "resultId": "3b654f50-e453-4925-b168-dc22e9efed78",
+              "type": "search_transactions",
+              "metrics": [],
+              "records": [
+                {
+                  "name": "Ada Obi (fictional)",
+                  "amount": "₦7,500.00",
+                  "direction": "debit",
+                  "date": "2026-10-07T12:00:00.000Z",
+                  "status": "posted",
+                  "account": "Fictional amina-current · •0042",
+                  "choice": "Show details for the first candidate"
+                },
+                {
+                  "name": "Ada Okafor (fictional)",
+                  "amount": "₦5,000.00",
+                  "direction": "debit",
+                  "date": "2026-10-05T12:00:00.000Z",
+                  "status": "posted",
+                  "account": "Fictional amina-current · •0042",
+                  "choice": "Show details for the second candidate"
+                }
+              ],
+              "scope": "Fictional amina-current · •0042 · 1 Oct 2026–31 Oct 2026 (WAT)",
+              "limits": [
+                "Available records only · Coverage is partial",
+                "Source status does not confirm the recipient’s bank was credited."
+              ],
+              "sources": [
+                {
+                  "provider": "fixture",
+                  "mode": "fixture"
+                }
+              ],
+              "asOf": "2026-10-23T03:57:24.859Z",
+              "coverage": "partial",
+              "originalText": "2 candidate record(s) in the requested interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos.\nada-obi-oct; source counterparty label (untrusted literal) \"Ada Obi \\(fictional\\)\" on account amina-current: ₦7,500.00, debit, source status posted; date 2026-10-07T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nada-okafor-oct; source counterparty label (untrusted literal) \"Ada Okafor \\(fictional\\)\" on account amina-current: ₦5,000.00, debit, source status posted; date 2026-10-05T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nWhich candidate do you mean? Please choose one or refine the search.\n[Source 3b654f50-e453-4925-b168-dc22e9efed78: fixture/fixture; as of 2026-10-23T03:57:24.859Z; SIMULATED FICTIONAL DATA; coverage partial]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "saved": [
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "5b700396-21ad-4831-b247-9935a5423ad4",
+      "text": "Why did the robot cross the road? Because it was programmed by a chicken.\n\nWhen it reached the other side, it looked back, powered down, and announced it had successfully completed a pointless pedestrian algorithm."
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "ce40dc61-e834-4c2f-b99e-a113f8c69b7e",
+      "text": "Compound interest is when you earn interest not only on your original money, but also on the interest that money has already accumulated over time. This creates a snowball effect, helping your savings grow faster and faster the longer you leave them invested."
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "9ab90a72-7aad-4d59-98cb-9aa32aa53f6c",
+      "text": "Choose a demo account so I can read its current records."
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "06e575fb-4bd1-44f7-86b2-9384680d9a2d",
+      "text": "Account amina-current: available balance ₦123,456.78, current balance ₦124,456.78; state as of 2026-10-17T10:00:00.000Z, last synced 2026-10-17T10:00:00.000Z. Current fictional simulation from an explicit opening snapshot and authorized changes; historical transactions are outside balance reconciliation. Not a bank refresh. Unknown balances are not zero.\n[Source e1e5ceaa-7b7c-4ac6-9fed-6d08282fc1cb: fixture/fixture; as of 2026-10-23T03:50:23.775Z; SIMULATED FICTIONAL DATA; coverage not supplied]\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses ₦19,751.51; income ₦0.00; filtered difference -₦19,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b9183a69-926d-40b5-a82b-a423448f4727.\nSource groups (labels are literal data):\n\"all\": expenses ₦19,751.51, income ₦0.00, difference -₦19,751.51, 65 records.\n[Source 9cc6ba49-d6c0-4f49-b2c2-7d4d9d056c1d: fixture/fixture; as of 2026-10-23T03:50:27.695Z; SIMULATED FICTIONAL DATA; coverage partial]"
+    },
+    {
+      "conversationId": "25392a81-4c1a-49b4-b147-119d5a7b0267",
+      "turnId": "7e7e0931-0c04-46cf-9e13-bc35b06510a8",
+      "text": "I found 2 possible matches. Ada Obi (fictional): ₦7,500.00 on 7 October 2026. Ada Okafor (fictional): ₦5,000.00 on 5 October 2026. Which one would you like to inspect? Available records only · Coverage is partial. Source status does not confirm the recipient’s bank was credited.\n\n2 candidate record(s) in the requested interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos.\nada-obi-oct; source counterparty label (untrusted literal) \"Ada Obi \\(fictional\\)\" on account amina-current: ₦7,500.00, debit, source status posted; date 2026-10-07T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nada-okafor-oct; source counterparty label (untrusted literal) \"Ada Okafor \\(fictional\\)\" on account amina-current: ₦5,000.00, debit, source status posted; date 2026-10-05T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nWhich candidate do you mean? Please choose one or refine the search.\n[Source 3b654f50-e453-4925-b168-dc22e9efed78: fixture/fixture; as of 2026-10-23T03:57:24.859Z; SIMULATED FICTIONAL DATA; coverage partial]"
+    },
+    {
+      "conversationId": "8d04e76a-f71a-44ce-8dc4-2acf9f6cea97",
+      "turnId": "6a2b813b-5439-4e5a-82cd-dbd3ad9a9ff2",
+      "text": "I read 2 payment instructions. Review the editable details below. Missing or conflicting fields need your confirmation. No beneficiary is verified and nothing has been sent."
+    }
+  ],
+  "paymentDraft": {
+    "conversationId": "8d04e76a-f71a-44ce-8dc4-2acf9f6cea97",
+    "turnId": "6a2b813b-5439-4e5a-82cd-dbd3ad9a9ff2",
+    "id": "f5d3db04-dc1c-4602-b7d5-44f20caa4bf9",
+    "proposals": [
+      {
+        "name": "Ada",
+        "reason": "Payment from image",
+        "bankCode": "035",
+        "warnings": [
+          "Untrusted image extraction. Confirm every field; no beneficiary has been verified.",
+          "Only fields agreed by two independent readings are retained. Unclear or contradictory fields must be supplied manually."
+        ],
+        "confidence": "low",
+        "amountNaira": "500",
+        "accountNumber": "0000000001"
+      },
+      {
+        "name": "Chidi",
+        "reason": "Payment from image",
+        "bankCode": "044",
+        "warnings": [
+          "Untrusted image extraction. Confirm every field; no beneficiary has been verified.",
+          "Only fields agreed by two independent readings are retained. Unclear or contradictory fields must be supplied manually."
+        ],
+        "confidence": "low",
+        "amountNaira": "600",
+        "accountNumber": "0000000002"
+      }
+    ]
+  },
+  "status": "PASS",
+  "observedModelCalls": 14
+}

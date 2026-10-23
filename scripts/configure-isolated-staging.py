@@ -1,6 +1,9 @@
 import sys,os,json,pathlib,secrets,hashlib,urllib.request,urllib.parse
 
 uri=os.environ.get('STAGING_DATABASE_URL')
+if not uri and '--authorized-stdin' in sys.argv:
+ print('SECURE_INPUT_READY',flush=True)
+ uri=json.loads(sys.stdin.readline())['databaseUrl']
 if not uri:
  print(json.dumps({'configured':False,'code':'SECURE_STAGING_DATABASE_BINDING_REQUIRED'}),flush=True)
  sys.exit(2)
@@ -26,16 +29,27 @@ settings={
  'LIVE_RECONCILIATION_VALIDATED':'false','PAYMENTS_EMERGENCY_DISABLED':'true',
  'NODE_VERSION':'22','NEXT_TELEMETRY_DISABLED':'1',
 }
-secret_keys={'DATABASE_URL','AI_API_KEY','OPERATOR_PASSWORD_HASH'}
-env=[{'key':k,'scopes':['functions'] if k!='NODE_VERSION' else ['builds'],
- 'is_secret':k in secret_keys,'values':[{'context':'all','value':v}]} for k,v in settings.items()]
+# Owner explicitly approved standard variables for this isolated site only.
+# Values are restricted to the one required deployment context.
+env=[{'key':k,'values':[{'context':'deploy-preview','value':v}]}
+ for k,v in settings.items()]
 headers={'Authorization':'Bearer '+os.environ['NETLIFY_AUTH_TOKEN'],'Content-Type':'application/json'}
 url='https://api.netlify.com/api/v1/accounts/'+site['account_id']+'/env?site_id='+site['id']
 req=urllib.request.Request(url,headers=headers,data=json.dumps(env).encode(),method='POST')
 try:
  with urllib.request.urlopen(req,timeout=30) as response: response.read()
 except Exception as error:
- print(json.dumps({'configured':False,'httpStatus':getattr(error,'code',None)}),flush=True)
+ reason=None
+ if isinstance(error,urllib.error.HTTPError):
+  try:
+   body=json.loads(error.read())
+   candidate=body.get('message') or body.get('error')
+   if isinstance(candidate,str):
+    for value in [uri,u.password,settings['AI_API_KEY'],password_hash,password]:
+     if value:candidate=candidate.replace(value,'[REDACTED]')
+    if not any(marker in candidate for marker in ['npg_','AIza','postgresql://']):reason=candidate[:250]
+  except Exception:pass
+ print(json.dumps({'configured':False,'httpStatus':getattr(error,'code',None),'reason':reason}),flush=True)
  sys.exit(1)
 private={'siteId':site['id'],'origin':origin,'operatorPassword':password,'operatorId':settings['OPERATOR_ID']}
 p=pathlib.Path('/workspace/work/isolated-staging-private.json')

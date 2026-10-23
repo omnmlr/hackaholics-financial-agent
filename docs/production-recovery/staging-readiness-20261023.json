@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-23T02:57:52.405200+00:00",
+  "google": {
+    "httpStatus": 200,
+    "flashLiteListed": true
+  },
+  "production": {
+    "httpStatus": 200,
+    "siteId": "fee8fc4a-b59d-4c8c-894b-599cf6d5a1e6",
+    "name": "askagus",
+    "publishedDeploy": "6ada1aa358e288da5818c039",
+    "publishedCommit": "869b5b9b488299007ece130e78d76cf5fc102d45",
+    "repoConnected": true
+  },
+  "staging": {
+    "httpStatus": 200,
+    "siteId": "b9f8d2af-8aba-494b-a012-4d0424df33c8",
+    "name": "agus-ai-isolated-staging-20261023",
+    "publishedDeploy": null,
+    "publishedCommit": null,
+    "repoConnected": false
+  }
+}

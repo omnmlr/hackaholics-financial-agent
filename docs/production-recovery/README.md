@@ -4,6 +4,11 @@ PR #44 remains a draft. Existing diagnostics and all earlier work are retained.
 The changes below have not been merged or deployed. Production's HTTP 401 root
 cause is still unconfirmed; this is not a claim that production is repaired.
 
+**23 October follow-up:** the owner confirmed the injected key is different
+from production's key. A fresh Flash-Lite capacity sample passed 24/24 genuine
+requests. See [the separate-key and capacity evaluation](FLASH_LITE_EVALUATION.md)
+for current evidence, credential boundaries and the proposed production candidate.
+
 ## Authenticated evidence
 
 The republished environment exposes `AI_API_KEY` and `NETLIFY_AUTH_TOKEN`.
@@ -137,9 +142,9 @@ as genuine-provider evidence. Genuine results and failures are retained separate
 The production 401 occurs before tools. Existing production logs omit the Google
 RPC reason and the published commit predates PR #44's diagnostic reader. Its
 exact cause cannot be reconstructed from HTTP status alone. Netlify conceals the
-production key, and the working injected key has not been proven identical.
-Credential identity must be confirmed privately, or the reviewed diagnostic patch
-must receive deployment approval to capture a bounded provider reason at source.
+production key; the owner has now confirmed the working injected key is different.
+An isolated comparison needs the exact old key securely bound, or the reviewed
+diagnostic patch needs deployment approval to capture a reason at source.
 No model change or key rotation should be presented as an established 401 repair
 without that evidence. No deployment, merge, Railway change or real-money setting
 change was made.

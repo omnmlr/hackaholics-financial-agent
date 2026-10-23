@@ -209,7 +209,7 @@ try {
   const ordinary = await turn(
     "ordinary",
     ordinaryId,
-    "Tell me a short joke about robots",
+    "Tell me a short joke about robots in two separate paragraphs.",
     [],
     (r) =>
       r.kind === "general" &&
@@ -328,9 +328,16 @@ try {
       ),
     );
     await page.goto(`${base}/conversation?chat=${ordinaryId}`);
-    await page.getByText(ordinary.reply.text, { exact: true }).waitFor();
+    // General replies render one <p> per paragraph. A whole-response exact
+    // locator incorrectly joins adjacent elements without a whitespace boundary.
+    const paragraphs = ordinary.reply.text
+      .split(/\n\n/)
+      .filter((p) => p.trim());
+    for (const paragraph of paragraphs)
+      await page.getByText(paragraph, { exact: true }).waitFor();
     await page.reload();
-    await page.getByText(ordinary.reply.text, { exact: true }).waitFor();
+    for (const paragraph of paragraphs)
+      await page.getByText(paragraph, { exact: true }).waitFor();
     results.push({ id: "process-restart-and-browser-reload", passed: true });
   }
   report.status = "PASS";

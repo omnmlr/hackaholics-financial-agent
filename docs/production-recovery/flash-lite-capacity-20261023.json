@@ -1,0 +1,374 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "credential": "user-confirmed-new-key-not-production-key",
+  "productionChanged": false,
+  "genuine": true,
+  "syntheticInputs": true,
+  "databaseAccess": false,
+  "paymentCapability": false,
+  "maximumRequests": 24,
+  "minimumStartIntervalMs": 6500,
+  "concurrency": 1,
+  "retries": 0,
+  "startedAt": "2026-10-23T02:25:57.175Z",
+  "status": "PASS",
+  "attempts": [
+    {
+      "number": 1,
+      "scenario": "text-1",
+      "startedAt": "2026-10-23T02:25:57.187Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 17,
+      "totalTokens": 55,
+      "elapsedMs": 863
+    },
+    {
+      "number": 2,
+      "scenario": "text-2",
+      "startedAt": "2026-10-23T02:26:03.686Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 26,
+      "totalTokens": 64,
+      "elapsedMs": 2415
+    },
+    {
+      "number": 3,
+      "scenario": "text-3",
+      "startedAt": "2026-10-23T02:26:10.186Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 23,
+      "totalTokens": 61,
+      "elapsedMs": 1256
+    },
+    {
+      "number": 4,
+      "scenario": "text-4",
+      "startedAt": "2026-10-23T02:26:16.687Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 20,
+      "totalTokens": 58,
+      "elapsedMs": 4473
+    },
+    {
+      "number": 5,
+      "scenario": "text-5",
+      "startedAt": "2026-10-23T02:26:23.189Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 19,
+      "totalTokens": 57,
+      "elapsedMs": 899
+    },
+    {
+      "number": 6,
+      "scenario": "text-6",
+      "startedAt": "2026-10-23T02:26:29.696Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 15,
+      "totalTokens": 53,
+      "elapsedMs": 917
+    },
+    {
+      "number": 7,
+      "scenario": "text-7",
+      "startedAt": "2026-10-23T02:26:36.195Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 25,
+      "totalTokens": 63,
+      "elapsedMs": 995
+    },
+    {
+      "number": 8,
+      "scenario": "text-8",
+      "startedAt": "2026-10-23T02:26:42.703Z",
+      "status": 200,
+      "inputTokens": 38,
+      "outputTokens": 22,
+      "totalTokens": 60,
+      "elapsedMs": 1221
+    },
+    {
+      "number": 9,
+      "scenario": "structured-1",
+      "startedAt": "2026-10-23T02:26:49.203Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 30,
+      "totalTokens": 77,
+      "elapsedMs": 953
+    },
+    {
+      "number": 10,
+      "scenario": "structured-2",
+      "startedAt": "2026-10-23T02:26:55.705Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 1107
+    },
+    {
+      "number": 11,
+      "scenario": "structured-3",
+      "startedAt": "2026-10-23T02:27:02.203Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 841
+    },
+    {
+      "number": 12,
+      "scenario": "structured-4",
+      "startedAt": "2026-10-23T02:27:08.705Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 953
+    },
+    {
+      "number": 13,
+      "scenario": "structured-5",
+      "startedAt": "2026-10-23T02:27:15.207Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 1291
+    },
+    {
+      "number": 14,
+      "scenario": "structured-6",
+      "startedAt": "2026-10-23T02:27:21.710Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 1262
+    },
+    {
+      "number": 15,
+      "scenario": "structured-7",
+      "startedAt": "2026-10-23T02:27:28.211Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 1072
+    },
+    {
+      "number": 16,
+      "scenario": "structured-8",
+      "startedAt": "2026-10-23T02:27:34.718Z",
+      "status": 200,
+      "inputTokens": 47,
+      "outputTokens": 40,
+      "totalTokens": 87,
+      "elapsedMs": 1225
+    },
+    {
+      "number": 17,
+      "scenario": "native-tool-1",
+      "startedAt": "2026-10-23T02:27:41.218Z",
+      "status": 200,
+      "inputTokens": 106,
+      "outputTokens": 19,
+      "totalTokens": 125,
+      "elapsedMs": 763
+    },
+    {
+      "number": 18,
+      "scenario": "native-tool-1",
+      "startedAt": "2026-10-23T02:27:47.725Z",
+      "status": 200,
+      "inputTokens": 69,
+      "outputTokens": 15,
+      "totalTokens": 84,
+      "elapsedMs": 491
+    },
+    {
+      "number": 19,
+      "scenario": "native-tool-2",
+      "startedAt": "2026-10-23T02:27:54.222Z",
+      "status": 200,
+      "inputTokens": 106,
+      "outputTokens": 19,
+      "totalTokens": 125,
+      "elapsedMs": 914
+    },
+    {
+      "number": 20,
+      "scenario": "native-tool-2",
+      "startedAt": "2026-10-23T02:28:00.725Z",
+      "status": 200,
+      "inputTokens": 69,
+      "outputTokens": 14,
+      "totalTokens": 83,
+      "elapsedMs": 894
+    },
+    {
+      "number": 21,
+      "scenario": "native-tool-3",
+      "startedAt": "2026-10-23T02:28:07.224Z",
+      "status": 200,
+      "inputTokens": 106,
+      "outputTokens": 19,
+      "totalTokens": 125,
+      "elapsedMs": 1038
+    },
+    {
+      "number": 22,
+      "scenario": "native-tool-3",
+      "startedAt": "2026-10-23T02:28:13.726Z",
+      "status": 200,
+      "inputTokens": 69,
+      "outputTokens": 14,
+      "totalTokens": 83,
+      "elapsedMs": 901
+    },
+    {
+      "number": 23,
+      "scenario": "native-tool-4",
+      "startedAt": "2026-10-23T02:28:20.228Z",
+      "status": 200,
+      "inputTokens": 106,
+      "outputTokens": 19,
+      "totalTokens": 125,
+      "elapsedMs": 697
+    },
+    {
+      "number": 24,
+      "scenario": "native-tool-4",
+      "startedAt": "2026-10-23T02:28:26.730Z",
+      "status": 200,
+      "inputTokens": 70,
+      "outputTokens": 15,
+      "totalTokens": 85,
+      "elapsedMs": 1006
+    }
+  ],
+  "results": [
+    {
+      "id": "text-1",
+      "passed": true,
+      "text": "Consistently setting aside money transforms financial discipline into an automatic, second-nature routine."
+    },
+    {
+      "id": "text-2",
+      "passed": true,
+      "text": "Setting aside money on a routine basis hardwires your brain for financial discipline, turning a conscious financial chore into an automatic lifestyle choice."
+    },
+    {
+      "id": "text-3",
+      "passed": true,
+      "text": "Consistently putting money aside turns financial prudence into an automatic routine, much like daily exercise trains your muscles over time."
+    },
+    {
+      "id": "text-4",
+      "passed": true,
+      "text": "Consistently putting away a little cash turns thriftiness into second nature through the power of daily repetition."
+    },
+    {
+      "id": "text-5",
+      "passed": true,
+      "text": "Consistently putting money aside transforms financial prudence into an automatic routine through the power of daily repetition."
+    },
+    {
+      "id": "text-6",
+      "passed": true,
+      "text": "Stashing cash on the regular turns a conscious chore into an automatic routine."
+    },
+    {
+      "id": "text-7",
+      "passed": true,
+      "text": "Consistently setting aside money transforms financial prudence into an automatic routine, much like daily physical exercise rewires your body for fitness."
+    },
+    {
+      "id": "text-8",
+      "passed": true,
+      "text": "Consistently putting money aside creates a rewarding behavioral loop, turning a conscious financial choice into an automatic daily routine."
+    },
+    {
+      "id": "structured-1",
+      "passed": true,
+      "text": "{\"beneficiary\": \"Ada\", \"amountNaira\": 501, \"purpose\": \"Lunch\", \"prepared_only\": true}"
+    },
+    {
+      "id": "structured-2",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 502,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-3",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 503,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-4",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 504,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-5",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 505,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-6",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 506,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-7",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 507,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "structured-8",
+      "passed": true,
+      "text": "{\n  \"beneficiary\": \"Ada\",\n  \"amountNaira\": 508,\n  \"purpose\": \"Lunch\",\n  \"prepared_only\": true\n}"
+    },
+    {
+      "id": "native-tool-1",
+      "passed": true,
+      "text": "The result of multiplying 12 by 4 is 48."
+    },
+    {
+      "id": "native-tool-2",
+      "passed": true,
+      "text": "The product of 13 and 5 is 65."
+    },
+    {
+      "id": "native-tool-3",
+      "passed": true,
+      "text": "The product of 14 and 6 is 84."
+    },
+    {
+      "id": "native-tool-4",
+      "passed": true,
+      "text": "The product of 15 and 7 is 105."
+    }
+  ],
+  "summary": {
+    "finishedAt": "2026-10-23T02:28:27.737Z",
+    "attemptedRequests": 24,
+    "http200": 24,
+    "failedOrPending": 0,
+    "qualityPasses": 20,
+    "qualityCases": 20,
+    "p50Ms": 953,
+    "p95Ms": 2415,
+    "maxMs": 4473,
+    "inputTokens": 1381,
+    "totalTokens": 1992,
+    "exactProjectQuotaVerified": false,
+    "productionCredentialTested": false
+  }
+}

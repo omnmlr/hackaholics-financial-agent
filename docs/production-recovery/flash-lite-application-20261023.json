@@ -1,0 +1,151 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "productionDatabaseAccess": false,
+  "paymentExecution": false,
+  "results": [
+    {
+      "id": "ordinary",
+      "httpStatus": 200,
+      "kind": "general",
+      "evidence": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "resultBytes": 0
+      },
+      "elapsedMs": 1441,
+      "text": "Why did the robot go to the doctor?\n\nBecause it had a virus!",
+      "passed": true
+    },
+    {
+      "id": "education",
+      "httpStatus": 200,
+      "kind": "general",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 0,
+        "resultBytes": 0
+      },
+      "elapsedMs": 2327,
+      "text": "Compound interest is when you earn interest not only on your original money, but also on the interest that money has already accumulated over time. This creates a snowball effect that helps your savings grow much faster the longer you leave them invested.",
+      "passed": true
+    },
+    {
+      "id": "account-permission",
+      "httpStatus": 200,
+      "kind": "clarify",
+      "evidence": {
+        "modelCalls": 1,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 1311,
+      "text": "Choose a demo account so I can read its current records.",
+      "passed": true
+    },
+    {
+      "id": "authorized-spending",
+      "httpStatus": 200,
+      "kind": "financial",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 1303
+      },
+      "elapsedMs": 3027,
+      "text": "Your spending came to \u20a619,751.51, and income came to \u20a60.00. Available records only \u00b7 Coverage is partial. Difference is income less expenses, not an account balance.\n\nAvailable records only for accounts amina-current, interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos; direction debit, category all, statuses posted. Expenses \u20a619,751.51; income \u20a60.00; filtered difference -\u20a619,751.51. Included 65 records. Excluded pending 1, failed 1, reversed 1, unknown 1, reversal credits 0, undated 1. Calculation b8341929-9d59-4e2d-88bd-e268f26022ed.\nSource groups (labels are literal data):\n\"all\": expenses \u20a619,751.51, income \u20a60.00, difference -\u20a619,751.51, 65 records.\n[Source 74f2e38a-512b-4cf8-b9a4-df317e9e01b4: fixture/fixture; as of 2026-10-23T02:24:22.701Z; SIMULATED FICTIONAL DATA; coverage partial]",
+      "passed": true
+    },
+    {
+      "id": "authorized-search",
+      "httpStatus": 200,
+      "kind": "clarify",
+      "narration": "ai",
+      "evidence": {
+        "modelCalls": 2,
+        "toolCalls": 2,
+        "resultBytes": 2226
+      },
+      "elapsedMs": 2972,
+      "text": "I found 2 possible matches. Ada Obi (fictional): \u20a67,500.00 on 7 October 2026. Ada Okafor (fictional): \u20a65,000.00 on 5 October 2026. Which one would you like to inspect? Available records only \u00b7 Coverage is partial. Source status does not confirm the recipient\u2019s bank was credited.\n\n2 candidate record(s) in the requested interval [2026-09-30T23:00:00.000Z, 2026-10-31T23:00:00.000Z), Africa/Lagos.\nada-obi-oct; source counterparty label (untrusted literal) \"Ada Obi \\(fictional\\)\" on account amina-current: \u20a67,500.00, debit, source status posted; date 2026-10-07T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nada-okafor-oct; source counterparty label (untrusted literal) \"Ada Okafor \\(fictional\\)\" on account amina-current: \u20a65,000.00, debit, source status posted; date 2026-10-05T12:00:00.000Z (bookedAt). A candidate record does not establish recipient bank credit.\nWhich candidate do you mean? Please choose one or refine the search.\n[Source 54384de6-64d0-4dcb-9f17-224b37b53c39: fixture/fixture; as of 2026-10-23T02:24:38.992Z; SIMULATED FICTIONAL DATA; coverage partial]",
+      "passed": true
+    },
+    {
+      "id": "payment-preparation",
+      "httpStatus": 200,
+      "kind": "handoff",
+      "evidence": {
+        "modelCalls": 1,
+        "toolCalls": 1,
+        "resultBytes": 0
+      },
+      "elapsedMs": 2865,
+      "text": "Here\u2019s an editable payment draft. Review the details and verify beneficiaries before approving and submitting separately.",
+      "passed": true
+    },
+    {
+      "id": "draft-fields-and-idempotent-reopen",
+      "passed": true
+    },
+    {
+      "id": "draft-after-process-restart",
+      "passed": true
+    }
+  ],
+  "providerRequests": [
+    {
+      "status": 200,
+      "attempt": 1
+    },
+    {
+      "status": 200,
+      "attempt": 2
+    },
+    {
+      "status": 200,
+      "attempt": 3
+    },
+    {
+      "status": 200,
+      "attempt": 4
+    },
+    {
+      "status": 200,
+      "attempt": 5
+    },
+    {
+      "status": 200,
+      "attempt": 6
+    },
+    {
+      "status": 200,
+      "attempt": 7
+    },
+    {
+      "status": 200,
+      "attempt": 8
+    },
+    {
+      "status": 200,
+      "attempt": 9
+    },
+    {
+      "status": 200,
+      "attempt": 10
+    }
+  ],
+  "selectedScenarios": [
+    "ordinary",
+    "education",
+    "account-permission",
+    "authorized-spending",
+    "authorized-search",
+    "payment-preparation",
+    "persistence"
+  ],
+  "status": "FAIL",
+  "failureStage": "browser-history-and-reload",
+  "credential": "user-confirmed-new-key-not-production-key",
+  "date": "2026-10-23"
+}

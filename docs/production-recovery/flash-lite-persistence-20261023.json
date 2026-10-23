@@ -1,0 +1,35 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "genuine": true,
+  "productionDatabaseAccess": false,
+  "paymentExecution": false,
+  "results": [
+    {
+      "id": "ordinary",
+      "httpStatus": 200,
+      "kind": "general",
+      "evidence": {
+        "modelCalls": 1,
+        "toolCalls": 0,
+        "resultBytes": 0
+      },
+      "elapsedMs": 1155,
+      "text": "Why did the robot cross the road? Because it was programmed by a chicken.\n\nWhen it reached the other side, it looked back, calculated the optimal path, and wondered why everyone made such a big deal out of firmware updates.",
+      "passed": true
+    },
+    {
+      "id": "process-restart-and-browser-reload",
+      "passed": true
+    }
+  ],
+  "providerRequests": [
+    {
+      "status": 200,
+      "attempt": 1
+    }
+  ],
+  "selectedScenarios": ["persistence", "ordinary"],
+  "status": "PASS",
+  "credential": "user-confirmed-new-key-not-production-key",
+  "date": "2026-10-23"
+}

@@ -1,0 +1,31 @@
+{
+  "utc": "2026-11-09T08:01:16.960392+00:00",
+  "mode": "sandbox_token",
+  "token_endpoint": "https://demo.remita.net/remita/exapp/api/v1/send/api/uaasvc/uaa/token",
+  "sdk_commit": "af6ae4b62b600cfb07c128103d63c81a3963d491",
+  "source_links": [
+    "https://api.remita.net/api/collections/24289864/2sAY4vi3YC?segregateAuth=true&versionTag=latest",
+    "https://raw.githubusercontent.com/RemitaPaymentServices/rits-sdk-dotnet-v3/af6ae4b62b600cfb07c128103d63c81a3963d491/README.md"
+  ],
+  "financial_api_calls": 0,
+  "token_posts": 1,
+  "returned_token_persisted": false,
+  "consumer_source_authority": "unknown; engine token cannot establish source consent",
+  "source_sha256": {
+    "collection": "89fa8f9dc8b043a946775f6c617b18f1381ac7076fc735a99207c62f0945348c",
+    "sdk_readme": "2e213ae29b167494b7d422bfc959974c246663a78d589736af2561bb9264b213"
+  },
+  "first_generation_public_test_permission_found": true,
+  "sdk_explicit_demo_test_provenance": true,
+  "current_rest_invitation_gate_documented": true,
+  "current_collection_credential_fields_are_placeholders": true,
+  "http_status": 200,
+  "response_is_json": true,
+  "response_bytes": 41,
+  "response_top_level_keys": [
+    "message",
+    "status"
+  ],
+  "nonempty_token_field_names": [],
+  "outcome": "Public TEST sample did not establish token admission; no retry or bank call"
+}

@@ -74,8 +74,9 @@
   - Audited runtime resource boundaries: AbortSignal timeouts, per-domain scraper circuit breakers, PGlite isolation, and `next.config.ts` security headers.
   - Documented concrete recommendations for Codex.
 
-- [ ] **Milestone 8: Final Checkpoints, Remote Push, & Hand-off**
-  - Complete `CODEX_HANDOFF.md`.
-  - Verify all test suites pass.
-  - Commit cleanly and push `feat/agus2-autonomous-engineering-sprint` to `origin`.
-  - Verify remote SHA.
+- [x] **Milestone 8: Final Checkpoints, Remote Push, & Hand-off**
+  - Completed comprehensive hand-off memo in `CODEX_HANDOFF.md`.
+  - Verified 100% test health: 67/67 test files pass, 1388/1388 tests pass.
+  - Verified TypeScript compilation: `tsc --noEmit` clean with 0 errors.
+  - Committed all deliverables cleanly to isolated branch `feat/agus2-autonomous-engineering-sprint`.
+  - Pushed to `origin` and verified remote commit SHA.

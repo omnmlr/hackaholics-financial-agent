@@ -2705,3 +2705,27 @@ body:has(.agus-workspace) {
     max-height: var(--workspace-height, 100dvh);
   }
 }
+
+
+/* Mobile Viewport Refinements (Compact 320px–360px & Android Keyboard Optimization) */
+@media (max-width: 360px) {
+  .agus-empty .agus-composer-area,
+  .agus-active .agus-composer-area {
+    width: calc(100% - 16px);
+  }
+  .agus-empty .agus-composer,
+  .agus-active .agus-composer {
+    padding-inline: 6px;
+    gap: 4px;
+  }
+  .agus-attachment {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+  }
+  .agus-send,
+  .agus-voice {
+    width: 40px;
+    height: 40px;
+  }
+}

@@ -1,0 +1,586 @@
+{
+  "timestamp": "2026-11-09T20:34:17.427Z",
+  "viewports": {
+    "320-compact": {
+      "label": "Compact Phone (320px)",
+      "width": 320,
+      "height": 640,
+      "tests": [
+        {
+          "id": "initial-no-overflow",
+          "name": "Zero Horizontal Overflow (Welcome)",
+          "passed": true,
+          "details": {
+            "scrollWidth": 320,
+            "clientWidth": 320,
+            "innerWidth": 320,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "header-visibility",
+          "name": "Header & Brand Asset Visibility",
+          "passed": true,
+          "details": {
+            "headerVisible": true,
+            "headerHeight": 88,
+            "wordmarkVisible": true,
+            "accountPillVisible": true,
+            "accountPillWidth": 116
+          }
+        },
+        {
+          "id": "composer-touch-targets",
+          "name": "Composer Dimensions & Touch Targets",
+          "passed": true,
+          "details": {
+            "composerBox": {
+              "width": 288,
+              "height": 62,
+              "left": 16,
+              "top": 271
+            },
+            "textareaBox": {
+              "width": 126,
+              "height": 44,
+              "left": 73,
+              "top": 280
+            },
+            "sendBox": {
+              "width": 44,
+              "height": 44,
+              "left": 249,
+              "top": 280
+            },
+            "micBox": null,
+            "attachBox": {
+              "width": 44,
+              "height": 44,
+              "left": 27,
+              "top": 280
+            },
+            "textareaFontSize": "16px"
+          }
+        },
+        {
+          "id": "composer-multiline-expansion",
+          "name": "Multiline Composer Vertical Auto-expansion",
+          "passed": true,
+          "details": {
+            "scrollHeight": 260,
+            "clientHeight": 160,
+            "value": "This is a multiline prompt test.\nSecond line with additional instructions.\nThird line testing vertical auto-expansion."
+          }
+        },
+        {
+          "id": "virtual-keyboard-resilience",
+          "name": "Virtual Keyboard Viewport Contraction Handling",
+          "passed": true,
+          "details": {
+            "viewportHeight": 300,
+            "composerBottom": 263,
+            "composerVisible": true,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "attachment-menu-bounds",
+          "name": "Attachment Menu Fits Viewport Bounds",
+          "passed": true,
+          "details": {
+            "menuFound": true,
+            "left": 27,
+            "right": 275,
+            "top": 214,
+            "bottom": 326,
+            "width": 248,
+            "fitsHorizontally": true
+          }
+        },
+        {
+          "id": "conversation-rendering",
+          "name": "Conversation Thread & Bubble Responsive Layout",
+          "passed": true,
+          "details": {
+            "assistantCount": 1,
+            "userCount": 1,
+            "overflowX": false
+          }
+        }
+      ],
+      "screenshots": [
+        "welcome-320-compact.png",
+        "keyboard-320-compact.png",
+        "attachment-menu-320-compact.png",
+        "conversation-320-compact.png"
+      ],
+      "pageErrors": []
+    },
+    "360-android": {
+      "label": "Standard Android (360px)",
+      "width": 360,
+      "height": 800,
+      "tests": [
+        {
+          "id": "initial-no-overflow",
+          "name": "Zero Horizontal Overflow (Welcome)",
+          "passed": true,
+          "details": {
+            "scrollWidth": 360,
+            "clientWidth": 360,
+            "innerWidth": 360,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "header-visibility",
+          "name": "Header & Brand Asset Visibility",
+          "passed": true,
+          "details": {
+            "headerVisible": true,
+            "headerHeight": 88,
+            "wordmarkVisible": true,
+            "accountPillVisible": true,
+            "accountPillWidth": 116
+          }
+        },
+        {
+          "id": "composer-touch-targets",
+          "name": "Composer Dimensions & Touch Targets",
+          "passed": true,
+          "details": {
+            "composerBox": {
+              "width": 328,
+              "height": 62,
+              "left": 16,
+              "top": 325
+            },
+            "textareaBox": {
+              "width": 166,
+              "height": 44,
+              "left": 73,
+              "top": 334
+            },
+            "sendBox": {
+              "width": 44,
+              "height": 44,
+              "left": 289,
+              "top": 334
+            },
+            "micBox": null,
+            "attachBox": {
+              "width": 44,
+              "height": 44,
+              "left": 27,
+              "top": 334
+            },
+            "textareaFontSize": "16px"
+          }
+        },
+        {
+          "id": "composer-multiline-expansion",
+          "name": "Multiline Composer Vertical Auto-expansion",
+          "passed": true,
+          "details": {
+            "scrollHeight": 212,
+            "clientHeight": 180,
+            "value": "This is a multiline prompt test.\nSecond line with additional instructions.\nThird line testing vertical auto-expansion."
+          }
+        },
+        {
+          "id": "virtual-keyboard-resilience",
+          "name": "Virtual Keyboard Viewport Contraction Handling",
+          "passed": true,
+          "details": {
+            "viewportHeight": 440,
+            "composerBottom": 265,
+            "composerVisible": true,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "attachment-menu-bounds",
+          "name": "Attachment Menu Fits Viewport Bounds",
+          "passed": true,
+          "details": {
+            "menuFound": true,
+            "left": 27,
+            "right": 275,
+            "top": 278,
+            "bottom": 390,
+            "width": 248,
+            "fitsHorizontally": true
+          }
+        },
+        {
+          "id": "conversation-rendering",
+          "name": "Conversation Thread & Bubble Responsive Layout",
+          "passed": true,
+          "details": {
+            "assistantCount": 1,
+            "userCount": 1,
+            "overflowX": false
+          }
+        }
+      ],
+      "screenshots": [
+        "welcome-360-android.png",
+        "keyboard-360-android.png",
+        "attachment-menu-360-android.png",
+        "conversation-360-android.png"
+      ],
+      "pageErrors": []
+    },
+    "390-iphone": {
+      "label": "Standard iPhone (390px)",
+      "width": 390,
+      "height": 844,
+      "tests": [
+        {
+          "id": "initial-no-overflow",
+          "name": "Zero Horizontal Overflow (Welcome)",
+          "passed": true,
+          "details": {
+            "scrollWidth": 390,
+            "clientWidth": 390,
+            "innerWidth": 390,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "header-visibility",
+          "name": "Header & Brand Asset Visibility",
+          "passed": true,
+          "details": {
+            "headerVisible": true,
+            "headerHeight": 88,
+            "wordmarkVisible": true,
+            "accountPillVisible": true,
+            "accountPillWidth": 123.984375
+          }
+        },
+        {
+          "id": "composer-touch-targets",
+          "name": "Composer Dimensions & Touch Targets",
+          "passed": true,
+          "details": {
+            "composerBox": {
+              "width": 358,
+              "height": 62,
+              "left": 16,
+              "top": 342
+            },
+            "textareaBox": {
+              "width": 196,
+              "height": 44,
+              "left": 73,
+              "top": 351
+            },
+            "sendBox": {
+              "width": 44,
+              "height": 44,
+              "left": 319,
+              "top": 351
+            },
+            "micBox": null,
+            "attachBox": {
+              "width": 44,
+              "height": 44,
+              "left": 27,
+              "top": 351
+            },
+            "textareaFontSize": "16px"
+          }
+        },
+        {
+          "id": "composer-multiline-expansion",
+          "name": "Multiline Composer Vertical Auto-expansion",
+          "passed": true,
+          "details": {
+            "scrollHeight": 164,
+            "clientHeight": 164,
+            "value": "This is a multiline prompt test.\nSecond line with additional instructions.\nThird line testing vertical auto-expansion."
+          }
+        },
+        {
+          "id": "virtual-keyboard-resilience",
+          "name": "Virtual Keyboard Viewport Contraction Handling",
+          "passed": true,
+          "details": {
+            "viewportHeight": 484,
+            "composerBottom": 268,
+            "composerVisible": true,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "attachment-menu-bounds",
+          "name": "Attachment Menu Fits Viewport Bounds",
+          "passed": true,
+          "details": {
+            "menuFound": true,
+            "left": 27,
+            "right": 275,
+            "top": 287,
+            "bottom": 399,
+            "width": 248,
+            "fitsHorizontally": true
+          }
+        },
+        {
+          "id": "conversation-rendering",
+          "name": "Conversation Thread & Bubble Responsive Layout",
+          "passed": true,
+          "details": {
+            "assistantCount": 1,
+            "userCount": 1,
+            "overflowX": false
+          }
+        }
+      ],
+      "screenshots": [
+        "welcome-390-iphone.png",
+        "keyboard-390-iphone.png",
+        "attachment-menu-390-iphone.png",
+        "conversation-390-iphone.png"
+      ],
+      "pageErrors": []
+    },
+    "430-flagship": {
+      "label": "Flagship Mobile (430px)",
+      "width": 430,
+      "height": 932,
+      "tests": [
+        {
+          "id": "initial-no-overflow",
+          "name": "Zero Horizontal Overflow (Welcome)",
+          "passed": true,
+          "details": {
+            "scrollWidth": 430,
+            "clientWidth": 430,
+            "innerWidth": 430,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "header-visibility",
+          "name": "Header & Brand Asset Visibility",
+          "passed": true,
+          "details": {
+            "headerVisible": true,
+            "headerHeight": 88,
+            "wordmarkVisible": true,
+            "accountPillVisible": true,
+            "accountPillWidth": 123.984375
+          }
+        },
+        {
+          "id": "composer-touch-targets",
+          "name": "Composer Dimensions & Touch Targets",
+          "passed": true,
+          "details": {
+            "composerBox": {
+              "width": 398,
+              "height": 62,
+              "left": 16,
+              "top": 373
+            },
+            "textareaBox": {
+              "width": 236,
+              "height": 44,
+              "left": 73,
+              "top": 382
+            },
+            "sendBox": {
+              "width": 44,
+              "height": 44,
+              "left": 359,
+              "top": 382
+            },
+            "micBox": null,
+            "attachBox": {
+              "width": 44,
+              "height": 44,
+              "left": 27,
+              "top": 382
+            },
+            "textareaFontSize": "16px"
+          }
+        },
+        {
+          "id": "composer-multiline-expansion",
+          "name": "Multiline Composer Vertical Auto-expansion",
+          "passed": true,
+          "details": {
+            "scrollHeight": 140,
+            "clientHeight": 140,
+            "value": "This is a multiline prompt test.\nSecond line with additional instructions.\nThird line testing vertical auto-expansion."
+          }
+        },
+        {
+          "id": "virtual-keyboard-resilience",
+          "name": "Virtual Keyboard Viewport Contraction Handling",
+          "passed": true,
+          "details": {
+            "viewportHeight": 572,
+            "composerBottom": 271,
+            "composerVisible": true,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "attachment-menu-bounds",
+          "name": "Attachment Menu Fits Viewport Bounds",
+          "passed": true,
+          "details": {
+            "menuFound": true,
+            "left": 27,
+            "right": 275,
+            "top": 306,
+            "bottom": 418,
+            "width": 248,
+            "fitsHorizontally": true
+          }
+        },
+        {
+          "id": "conversation-rendering",
+          "name": "Conversation Thread & Bubble Responsive Layout",
+          "passed": true,
+          "details": {
+            "assistantCount": 1,
+            "userCount": 1,
+            "overflowX": false
+          }
+        }
+      ],
+      "screenshots": [
+        "welcome-430-flagship.png",
+        "keyboard-430-flagship.png",
+        "attachment-menu-430-flagship.png",
+        "conversation-430-flagship.png"
+      ],
+      "pageErrors": []
+    },
+    "768-tablet": {
+      "label": "Tablet / Foldable (768px)",
+      "width": 768,
+      "height": 1024,
+      "tests": [
+        {
+          "id": "initial-no-overflow",
+          "name": "Zero Horizontal Overflow (Welcome)",
+          "passed": true,
+          "details": {
+            "scrollWidth": 768,
+            "clientWidth": 768,
+            "innerWidth": 768,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "header-visibility",
+          "name": "Header & Brand Asset Visibility",
+          "passed": true,
+          "details": {
+            "headerVisible": true,
+            "headerHeight": 112,
+            "wordmarkVisible": true,
+            "accountPillVisible": true,
+            "accountPillWidth": 162.609375
+          }
+        },
+        {
+          "id": "composer-touch-targets",
+          "name": "Composer Dimensions & Touch Targets",
+          "passed": true,
+          "details": {
+            "composerBox": {
+              "width": 614,
+              "height": 68,
+              "left": 77,
+              "top": 401
+            },
+            "textareaBox": {
+              "width": 406,
+              "height": 44,
+              "left": 148,
+              "top": 413
+            },
+            "sendBox": {
+              "width": 46,
+              "height": 46,
+              "left": 630,
+              "top": 412
+            },
+            "micBox": null,
+            "attachBox": {
+              "width": 44,
+              "height": 44,
+              "left": 92,
+              "top": 413
+            },
+            "textareaFontSize": "18px"
+          }
+        },
+        {
+          "id": "composer-multiline-expansion",
+          "name": "Multiline Composer Vertical Auto-expansion",
+          "passed": true,
+          "details": {
+            "scrollHeight": 100,
+            "clientHeight": 100,
+            "value": "This is a multiline prompt test.\nSecond line with additional instructions.\nThird line testing vertical auto-expansion."
+          }
+        },
+        {
+          "id": "virtual-keyboard-resilience",
+          "name": "Virtual Keyboard Viewport Contraction Handling",
+          "passed": true,
+          "details": {
+            "viewportHeight": 664,
+            "composerBottom": 408,
+            "composerVisible": true,
+            "overflowX": false
+          }
+        },
+        {
+          "id": "attachment-menu-bounds",
+          "name": "Attachment Menu Fits Viewport Bounds",
+          "passed": true,
+          "details": {
+            "menuFound": true,
+            "left": 92,
+            "right": 340,
+            "top": 316,
+            "bottom": 428,
+            "width": 248,
+            "fitsHorizontally": true
+          }
+        },
+        {
+          "id": "conversation-rendering",
+          "name": "Conversation Thread & Bubble Responsive Layout",
+          "passed": true,
+          "details": {
+            "assistantCount": 1,
+            "userCount": 1,
+            "overflowX": false
+          }
+        }
+      ],
+      "screenshots": [
+        "welcome-768-tablet.png",
+        "keyboard-768-tablet.png",
+        "attachment-menu-768-tablet.png",
+        "conversation-768-tablet.png"
+      ],
+      "pageErrors": []
+    }
+  },
+  "summary": {
+    "total": 35,
+    "passed": 35,
+    "failed": 0,
+    "warnings": 0
+  }
+}

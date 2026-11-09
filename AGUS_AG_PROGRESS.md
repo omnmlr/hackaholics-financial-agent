@@ -27,11 +27,13 @@
   - Tested zero horizontal overflow, 44x44px touch targets, virtual keyboard contraction, multiline composer expansion, attachment menus, and conversation bubble responsiveness.
   - Saved full screenshot gallery and report in `docs/mobile-audit/`.
 
-- [ ] **Milestone 3: Agent Architecture & Flexible Tool Execution**
-  - Design and implement typed, discoverable tool contracts (`src/lib/agent-architecture/`).
-  - Implement composable execution planner with durable intermediate state.
-  - Handle safe continuation after partial tool failures, retry/idempotency, and unambiguous action lifecycle states (proposed, approved, running, failed, completed).
-  - Maintain separation between AI reasoning and deterministic execution authority.
+- [x] **Milestone 3: Agent Architecture & Flexible Tool Execution**
+  - Designed and implemented typed, discoverable tool contracts in `src/lib/agent-architecture/types.ts` and `tool-registry.ts`.
+  - Implemented composable DAG-based execution planner `PlanExecutor` in `src/lib/agent-architecture/planner.ts` with durable intermediate state.
+  - Features: step dependency DAG resolution, failure isolation (aborts dependent steps, continues independent steps), exponential backoff retries, suspension at authorization gates, resumption with tokens, and execution timeouts via `AbortSignal`.
+  - Unambiguous action lifecycle states (`proposed`, `awaiting_authorization`, `authorized`, `running`, `completed`, `failed`, `uncertain`, `cancelled`).
+  - Separation between AI reasoning and deterministic execution authority.
+  - Vitest test suite `tests/agent-architecture.test.ts`: 9/9 passing tests. `tsc --noEmit`: 0 errors.
 
 - [ ] **Milestone 4: External Actions Hardening & Compatibility Adapters**
   - Integrate Opus external actions shopping engine into the AGUS 2.0 worktree.

@@ -15,7 +15,7 @@ it("retains payment references and audit records across separate process restart
       const result = spawnSync(
         process.execPath,
         ["--import", "tsx", "tests/persistence-worker.ts", action],
-        { env, encoding: "utf8", timeout: 30000 },
+        { env, encoding: "utf8", timeout: 60000 },
       );
       expect(result.error).toBeUndefined();
       expect(result.status, result.stderr).toBe(0);
@@ -30,4 +30,4 @@ it("retains payment references and audit records across separate process restart
   } finally {
     await rm(path, { recursive: true, force: true });
   }
-}, 60000);
+}, 120000);

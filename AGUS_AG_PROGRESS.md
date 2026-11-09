@@ -35,10 +35,15 @@
   - Separation between AI reasoning and deterministic execution authority.
   - Vitest test suite `tests/agent-architecture.test.ts`: 9/9 passing tests. `tsc --noEmit`: 0 errors.
 
-- [ ] **Milestone 4: External Actions Hardening & Compatibility Adapters**
-  - Integrate Opus external actions shopping engine into the AGUS 2.0 worktree.
-  - Harden against prompt injection in web text, layout changes, network timeouts, price hallucinations, and stale data.
-  - Build workspace adapter allowing Codex to invoke external actions via `agent-workspace` without core modifications.
+- [x] **Milestone 4: External Actions Hardening & Compatibility Adapters**
+  - Integrated external actions shopping engine into `src/lib/external-actions/` (Jumia, Konga, Jiji).
+  - Hardened against adversarial web text and prompt injection attacks (`src/lib/external-actions/sanitizer.ts`): strips invisible Unicode, zero-width spaces, instruction overrides, system tags, and malicious URI schemes (`javascript:`, `data:`).
+  - Built real-world price anomaly & hallucination detector (`src/lib/external-actions/anomaly-detector.ts`): flags extreme price outliers (< 20% or > 4.5x of median), negative/zero prices, and stale listings (> 14 days).
+  - Built per-domain circuit breaker and rate limiting in `src/lib/external-actions/scrapers.ts` with error isolation across sources.
+  - Implemented multi-factor preference scoring, budget capping, negotiation strategy, and draft merchant messages.
+  - Built adapter `src/lib/external-actions/adapter.ts` registering typed contracts with `ToolRegistry` and generating native Gemini `FunctionDeclaration` entries.
+  - Enforced strict authorization token requirement for consequential external actions (`send_merchant_message`).
+  - Unit & integration test suite `tests/external-actions.test.ts`: 21/21 passing tests. `tsc --noEmit`: 0 errors.
 
 - [ ] **Milestone 5: Reproducible Agent Evaluation Harness**
   - Extensible test harness for open-ended, multi-step scenarios (requirement shifts mid-turn, commitment forget/update, tool errors, injection attempts, uncertain outcomes).

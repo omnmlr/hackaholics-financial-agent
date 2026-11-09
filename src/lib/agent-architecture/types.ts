@@ -58,7 +58,7 @@ export interface ToolContract<TInput = unknown, TOutput = unknown> {
   outputSchema: z.ZodType<TOutput>;
   isIdempotent: boolean;
   timeoutMs: number;
-  maxRetries: number;
+  maxRetries?: number;
   execute: (input: TInput, context: ExecutionContext) => Promise<TOutput>;
 }
 

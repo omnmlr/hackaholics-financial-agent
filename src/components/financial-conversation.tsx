@@ -591,7 +591,7 @@ export function FinancialConversation({
     setText("");
     drafts.set(id, "");
     const controller = new AbortController(),
-      timeout = setTimeout(() => controller.abort(), 65000);
+      timeout = setTimeout(() => controller.abort(), 85000);
     activeRequest.current = {
       controller,
       original,
@@ -604,6 +604,7 @@ export function FinancialConversation({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           conversationId: chatId,
+          requestId: crypto.randomUUID(),
           text: original,
           accountIds: account ? [account] : [],
         }),

@@ -1,7 +1,7 @@
 import { operator, sameOrigin } from "@/lib/auth";
 import { AppError } from "@/lib/domain";
 import { chatHistory } from "@/lib/chat-history/store";
-import { requireFinancialDemo } from "@/lib/financial-integration/service";
+import { requireConversation } from "@/lib/financial-integration/service";
 import { z } from "zod";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET(req: Request) {
     if (req.headers.get("sec-fetch-site") === "cross-site")
       throw new AppError("Origin rejected", 403);
     const history = chatHistory(await operator(req));
-    requireFinancialDemo();
+    requireConversation();
     const params = new URL(req.url).searchParams;
     if (
       [...params.keys()].some((key) => key !== "id") ||

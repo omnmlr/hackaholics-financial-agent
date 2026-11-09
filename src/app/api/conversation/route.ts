@@ -15,14 +15,23 @@ import {
 } from "@/lib/financial-integration/conversation";
 import {
   simulation,
-  requireFinancialDemo,
+  requireConversation,
 } from "@/lib/financial-integration/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const reply = (data: object, status = 200) =>
   Response.json(
-    { simulation, ...data },
+    {
+      ...(process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini" &&
+      process.env.AGUS_WORKSPACE_ENABLED === "true"
+        ? {
+            financialSimulation:
+              process.env.FINANCIAL_DEMO_ENABLED === "true" ? simulation : null,
+          }
+        : { simulation }),
+      ...data,
+    },
     {
       status,
       headers: {
@@ -37,7 +46,7 @@ export async function POST(req: Request) {
   try {
     sameOrigin(req);
     const owner = await operator(req);
-    requireFinancialDemo();
+    requireConversation();
     if (new URL(req.url).search) throw new SyntaxError();
     if (
       req.headers.get("content-type")?.split(";")[0].trim() !==
@@ -73,6 +82,7 @@ export async function POST(req: Request) {
         lease,
         input.text,
         result,
+        result.execution?.id,
       );
       if (result.paymentDraftId)
         await mutate((s) => {

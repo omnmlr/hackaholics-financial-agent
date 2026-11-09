@@ -179,30 +179,63 @@ export function workspace(owner: string) {
         return task;
       });
     },
-    async proposeMemory(raw: unknown) {
+    async proposeMemory(raw: unknown, requestId?: string) {
+      if (requestId) z.uuid().parse(requestId);
       const input = MemoryInput.parse(raw);
       const memory: MemoryFact = {
         ...input,
-        id: randomUUID(),
+        id: requestId ?? randomUUID(),
         confirmed: false,
         createdAt: new Date().toISOString(),
         provenance: "user_supplied_or_model_proposed",
       };
       const d = await initializeWorkspace();
-      await d.execute(
-        sql`INSERT INTO agus2_memories VALUES (${owner},${memory.id},false,${JSON.stringify(memory)}::jsonb)`,
-      );
-      return memory;
+      return d.transaction(async (tx) => {
+        const inserted = await tx.execute(
+          sql`INSERT INTO agus2_memories VALUES (${owner},${memory.id},false,${JSON.stringify(memory)}::jsonb) ON CONFLICT DO NOTHING RETURNING id`,
+        );
+        const forgotten = await tx.execute(
+          sql`SELECT id FROM agus2_events WHERE owner=${owner} AND task=${memory.id} AND kind='memory_forgotten' LIMIT 1`,
+        );
+        if (forgotten.rows.length)
+          throw Object.assign(
+            new AppError(
+              "Memory was forgotten; the old request cannot recreate it",
+              409,
+            ),
+            { code: "MEMORY_FORGOTTEN" },
+          );
+        if (inserted.rows.length) return memory;
+        const saved = await tx.execute(
+          sql`SELECT payload FROM agus2_memories WHERE owner=${owner} AND id=${memory.id}`,
+        );
+        const original = saved.rows[0]?.payload as MemoryFact | undefined;
+        if (
+          !original ||
+          original.text !== memory.text ||
+          original.category !== memory.category
+        )
+          throw new AppError(
+            "Request identity already used for different memory",
+            409,
+          );
+        return original;
+      });
     },
     async memoryAction(id: string, action: "confirm" | "forget") {
       z.uuid().parse(id);
       const d = await initializeWorkspace();
       if (action === "forget") {
-        const r = await d.execute(
-          sql`DELETE FROM agus2_memories WHERE owner=${owner} AND id=${id} RETURNING id`,
-        );
-        if (!r.rows.length) throw new AppError("Memory not found", 404);
-        return { forgotten: true };
+        return d.transaction(async (tx) => {
+          const r = await tx.execute(
+            sql`DELETE FROM agus2_memories WHERE owner=${owner} AND id=${id} RETURNING id`,
+          );
+          if (!r.rows.length) throw new AppError("Memory not found", 404);
+          await tx.execute(
+            sql`INSERT INTO agus2_events VALUES (${owner},${randomUUID()},${id},'memory_forgotten',now())`,
+          );
+          return { forgotten: true };
+        });
       }
       const r = await d.execute(
         sql`UPDATE agus2_memories SET confirmed=true,payload=jsonb_set(payload,'{confirmed}','true') WHERE owner=${owner} AND id=${id} RETURNING payload`,

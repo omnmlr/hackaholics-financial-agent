@@ -95,10 +95,11 @@ export function chatHistory(owner: string) {
       lease: string,
       text: string,
       reply: AgentReply,
+      requestId?: string,
     ): Promise<SavedTurn> {
       const d = await storage();
       const turn: SavedTurn = {
-        id: randomUUID(),
+        id: requestId ?? randomUUID(),
         text: scrub(text),
         reply,
         createdAt: new Date().toISOString(),
@@ -109,9 +110,15 @@ export function chatHistory(owner: string) {
         );
         if (!result.rows.length) throw new AppError("Chat changed", 409);
         await tx.execute(
-          sql`INSERT INTO chat_turns (owner,chat,id,payload) VALUES (${owner},${id},${turn.id},${JSON.stringify(turn)}::jsonb)`,
+          sql`INSERT INTO chat_turns (owner,chat,id,payload) VALUES (${owner},${id},${turn.id},${JSON.stringify(turn)}::jsonb) ON CONFLICT (owner,chat,id) DO UPDATE SET payload=EXCLUDED.payload WHERE chat_turns.payload->'reply'->'execution'->>'state' IN ('interrupted','paused')`,
         );
       });
+      if (requestId) {
+        const existing = await d.execute(
+          sql`SELECT payload FROM chat_turns WHERE owner=${owner} AND chat=${id} AND id=${requestId}`,
+        );
+        return existing.rows[0].payload as SavedTurn;
+      }
       return turn;
     },
     async release(id: string, lease: string) {

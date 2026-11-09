@@ -219,6 +219,7 @@ Return a concise natural answer when no further tool is needed. The chat uses pl
 export function createModelLedAgent(
   options: Omit<AgentOptions, "model"> & {
     model: ToolModel;
+    readOnly?: boolean;
     workspace?: {
       declarations: FunctionDeclaration[];
       execute(name: string, args: unknown): Promise<AgentReply>;
@@ -488,6 +489,9 @@ export function createModelLedAgent(
                   ...declarationsForTurn(
                     input.accountIds.length > 0,
                     !!reads!.authoring,
+                  ).filter(
+                    (d) =>
+                      !options.readOnly || d.name !== "prepare_payment_draft",
                   ),
                   ...(options.workspace?.declarations ?? []),
                 ],
@@ -649,6 +653,8 @@ export function createModelLedAgent(
             seen.add(signature);
             let result: unknown;
             try {
+              if (options.readOnly && call.name === "prepare_payment_draft")
+                throw new AgentError("READ_ONLY_CAPABILITY");
               if (
                 options.workspace?.declarations.some(
                   (d) => d.name === call.name,

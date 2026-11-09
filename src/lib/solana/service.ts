@@ -348,9 +348,32 @@ export function createSolanaService(
     async prepare(
       owner: string,
       untrusted: PrepareTransfer,
+      requestId?: string,
     ): Promise<SolanaDraft> {
       parsed(Owner, owner);
       const input = parsed(Prepare, untrusted);
+      if (requestId) {
+        parsed(Id, requestId);
+        requireDevnet();
+        const saved = await store.get(owner, requestId);
+        if (saved) {
+          const original = await load(owner, requestId);
+          if (
+            original.sender !== input.sender ||
+            original.recipient !== input.recipient ||
+            original.asset !== input.asset ||
+            original.mint !== (input.mint ?? null) ||
+            decimalToAtoms(input.amount, original.decimals).toString() !==
+              original.amountAtoms
+          )
+            throw new SolanaError(
+              "REQUEST_CONFLICT",
+              "Request identity already used for different transfer instructions",
+              409,
+            );
+          return original;
+        }
+      }
       const sender = address(input.sender, true),
         recipient = address(input.recipient, true);
       if (sender.equals(recipient))
@@ -515,7 +538,7 @@ export function createSolanaService(
           : integer(simulation.unitsConsumed);
       const at = now();
       const draft: SolanaDraft = {
-        id: randomUUID(),
+        id: requestId ?? randomUUID(),
         owner,
         revision: 0,
         network: "devnet",

@@ -15,7 +15,10 @@ import { chatHistory } from "../chat-history/store";
 import { operator } from "../auth";
 import { AppError } from "../domain";
 import { createModelLedAgent } from "../model-led-agent/agent";
-import { createGeminiToolModel } from "../model-led-agent/model";
+import {
+  createGeminiToolModel,
+  type ToolModel,
+} from "../model-led-agent/model";
 import { turnDiagnostic } from "../model-led-agent/diagnostics";
 import { SavingsMemorySchema } from "../model-led-agent/savings";
 import { readState } from "../db";
@@ -26,6 +29,8 @@ import { provider } from "../paystack";
 export const ConversationInput = z.strictObject({
   conversationId: IdSchema,
   text: z.string().trim().min(1).max(4000),
+  requestId: z.uuid().optional(),
+  resumeRunId: z.uuid().optional(),
   accountIds: z
     .array(IdSchema)
     .max(5)
@@ -39,16 +44,41 @@ export async function conversationTurn(
   input: z.infer<typeof ConversationInput>,
   model?: AgentModel,
 ) {
+  if (
+    !model &&
+    process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini" &&
+    process.env.AGUS_WORKSPACE_ENABLED === "true"
+  ) {
+    const { runPersonalConversation } =
+      await import("../personal-agent/conversation");
+    return runPersonalConversation(req, input);
+  }
+  return financialConversationTurn(req, input, model);
+}
+
+export async function financialConversationTurn(
+  req: Request,
+  input: z.infer<typeof ConversationInput>,
+  model?: AgentModel,
+  specialistModel?: ToolModel,
+  readOnly = false,
+) {
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
-  const parsed = ConversationInput.parse(input);
+  const {
+    requestId: ignoredRequest,
+    resumeRunId: ignoredResume,
+    ...parsed
+  } = ConversationInput.parse(input);
+  void ignoredRequest;
+  void ignoredResume;
   const owner = await operator(req);
   const state = await readState();
   const messages = state.messages.filter(
     (m) => m.owner === owner && m.conversationId === parsed.conversationId,
   );
   const batchIds = new Set(messages.map((m) => m.batchId));
-  if (messages.length) {
+  if (messages.length && !readOnly) {
     const edited = await editConversationDraft(
       owner,
       parsed.text,
@@ -143,8 +173,9 @@ export async function conversationTurn(
     !model && process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini"
       ? createModelLedAgent({
           ...options,
-          model: createGeminiToolModel(),
-          workspace: personalTools(owner),
+          model: specialistModel ?? createGeminiToolModel(),
+          readOnly,
+          workspace: specialistModel ? undefined : personalTools(owner),
         })
       : createFinancialAgent({
           ...options,

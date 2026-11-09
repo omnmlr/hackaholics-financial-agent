@@ -25,6 +25,16 @@ export const simulation = Object.freeze({
   simulated: true,
   label: FIXTURE_LABEL,
 });
+/** Ordinary personal-agent work is independent of financial fixture access. */
+export function requireConversation() {
+  if (
+    process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini" &&
+    process.env.AGUS_WORKSPACE_ENABLED === "true" &&
+    config().mode !== "live"
+  )
+    return;
+  requireFinancialDemo();
+}
 export function requireFinancialDemo() {
   if (
     process.env.FINANCIAL_DEMO_ENABLED !== "true" ||

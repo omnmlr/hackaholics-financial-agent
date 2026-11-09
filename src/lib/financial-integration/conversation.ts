@@ -1,3 +1,4 @@
+import { personalTools } from "../agent-workspace/tools";
 import { z } from "zod";
 import { IdSchema } from "../financial-data/contracts";
 import {
@@ -140,7 +141,11 @@ export async function conversationTurn(
   // evaluation/rollback. Client input never selects a provider or architecture.
   const agent =
     !model && process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini"
-      ? createModelLedAgent({ ...options, model: createGeminiToolModel() })
+      ? createModelLedAgent({
+          ...options,
+          model: createGeminiToolModel(),
+          workspace: personalTools(owner),
+        })
       : createFinancialAgent({
           ...options,
           model: model ?? createConfiguredModel(),

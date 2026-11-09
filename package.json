@@ -28,11 +28,14 @@
     "test:browser:native": "node scripts/browser-native-agent.mjs",
     "test:browser:premium": "node scripts/browser-premium.mjs",
     "test:browser:motion": "node scripts/browser-intelligence-motion.mjs",
-    "test:browser:workflows": "node scripts/browser-workflows.mjs"
+    "test:browser:workflows": "node scripts/browser-workflows.mjs",
+    "responsibilities:run": "node --import=tsx scripts/responsibilities.ts",
+    "test:agent-workspace": "node scripts/agent-workspace-smoke.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",
     "@google/genai": "2.30.0",
+    "@solana/web3.js": "^1.99.0",
     "@tailwindcss/postcss": "^4.1.0",
     "decimal.js": "10.6.0",
     "drizzle-orm": "^0.45.4",
@@ -58,7 +61,11 @@
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.57.0",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "@solana/spl-token": "^0.4.15"
   },
-  "type": "module"
+  "type": "module",
+  "overrides": {
+    "jayson": "5.0.0"
+  }
 }

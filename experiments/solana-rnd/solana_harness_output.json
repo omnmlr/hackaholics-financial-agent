@@ -1,0 +1,85 @@
+{
+  "timestamp": "2026-11-09T12:42:27.161Z",
+  "rpc": "https://api.devnet.solana.com",
+  "tests": {
+    "cluster": {
+      "status": "SUCCESS",
+      "slot": 520385459,
+      "version": "4.4.0",
+      "recentBlockhash": "8aYagLfPQvogcWpmF1QKL8M4QA74ugnTJsEDBGSvF3Bw",
+      "lastValidBlockHeight": 507527762
+    },
+    "devnet_usdc": {
+      "status": "SUCCESS",
+      "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "decimals": 6,
+      "supply": "16286767312182467832",
+      "isInitialized": true,
+      "mintAuthority": "GrNg1XM2ctzeE2mXxXCfhcTUbejM8Z4z4wNVTy2FjMEz",
+      "freezeAuthority": "CJtyoKSLrktozQzjERTiK3btQtiTK3nN4QrqGHLidyCT",
+      "programOwner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+    },
+    "ata_derivation": {
+      "status": "SUCCESS",
+      "senderOwner": "3AgYVEBJofVp3GJjmMCB2MF1wGUrRUK8cr1kmpzD7i1g",
+      "senderATA": "9S8tjiKcXmuUktmZGtcQRLuARDHB1zvbAZGsGowGcMzd",
+      "recipientOwner": "8LrG2bRRjnXUg5nS2scp8wPvZ2esbSPLGGJnsXxPFJmu",
+      "recipientATA": "62PTKQxDLob76eXEzzmaguudBPZ3ni7zRHFkPXaPShHU"
+    },
+    "transaction_preparation": {
+      "status": "SUCCESS",
+      "instructionCount": 4,
+      "feePayer": "3AgYVEBJofVp3GJjmMCB2MF1wGUrRUK8cr1kmpzD7i1g",
+      "idempotencyReference": "5RAi6tMHootkTdetHCCdc8T9GTEg3MNZ81yWpZqyMEm",
+      "transferAmountAtomic": "10000000",
+      "transferAmountUI": "10.00 USDC",
+      "messageBytes": 405,
+      "mtuLimit": 1232,
+      "withinMtuLimit": true
+    },
+    "simulation": {
+      "status": "SUCCESS",
+      "resultValue": {
+        "accounts": null,
+        "err": "AccountNotFound",
+        "fee": null,
+        "innerInstructions": null,
+        "loadedAccountsDataSize": 0,
+        "loadedAddresses": {
+          "readonly": [],
+          "writable": []
+        },
+        "logs": [],
+        "postBalances": [
+          0,
+          0,
+          0,
+          1,
+          484525905289,
+          0,
+          0,
+          5938070540,
+          1,
+          20508277856
+        ],
+        "postTokenBalances": [],
+        "preBalances": [
+          0,
+          0,
+          0,
+          1,
+          484525905289,
+          0,
+          0,
+          5938070540,
+          1,
+          20508277856
+        ],
+        "preTokenBalances": [],
+        "replacementBlockhash": null,
+        "returnData": null,
+        "unitsConsumed": 0
+      }
+    }
+  }
+}

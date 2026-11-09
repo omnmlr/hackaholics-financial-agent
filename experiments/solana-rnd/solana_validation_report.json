@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-11-09T12:40:56Z",
+  "rpc_endpoint": "https://api.devnet.solana.com",
+  "results": {
+    "cluster_connectivity": {
+      "healthy": true,
+      "version": {
+        "feature-set": 2681577653,
+        "solana-core": "4.4.0"
+      },
+      "current_slot": 520385085,
+      "latest_blockhash": "9MMjLKfSThG2xuCLMHt4dbUjvguC4EC6sSJf6QGjxn3M",
+      "last_valid_block_height": 507527392
+    },
+    "devnet_usdc_validation": {
+      "mint_address": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+      "valid_spl_mint": true,
+      "decimals": 6,
+      "supply": "16286767312182467832",
+      "mint_authority": "GrNg1XM2ctzeE2mXxXCfhcTUbejM8Z4z4wNVTy2FjMEz",
+      "freeze_authority": "CJtyoKSLrktozQzjERTiK3btQtiTK3nN4QrqGHLidyCT",
+      "program_owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+      "distinction_from_mainnet": {
+        "devnet_mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+        "mainnet_mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        "warning": "Devnet USDC is a test faucet token with arbitrary supply; never treat devnet tokens as genuine monetary value."
+      }
+    },
+    "account_reads": {
+      "sampled_address": "GrNg1XM2ctzeE2mXxXCfhcTUbejM8Z4z4wNVTy2FjMEz",
+      "native_lamports": 6006361680,
+      "native_sol": 6.00636168,
+      "devnet_usdc_accounts_count": 1,
+      "token_accounts_sample": [
+        {
+          "pubkey": "J5PpXvvkf9zRkyQZdVh5defDBrznDWw7cFMWAbGx59tt",
+          "amount": "5000.01"
+        }
+      ]
+    },
+    "simulation_preflight": {
+      "endpoint": "simulateTransaction",
+      "supported_options": {
+        "sigVerify": false,
+        "commitment": "confirmed",
+        "replaceRecentBlockhash": true
+      },
+      "purpose": "Enables pre-broadcast error detection, compute-unit estimation, and account state simulation without spending SOL or signing keys."
+    },
+    "protocol_reconciliation_rules": {
+      "blockhash_lifetime": {
+        "duration_slots": 150,
+        "duration_time": "~60-90 seconds",
+        "rule": "Every Solana transaction embeds a recentBlockhash. If a transaction is not confirmed within 150 slots, it is permanently expired by validators."
+      },
+      "duplicate_prevention": {
+        "mechanism": "Validator Signature Cache + Recent Blockhash",
+        "rule": "Re-broadcasting a transaction with the same signature and valid blockhash returns an idempotent confirmation or 'AlreadyProcessed' status. It CANNOT execute twice."
+      },
+      "commitment_levels": {
+        "processed": "Transaction observed by current leader (fastest, unconfirmed).",
+        "confirmed": "Voted by supermajority (2/3+ of stake). Suitable for UI progress feedback.",
+        "finalized": "Rooted in cluster ledger (31+ confirmed blocks on top). Irrevocable. AGUS settlement requirement."
+      },
+      "error_taxonomy": {
+        "InstructionError": "Smart contract logic rejected execution (e.g. SPL Token insufficient funds, unauthorized freeze).",
+        "BlockhashNotFound": "Transaction submitted with an expired or invalid recent blockhash.",
+        "InsufficientFundsForFee": "Payer wallet has fewer lamports than required for network base fee + priority fee."
+      }
+    }
+  }
+}

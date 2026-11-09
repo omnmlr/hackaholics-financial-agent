@@ -59,10 +59,12 @@
   - Offline reproducible testing: 0 paid API costs, deterministic fixtures.
   - Vitest test suite `tests/agent-evaluation.test.ts`: 7/7 passing tests (100% pass rate). `tsc --noEmit`: 0 errors.
 
-- [ ] **Milestone 6: Independent Banking, Solana, & Platform Research**
-  - Nigerian Open Banking (NIBSS, regulatory truth, Mono/Okra vs Paystack/Monnify limitations).
-  - Solana devnet vs mainnet USDC / Cross-currency rails (Jupiter, Circle CCTP, Solana Pay).
-  - Voice, messaging (WhatsApp/Telegram bridges), and cross-platform transport.
+- [x] **Milestone 6: Independent Banking, Solana, & Platform Research**
+  - Authored comprehensive engineering memo `docs/research/BANKING_SOLANA_PLATFORM_RESEARCH.md`.
+  - Part 1: Nigerian Open Banking regulatory landscape (CBN Open Banking Operational Guidelines 2023, NIBSS Open Banking Registry, comparative audit of Mono vs Okra vs Stitch vs OnePipe, Paystack/Monnify boundary limitations, and hybrid PFM aggregation architecture).
+  - Part 2: Solana production roadmap from Devnet to Mainnet (security & UX barriers, dynamic compute unit optimization, priority fee calculation, multi-tier RPC failover manager, and evaluation of Jupiter v6, Circle CCTP, and Solana Pay for Nigerian FX hedging and remittance corridors).
+  - Part 3: Cross-platform messaging architecture (WhatsApp Cloud API & Telegram zero-trust session binding, out-of-band ephemeral step-up authentication for consequential actions, and audio pipeline processing).
+  - Part 4: Actionable typed interface definitions for Codex (`BankAccountSnapshot`, `MainnetTransferConfig`).
 
 - [ ] **Milestone 7: Performance, Security, and Dependency Hygiene**
   - Comprehensive vulnerability audit of `package.json` dependencies (runtime vs dev-only).

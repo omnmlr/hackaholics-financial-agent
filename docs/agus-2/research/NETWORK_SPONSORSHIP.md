@@ -1,0 +1,78 @@
+# Institutional networks and sponsored source-account initiation
+
+Research date: 9 November 2026. Scope: NIBSS, Remita RITS, Interswitch and PayAttitude; no Mono/Paystack re-investigation. **No bank, provider sandbox or payment integration was executed.** Public official pages/specifications and pinned public source were inspected. Zero credentials, account numbers supplied by users, transactions or expenditure.
+
+## Strongest discovery and verdict
+
+The rails already support **account-originated** credit transfers and institutional balance enquiries; the missing capability is not constructing a Nigerian transfer message. The strongest implementation hypothesis is **a sponsored AGUS initiation channel in which an authorized institution remains responsible for each existing source account, authenticates its customer and originates one bank transfer directly to the beneficiary**. This could avoid the extra collection-plus-payout leg. It is a proposal, not an offer any institution has made to AGUS.
+
+Remita's RITS source is a more concrete discovery than a generic merchant checkout SDK: it has explicit source and destination accounts, and an older README describes bank-authenticated account linking. However, deep tracing found substantial limitations: that linking is described for a **merchant profile**, its promised linking methods are absent from the inspected PHP gateway, the newer transfer contract contains institutional credentials rather than a per-user source-account grant, and no general balance/history API was established. It is a serious partner question, not a ready multi-bank personal-payments solution.
+
+**Twenty existing personal source banks meeting all requirements: zero independently verified in this lane.** Network destination lists, merchant examples and source-account string fields do not establish authorized source coverage.
+
+## Primary network evidence
+
+| Route | Evidence found | Fit and remaining gate |
+| --- | --- | --- |
+| [NIBSS NIP](https://nibss-plc.com.ng/nibss-instant-payment/) | Official FAQ describes direct credit from sender's account, direct debit standing instructions, balance enquiry, name enquiry and transaction-status query. Says CBN-licensed institutions have access for different use cases and onboarding is via a NIBSS relationship manager. Non-CBN-settling participants require a settlement bank; the page describes collateral. Participant fees are charged weekly. | Mechanism can support an authorized source institution. AGUS cannot nominate any user's account as source merely by joining a rail or signing a message. Source-bank access, customer authority, general history and sponsor commercial terms remain separate gates. Do not imply that every software vendor must obtain its own banking licence; a bank-sponsored technology channel is a different institutional arrangement. |
+| [NIBSS Pay / NAPS](https://nibss-plc.com.ng/nibss-pay/) | Corporate/bulk service with API and 2FA portal; funding account must be **profiled by the customer's bank**. Advertises balance views across profiled accounts and maker/approver/auditor roles. FAQ publishes ₦15 per record. | Useful precedent: multiple existing accounts can be centrally operated under bank profiling. Published scope is financial institutions, corporates, PSSP aggregators and government, not a demonstrated consumer third-party-personal-account API. No general transaction-history capability established. Listed price is a website statement, not a complete or binding AGUS tariff. |
+| [NIBSS Direct Debit](https://nibss-plc.com.ng/nibss-direct-debit-ndd/) | Mandate repository; fixed/variable mandates and NIBSS Mandate Management + EasyPay integration. FAQ publishes ₦30 per successful debit. | Legitimate collection authority is scoped to a biller/subscriber contract. Does not by itself authorize arbitrary personal beneficiaries or account-history access. Collection then payout adds legs and cannot be declared normal-fee parity without full pricing. Global Standing Instruction is described for recovering defaulted funds, not a general personal-agent permission. |
+| [National Payment Stack](https://nibss-plc.com.ng/national-payment-stack/) | Official page describes ISO 20022 single/bulk payments, richer IDs, returns/disputes, BVN/TIN checks, open-banking readiness and a certification sandbox. Public page has an institution-type waitlist, including developer/technology partners. | More modern messaging/traceability could simplify a sponsor adapter. No publicly inspected consumer consent/token contract, 20-source-bank permission matrix, history service or zero-cost commercial agreement. A published sandbox claim is not tested access. |
+| [CentralPay](https://nibss-plc.com.ng/central-pay/), [e-BillsPay](https://nibss-plc.com.ng/e-billspay/) | CentralPay is merchant/e-commerce collection using cards or account OTP/internet banking/mCASH. e-BillsPay is biller validation/notification over bank channels; complex integration includes VPN. | Authenticated merchant collections, not evidence of arbitrary personal P2P initiation or general bank-data access. Avoid reclassifying every intended recipient as an AGUS merchant to evade the product's permitted purpose. |
+| [NQR](https://nibss-plc.com.ng/nqr/) | EMV QR merchant payments. User opens bank app, inspects merchant/amount and authenticates. Bank onboarding required. | Strong bank-controlled authorization precedent. No broad bank read capability or general personal recipient route shown. Creating/reading a QR cannot give AGUS source-account authority. |
+
+The NIP FAQ's network-wide balance capability and NPS's participant/settlement visibility must not be mistaken for AGUS consent to inspect every personal account. Receiving institutions being reachable on NIP is not proof those banks allow this third-party initiation model.
+
+## Remita: source and wire-contract investigation
+
+### Current official specification
+
+Retrieved [Remita's official API documentation](https://api.remita.net/) and its public backing [Postman collection](https://api.remita.net/api/collections/24289864/2sAY4vi3YC?segregateAuth=true&versionTag=latest) as documentation, without calling any banking or demo service. The collection contains 91 request entries in the retrieved snapshot.
+
+- Funds Transfer REST is explicitly described as available to financial **and non-financial** institutions; SOAP is described as financial-institution-only.
+- Single Payment request contains `sourceBankCode`, `sourceAccountNumber`, `sourceAccountName`, destination account/bank/name, amount, reference and channel. This is genuinely an account-to-account contract, not merely a beneficiary directory.
+- No source-account onboarding/consent process is established by these source fields. The `isApproval` documentation says it is currently unused and should be false; that is not permission to bypass AGUS approval or bank authentication.
+- The documentation BankList response is an **example containing 19 banks**, not an authenticated runtime result and not a declaration that all 19 can be personal debit sources.
+- History-named endpoints are mandate-payment history and salary/loan-collection history. Neither is general personal-account transaction history. No general account-balance/history contract was established in this collection.
+
+### Pinned repositories and actual implementation
+
+| Repository | Inspected revision/files | What the code establishes |
+| --- | --- | --- |
+| [RemitaPaymentServices/rits-sdk-php-v1](https://github.com/RemitaPaymentServices/rits-sdk-php-v1/tree/dad34a90df3094177d4f893d1de8612dd69f6eaf) | SHA `dad34a90df3094177d4f893d1de8612dd69f6eaf`; `README.md`, `RITsGatewayService.php`, `Request/PaymentSingle/PaymentSingleRequest.php` | README: merchant/biller registration, provider-issued merchant credentials, AddAccount → bank OTP/card validation → account token. Single Payment described as debiting **a merchant's account**. Actual request has `fromBank`/`debitAccount` and beneficiary fields; the gateway exposes active banks, enquiry, single/bulk payment and status. **`addAccount` and `validateAccountOTP` are absent from the actual gateway** despite README examples. No detected licence: do not assume unrestricted code reuse. |
+| [RemitaPaymentServices/rits-sdk-dotnet-v3](https://github.com/RemitaPaymentServices/rits-sdk-dotnet-v3/tree/af6ae4b62b600cfb07c128103d63c81a3963d491) | SHA `af6ae4b62b600cfb07c128103d63c81a3963d491`; `RitsSinglePayment/SinglePaymentPayload.cs`, `SinglePayment.cs`, `RitsAccountEnquiry/Data.cs`, under `rits-nuget-dotnet/Com/Systemspecs/Paymentinfra/` | Serializer sends 16 payload fields, including source/destination accounts, original account/bank and `remitaFunded`, using an institutional Bearer access token. It does **not** serialize a per-source account token, mandate ID or user authorization session. Enquiry response has only source account/name/bank, not balance/history. Repo reports GPL-3.0: inspect obligations before reuse; no need to copy it to implement an independently documented contract. |
+| [RemitaPaymentServices/remita-data-referencing-sdk-python](https://github.com/RemitaPaymentServices/remita-data-referencing-sdk-python/tree/4d8df89515aad24900dab43a3c1ff399fdb76429) | SHA `4d8df89515aad24900dab43a3c1ff399fdb76429`; README | Points to Remita **Loan Service** documentation, not demonstrated general retail account aggregation. Not a substitute for personal account history. |
+
+The SDK README links to repositories under `RemitaNet`; those particular repository requests returned 404. The public `RemitaPaymentServices` versions remain inspectable. These are historical artefacts (provider metadata reports 2023 pushes), not proof of current service enablement or a supported modern consumer authorization interface.
+
+### Isolated experiment and its exact meaning
+
+A network-free Python static audit inspected the downloaded PHP/.NET source and public collection. No third-party code was imported/executed, and no HTTP request was made by the audit. Assertions confirmed:
+
+1. v3 source and destination account/bank fields exist, and all 16 payload properties appear in the serializer.
+2. PHP's documented `addAccount` / `validateAccountOTP` methods are missing from the gateway implementation.
+3. v3 AccountEnquiry returns three identity fields, with no balance/history fields.
+4. The retrieved collection's four history-named requests concern mandates or salary/loan collection.
+
+This resolves whether the inspected code itself implements consumer-linking plus account reads: **it does not establish that complete flow**. It does not test a Remita SDK runtime, a mock bank, server-side authorization, account access, payment execution or source-bank coverage. PHP/.NET runtimes were not installed for this task; no dependency installation or fake provider success was needed to inspect these wire contracts. The [audit script, source manifest and observed output](experiments/remita/README.md) are preserved in GitHub with pinned source revisions and hashes; the script was rerun against the inspected cache and its output matched exactly.
+
+## Interswitch and PayAttitude
+
+[Interswitch Send Money](https://docs.interswitchgroup.com/docs/send-money-overview) explicitly describes P2P wallet/account combinations; [Single Transfer](https://docs.interswitchgroup.com/docs/single-transfer) describes a source `initiation` object and destination `termination`. However, its shown example initiates with payment method `CA`, an initiating entity code and terminal ID; it does not show a user's existing bank source account, consent token or bank authentication grant. A Bearer/terminal integration plus a recipient bank list does not settle the funding-source question. Balance/history services in the wider catalogue must also be checked for the exact product (issuer/card/program data is not general personal-account aggregation). No API requests or sample test-card operations were executed. Ask Interswitch for a bank-account-funded consumer-P2P product and bank-specific source authorization, not just TransferFunds access.
+
+[up-eplatform/PayAttitude-Integration](https://github.com/up-eplatform/PayAttitude-Integration/tree/232eaa4cac9d5df1efd5b03503ba8894d459c539), SHA `232eaa4cac9d5df1efd5b03503ba8894d459c539`, is a merchant scheme integration specification. It requires merchant provisioning and UAT; PayAttitude contacts the user for authentication and the issuer authorizes. This is a useful **external user-authentication mechanism**. But the documented order is a payment to a provisioned merchant, not an arbitrary personal beneficiary, and it provides no bank-history API or 20-source-bank table. A JSON `fee: 0` field is not evidence that processing or the user's total fee is zero. Do not adopt its legacy SHA-1/AES example as AGUS's security design without a current supported contract and review.
+
+## Other open-source false positives eliminated
+
+- [cowriesys/nibss](https://github.com/cowriesys/nibss/tree/2e2bdea293736f3c619aa842befde353c2a241b0), SHA `2e2bdea293736f3c619aa842befde353c2a241b0`: actual documented source is a **new mobile money wallet**; bank account/name enquiry is a beneficiary operation, and history is the wallet's history. It does not connect the user's existing bank accounts. The repository/domain is a third party, not NIBSS institutional authorization.
+- [SuruEarnest/NIBSS-SANDBOX](https://github.com/SuruEarnest/NIBSS-SANDBOX/tree/6d45d42320a17a581d721740633c4abbd75fe828), SHA `6d45d42320a17a581d721740633c4abbd75fe828`: repository description explicitly calls it a mock NIP SOAP service for development. No reason to treat mock SOAP success as source-bank permission or duplicate that experiment.
+
+## Smallest actionable external obstacle and next step
+
+The smallest useful commitment to obtain is **a named authorized participant's written acceptance of a per-user consumer-source initiation model**, including how each source bank delegates customer authority, whether balance **and history** are available, and who pays every incremental fee. For Remita, specifically request the supported replacement for historical RITS AddAccount/ValidateAccountOTP and confirmation whether third-party **personal** profiles may be provisioned without linking customers' accounts to AGUS's merchant identity.
+
+Request a table of at least 20 named source banks and account types with source-bank consent method, account-read scopes, permitted P2P beneficiaries, revocation, strong authentication, actual pricing and incident/reversal obligations. A generic “all banks” or bank-code list is insufficient. Sponsor one source-bank flow first to validate the mechanism, then qualify each of the remaining banks; one bank's success does not imply 20.
+
+Proposed engineering sequence if accepted: sponsored contract and source-grant schema → bank/provider-controlled customer authorization → read connector → exact-beneficiary initiation/approval → durable reference/status reconciliation → bank-by-bank coverage evidence → fee-parity comparison against that bank's equivalent transfer. Keep customer funds outside an AGUS collection pool. The sponsor must offer existing-bank consumer authority; opening replacement wallets does not meet the requirement.
+
+Zero AGUS markup is an enforceable AGUS pricing policy. **Zero incremental provider cost is not established.** Ordinary bank transfer income, a sponsor's acquisition budget or non-transactional product revenue could fund the integration only if a real party commits to it; those are negotiation possibilities, not identified funding mechanisms. Do not promise the launch fee model until the per-bank all-in comparison is supported.

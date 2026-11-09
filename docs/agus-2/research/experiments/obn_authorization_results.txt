@@ -1,0 +1,10 @@
+Upstream commit: 5c85a0a6386841584c460a6ccd652e0873347f9a
+Upstream source SHA-256: 492bf26cf9f7ebbc9d44e7984a3d12e11be942b635042bfc063d3a2c5ca4bdc5
+Local unit experiment; Kong, HTTP introspection and token response are test doubles.
+missing bearer: PASS (HTTP_401)
+inactive consent token: PASS (HTTP_401)
+read permission cannot write: PASS (HTTP_403)
+wrong registered client: PASS (HTTP_403)
+empty token client identity: PASS (HTTP_403)
+authorization server rejects: PASS (HTTP_401)
+active matching write grant: PASS (OK)

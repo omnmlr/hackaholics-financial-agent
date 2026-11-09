@@ -1,0 +1,66 @@
+{
+  "kind": "offline_static_contract_inspection",
+  "third_party_code_executed": false,
+  "network_calls_during_audit": 0,
+  "financial_operations": 0,
+  "php_v1_gateway_methods": [
+    "init",
+    "getHeaders",
+    "activeBanks",
+    "accountInquiry",
+    "paymentStatusSingle",
+    "paymentStatusBulk",
+    "singlePayment",
+    "bulkPayment"
+  ],
+  "php_readme_link_methods_missing_from_gateway": [
+    "addAccount",
+    "validateAccountOTP"
+  ],
+  "v3_payload_fields": [
+    "amount",
+    "transactionRef",
+    "transactionDescription",
+    "channel",
+    "currency",
+    "destinationAccount",
+    "destinationAccountName",
+    "destinationBankCode",
+    "destinationEmail",
+    "sourceAccount",
+    "sourceAccountName",
+    "sourceBankCode",
+    "originalAccountNumber",
+    "originalBankCode",
+    "customReference",
+    "remitaFunded"
+  ],
+  "v3_serialized_body_matches_payload_fields": true,
+  "v3_enquiry_fields": [
+    "sourceAccount",
+    "sourceAccountName",
+    "sourceBankCode"
+  ],
+  "current_postman_endpoint_count": 91,
+  "history_named_endpoints": [
+    "/Accept Payments/Direct Debit (For Non-Financial Institutions)/Check Status and Webhook Notifications/MandatePaymentHistory",
+    "/Accept Payments/Direct Debit (For Financial Institutions)/Mandate Management/Get Mandate History",
+    "/Inflight Collections/APIs/Get Salary History",
+    "/Inflight Collections/APIs/Mandate History"
+  ],
+  "not_proven": [
+    "bank_source_authority",
+    "20_source_bank_coverage",
+    "general_balance_or_transaction_history",
+    "provider_access",
+    "fee_parity",
+    "payment_execution"
+  ],
+  "source_hashes": {
+    "rits-service.php": "83f93b7838e6450ebb6c29adff8134ac2bf59f71d9003a8d2bcc89e696ba8b10",
+    "v3-single-payload.cs": "a56a2c62526cbfa979f02608635cefc56149b976920f5e40b9213084100f7f2e",
+    "v3-single.cs": "47e190b296af131cdc731625645391d80451e70d153b820b26df5a3315e82c92",
+    "v3-enquiry-data.cs": "bb5766dc6f25aa6d8e232068978c42dad737d9c4aa90afe831515248faa3d046",
+    "remita-collection.raw": "5f7f5c94820f7ca64fea0f7f40fe07d62827db782b79448e7cc4cd3684338380"
+  }
+}

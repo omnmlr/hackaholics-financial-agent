@@ -1,0 +1,27 @@
+{
+  "rits-service.php": {
+    "url": "https://raw.githubusercontent.com/RemitaPaymentServices/rits-sdk-php-v1/dad34a90df3094177d4f893d1de8612dd69f6eaf/RITsGatewayService.php",
+    "sha256": "83f93b7838e6450ebb6c29adff8134ac2bf59f71d9003a8d2bcc89e696ba8b10",
+    "bytes": 9147
+  },
+  "v3-single-payload.cs": {
+    "url": "https://raw.githubusercontent.com/RemitaPaymentServices/rits-sdk-dotnet-v3/af6ae4b62b600cfb07c128103d63c81a3963d491/rits-nuget-dotnet/Com/Systemspecs/Paymentinfra/RitsSinglePayment/SinglePaymentPayload.cs",
+    "sha256": "a56a2c62526cbfa979f02608635cefc56149b976920f5e40b9213084100f7f2e",
+    "bytes": 1033
+  },
+  "v3-single.cs": {
+    "url": "https://raw.githubusercontent.com/RemitaPaymentServices/rits-sdk-dotnet-v3/af6ae4b62b600cfb07c128103d63c81a3963d491/rits-nuget-dotnet/Com/Systemspecs/Paymentinfra/RitsSinglePayment/SinglePayment.cs",
+    "sha256": "47e190b296af131cdc731625645391d80451e70d153b820b26df5a3315e82c92",
+    "bytes": 3023
+  },
+  "v3-enquiry-data.cs": {
+    "url": "https://raw.githubusercontent.com/RemitaPaymentServices/rits-sdk-dotnet-v3/af6ae4b62b600cfb07c128103d63c81a3963d491/rits-nuget-dotnet/Com/Systemspecs/Paymentinfra/RitsAccountEnquiry/Data.cs",
+    "sha256": "bb5766dc6f25aa6d8e232068978c42dad737d9c4aa90afe831515248faa3d046",
+    "bytes": 346
+  },
+  "remita-collection.raw": {
+    "url": "https://api.remita.net/api/collections/24289864/2sAY4vi3YC?segregateAuth=true&versionTag=latest",
+    "sha256": "5f7f5c94820f7ca64fea0f7f40fe07d62827db782b79448e7cc4cd3684338380",
+    "bytes": 838087
+  }
+}

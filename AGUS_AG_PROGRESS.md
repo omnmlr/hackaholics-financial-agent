@@ -66,10 +66,13 @@
   - Part 3: Cross-platform messaging architecture (WhatsApp Cloud API & Telegram zero-trust session binding, out-of-band ephemeral step-up authentication for consequential actions, and audio pipeline processing).
   - Part 4: Actionable typed interface definitions for Codex (`BankAccountSnapshot`, `MainnetTransferConfig`).
 
-- [ ] **Milestone 7: Performance, Security, and Dependency Hygiene**
-  - Comprehensive vulnerability audit of `package.json` dependencies (runtime vs dev-only).
-  - Mobile bundle size optimization review.
-  - Safe remediation without breaking changes.
+- [x] **Milestone 7: Performance, Security, and Dependency Hygiene**
+  - Completed comprehensive vulnerability and resource audit in `docs/SECURITY_AND_PERFORMANCE_AUDIT.md`.
+  - Analyzed 10 vulnerabilities reported by `npm audit`:
+    - Dissected `bigint-buffer` (GHSA-3gc7-fjrx-p6mg): why `npm audit fix --force` breaks modern SPL Token v2, why Windows Node runtime runs safe pure-JS BigInt fallback, and future migration path.
+    - Verified `minimatch` / `typescript-eslint` is purely dev-only with zero production runtime exposure.
+  - Audited runtime resource boundaries: AbortSignal timeouts, per-domain scraper circuit breakers, PGlite isolation, and `next.config.ts` security headers.
+  - Documented concrete recommendations for Codex.
 
 - [ ] **Milestone 8: Final Checkpoints, Remote Push, & Hand-off**
   - Complete `CODEX_HANDOFF.md`.

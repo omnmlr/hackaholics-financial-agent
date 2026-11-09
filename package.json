@@ -29,8 +29,10 @@
     "test:browser:premium": "node scripts/browser-premium.mjs",
     "test:browser:motion": "node scripts/browser-intelligence-motion.mjs",
     "test:browser:workflows": "node scripts/browser-workflows.mjs",
-    "responsibilities:run": "node --import=tsx scripts/responsibilities.ts",
-    "test:agent-workspace": "node scripts/agent-workspace-smoke.mjs"
+    "responsibilities:run": "node --env-file-if-exists=.env.local --import=tsx scripts/responsibilities.ts",
+    "test:agent-workspace": "node scripts/agent-workspace-smoke.mjs",
+    "test:agent-followup": "node scripts/agent-workspace-smoke.mjs --followup",
+    "test:agent-runner": "node scripts/agent-workspace-smoke.mjs --runner"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",

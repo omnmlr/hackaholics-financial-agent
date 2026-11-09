@@ -56,9 +56,10 @@ export default function ResponsibilitiesPage() {
       <p>Your money, and what&apos;s next.</p>
       <p>
         Saved reminders require your approval. They create in-app updates only;
-        they never send messages, initiate payments or verify financial
-        outcomes. Automatic follow-ups require the local responsibility runner
-        to be running.
+        they never send messages or initiate payments. Explicitly approved
+        devnet status follow-ups can verify the matching signed test-network
+        transaction. Automatic follow-ups require the local responsibility
+        runner to be running.
       </p>
       <p role="status" aria-live="polite">
         {status}
@@ -120,6 +121,16 @@ export default function ResponsibilitiesPage() {
         >
           <h3>{task.title}</h3>
           <p>{task.objective}</p>
+          {task.watch && (
+            <p>
+              Read-only devnet follow-up · {task.watch.attempts} attempts · last
+              observed {task.watch.observedState ?? "none"} ·{" "}
+              {task.watch.failureCode ?? "no read error recorded"}.{" "}
+              {task.watch.confirmation
+                ? `Verified ${task.watch.confirmation.commitment} at slot ${task.watch.confirmation.slot}.`
+                : "No verified success recorded."}
+            </p>
+          )}
           <p>
             {task.state} · {new Date(task.dueAt).toLocaleString()} ·{" "}
             {task.scope}
@@ -146,7 +157,11 @@ export default function ResponsibilitiesPage() {
                 })
               }
             >
-              {command === "approve" ? "Approve in-app reminder" : command}
+              {command === "approve"
+                ? task.watch
+                  ? "Approve read-only devnet follow-up"
+                  : "Approve in-app reminder"
+                : command}
             </button>
           ))}
         </article>

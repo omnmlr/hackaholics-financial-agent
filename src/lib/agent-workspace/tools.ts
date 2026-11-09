@@ -1,3 +1,4 @@
+import { FollowupInput, prepareSolanaFollowup } from "./solana-followups";
 import { z } from "zod";
 import type { FunctionDeclaration } from "@google/genai";
 import type { AgentReply } from "../financial-agent/agent";
@@ -8,7 +9,7 @@ import type { WorkspaceAction } from "./artifacts";
 const definitions = {
   read_agent_workspace: {
     description:
-      "Read owned saved responsibilities and attributed memory. Pending memory is unconfirmed; no memory is current bank evidence. No external actions.",
+      "Read owned saved responsibilities, attributed memory and saved devnet draft IDs. Use this to recover a prior task/transfer reference across turns; clarify when several match. Recorded draft states are historical: use solana_transaction_status for current verification. Pending memory is unconfirmed; memory is never bank evidence or authority. No signing or external sends.",
     schema: z.strictObject({}),
   },
   save_memory_proposal: {
@@ -37,6 +38,11 @@ const definitions = {
       mint: z.string().min(32).max(44).optional(),
     }),
   },
+  prepare_solana_followup: {
+    description:
+      "Propose a bounded persistent read-only devnet status follow-up for an owned already signed/submitted unresolved draft, only when the user asks to track it. Human activation required. No signing, resending, external messages or payments.",
+    schema: FollowupInput,
+  },
   solana_transaction_status: {
     description:
       "Reconcile an owned prepared devnet transaction by draft ID. Read-only; unknown/pending never means success. Does not resend or sign.",
@@ -45,9 +51,12 @@ const definitions = {
 };
 export function personalTools(owner: string) {
   const enabled = Object.entries(definitions).filter(([name]) =>
-    name.startsWith("solana_")
-      ? process.env.AGUS_SOLANA_DEVNET_ENABLED === "true"
-      : process.env.AGUS_WORKSPACE_ENABLED === "true",
+    name === "prepare_solana_followup"
+      ? process.env.AGUS_SOLANA_DEVNET_ENABLED === "true" &&
+        process.env.AGUS_WORKSPACE_ENABLED === "true"
+      : name.startsWith("solana_")
+        ? process.env.AGUS_SOLANA_DEVNET_ENABLED === "true"
+        : process.env.AGUS_WORKSPACE_ENABLED === "true",
   );
   if (!enabled.length) return undefined;
   const declarations = enabled.map(
@@ -87,7 +96,18 @@ export function personalTools(owner: string) {
               `${t.id}: ${t.title.slice(0, 120)}; ${t.state}; due ${t.dueAt}; scope ${t.scope}`,
           )
           .join("\n");
-        text = `Your saved workspace has ${saved.tasks.length} retrieved responsibilities and ${saved.memories.length} retrieved memory notes (up to 100 each). Memory is attributed context, never verified financial data.${notes ? "\n" + notes : ""}${responsibilities ? "\nSaved responsibilities (bounded):\n" + responsibilities : ""}`;
+        const drafts =
+          process.env.AGUS_SOLANA_DEVNET_ENABLED === "true"
+            ? await service().list(owner)
+            : [];
+        const draftReferences = drafts
+          .slice(0, 10)
+          .map(
+            (d) =>
+              `${d.id}: ${d.amount} ${d.asset} DEVNET; recipient ${d.recipient}; saved state ${d.state}; prepared ${d.preparedAt}`,
+          )
+          .join("\n");
+        text = `Your saved workspace has ${saved.tasks.length} retrieved responsibilities and ${saved.memories.length} retrieved memory notes (up to 100 each). Memory is attributed context, never verified financial data.${notes ? "\n" + notes : ""}${responsibilities ? "\nSaved responsibilities (bounded):\n" + responsibilities : ""}${draftReferences ? "\nSaved devnet draft references (up to 10; recorded state only, recheck on-chain before asserting a new outcome):\n" + draftReferences : ""}`;
         action = { kind: "overview" };
       } else if (name === "save_memory_proposal") {
         const memory = await workspace(owner).proposeMemory(input);
@@ -98,6 +118,11 @@ export function personalTools(owner: string) {
         const task = await workspace(owner).createTask(input);
         text =
           "Responsibility prepared, awaiting your approval below. Only an in-app reminder is supported; no external action occurred.";
+        action = { kind: "responsibility", id: task.id };
+      } else if (name === "prepare_solana_followup") {
+        const task = await prepareSolanaFollowup(owner, input);
+        text =
+          "Devnet follow-up saved for your review. Activate it below to permit bounded read-only reconciliation and an in-app result; no signing or resend is authorized.";
         action = { kind: "responsibility", id: task.id };
       } else if (name === "solana_wallet_balances") {
         const wallet = await service().discoverWallet(

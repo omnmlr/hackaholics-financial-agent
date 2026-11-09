@@ -1,0 +1,34 @@
+{
+  "date": "2026-11-09",
+  "parent": "ee861981bb78aec37c802c339b8951a14287d828",
+  "branch": "dev/agus2-solana-core-20261109",
+  "full_suite": {
+    "result": "passed",
+    "files": 64,
+    "tests": 1356,
+    "seconds": 126.57
+  },
+  "additional_scheduler_tests": { "result": "passed", "tests": 2 },
+  "followup_and_solana_regression": {
+    "result": "passed",
+    "files": 6,
+    "tests": 52
+  },
+  "actual_process_restart": "passed; approved deferred follow-up and evidence persist on disk across independent Node processes; reconciliation fixture, no network",
+  "actual_production_browser": [
+    "test:agent-followup passed: wallet panel -> owned submitted-draft fixture -> real API proposal -> in-chat human approval/pause/resume/cancel; no model/chain calls",
+    "test:agent-runner passed: opt-in Next.js server automatically delivers a human-approved reminder once, sharing its SQL client with HTTP; no model/chain calls"
+  ],
+  "cli_guard": "PGlite CLI refused before database directory creation; PostgreSQL or explicitly offline embedded use required",
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "public_devnet_rpc": "devnet-simulation.json: genuine unsigned unfunded simulation returned AccountNotFound, slot 520448828; no transaction submitted",
+  "genuine_new_model_calls": 0,
+  "funded_wallet_acceptance": "outstanding; requires user-controlled funds and signing",
+  "model_acceptance": "outstanding; confirmed free provider/model configuration required",
+  "independent_security_review": "pending before merge/release",
+  "ngn_spent": 0,
+  "external_messages_sent": 0,
+  "merged_or_deployed": false
+}

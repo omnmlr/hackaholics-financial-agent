@@ -7,10 +7,19 @@ import {
 } from "@/lib/agent-workspace/http";
 import { workspace, TaskInput, MemoryInput } from "@/lib/agent-workspace/store";
 
+import {
+  FollowupInput,
+  prepareSolanaFollowup,
+} from "@/lib/agent-workspace/solana-followups";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const Input = z.discriminatedUnion("action", [
   z.strictObject({ action: z.literal("create_task"), input: TaskInput }),
+  z.strictObject({
+    action: z.literal("prepare_solana_followup"),
+    input: FollowupInput,
+  }),
   z.strictObject({ action: z.literal("propose_memory"), input: MemoryInput }),
   z.strictObject({
     action: z.enum(["approve", "pause", "resume", "cancel"]),
@@ -38,11 +47,14 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     sameOrigin(req);
-    const store = workspace(await operator(req));
+    const owner = await operator(req);
+    const store = workspace(owner);
     const input = Input.parse(await workspaceBody(req));
     let result: unknown;
     if (input.action === "create_task")
       result = await store.createTask(input.input);
+    else if (input.action === "prepare_solana_followup")
+      result = await prepareSolanaFollowup(owner, input.input);
     else if (input.action === "propose_memory")
       result = await store.proposeMemory(input.input);
     else if (input.action === "run_due") result = await store.runDue();

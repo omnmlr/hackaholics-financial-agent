@@ -228,7 +228,12 @@ function message(error: unknown) {
 export function DevnetWallet({
   embedded = false,
   initialDraftId = "",
-}: { embedded?: boolean; initialDraftId?: string } = {}) {
+  onFollowupPrepared,
+}: {
+  embedded?: boolean;
+  initialDraftId?: string;
+  onFollowupPrepared?: () => void;
+} = {}) {
   const [drafts, setDrafts] = useState<SolanaDraft[]>([]);
   const [selectedId, setSelectedId] = useState(initialDraftId);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
@@ -351,6 +356,30 @@ export function DevnetWallet({
       setNotice(
         "Saved devnet drafts refreshed. Nothing was signed or submitted.",
       );
+    });
+  }
+
+  async function prepareFollowup() {
+    if (!active) return;
+    await perform("Preparing a read-only follow-up…", async () => {
+      const response = await fetch("/api/agent-workspace", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "prepare_solana_followup",
+          input: { id: active.id },
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok)
+        throw new Error(
+          "Follow-up could not be prepared. Refresh your responsibilities to check its saved state; no automatic retry was made.",
+        );
+      setNotice(
+        "Read-only follow-up saved. Review and approve it in Responsibilities & memory; the local runner must be operating. No signature or resend is authorized.",
+      );
+      onFollowupPrepared?.();
     });
   }
 
@@ -1082,7 +1111,26 @@ export function DevnetWallet({
                 prepare a replacement for this transfer.
               </p>
             ) : null}
+            {active.submission && unresolved.has(active.state) && (
+              <p className={styles.muted}>
+                You can prepare a bounded status follow-up, then approve
+                read-only checks in{" "}
+                <Link href="/responsibilities">Responsibilities & memory</Link>.
+                An in-app update records the verified result or continuing
+                uncertainty; the runner must be operating.
+              </p>
+            )}
             <div className={styles.actions}>
+              {active.submission && unresolved.has(active.state) && (
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  disabled={!canAct}
+                  onClick={() => void prepareFollowup()}
+                >
+                  Prepare status follow-up
+                </button>
+              )}
               <button
                 className={styles.secondary}
                 disabled={!canAct || active.state === "cancelled"}

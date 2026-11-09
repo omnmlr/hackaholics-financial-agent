@@ -26,7 +26,21 @@ export type Responsibility = z.infer<typeof TaskInput> & {
   id: string;
   version: number;
   state: "awaiting_approval" | "active" | "paused" | "cancelled" | "completed";
-  scope: "in_app_reminder_only";
+  scope: "in_app_reminder_only" | "solana_devnet_reconciliation_only";
+  watch?: {
+    draftId: string;
+    expiresAt: string;
+    attempts: number;
+    checkedAt?: string;
+    observedState?: string;
+    failureCode?: string;
+    signature?: string;
+    confirmation?: {
+      slot: number;
+      commitment: "confirmed" | "finalized";
+      feeLamports: string;
+    };
+  };
   createdAt: string;
 };
 export type MemoryFact = z.infer<typeof MemoryInput> & {
@@ -110,6 +124,7 @@ export function workspace(owner: string) {
         const original = rows.rows[0]?.payload as Responsibility | undefined;
         if (
           !original ||
+          original.scope !== "in_app_reminder_only" ||
           original.title !== task.title ||
           original.objective !== task.objective ||
           original.dueAt !== task.dueAt ||
@@ -200,7 +215,7 @@ export function workspace(owner: string) {
       // All work is a local notification in one transaction: no replayable external effects.
       return d.transaction(async (tx) => {
         const rows = await tx.execute(
-          sql`SELECT payload FROM agus2_tasks WHERE owner=${owner} AND state='active' AND due_at <= ${now.toISOString()}::timestamptz ORDER BY due_at,id LIMIT 25 FOR UPDATE SKIP LOCKED`,
+          sql`SELECT payload FROM agus2_tasks WHERE owner=${owner} AND state='active' AND payload->>'scope'='in_app_reminder_only' AND due_at <= ${now.toISOString()}::timestamptz ORDER BY due_at,id LIMIT 25 FOR UPDATE SKIP LOCKED`,
         );
         let delivered = 0;
         for (const row of rows.rows) {

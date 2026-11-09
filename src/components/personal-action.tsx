@@ -197,9 +197,9 @@ function SavedRecords({
         </button>
       </div>
       <p>
-        Only an in-app reminder is authorized here. Reminders are delivered when
-        the responsibilities runner is operating; approval does not authorize
-        messages, purchases or payments.
+        Only the displayed scope is authorized here. Reminders are delivered
+        when the responsibilities runner is operating; approval does not
+        authorize messages, purchases or payments.
       </p>
       {error && <p role="alert">{error}</p>}
       <p role="status">{busy ? "Saving…" : status}</p>
@@ -214,6 +214,19 @@ function SavedRecords({
         <article key={task.id} className={styles.record}>
           <h4>{task.title}</h4>
           <p>{task.objective}</p>
+          {task.watch && (
+            <p>
+              Read-only devnet follow-up · stops after 32 checks or{" "}
+              {new Date(task.watch.expiresAt).toLocaleString()}. Last
+              observation: {task.watch.observedState ?? "none"}
+              {task.watch.failureCode
+                ? ` · ${task.watch.failureCode}`
+                : ""}.{" "}
+              {task.watch.confirmation
+                ? `Verified ${task.watch.confirmation.commitment} at slot ${task.watch.confirmation.slot}.`
+                : "No verified success recorded."}
+            </p>
+          )}
           <p>
             <strong>{task.state.replaceAll("_", " ")}</strong> · due{" "}
             {new Date(task.dueAt).toLocaleString()}
@@ -221,6 +234,12 @@ function SavedRecords({
               ? ` · repeats every ${task.intervalSeconds} seconds`
               : ""}
           </p>
+          {task.watch?.signature && (
+            <p>
+              Observed transaction reference:{" "}
+              <code className={styles.address}>{task.watch.signature}</code>
+            </p>
+          )}
           <div className={styles.row}>
             {[
               ...(task.state === "awaiting_approval" ? ["approve"] : []),
@@ -244,7 +263,9 @@ function SavedRecords({
                 }
               >
                 {command === "approve"
-                  ? "Approve in-app reminder"
+                  ? task.scope === "solana_devnet_reconciliation_only"
+                    ? "Approve read-only devnet follow-up"
+                    : "Approve in-app reminder"
                   : command === "pause"
                     ? "Pause responsibility"
                     : command === "resume"
@@ -304,7 +325,8 @@ function SavedRecords({
           <h4>Delivered in-app reminders</h4>
           {saved.notifications.map((note, i) => (
             <p key={i}>
-              {note.title || note.text || "Reminder delivered"}
+              {note.title || "In-app update"}
+              {note.text ? `: ${note.text}` : ""}
               {note.dueAt ? ` · ${new Date(note.dueAt).toLocaleString()}` : ""}
             </p>
           ))}
@@ -379,7 +401,11 @@ export function WorkspaceLauncher({
         </nav>
         {open &&
           (tab === "wallet" ? (
-            <DevnetWallet embedded initialDraftId={initialDraftId} />
+            <DevnetWallet
+              embedded
+              initialDraftId={initialDraftId}
+              onFollowupPrepared={() => setTab("workspace")}
+            />
           ) : (
             <SavedRecords action={{ kind: "overview" }} />
           ))}

@@ -13,19 +13,21 @@ FINANCIAL_DEMO_ENABLED=true
 AGUS_AGENT_ARCHITECTURE=native-gemini
 AGUS_WORKSPACE_ENABLED=true
 AGUS_SOLANA_DEVNET_ENABLED=true
+# Optional local long-lived Node server runner; never production/live mode:
+AGUS_RESPONSIBILITY_RUNNER_ENABLED=true
 APP_ORIGIN=http://localhost:3000
 ```
 
 Configure `OPERATOR_ID`/`OPERATOR_PASSWORD_HASH` through existing instructions. A legitimate configured development Gemini provider/model/key is required for actual conversation. No new model requests were made: a generic key binding does not establish provider identity, free entitlement or permission to incur charges. Existing subscriptions are not assumed to provide an API.
 
-Build/start using existing npm commands, sign in at `/`, then open `/responsibilities` or `/devnet`. No production deployment was performed. In the managed environment, use supported subprocess permissions for tests and `NODE_USE_ENV_PROXY=1` for Node RPC access through the inherited proxy; do not bypass the proxy or disable TLS.
+Build/start using existing npm commands and sign in at `/`. Use **Wallet & responsibilities** inside the conversation, or the standalone `/responsibilities` and `/devnet` routes. No production deployment was performed. In the managed environment, use supported subprocess permissions for tests and `NODE_USE_ENV_PROXY=1` for Node RPC access through the inherited proxy; do not bypass the proxy or disable TLS.
 
 ## Working contracts
 
 - `GET/POST /api/agent-workspace`: owner-scoped tasks, memory, in-app notifications and event history. Mutations require existing session/origin protections and strict bounded JSON. Human approval activates reminders; pause/resume/cancel use expected versions. Optional task `requestId` makes repeated creation idempotent and rejects changed instructions under the same ID.
 - Memory proposals remain unconfirmed until human confirmation. Forget deletes the stored fact; memory is never permission, bank truth or independently verified agreement. It is not a credential vault.
-- `npm run responsibilities:run -- --watch` runs local due reminders; omit `--watch` for one pass. Due-time state persists across process restart. Notifications and advancement are one SQL transaction with unique occurrence IDs. No calls, bank reads, external sends or financial effects occur. An unattended service is **not provisioned**; the runner must actually be running for automatic updates.
-- Native tools can read the workspace, propose memory/reminders, read devnet balances, prepare unsigned transfers and reconcile owned drafts. They cannot approve, activate, sign or submit transfers. Existing financial authority, calculations, consented fixture reads and payment controls remain intact.
+- With `AGUS_RESPONSIBILITY_RUNNER_ENABLED=true`, the long-lived local Node web server checks approved reminders and read-only devnet follow-ups in-process. PGlite is single-process, so the runner shares the web app's SQL client. It is suppressed during builds/live mode and has non-overlapping ticks. No hosted scheduler/uptime is promised; stopping the server stops checks, and saved jobs recover on restart. For PostgreSQL, `npm run responsibilities:run -- --watch` can run separately. For PGlite the CLI refuses access unless `--offline-embedded` is explicitly supplied with the web server **stopped**. The CLI loads `.env.local`. Notifications and task advancement are transactional and deduplicated. No calls, bank reads, external messages or financial executions occur; approved devnet follow-ups perform bounded public-chain reconciliation reads.
+- Native tools can read the workspace, propose memory/reminders, read devnet balances, prepare unsigned transfers, recover owned saved devnet draft references, propose read-only devnet follow-ups and reconcile owned drafts. They cannot approve, activate, sign or submit transfers. Existing financial authority, calculations, consented fixture reads and payment controls remain intact.
 
 ## Solana devnet
 
@@ -56,3 +58,13 @@ The chat renders saved personal-action references instead of appending raw tool 
 Every newly prepared devnet transfer must pass simulation of its **exact unsigned bytes and blockhash** before storage/approval. The simulation timestamp, slot and units are part of the review digest and displayed in the wallet. A simulation is not execution evidence. Historical unsimulated drafts remain readable and previously submitted records remain reconcilable, but cannot receive new approval or submission authority. No funds, token minting, wallet signatures or genuine new model calls were performed in this checkpoint.
 
 Validation: 1,344 tests in 62 files pass (124.56s); targeted agent follow-up 44/44, typecheck, lint and production build pass. Actual local production HTTP/Chromium acceptance covers in-chat human approval, pause/resume/cancel, confirmed memory, reopening persisted state, mobile overflow, dialog Escape and lazy wallet loading. Scripted tool/RPC tests establish controlled behavior, not real model or funded-chain acceptance. [Dev3pack decisions](competition/DEV3PACK.md) record the open-source submission constraint and bounded official resource findings. Security-sensitive changes still require independent review before merge/release; no merge or release was performed.
+
+## Persistent devnet follow-up checkpoint
+
+An unresolved already submitted/signed owned draft can become a **proposed** read-only responsibility through the wallet panel or `prepare_solana_followup` native tool. The wallet panel opens its approval review within the conversation. Human activation is separate; the model cannot activate it. Progress, leases, retry backoff and result evidence persist in the existing development task table. There are at most 32 reconciliation attempts within 24 hours, three due jobs per pass, and no sign/send/resend capability. A cancellation/pause that wins the version race suppresses the pending result notification. Retries cannot reopen completed/cancelled work. Expiry is explicitly an unresolved outcome, not payment failure or success.
+
+`read_agent_workspace` exposes bounded owned saved draft IDs so a subsequent conversation can recover the right reference and re-check it. Several possible matches require clarification; stored state alone is not a new on-chain observation.
+
+[Actual public unsigned simulation](evidence/devnet-simulation.json) reached devnet at slot 520448828 and returned `AccountNotFound` for the unfunded diagnostic address: transport verified, no signature, funds or broadcast. This does **not** satisfy funded wallet acceptance. Follow-up SQL/HTTP/browser fixtures are explicitly fictional records; outcome verification still delegates to the existing exact-message reconciliation service.
+
+Verification: full regression **1,356 tests / 64 files** passed (126.57s), followed by **2 additional scheduler tests**. The final targeted run covers central agent/scheduler changes. Typecheck, lint, production build, actual production browser checks for both automatic local reminders and the in-chat devnet follow-up approval lifecycle pass. The CLI was observed refusing PGlite access before creating its database directory. No major implementation is left solely in temporary files; see the final private development commit and verified remote SHA. Remaining external acceptance requirements and independent review before merge/release are unchanged.

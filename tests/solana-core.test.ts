@@ -18,6 +18,7 @@ import {
   DEVNET_GENESIS,
   DEVNET_RPC,
   createSolanaService,
+  draftDigest,
   decimalToAtoms,
   atomsToDecimal,
   type DraftStore,
@@ -119,6 +120,11 @@ function setup() {
     getFeeForMessage: vi.fn(async () => 5000),
     getMinimumBalanceForRentExemption: vi.fn(async () => 2039280),
     getBlockHeight: vi.fn(async () => 950),
+    simulateTransaction: vi.fn(async () => ({
+      err: null,
+      slot: 100,
+      unitsConsumed: 450,
+    })),
     sendRawTransaction: vi.fn(async () => {
       throw new Error("simulated response loss");
     }),
@@ -191,6 +197,61 @@ describe("devnet exact decimal accounting", () => {
 });
 
 describe("devnet preparation and authority", () => {
+  it("simulates the exact unsigned message before creating a review record", async () => {
+    const s = setup();
+    const draft = await s.prepare();
+    const raw = vi.mocked(s.rpc.simulateTransaction).mock.calls[0][0];
+    expect(raw.toString("base64")).toBe(draft.unsignedTransactionBase64);
+    expect(Transaction.from(raw).serializeMessage().toString("base64")).toBe(
+      draft.messageBase64,
+    );
+    expect(draft.simulation).toMatchObject({
+      passed: true,
+      slot: 100,
+      unitsConsumed: 450,
+    });
+    expect(s.rpc.sendRawTransaction).not.toHaveBeenCalled();
+  });
+  it("fails closed on simulation execution errors or unavailability without persisting an approvable draft", async () => {
+    const s = setup();
+    vi.mocked(s.rpc.simulateTransaction).mockResolvedValueOnce({
+      err: { InstructionError: [0, "InsufficientFunds"] },
+      slot: 100,
+    });
+    await expect(s.prepare()).rejects.toMatchObject({
+      code: "SIMULATION_FAILED",
+    });
+    vi.mocked(s.rpc.simulateTransaction).mockRejectedValueOnce(
+      new Error("unavailable"),
+    );
+    await expect(s.prepare()).rejects.toMatchObject({
+      code: "RPC_UNAVAILABLE",
+    });
+    expect(s.store.rows.size).toBe(0);
+    expect(s.rpc.sendRawTransaction).not.toHaveBeenCalled();
+  });
+  it("keeps historical unsimulated drafts readable but forbids new approval or submission", async () => {
+    const s = setup();
+    const draft = await s.prepare();
+    delete draft.simulation;
+    draft.digest = draftDigest(draft);
+    s.store.rows.set(draft.id, draft);
+    expect((await s.service.get("alice", draft.id)).id).toBe(draft.id);
+    await expect(
+      s.service.approve("alice", draft.id, {
+        digest: draft.digest,
+        acknowledged: true,
+      }),
+    ).rejects.toMatchObject({ code: "SIMULATION_REQUIRED" });
+    await expect(
+      s.service.submitSigned("alice", draft.id, {
+        digest: draft.digest,
+        signedTransactionBase64: draft.unsignedTransactionBase64,
+      }),
+    ).rejects.toMatchObject({ code: "SIMULATION_REQUIRED" });
+    expect(s.rpc.sendRawTransaction).not.toHaveBeenCalled();
+  });
+
   it("pins the complete independently observed devnet genesis hash", () => {
     expect(DEVNET_GENESIS).toBe("EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG");
   });

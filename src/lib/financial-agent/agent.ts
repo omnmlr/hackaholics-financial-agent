@@ -83,6 +83,8 @@ export type AgentReply = {
   text: string;
   citations: string[];
   presentation?: FinancialPresentation;
+  workspace?: import("../agent-workspace/artifacts").WorkspaceAction;
+  workspaceActions?: import("../agent-workspace/artifacts").WorkspaceAction[];
   savings?: {
     target: number;
     startingAmount: number;

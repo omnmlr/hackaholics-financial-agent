@@ -122,6 +122,7 @@ export function draftDigest(d: SolanaDraft): string {
       messageBase64: d.messageBase64,
       messageDigest: d.messageDigest,
       unsignedTransactionBase64: d.unsignedTransactionBase64,
+      simulation: d.simulation,
     }),
   );
 }
@@ -496,6 +497,22 @@ export function createSolanaService(
           "INSUFFICIENT_SOL",
           "Insufficient SOL for the amount, network fee and possible account rent",
         );
+      const unsigned = tx.serialize({
+        requireAllSignatures: false,
+        verifySignatures: false,
+      });
+      const simulation = await rpcRead(() => rpc.simulateTransaction(unsigned));
+      if (simulation.err !== null)
+        throw new SolanaError(
+          "SIMULATION_FAILED",
+          "Devnet simulation failed. Nothing was prepared, signed or submitted; review the balance, recipient and token account state.",
+          409,
+        );
+      const simulationSlot = integer(simulation.slot);
+      const simulationUnits =
+        simulation.unitsConsumed === undefined
+          ? null
+          : integer(simulation.unitsConsumed);
       const at = now();
       const draft: SolanaDraft = {
         id: randomUUID(),
@@ -522,9 +539,13 @@ export function createSolanaService(
         lastValidBlockHeight: latest.lastValidBlockHeight,
         preparedAt: at.toISOString(),
         expiresAt: new Date(at.getTime() + 90_000).toISOString(),
-        unsignedTransactionBase64: tx
-          .serialize({ requireAllSignatures: false, verifySignatures: false })
-          .toString("base64"),
+        unsignedTransactionBase64: unsigned.toString("base64"),
+        simulation: {
+          at: at.toISOString(),
+          slot: simulationSlot,
+          unitsConsumed: simulationUnits,
+          passed: true,
+        },
         messageBase64: message.toString("base64"),
         messageDigest: sha256(message),
         digest: "",
@@ -579,6 +600,12 @@ export function createSolanaService(
           "Only an unsubmitted prepared draft can be approved",
           409,
         );
+      if (!d.simulation?.passed)
+        throw new SolanaError(
+          "SIMULATION_REQUIRED",
+          "Prepare a new draft with a verified simulation before approval or signing",
+          409,
+        );
       await current(d);
       return transition(
         d,
@@ -598,6 +625,12 @@ export function createSolanaService(
       const request = parsed(Signed, input);
       await network();
       const d = await load(owner, id);
+      if (!d.simulation?.passed)
+        throw new SolanaError(
+          "SIMULATION_REQUIRED",
+          "Prepare a new draft with a verified simulation before signing",
+          409,
+        );
       if (
         d.state !== "approved" ||
         d.submission ||

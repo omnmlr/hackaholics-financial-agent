@@ -1,0 +1,86 @@
+.card {
+  margin: 16px 0;
+  padding: 18px;
+  border: 1px solid var(--border, #3b4048);
+  border-radius: 16px;
+  background: var(--surface, #171a20);
+  color: var(--ink, #f3f4f6);
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+  font-size: 14px;
+}
+.card h3,
+.card h4 {
+  margin: 0 0 8px;
+}
+.card p {
+  margin: 8px 0;
+}
+.row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.card button,
+.dialog button,
+.launcher {
+  color: inherit;
+  border: 1px solid var(--border, #4f5663);
+  background: transparent;
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-height: 44px;
+  cursor: pointer;
+  font: inherit;
+}
+.card button:disabled,
+.dialog button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.card button:focus-visible,
+.dialog button:focus-visible,
+.launcher:focus-visible {
+  outline: 2px solid #b7d5ff;
+  outline-offset: 3px;
+}
+.record {
+  border-top: 1px solid var(--border, #3b4048);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+.address {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+.dialog {
+  color: var(--ink, #f3f4f6);
+  background: var(--surface, #171a20);
+  width: min(1050px, calc(100vw - 20px));
+  max-height: calc(100dvh - 24px);
+  border: 1px solid var(--border, #4f5663);
+  border-radius: 18px;
+  padding: 20px;
+  margin: auto;
+  overflow-y: auto;
+}
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.7);
+}
+.dialog > nav {
+  justify-content: flex-start;
+  margin: 16px 0;
+}
+.dialog [aria-pressed="true"] {
+  border-color: #b7d5ff;
+}
+@media (max-width: 600px) {
+  .dialog {
+    padding: 12px;
+  }
+  .card {
+    padding: 12px;
+  }
+}

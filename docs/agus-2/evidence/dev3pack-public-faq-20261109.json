@@ -1,0 +1,130 @@
+[
+  {
+    "q": "What is the Dev3Pack Global Hackathon?",
+    "a": "A hybrid, three-day Solana university hackathon (27 – 29 Nov 2026). Participants build, demo, and compete worldwide — online or at a local build station. It's part of a broader Dev3Pack journey that includes a Solana Rust Bootcamp (English and Spanish) and the Bridge Accelerator (from 7 Dec)."
+  },
+  {
+    "q": "Do I need to hack in person?",
+    "a": "No. In-person attendance at a build station is completely optional. You can do the entire hackathon — kickoff, building, feedback, submission, closing — fully online. Local stations are there if you want the energy and support, but they're not required to participate or win."
+  },
+  {
+    "q": "Can I start building before the hackathon?",
+    "a": "Yes, with one condition: the project must be related to Solana. You're encouraged to come in with prior code, designs, and research. The Solana Rust Bootcamp (2–27 Nov, English and Spanish) is there to help you ramp up before kickoff."
+  },
+  {
+    "q": "Does my project have to be open source?",
+    "a": "Yes, it is mandatory."
+  },
+  {
+    "q": "Where can I find Solana Rust Bootcamp recordings?",
+    "a": "Bootcamp sessions will be shared with accepted participants. Check the member dashboard and Telegram once the bootcamp starts (2–27 Nov)."
+  },
+  {
+    "q": "I applied but didn't get accepted yet — how do I check?",
+    "a": "Check spam, promotions, and \"all mail\" for the confirmation email. The fastest way to check is to try creating your account at hack.dev3pack.xyz/auth/sign-up using the same email you applied with. If your email is whitelisted, sign-up goes through — you're in. If it's blocked, you haven't been accepted yet."
+  },
+  {
+    "q": "What's the fastest way to get started?",
+    "a": "Three steps: (1) Explore ideas at ideas.sendai.fun, superteam.fun/build/ideas, superteam.fun/build/past-hackathon-winners, or Colosseum Copilot. (2) Write a clear prompt describing what you want to build — the user, the problem, the core flow, and any Solana/partner integrations. (3) Paste it into trynoah.ai — Noah AI generates a ready-to-go full-stack Solana app you can clone and customize in minutes."
+  },
+  {
+    "q": "What's the full hackathon schedule?",
+    "a": "The hackathon is 27 to 29 November 2026. Exact UTC session times will be in the dashboard calendar once you are accepted. Plan to submit on Sunday, 29 November."
+  },
+  {
+    "q": "Can I hack solo?",
+    "a": "Yes. Solo participation is fully allowed. You're eligible for all the same prizes and perks."
+  },
+  {
+    "q": "How big can my team be?",
+    "a": "Teams can have a maximum of 4 members. Solo (1 person) is the minimum."
+  },
+  {
+    "q": "How do I form a team?",
+    "a": "Three ways: (1) Create a Team at hack.dev3pack.xyz/dashboard/teams — pick a name, add a description, tag the roles you need, and choose whether to make it open. (2) Join by Code — ask a teammate for their 6-character join code. (3) Browse the Participant's Directory — find people by name, city, university, country, or background and reach out to those marked \"Looking for team.\""
+  },
+  {
+    "q": "Can I switch teams?",
+    "a": "Yes, but talk to your current team first. You'll need to leave your current team before joining or creating a new one."
+  },
+  {
+    "q": "I'm looking for a team — what should I do?",
+    "a": "Toggle \"Looking for team\" on your profile so you show up in the Directory with a green badge. Browse Open Teams, attend team-formation sessions listed in the dashboard, or ask your local build station organizer. Worst case: hack solo — many great projects are shipped by one person."
+  },
+  {
+    "q": "What's the submission deadline?",
+    "a": "The hard deadline is Sunday, 29 November 2026. Exact UTC hours will be confirmed in the dashboard. After the deadline, submissions are locked and judging begins."
+  },
+  {
+    "q": "Can I edit my project after creating it?",
+    "a": "Yes — until the deadline. You can keep editing every part of your submission right up to the Sunday, 29 November cutoff. After the deadline, submissions are locked and judging begins."
+  },
+  {
+    "q": "What do I need to submit?",
+    "a": "The submission form has 5 steps: (1) Project — name, one-liner, optional category, contract address, hub, and description. (2) Images. (3) Links & video — demo video, repo, live link. (4) Team — confirm your team members. (5) Review & submit."
+  },
+  {
+    "q": "What are the demo video requirements?",
+    "a": "Under 3 minutes — strict. Videos longer than 3 minutes are disqualified from prize eligibility. Show the product in action (a real demo, not a pitch deck). Host on YouTube, Loom, or any public link. Any language is welcome."
+  },
+  {
+    "q": "How are projects judged?",
+    "a": "Two stages using Product and Technical rubrics.\n\nStage 1: All submissions are scored and filtered to the top 100.\n\nStage 2: The top 100 receive a deeper review, including code inspection, founder-market fit, and live demo verification.\n\nKey signals include eligibility compliance, product clarity, real-world impact, demo quality, deployment, repo quality, and Solana/SDK depth."
+  },
+  {
+    "q": "Mainnet or devnet?",
+    "a": "Either works — both mainnet and devnet smart contract/program addresses are accepted."
+  },
+  {
+    "q": "What tracks are available?",
+    "a": "The main track is Solana — every project ships on Solana. Partner tracks and prize amounts will be announced on this site before kickoff."
+  },
+  {
+    "q": "How many tracks can I apply for?",
+    "a": "Every project competes in the main Solana track by default. If partner tracks are added, you can opt into those that your project actually uses. Judges check qualification requirements."
+  },
+  {
+    "q": "Are there regional prizes?",
+    "a": "Yes. Top teams are invited to the Bridge Accelerator (from 7 December) — no separate prize application needed for that path."
+  },
+  {
+    "q": "Does my project have to use Solana?",
+    "a": "Yes, if you want to be eligible for prizes and the accelerator. A project built on Ethereum or any other non-Solana chain will be disqualified for prizes."
+  },
+  {
+    "q": "Where can I claim my AI credits?",
+    "a": "Head to the Perks tab in your hackathon dashboard: hack.dev3pack.xyz/member/perks. Each perk has its own \"Apply\" button and step-by-step instructions. Use your hackathon-registered email when claiming — some perks verify against the participant list."
+  },
+  {
+    "q": "What perks are available?",
+    "a": "Noah AI credits, Cursor Pro (1 year, $240) for select countries, $30 v0 credits, and Top 30 Claude Pro — top 30 finishers in the Solana track share a $2,500 pool for a free month of Claude Pro (awarded after judging)."
+  },
+  {
+    "q": "How do I find a mentor?",
+    "a": "Open the Mentors tab in your dashboard. Browse mentors by expertise, then book office hours or send a direct message. Feedback sessions during the hackathon weekend will be listed on the schedule."
+  },
+  {
+    "q": "What if no mentor is available?",
+    "a": "Talk to SoleneGPT at solenegpt.bonfires.ai — it's an always-on AI mentor trained for hackathon-style support. Recommended fallback for code questions, design feedback, scoping advice, and unblocking yourself at 3am."
+  },
+  {
+    "q": "Are AI-generated code and tools allowed?",
+    "a": "Yes — use whatever helps you ship faster. What matters is that the project is yours, you understand it, and you can demo and explain it."
+  },
+  {
+    "q": "What about plagiarism and reusing code?",
+    "a": "Open-source libraries and templates are fine. Forking someone else's hackathon project and submitting it as yours is not — it'll be disqualified. Pre-existing code from your own Solana projects is allowed; be transparent in the README about what was built before vs. during."
+  },
+  {
+    "q": "What are the behavior expectations?",
+    "a": "Be respectful. Be inclusive. Help other hackers when you can. Harassment, discrimination, or toxic behavior — at build stations, in chat, or in mentor sessions — gets you removed from the hackathon and any future Dev3Pack programs."
+  },
+  {
+    "q": "What happens after winners are announced?",
+    "a": "Winners are announced after judging. Top teams are invited to the Bridge Accelerator (from 7 December). Keep building — the project, the network, and the Solana skills stay with you."
+  },
+  {
+    "q": "What if my team doesn't win?",
+    "a": "You still keep everything you built — the project, the perks, the network — and you're eligible to apply for Dev3Pack Bridge (bridge.dev3pack.xyz) plus the student club program. A lot of careers in Web3 start with a non-winning hackathon submission."
+  }
+]

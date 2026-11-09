@@ -1,5 +1,6 @@
 import {
   Connection,
+  VersionedTransaction,
   type AccountInfo,
   type Message,
   type PublicKey,
@@ -24,6 +25,9 @@ export interface SolanaRpc {
   getFeeForMessage(message: Message): Promise<number | null>;
   getMinimumBalanceForRentExemption(size: number): Promise<number>;
   getBlockHeight(): Promise<number>;
+  simulateTransaction(
+    raw: Buffer,
+  ): Promise<{ err: unknown; slot: number; unitsConsumed?: number }>;
   sendRawTransaction(raw: Buffer): Promise<string>;
   getSignatureStatus(signature: string): Promise<SignatureStatus | null>;
   getTransaction(
@@ -82,6 +86,23 @@ export function pinnedDevnetRpc(): SolanaRpc {
     getMinimumBalanceForRentExemption: (size) =>
       connection.getMinimumBalanceForRentExemption(size, "confirmed"),
     getBlockHeight: () => connection.getBlockHeight("confirmed"),
+    async simulateTransaction(raw) {
+      // VersionedTransaction accepts legacy messages too. This overload preserves the
+      // exact prepared blockhash/message; legacy simulateTransaction(Transaction) rewrites it.
+      const result = await connection.simulateTransaction(
+        VersionedTransaction.deserialize(raw),
+        {
+          commitment: "confirmed",
+          sigVerify: false,
+          replaceRecentBlockhash: false,
+        },
+      );
+      return {
+        err: result.value.err,
+        slot: result.context.slot,
+        unitsConsumed: result.value.unitsConsumed,
+      };
+    },
     // The application issues one send. An ambiguous response NEVER triggers a resend.
     sendRawTransaction: (raw) =>
       connection.sendRawTransaction(raw, {

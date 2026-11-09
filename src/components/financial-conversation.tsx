@@ -30,6 +30,7 @@ import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { BrandAsset } from "./brand-asset";
 import { FinancialBackdrop } from "./financial-backdrop";
 import { FinancialResponse } from "./financial-response";
+import { PersonalAction, WorkspaceLauncher } from "./personal-action";
 import { CopyableMessage } from "./copyable-message";
 import { conversationDrafts as drafts } from "@/lib/chat-history/drafts";
 import {
@@ -964,6 +965,7 @@ export function FinancialConversation({
         )}
       </nav>
       <div className="agus-sidebar-bottom">
+        {authenticated && <WorkspaceLauncher />}
         <div className="agus-sidebar-note">
           <ShieldCheck size={16} />
           <span>
@@ -1240,6 +1242,15 @@ export function FinancialConversation({
                           }
                         />
                       </CopyableMessage>
+                      {(
+                        turn.reply.workspaceActions ??
+                        (turn.reply.workspace ? [turn.reply.workspace] : [])
+                      ).map((action, index) => (
+                        <PersonalAction
+                          key={JSON.stringify(action) + index}
+                          action={action}
+                        />
+                      ))}
                       {turn.reply.accountAction === "choose_demo_account" && (
                         <button
                           className="agus-secondary"

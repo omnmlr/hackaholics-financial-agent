@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-09",
+  "parent": "3b7b691edcff283646eff4fb783b775caaceda5a",
+  "branch": "dev/agus2-solana-core-20261109",
+  "full_suite": {
+    "result": "passed",
+    "files": 62,
+    "tests": 1344,
+    "seconds": 124.56
+  },
+  "final_agent_regression": { "result": "passed", "tests": 44 },
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "actual_local_production_browser": "passed; 390px Chromium; chat-shell workspace, approval/pause/resume/cancel, memory confirmation, persisted reopening, lazy wallet, modal Escape and overflow",
+  "simulation_tests": "exact SDK transport bytes/config; execution failure/unavailability fail closed; historical drafts retain read access but cannot obtain signing authority",
+  "genuine_model_acceptance": "blocked: confirmed free provider/model/key configuration outstanding",
+  "funded_wallet_acceptance": "blocked: user-controlled test funds and manual signature outstanding",
+  "new_external_financial_operations": 0,
+  "spent_ngn": 0,
+  "independent_security_review": "pending before merge/release",
+  "deployment_or_merge": false
+}

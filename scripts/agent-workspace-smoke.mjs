@@ -175,6 +175,77 @@ try {
   await page
     .getByText("Gerald proposed Friday", { exact: true })
     .waitFor({ state: "detached" });
+  // Real chat-shell -> authenticated workspace -> versioned human actions -> persisted recovery.
+  await api("/api/agent-workspace", {
+    action: "create_task",
+    input: {
+      title: "Chat workspace acceptance",
+      objective: "Review only; no external action",
+      dueAt: "2026-12-01T12:00:00Z",
+    },
+  });
+  await api("/api/agent-workspace", {
+    action: "propose_memory",
+    input: { text: "Chat memory acceptance", category: "preference" },
+  });
+  await page.goto(base);
+  await page
+    .getByRole("button", { name: "Open conversations", exact: true })
+    .click();
+  await page
+    .locator("dialog[open]")
+    .getByRole("button", { name: "Wallet & responsibilities", exact: true })
+    .click();
+  const workspaceDialog = page.getByRole("dialog", {
+    name: "Your agent workspace",
+    exact: true,
+  });
+  await workspaceDialog
+    .getByText("Chat workspace acceptance", { exact: true })
+    .waitFor();
+  const taskCard = workspaceDialog
+    .locator("article")
+    .filter({
+      has: page.getByRole("heading", {
+        name: "Chat workspace acceptance",
+        exact: true,
+      }),
+    });
+  await taskCard
+    .getByRole("button", { name: "Approve in-app reminder", exact: true })
+    .click();
+  await taskCard
+    .getByRole("button", { name: "Pause responsibility", exact: true })
+    .click();
+  await taskCard
+    .getByRole("button", { name: "Resume responsibility", exact: true })
+    .click();
+  await taskCard
+    .getByRole("button", { name: "Cancel responsibility", exact: true })
+    .click();
+  await taskCard.getByText(/cancelled/).waitFor();
+  await workspaceDialog
+    .getByRole("button", { name: "Confirm memory", exact: true })
+    .click();
+  await workspaceDialog
+    .getByText("User-confirmed statement", { exact: true })
+    .waitFor();
+  assert.equal(
+    await workspaceDialog.evaluate((el) => el.scrollWidth <= el.clientWidth),
+    true,
+  );
+  await workspaceDialog
+    .getByRole("button", { name: "Solana devnet wallet", exact: true })
+    .click();
+  await workspaceDialog
+    .getByRole("heading", { name: "Your wallet. Your approval.", exact: true })
+    .waitFor();
+  await workspaceDialog
+    .getByRole("button", { name: "Responsibilities & memory", exact: true })
+    .click();
+  await workspaceDialog.getByText(/cancelled/).waitFor();
+  await page.keyboard.press("Escape");
+  await workspaceDialog.waitFor({ state: "hidden" });
   await page.goto(base + "/devnet");
   await page
     .getByRole("heading", { name: "Your wallet. Your approval.", exact: true })
@@ -182,7 +253,7 @@ try {
   assert.equal((await api("/api/agent-workspace/solana")).status, 503);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: actual production HTTP/browser auth, task approval/idempotency, due delivery, stale rejection, memory confirmation/forget, mobile routes, disabled devnet boundary; zero provider or chain calls.",
+    "PASS: actual production HTTP/browser auth, task approval/idempotency, due delivery, stale rejection, memory confirmation/forget, mobile routes, in-chat review/approval/pause/resume/cancel, lazy wallet panel, reload recovery, disabled devnet boundary; zero provider or chain calls.",
   );
 } finally {
   await browser?.close();

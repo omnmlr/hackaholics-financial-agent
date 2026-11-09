@@ -61,6 +61,13 @@ export type SolanaDraft = {
     commitment: "confirmed" | "finalized";
     feeLamports: string;
   } | null;
+  /** Absent only on historical drafts; these cannot acquire new signing authority. */
+  simulation?: {
+    at: string;
+    slot: number;
+    unitsConsumed: number | null;
+    passed: true;
+  };
   failureCode: string | null;
 };
 export type WalletSnapshot = {

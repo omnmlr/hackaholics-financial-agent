@@ -225,9 +225,12 @@ function message(error: unknown) {
   return "The request could not be completed. No automatic retry was made.";
 }
 
-export function DevnetWallet() {
+export function DevnetWallet({
+  embedded = false,
+  initialDraftId = "",
+}: { embedded?: boolean; initialDraftId?: string } = {}) {
   const [drafts, setDrafts] = useState<SolanaDraft[]>([]);
-  const [selectedId, setSelectedId] = useState("");
+  const [selectedId, setSelectedId] = useState(initialDraftId);
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [walletName, setWalletName] = useState<WalletName>("Phantom");
   const [connection, setConnection] = useState<Connection | null>(null);
@@ -615,15 +618,17 @@ export function DevnetWallet() {
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/" aria-label="AGUS home">
-          <BrandAsset />
-        </Link>
-        <Link className={styles.back} href="/">
-          Back to your conversation
-        </Link>
-      </header>
+    <section className={styles.page} aria-label="Devnet wallet">
+      {!embedded && (
+        <header className={styles.header}>
+          <Link href="/" aria-label="AGUS home">
+            <BrandAsset />
+          </Link>
+          <Link className={styles.back} href="/">
+            Back to your conversation
+          </Link>
+        </header>
+      )}
       <div className={styles.intro}>
         <p className={styles.eyebrow}>SOLANA DEVNET</p>
         <h1>Your wallet. Your approval.</h1>
@@ -949,6 +954,12 @@ export function DevnetWallet() {
                   ? " plus the token amount above"
                   : " including the transfer amount"}
               </dd>
+              <dt>Pre-signing simulation</dt>
+              <dd>
+                {active.simulation?.passed
+                  ? `Passed at slot ${active.simulation.slot} on ${new Date(active.simulation.at).toLocaleString()}${active.simulation.unitsConsumed === null ? "" : ` · ${active.simulation.unitsConsumed} compute units`}. This is not confirmation; chain state can change.`
+                  : "Historical draft without simulation. Prepare a new draft before signing."}
+              </dd>
               <dt>Draft expires</dt>
               <dd>{new Date(active.expiresAt).toLocaleString()}</dd>
               <dt>Draft ID</dt>
@@ -1096,6 +1107,6 @@ export function DevnetWallet() {
           </div>
         ) : null}
       </section>
-    </main>
+    </section>
   );
 }

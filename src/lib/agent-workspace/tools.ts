@@ -3,6 +3,7 @@ import type { FunctionDeclaration } from "@google/genai";
 import type { AgentReply } from "../financial-agent/agent";
 import { workspace, TaskInput, MemoryInput } from "./store";
 import { service } from "../solana";
+import type { WorkspaceAction } from "./artifacts";
 
 const definitions = {
   read_agent_workspace: {
@@ -68,41 +69,64 @@ export function personalTools(owner: string) {
       const definition = enabled.find(([key]) => key === name)?.[1];
       if (!definition) throw new Error("Tool unavailable");
       const input = definition.schema.parse(args);
-      let data: unknown, text: string;
+      let text: string;
+      let action: WorkspaceAction;
       if (name === "read_agent_workspace") {
-        data = await workspace(owner).snapshot();
-        text =
-          "Saved workspace; memory is attributed context, not verified financial data.";
+        const saved = await workspace(owner).snapshot();
+        const notes = saved.memories
+          .slice(0, 10)
+          .map(
+            (m) =>
+              `${m.confirmed ? "User-confirmed statement" : "Unconfirmed proposal"}: ${m.text.slice(0, 300)}`,
+          )
+          .join("\n");
+        const responsibilities = saved.tasks
+          .slice(0, 20)
+          .map(
+            (t) =>
+              `${t.id}: ${t.title.slice(0, 120)}; ${t.state}; due ${t.dueAt}; scope ${t.scope}`,
+          )
+          .join("\n");
+        text = `Your saved workspace has ${saved.tasks.length} retrieved responsibilities and ${saved.memories.length} retrieved memory notes (up to 100 each). Memory is attributed context, never verified financial data.${notes ? "\n" + notes : ""}${responsibilities ? "\nSaved responsibilities (bounded):\n" + responsibilities : ""}`;
+        action = { kind: "overview" };
       } else if (name === "save_memory_proposal") {
-        data = await workspace(owner).proposeMemory(input);
+        const memory = await workspace(owner).proposeMemory(input);
         text =
-          "Memory proposed. Confirm or forget it in /responsibilities. It is not yet confirmed.";
+          "Memory proposed. Please confirm the statement or forget it below; it is not yet confirmed.";
+        action = { kind: "memory", id: memory.id };
       } else if (name === "prepare_responsibility") {
-        data = await workspace(owner).createTask(input);
+        const task = await workspace(owner).createTask(input);
         text =
-          "Responsibility prepared, awaiting your approval in /responsibilities. Only an in-app reminder is supported; no external action occurred.";
+          "Responsibility prepared, awaiting your approval below. Only an in-app reminder is supported; no external action occurred.";
+        action = { kind: "responsibility", id: task.id };
       } else if (name === "solana_wallet_balances") {
-        data = await service().discoverWallet(
+        const wallet = await service().discoverWallet(
           owner,
           (input as { wallet: string }).wallet,
         );
         text =
-          "Solana devnet RPC observations; not production funds, dollars or a fiat conversion.";
+          "Solana devnet RPC observations are shown below with their observation time. These are test assets, not production funds or dollars.";
+        action = { kind: "wallet", wallet };
       } else if (name === "solana_prepare_transfer") {
-        data = await service().prepare(
+        const draft = await service().prepare(
           owner,
           input as z.infer<typeof definitions.solana_prepare_transfer.schema>,
         );
         text =
-          "Unsigned devnet transaction prepared. Review exact recipient, amount and fee at /devnet. Nothing was approved, signed or submitted.";
+          "Unsigned devnet transaction prepared. Review its exact recipient, amount and fee below. Nothing was approved, signed or submitted.";
+        action = { kind: "solana", id: draft.id };
       } else {
-        data = await service().reconcile(owner, (input as { id: string }).id);
-        text =
-          "Current devnet transaction record; unresolved status is not confirmation.";
+        const draft = await service().reconcile(
+          owner,
+          (input as { id: string }).id,
+        );
+        text = `The devnet record is ${draft.state}. ${draft.confirmation ? "The matching on-chain transaction was verified." : "This is not evidence of completed execution."}`;
+        action = { kind: "solana", id: draft.id };
       }
       return {
         kind: "general",
-        text: `${text}\n${JSON.stringify(data)}`,
+        text,
+        workspace: action,
         citations: [],
         evidence: { modelCalls: 0, toolCalls: 1, resultBytes: 0 },
       };

@@ -236,4 +236,28 @@ export class PlanExecutor {
     current.checkpointVersion++;
     return current;
   }
+
+  /**
+   * Cancels a plan and rolls back / marks all non-terminal steps as cancelled.
+   */
+  cancelPlan(plan: ExecutionPlan, reason: string): ExecutionPlan {
+    const current = executionPlanSchema.parse(plan);
+    current.status = "cancelled";
+    current.updatedAt = new Date().toISOString();
+    current.checkpointVersion++;
+
+    for (const step of current.steps) {
+      if (
+        step.state === "proposed" ||
+        step.state === "awaiting_authorization" ||
+        step.state === "running"
+      ) {
+        step.state = "cancelled";
+        step.error = `Cancelled: ${reason}`;
+      }
+    }
+
+    current.evidenceLog.push(`Plan cancelled: ${reason}`);
+    return current;
+  }
 }

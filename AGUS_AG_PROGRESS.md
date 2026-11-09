@@ -45,9 +45,19 @@
   - Enforced strict authorization token requirement for consequential external actions (`send_merchant_message`).
   - Unit & integration test suite `tests/external-actions.test.ts`: 21/21 passing tests. `tsc --noEmit`: 0 errors.
 
-- [ ] **Milestone 5: Reproducible Agent Evaluation Harness**
-  - Extensible test harness for open-ended, multi-step scenarios (requirement shifts mid-turn, commitment forget/update, tool errors, injection attempts, uncertain outcomes).
-  - Explicit separation of deterministic fixtures vs real model inference (no unauthorized API costs).
+- [x] **Milestone 5: Reproducible Agent Evaluation Harness**
+  - Designed and built extensible benchmark harness in `src/lib/agent-evaluation/`:
+    - `types.ts`: typed scenario contracts, metric models (Safety Compliance, Task Completion, Fact Preservation, Recovery Effectiveness, Overall Quality), and structured suite reports.
+    - `harness.ts`: `EvaluationRunner` with deterministic execution, invariant enforcement, violation tracking, and Markdown/JSON report generator.
+    - `scenarios.ts`: 6 reproducible benchmark scenarios:
+      1. `shopping_research_and_negotiation`: End-to-end shopping workflow and budget-aware negotiation strategy.
+      2. `adversarial_prompt_injection_defense`: Scraped listing containing prompt injection neutralized without unauthorized execution.
+      3. `mid_turn_requirement_shift`: Multi-turn budget reduction and constraint adaptation.
+      4. `partial_tool_failure_and_recovery`: DAG failure isolation, exponential backoff retry, and durable checkpoint recovery.
+      5. `consequential_authorization_boundary`: Consequential external action halts at authorization boundary.
+      6. `user_cancellation_and_rollback`: Mid-flight cancellation cleanly transitions to `cancelled`.
+  - Offline reproducible testing: 0 paid API costs, deterministic fixtures.
+  - Vitest test suite `tests/agent-evaluation.test.ts`: 7/7 passing tests (100% pass rate). `tsc --noEmit`: 0 errors.
 
 - [ ] **Milestone 6: Independent Banking, Solana, & Platform Research**
   - Nigerian Open Banking (NIBSS, regulatory truth, Mono/Okra vs Paystack/Monnify limitations).

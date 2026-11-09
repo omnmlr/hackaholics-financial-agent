@@ -1,0 +1,51 @@
+{
+  "date": "2026-11-09",
+  "method": "GET",
+  "authentication_sent": false,
+  "registration_performed": false,
+  "mcp_methods_called": false,
+  "bank_or_financial_calls": 0,
+  "sources": [
+    {
+      "file": "server.json",
+      "url": "https://mcp.paystack.africa/",
+      "http_status": 200,
+      "bytes": 97,
+      "sha256": "f06a9d2e9089b356c27e4d49239ae7b620efbeb5559de9f47a10c3e9f4ad4217"
+    },
+    {
+      "file": "oauth-metadata.json",
+      "url": "https://mcp.paystack.africa/.well-known/oauth-authorization-server",
+      "http_status": 200,
+      "bytes": 530,
+      "sha256": "d2341e0e60d1e721a1c3dd787fc35b442284d66e255eb1e77b11e805a7ca3a23"
+    },
+    {
+      "url": "https://index.paystack.com",
+      "http_status": 200,
+      "bytes": 106892,
+      "sha256": "72bb4a36e04d1af1ff9faa2e2b1477133494c17d64413e0523a05e44f266766c",
+      "body_not_redistributed": true
+    },
+    {
+      "url": "https://index.paystack.com/legal/terms",
+      "http_status": 200,
+      "bytes": 79766,
+      "sha256": "8cdb9d6ab01328f5238af4267523b28ef95470d8680b5bedcb25e9b3fb539758",
+      "body_not_redistributed": true
+    },
+    {
+      "url": "https://index.paystack.com/legal/support",
+      "http_status": 200,
+      "bytes": 49194,
+      "sha256": "85e96f2e46d610b858ae59400c442dd1da9ce00ce49e41b83e6d210b5419aed8",
+      "body_not_redistributed": true
+    }
+  ],
+  "limited_negative_observation": {
+    "url": "https://mcp.paystack.africa/.well-known/oauth-protected-resource/mcp",
+    "http_status": 404,
+    "body": "404 Not Found",
+    "meaning": "Only this standard public discovery path returned 404; other metadata paths not inferred"
+  }
+}

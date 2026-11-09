@@ -1,0 +1,101 @@
+{
+  "observed_utc": "2026-11-09T08:13:25.849878+00:00",
+  "experiment": "actual_public_metadata_and_policy_discovery_only",
+  "http_methods_used": [
+    "GET"
+  ],
+  "sources": {
+    "server": {
+      "url": "https://mcp.paystack.africa/",
+      "http_status": 200,
+      "bytes": 97,
+      "sha256": "f06a9d2e9089b356c27e4d49239ae7b620efbeb5559de9f47a10c3e9f4ad4217"
+    },
+    "oauth": {
+      "url": "https://mcp.paystack.africa/.well-known/oauth-authorization-server",
+      "http_status": 200,
+      "bytes": 530,
+      "sha256": "d2341e0e60d1e721a1c3dd787fc35b442284d66e255eb1e77b11e805a7ca3a23"
+    },
+    "supported_agents": {
+      "url": "https://index.paystack.com/legal/support/supported-agents",
+      "http_status": 200,
+      "bytes": 20862,
+      "sha256": "5ad5a7cedb647c2d28e3921e40d7c623bab09fc6c25ed20a117f14e9d2921198"
+    },
+    "transfers": {
+      "url": "https://index.paystack.com/legal/support/transfers-and-zap",
+      "http_status": 200,
+      "bytes": 24062,
+      "sha256": "0fff00faa6f1c5673a23acc5389e30c1ce203559d9b641a9616b7d25062bab9f"
+    },
+    "privacy": {
+      "url": "https://index.paystack.com/legal/privacy",
+      "http_status": 200,
+      "bytes": 67696,
+      "sha256": "d2c2cb86ec782634149039ee66b3faf75dee5c36bfdd51c9fdbc524320589670"
+    },
+    "terms": {
+      "url": "https://index.paystack.com/legal/terms",
+      "http_status": 200,
+      "bytes": 79766,
+      "sha256": "8cdb9d6ab01328f5238af4267523b28ef95470d8680b5bedcb25e9b3fb539758"
+    }
+  },
+  "server": {
+    "name": "paystack-index-mcp",
+    "version": "0.0.1",
+    "status": "ok",
+    "docs": "https://index.paystack.com"
+  },
+  "oauth": {
+    "issuer": "https://mcp.paystack.africa",
+    "authorization_endpoint": "https://index.paystack.com/oauth/authorize",
+    "token_endpoint": "https://mcp.paystack.africa/oauth/token",
+    "registration_endpoint": "https://mcp.paystack.africa/oauth/register",
+    "grant_types_supported": [
+      "authorization_code",
+      "refresh_token",
+      "client_credentials"
+    ],
+    "response_types_supported": [
+      "code"
+    ],
+    "code_challenge_methods_supported": [
+      "S256"
+    ],
+    "scopes_supported": [
+      "mcp:transact"
+    ],
+    "token_endpoint_auth_methods_supported": [
+      "client_secret_post",
+      "client_secret_basic",
+      "none"
+    ]
+  },
+  "advertised_endpoint_hosts_expected": {
+    "authorization_endpoint": true,
+    "token_endpoint": true,
+    "registration_endpoint": true
+  },
+  "document_text_observations": {
+    "supported_agent_names_present": [
+      "Claude",
+      "ChatGPT",
+      "OpenClaw"
+    ],
+    "not_supported_at_launch_text_present": true,
+    "zap_balance_source_text_present": true,
+    "privacy_zap_balance_text_present": true,
+    "merchant_restriction_text_present": true
+  },
+  "registration_advertised": true,
+  "registration_attempted": false,
+  "oauth_token_requests": 0,
+  "mcp_method_calls": 0,
+  "customer_account_reads": 0,
+  "financial_operations": 0,
+  "banking_integration_established": false,
+  "verified_existing_source_banks": 0,
+  "stop_reason": "No approved AGUS client/customer-source grant. Public discovery is not bank authority. Published Zap-balance/agent-policy constraints need explicit provider resolution."
+}

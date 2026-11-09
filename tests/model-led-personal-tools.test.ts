@@ -193,3 +193,65 @@ it("returns durable completed steps when the model fails after saving a proposal
     1,
   );
 });
+
+it("enforces the financial specialist's read-only restriction even for an undeclared model call", async () => {
+  const repository = createFixtureRepository(),
+    clock = () => FIXTURE_NOW;
+  let calls = 0;
+  const model: ToolModel = {
+    provider: "scripted",
+    model: "scripted",
+    async generate(input) {
+      expect(
+        input.declarations.some((d) => d.name === "prepare_payment_draft"),
+      ).toBe(false);
+      if (input.responseJsonSchema)
+        return {
+          text: '{"safeGeneralConversation":true}',
+          content: {
+            role: "model",
+            parts: [{ text: '{"safeGeneralConversation":true}' }],
+          },
+          calls: [],
+        };
+      if (calls++ === 0) {
+        const call = { name: "prepare_payment_draft", args: {} };
+        return {
+          text: "",
+          content: { role: "model", parts: [{ functionCall: call }] },
+          calls: [call],
+        };
+      }
+      return {
+        text: "Preparation requires a separate supported workflow.",
+        content: {
+          role: "model",
+          parts: [
+            { text: "Preparation requires a separate supported workflow." },
+          ],
+        },
+        calls: [],
+      };
+    },
+  };
+  const agent = createModelLedAgent({
+    model,
+    readOnly: true,
+    tools: createReadTools({
+      repository,
+      sources: [createFixtureDataSource({ repository, clock })],
+      clock,
+    }),
+    access: createRepositoryAccess(repository, clock),
+    clock,
+    store: new MemoryContextStore(),
+  });
+  const result = await agent.turn({
+    ctx: fixturePrincipal,
+    conversationId: "readonly-enforcement",
+    text: "Explain how payment preparation works",
+    accountIds: [],
+  });
+  expect(result.handoff).toBeUndefined();
+  expect(result.kind).not.toBe("handoff");
+});

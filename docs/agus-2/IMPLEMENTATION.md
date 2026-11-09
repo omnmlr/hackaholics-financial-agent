@@ -2,6 +2,8 @@
 
 Recovered source: `6fbbcf66fb5233e4b554f91cbde1508ad72a369d`. Old checkout and every fetched advanced/research branch remain preserved. GitHub has no reachable `fe8f58a`, `b04cb5c`, `130c8db` or `a358532` in the inspected refs/object database; no missing implementation was assumed present. This branch extends the recovered native agent rather than replacing it.
 
+The central coordinator is extended on `dev/agus2-agent-engine-20261109`; see [engine checkpoint and current limits](ENGINE_CHECKPOINT.md). General conversation on that branch no longer requires the financial fixture.
+
 ## Run locally
 
 Use the existing operator password setup and a separate development database. Never copy production secrets or customer records. Install with `npm ci --ignore-scripts`, then configure:

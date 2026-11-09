@@ -154,6 +154,12 @@ it("runs a compound goal through Gemini function calls with the financial fixtur
     body.reply.workspaceActions.map((a: { kind: string }) => a.kind),
   ).toEqual(["memory", "responsibility"]);
   const sent = wire.mock.calls.map((c) => JSON.parse(String(c[1]?.body)));
+  const reminderDeclaration = sent[0].tools[0].functionDeclarations.find(
+    (d: { name: string }) => d.name === "prepare_responsibility",
+  );
+  expect(
+    reminderDeclaration.parametersJsonSchema.properties,
+  ).not.toHaveProperty("requestId");
   const finalRequest = sent[sent.length - 2];
   expect(JSON.stringify(finalRequest.contents)).toContain('"id":"memory-id"');
   expect(JSON.stringify(finalRequest.contents)).toContain('"functionResponse"');
@@ -311,4 +317,85 @@ it("rejects identity conflicts, untrusted control origins, missing authenticatio
       accountIds: [],
     }),
   ).rejects.toMatchObject({ status: 409 });
+});
+
+it("composes a focused financial specialist using authorized fixture sources and retains the original source presentation", async () => {
+  process.env.FINANCIAL_DEMO_ENABLED = "true";
+  const { runPersonalConversation } =
+    await import("../src/lib/personal-agent/conversation");
+  const { AgentError } = await import("../src/lib/financial-agent/protocol");
+  let rootCalls = 0,
+    childCalls = 0;
+  const model: import("../src/lib/model-led-agent/model").ToolModel = {
+    provider: "scripted",
+    model: "scripted",
+    async generate(input) {
+      if (input.responseJsonSchema) {
+        const text = '{"grounded":true}';
+        return {
+          text,
+          content: { role: "model", parts: [{ text }] },
+          calls: [],
+        };
+      }
+      if (
+        input.system.includes("intelligent conversational financial assistant")
+      ) {
+        expect(JSON.stringify(input.contents)).toContain(
+          "Financial subtask selected by the coordinator",
+        );
+        expect(
+          input.declarations.some((d) => d.name === "prepare_payment_draft"),
+        ).toBe(false);
+        if (childCalls++) throw new AgentError("MODEL_NETWORK");
+        const call = {
+          name: "get_account_summary",
+          args: { accountIds: ["amina-current"] },
+        };
+        return {
+          text: "",
+          content: { role: "model", parts: [{ functionCall: call }] },
+          calls: [call],
+        };
+      }
+      if (rootCalls++ === 0) {
+        const call = {
+          name: "analyze_finances",
+          args: {
+            focus:
+              "Inspect the current selected account summary and report source limitations",
+          },
+        };
+        return {
+          text: "",
+          content: { role: "model", parts: [{ functionCall: call }] },
+          calls: [call],
+        };
+      }
+      const text =
+        "The selected account summary is attached from the authorized fictional records. These fixture records are not a live bank connection. I can use verified information to help compare the available options.";
+      return { text, content: { role: "model", parts: [{ text }] }, calls: [] };
+    },
+  };
+  try {
+    const result = await runPersonalConversation(
+      req("/api/conversation"),
+      {
+        conversationId: "financial-composition",
+        text: "Check the selected account summary and help me compare my options",
+        accountIds: ["amina-current"],
+      },
+      model,
+    );
+    expect(result.execution?.state).toBe("completed");
+    expect(result.presentation?.results[0].type).toBe("get_account_summary");
+    expect(result.citations.length).toBeGreaterThan(0);
+    expect(result.presentation?.explanation.join(" ")).toContain(
+      "compare the available options",
+    );
+    expect(result.handoff).toBeUndefined();
+    expect(childCalls).toBe(2);
+  } finally {
+    process.env.FINANCIAL_DEMO_ENABLED = "false";
+  }
 });

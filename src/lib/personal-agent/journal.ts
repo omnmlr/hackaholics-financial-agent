@@ -134,6 +134,7 @@ export function runJournal(owner: string) {
         plan?: PlanStep[];
         state?: RunStatus;
         reply?: AgentRun["reply"];
+        disclosures?: string[];
         reason?: string;
         release?: boolean;
       },
@@ -157,6 +158,7 @@ export function runJournal(owner: string) {
           if (patch.plan) run.plan = patch.plan;
           if (patch.state) run.state = patch.state;
           if (patch.reply) run.reply = patch.reply;
+          if (patch.disclosures) run.disclosures = patch.disclosures;
           if (patch.reason) run.reason = patch.reason;
         }
         run.version++;

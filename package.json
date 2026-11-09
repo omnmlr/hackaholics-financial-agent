@@ -32,7 +32,8 @@
     "responsibilities:run": "node --env-file-if-exists=.env.local --import=tsx scripts/responsibilities.ts",
     "test:agent-workspace": "node scripts/agent-workspace-smoke.mjs",
     "test:agent-followup": "node scripts/agent-workspace-smoke.mjs --followup",
-    "test:agent-runner": "node scripts/agent-workspace-smoke.mjs --runner"
+    "test:agent-runner": "node scripts/agent-workspace-smoke.mjs --runner",
+    "test:personal-agent": "node scripts/personal-agent-smoke.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.10",

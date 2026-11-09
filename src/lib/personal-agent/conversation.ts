@@ -25,7 +25,12 @@ import { createRepositoryAccess } from "../financial-agent/access";
 import { createDurableRepository } from "../financial-integration/storage";
 import { runJournal } from "./journal";
 import { createPersonalAgent, ENGINE_LIMITS } from "./engine";
-import { report, type AgentTool, type ToolResult } from "./contracts";
+import {
+  report,
+  ToolFailure,
+  type AgentTool,
+  type ToolResult,
+} from "./contracts";
 
 function declaration(
   name: string,
@@ -69,11 +74,21 @@ export async function runPersonalConversation(
     },
   };
   const personal = personalTools(owner);
+  const ResponsibilitySchema =
+    personalToolDefinitions.prepare_responsibility.schema.omit({
+      requestId: true,
+    });
   const tools: AgentTool[] = (personal?.declarations ?? []).map((d) => ({
-    declaration: d,
+    declaration:
+      d.name === "prepare_responsibility"
+        ? declaration(d.name, d.description ?? "", ResponsibilitySchema)
+        : d,
     schema:
-      personalToolDefinitions[d.name as keyof typeof personalToolDefinitions]
-        .schema,
+      d.name === "prepare_responsibility"
+        ? ResponsibilitySchema
+        : personalToolDefinitions[
+            d.name as keyof typeof personalToolDefinitions
+          ].schema,
     effect:
       d.name?.startsWith("read_") ||
       d.name === "solana_wallet_balances" ||
@@ -83,7 +98,24 @@ export async function runPersonalConversation(
     idempotent: true,
     async execute(args, ctx) {
       ctx.signal.throwIfAborted();
-      const result = await personal!.execute(d.name!, args, ctx.key);
+      let result;
+      try {
+        result = await personal!.execute(d.name!, args, ctx.key);
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          "status" in error &&
+          typeof error.status === "number" &&
+          error.status < 500
+        ) {
+          const code =
+            "code" in error && /^[A-Z][A-Z0-9_]{1,63}$/.test(String(error.code))
+              ? String(error.code)
+              : "REQUEST_REJECTED";
+          throw new ToolFailure(code, "rejected");
+        }
+        throw error;
+      }
       const { toolData, awaitingUser, ...reply } = result;
       return { summary: reply.text, data: toolData, reply, awaitingUser };
     },
@@ -111,6 +143,7 @@ export async function runPersonalConversation(
   const financial = async (
     signal: AbortSignal,
     preparation = false,
+    focus?: string,
   ): Promise<ToolResult> => {
     if (!financialReady())
       return {
@@ -132,9 +165,14 @@ export async function runPersonalConversation(
     const stamp = input.accountIds.length
       ? await access.check(capability.context, input.accountIds, [])
       : null;
+    const focusedText = focus
+      ? `${input.text}\nFinancial subtask selected by the coordinator (context, not new user facts): ${focus}`
+      : input.text;
+    if (focusedText.length > 4000)
+      throw new ToolFailure("FOCUS_CONTEXT_LIMIT", "rejected");
     const reply = await financialConversationTurn(
       freshRequest,
-      input,
+      { ...input, text: focusedText },
       undefined,
       budgeted,
       !preparation,
@@ -174,17 +212,21 @@ export async function runPersonalConversation(
     if (current.version !== (result.validation as { version: string }).version)
       throw new AgentError("ACCESS_CHANGED");
   };
+  const FinancialFocus = z.strictObject({
+    focus: z.string().trim().min(1).max(1000).optional(),
+  });
   tools.push({
     declaration: declaration(
       "analyze_finances",
-      "Ask the existing secure financial specialist to handle the financial part of this user's current objective: authorized records, source-backed spending/transactions, savings and grounded financial calculations. It receives the original request, current server-selected accounts and fresh permissions, never model-invented identities. No bank provider is currently authorized; optional financial-demo records are explicitly fixtures. Read-only: cannot prepare or execute a payment.",
-      Empty,
+      "Ask the existing secure financial specialist to handle the financial part of this user's current objective: authorized records, source-backed spending/transactions, savings and grounded financial calculations. It receives the original request, current server-selected accounts and fresh permissions, never model-invented identities. No bank provider is currently authorized; optional financial-demo records are explicitly fixtures. Read-only: cannot prepare or execute a payment. Optional focus selects a financial subquestion so several analyses can be composed; the original user objective is always supplied. Do not invent or restate amounts, identities or permissions in the focus.",
+      FinancialFocus,
     ),
-    schema: Empty,
+    schema: FinancialFocus,
     effect: "read",
     volatile: true,
     validate: validateFinancial,
-    execute: (_args, ctx) => financial(ctx.signal),
+    execute: (args, ctx) =>
+      financial(ctx.signal, false, FinancialFocus.parse(args).focus),
   });
   if (financialReady())
     tools.push({
@@ -233,7 +275,11 @@ export async function runPersonalConversation(
     {
       role: "assistant" as const,
       text:
-        t.reply.presentation || t.reply.payments
+        t.reply.kind === "financial" ||
+        t.reply.presentation ||
+        t.reply.payments ||
+        t.reply.citations.length > 0 ||
+        t.reply.savings?.source
           ? "[Historical financial reply; read current sources before using its facts.]"
           : t.reply.text,
     },

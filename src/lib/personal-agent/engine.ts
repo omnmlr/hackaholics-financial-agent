@@ -10,6 +10,7 @@ import { cancellable } from "../request-cancellation";
 import type { RunJournal } from "./journal";
 import {
   report,
+  ToolFailure,
   type AgentRun,
   type AgentTool,
   type ExecutionStep,
@@ -131,6 +132,8 @@ export function createPersonalAgent(options: {
         for (const step of steps)
           if (step.state === "succeeded" && step.result) {
             const tool = registry.get(step.name);
+            if (!tool && step.effect !== "plan" && step.name !== "inspect_run")
+              throw new AgentError("CAPABILITY_CHANGED");
             if (tool?.validate) await tool.validate(step.result);
             else if (tool?.volatile)
               throw new AgentError("FRESH_AUTHORIZATION_REQUIRED");
@@ -138,7 +141,11 @@ export function createPersonalAgent(options: {
       };
       if (!lease) {
         if (run.reply && ["completed", "waiting_user"].includes(run.state)) {
-          await validate(run.steps);
+          await validate(
+            run.steps.filter(
+              (s) => !run.disclosures || run.disclosures.includes(s.key),
+            ),
+          );
           return {
             ...run.reply,
             execution: { ...report(run), replayed: true },
@@ -247,7 +254,10 @@ export function createPersonalAgent(options: {
                 sequence: s.sequence,
                 name: s.name,
                 state: s.state,
-                ...(s.effect === "proposal" && s.state === "succeeded"
+                ...(s.effect === "proposal" &&
+                s.state === "succeeded" &&
+                registry.has(s.name) &&
+                !registry.get(s.name)?.volatile
                   ? { historicalResult: s.result }
                   : {
                       instruction:
@@ -281,6 +291,7 @@ export function createPersonalAgent(options: {
           .reverse()
           .find(
             (r) =>
+              r.kind === "financial" ||
               r.presentation ||
               r.payments ||
               r.savings ||
@@ -290,17 +301,54 @@ export function createPersonalAgent(options: {
         const actions = replies.flatMap(
           (r) => r.workspaceActions ?? (r.workspace ? [r.workspace] : []),
         );
+        const sourceReplies = replies.filter(
+          (r) =>
+            r.kind === "financial" ||
+            r.presentation ||
+            r.payments ||
+            r.savings?.source,
+        );
+        const hasProtectedSource = sourceReplies.length > 0;
+        // A general coordinator must not bypass the financial specialist's slot-
+        // grounded narration by rewriting its amounts, statuses or source caveats.
+        const unsafeFinancialRewrite =
+          unsupportedAuthorityClaim(text) ||
+          /[₦$€£]\s*[\d]|\b(?:NGN|USD|USDC|naira|dollars?)\s*[\d]|\d[\d,.]*\s*(?:NGN|USD|USDC|naira|dollars?)\b/i.test(
+            text,
+          ) ||
+          /\b(?:transfer|transaction|payment)\s+(?:has\s+|was\s+|is\s+)?(?:arrived|succeeded|completed|settled|confirmed|successful|sent|received|credited)\b/i.test(
+            text,
+          );
+        const complementary =
+          hasProtectedSource && unsafeFinancialRewrite ? "" : text;
+        const trustedTexts = [...new Set(sourceReplies.map((r) => r.text))];
+        const releasedText = hasProtectedSource
+          ? [
+              ...trustedTexts,
+              ...(complementary && !trustedTexts.includes(complementary)
+                ? [complementary]
+                : []),
+            ].join("\n\n")
+          : text;
+        const sourceExplanations = sourceReplies.flatMap(
+          (r) => r.presentation?.explanation ?? [r.text],
+        );
         let value: AgentReply = {
           ...(financial ?? basic(text)),
           ...(financial?.presentation
             ? {
                 presentation: {
                   ...financial.presentation,
-                  explanation: text.split(/\n\n/).filter(Boolean),
+                  explanation: [
+                    ...new Set([
+                      ...sourceExplanations,
+                      ...(complementary ? [complementary] : []),
+                    ]),
+                  ],
                 },
               }
             : {}),
-          text,
+          text: releasedText,
           citations: [...new Set(replies.flatMap((r) => r.citations))],
           ...(actions.length
             ? {
@@ -316,6 +364,7 @@ export function createPersonalAgent(options: {
         await checkpoint({
           state: status,
           reply: value,
+          disclosures: [...validations.keys()],
           reason: code,
           release: true,
         });
@@ -559,19 +608,27 @@ export function createPersonalAgent(options: {
                       },
                     };
                   } catch (error) {
+                    const candidate =
+                      error instanceof Error && "code" in error
+                        ? String(error.code)
+                        : "";
                     const code =
-                      error instanceof AgentError
-                        ? error.code
-                        : error instanceof z.ZodError
-                          ? "INVALID_ARGUMENT"
-                          : error instanceof Error && "code" in error
-                            ? String(error.code).slice(0, 60)
-                            : "TOOL_UNAVAILABLE";
+                      (error as Error)?.name === "TimeoutError"
+                        ? "TIMEOUT"
+                        : error instanceof AgentError ||
+                            error instanceof ToolFailure
+                          ? error.code
+                          : error instanceof z.ZodError
+                            ? "INVALID_ARGUMENT"
+                            : /^[A-Z][A-Z0-9_]{1,63}$/.test(candidate)
+                              ? candidate
+                              : "TOOL_UNAVAILABLE";
                     const unknown =
                       tool.effect === "proposal" &&
-                      (options.signal?.aborted ||
-                        /TIMEOUT|TURN_LIMIT|ABORT|RESULT_BYTES/i.test(code) ||
-                        (error as Error)?.name === "TimeoutError");
+                      !(
+                        error instanceof ToolFailure &&
+                        error.outcome === "rejected"
+                      );
                     await checkpoint({
                       step: {
                         ...step,

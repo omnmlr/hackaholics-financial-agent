@@ -2,6 +2,14 @@ import type { FunctionDeclaration } from "@google/genai";
 import type { AgentReply } from "../financial-agent/agent";
 import type { z } from "zod";
 
+export class ToolFailure extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly outcome: "rejected" | "unknown",
+  ) {
+    super(code);
+  }
+}
 export type ToolResult = {
   summary: string;
   data: unknown;
@@ -63,6 +71,7 @@ export type AgentRun = {
   updatedAt: string;
   plan: PlanStep[];
   steps: ExecutionStep[];
+  disclosures?: string[];
   reply?: AgentReply;
   reason?: string;
 };

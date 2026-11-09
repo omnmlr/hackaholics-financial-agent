@@ -1,0 +1,32 @@
+{
+  "kind": "scripted-coordinator-with-genuine-public-devnet-tool",
+  "observedAt": "2026-11-09T21:52:00.516Z",
+  "genuineModelCalls": 0,
+  "scriptedModelCalls": 3,
+  "actualRpcCalls": 3,
+  "engineState": "completed",
+  "steps": [
+    {
+      "sequence": 1,
+      "tool": "solana_wallet_balances",
+      "state": "succeeded",
+      "summary": "Solana devnet RPC observations are shown below with their observation time. These are test assets, not production funds or dollars."
+    }
+  ],
+  "walletConnected": false,
+  "privateKeyGenerated": false,
+  "transactionsPreparedOrSent": 0,
+  "observedWallet": {
+    "sol": {
+      "amount": "0",
+      "decimals": 9,
+      "lamports": "0"
+    },
+    "tokens": [],
+    "wallet": "2URn9ic3aMGQgGXzPcKMPjdwUJgj9Efumr2bTq4jWNAb",
+    "network": "devnet",
+    "fetchedAt": "2026-11-09T21:52:00.508Z",
+    "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+    "rpcEndpoint": "https://api.devnet.solana.com"
+  }
+}

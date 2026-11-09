@@ -492,3 +492,193 @@ it("repairs unsupported final narration against existing results without replayi
   expect(execute).toHaveBeenCalledTimes(1);
   expect(reviews).toBe(2);
 });
+
+it("keeps timed-out proposal outcomes unknown, then recovers with the same stable operation key", async () => {
+  const owner = randomUUID(),
+    tool = noteTool(owner),
+    original = tool.execute,
+    args = { text: "Keep this once despite a timeout", category: "note" };
+  tool.execute = async (input, ctx) => {
+    const result = await original(input, ctx);
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    return result;
+  };
+  const s = await setup(
+    scripted([
+      calls({ name: "save_note", args }),
+      answer(
+        "The preparation response is uncertain. Inspect the saved note before retrying.",
+      ),
+    ]),
+    [tool],
+    owner,
+  );
+  const partial = await createPersonalAgent({
+    model: scripted([
+      calls({ name: "save_note", args }),
+      answer("The preparation response is uncertain; it is not confirmed."),
+    ]),
+    journal: s.journal,
+    tools: [tool],
+    limits: { toolMs: 10 },
+  }).run({ id: s.run.id });
+  expect(partial.execution?.state).toBe("interrupted");
+  expect(partial.execution?.steps[0].state).toBe("unknown");
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  tool.execute = original;
+  const resumed = await createPersonalAgent({
+    model: scripted([
+      calls({ name: "save_note", args }),
+      answer("The note proposal is recorded once and awaits confirmation."),
+    ]),
+    journal: s.journal,
+    tools: [tool],
+  }).run({ id: s.run.id, resume: true });
+  expect(resumed.execution?.state).toBe("waiting_user");
+  expect((await workspace(owner).snapshot()).memories).toHaveLength(1);
+});
+it("requires manual recovery for uncertain non-idempotent effects", async () => {
+  const s = await setup(scripted([]));
+  const claimed = await s.journal.claim(s.run.id);
+  const key = executionKey(s.run.id, "unsafe_retry", {});
+  await s.journal.update(s.run.id, claimed.lease!, {
+    step: {
+      sequence: 1,
+      key,
+      name: "unsafe_retry",
+      effect: "proposal",
+      state: "unknown",
+      startedAt: new Date().toISOString(),
+    },
+    state: "interrupted",
+    release: true,
+  });
+  const execute = vi.fn(async () => ({ summary: "must not run", data: {} }));
+  const result = await createPersonalAgent({
+    journal: s.journal,
+    model: scripted([calls({ name: "unsafe_retry", args: {} })]),
+    tools: [
+      {
+        declaration: { name: "unsafe_retry", parametersJsonSchema: {} },
+        schema: z.strictObject({}),
+        effect: "proposal",
+        idempotent: false,
+        execute,
+      },
+    ],
+  }).run({ id: s.run.id, resume: true });
+  expect(execute).not.toHaveBeenCalled();
+  expect(result.execution?.reason).toBe("MANUAL_RECOVERY_REQUIRED");
+});
+it("does not replay a cached action after its capability was removed", async () => {
+  const owner = randomUUID(),
+    s = await setup(
+      scripted([
+        calls({
+          name: "save_note",
+          args: { text: "One scoped note", category: "note" },
+        }),
+        answer("The note is proposed and needs confirmation."),
+      ]),
+      [noteTool(owner)],
+      owner,
+    );
+  await s.agent.run({ id: s.run.id });
+  await expect(
+    createPersonalAgent({
+      journal: s.journal,
+      model: scripted([]),
+      tools: [],
+    }).run({ id: s.run.id }),
+  ).rejects.toMatchObject({ code: "CAPABILITY_CHANGED" });
+});
+
+it("does not disclose stale financial proposal results to the model on resume or bind a new ordinary answer to old financial permissions", async () => {
+  let valid = true;
+  const tool: AgentTool = {
+    declaration: { name: "financial_proposal", parametersJsonSchema: {} },
+    schema: z.strictObject({}),
+    effect: "proposal",
+    volatile: true,
+    validate: async () => {
+      if (!valid) throw new AgentError("ACCESS_CHANGED");
+    },
+    async execute() {
+      return {
+        summary: "Source analysis was returned",
+        data: { sensitiveAmount: "987654321.123" },
+        reply: {
+          kind: "financial",
+          text: "Source analysis was returned",
+          citations: ["source"],
+          evidence: { modelCalls: 0, toolCalls: 1, resultBytes: 1 },
+        },
+      };
+    },
+  };
+  const s = await setup(
+    scripted([calls({ name: "financial_proposal", args: {} })]),
+    [tool],
+  );
+  expect((await s.agent.run({ id: s.run.id })).execution?.state).toBe(
+    "interrupted",
+  );
+  valid = false;
+  const resumed = createPersonalAgent({
+    journal: s.journal,
+    tools: [tool],
+    model: scripted(
+      [
+        answer(
+          "I can still help reason through your options without private account facts.",
+        ),
+      ],
+      (input) => {
+        expect(JSON.stringify(input.contents)).not.toContain("987654321.123");
+      },
+    ),
+  });
+  const result = await resumed.run({ id: s.run.id, resume: true });
+  expect(result.kind).toBe("general");
+  expect(result.citations).toEqual([]);
+  expect(result.execution?.state).toBe("completed");
+  const replay = await resumed.run({ id: s.run.id });
+  expect(replay.execution?.replayed).toBe(true);
+});
+
+it("retains specialist financial facts even if a coordinator and its reviewer accept a conflicting amount", async () => {
+  const authoritative =
+    "Fictional source reports an available balance of ₦120.00 as of its recorded timestamp.";
+  const tool: AgentTool = {
+    declaration: { name: "financial", parametersJsonSchema: {} },
+    schema: z.strictObject({}),
+    effect: "read",
+    volatile: true,
+    validate: async () => {},
+    async execute() {
+      return {
+        summary: "Source-backed financial result obtained",
+        data: { text: authoritative, simulated: true },
+        reply: {
+          kind: "financial",
+          text: authoritative,
+          citations: ["fixture"],
+          evidence: { modelCalls: 0, toolCalls: 1, resultBytes: 1 },
+        },
+      };
+    },
+  };
+  const s = await setup(
+    scripted([
+      calls({ name: "financial", args: {} }),
+      answer(
+        "Your available balance is ₦999,999.00 and your payment is successful.",
+      ),
+    ]),
+    [tool],
+  );
+  const result = await s.agent.run({ id: s.run.id });
+  expect(result.text).toBe(authoritative);
+  expect(result.text).not.toContain("999,999");
+  expect(result.citations).toEqual(["fixture"]);
+});

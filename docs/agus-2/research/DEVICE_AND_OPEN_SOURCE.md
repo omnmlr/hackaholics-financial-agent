@@ -79,4 +79,4 @@ Accessed 9 November 2026; code refs pinned where available.
 - [PyFinTS protocol, supported operations and limitations](https://github.com/raphaelm/python-fints/blob/eda20b4fec2e612dc7942234884be2e8c4fe632f/README.md); [bank endpoint/auth/product-registration prerequisites](https://github.com/raphaelm/python-fints/blob/eda20b4fec2e612dc7942234884be2e8c4fe632f/docs/quickstart.rst).
 - [EBICS client bank-issued credentials and activation sequence](https://github.com/node-ebics/node-ebics-client/blob/4a09c8e260a7e61b4bebea9f9df9e52e658dcb6e/README.md). This client's README recommends a Node security-revert flag; it is evidence of protocol mechanics, **not a dependency recommendation**.
 
-Bottom-line evidence state for this lane: **useful code and authorization patterns found; zero Nigerian source banks independently linked/read/paid in this investigation; 20-source-bank and fee-parity launch requirements remain unproven.**
+Evidence state for this lane: **useful code and authorization patterns found; zero Nigerian source banks independently linked/read/paid in this investigation; 20-source-bank and fee-parity launch requirements remain unproven.**

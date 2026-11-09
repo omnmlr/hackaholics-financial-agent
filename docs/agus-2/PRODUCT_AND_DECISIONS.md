@@ -2,6 +2,8 @@
 
 Date: 9 November 2026. Status: **planning for founder review; no implementation authorized**.
 
+Current reading order: the **founder-confirmed launch requirements below supersede D2/D4 and any conflicting early recommendation**. The follow-up [multi-bank investigation](MULTIBANK_CONNECTIVITY.md) preserves the 20-source-bank, fee-parity and committed Solana/USD requirements; it does not treat statement uploads or manual handoff as launch completion.
+
 ## Established founder requirements
 
 Source: this assignment. These are requirements, not evidence of working integrations.
@@ -24,9 +26,9 @@ Historical Phase 1 contracts and the model-led-agent architecture were also read
 | ID | Recommendation | Reason / consequence |
 | --- | --- | --- |
 | D1 | Keep AGUS an agent and orchestration product. Do not hold pooled customer money, run an exchange, make markets or operate a lending treasury. | Avoid building a financial institution to deliver personal assistance. Partner use still has contractual and regulatory obligations. |
-| D2 | Ship financial understanding before integrated money movement: user-supplied statements first; consented bank API only when access is evidenced. | Useful at ₦0 without pretending a sandbox is a connected bank. Imported records must show source, age and incomplete coverage. |
+| D2 | **Superseded for launch:** statement-based work can be preparatory, but initial financial launch requires the founder-confirmed existing-account/source-payment capabilities below. | Do not claim a statement/import experience completes the banking requirement. Imported records still need source, age and incomplete-coverage labels. |
 | D3 | Make account reading, collections, payouts, receiving accounts and wallets separate capabilities with separate grants. | Data consent cannot authorize a debit; a Paystack payout balance cannot represent a user's bank balance. |
-| D4 | Keep Solana/USDC optional. Prefer native USDC on one verified network if a stablecoin route becomes viable. | RPC reads and quotes passed; no end-to-end settlement was tested. No cross-chain bridge, swap engine or AGUS token is needed for the initial plan. |
+| D4 | **Superseded:** native Solana USDC and USD receiving/conversion are committed product direction; provider access and staging remain gated. | RPC reads and quotes passed; no end-to-end settlement was tested. No evidence requires adding a cross-chain bridge, swap engine or AGUS token. |
 | D5 | Prefer user-controlled signing or a provider-hosted financial experience; AGUS stores neither seed phrases nor pooled balances. | Signing authority must be explicit. Noncustodial design does not automatically remove compliance duties. |
 | D6 | Treat Bridge as a conditional USD-account candidate and Paycrest as a conditional conversion candidate, not selected production dependencies. | Both have onboarding gates; Paycrest explicitly assigns KYC and applicable compliance to integrating senders. No proof of free production access exists. |
 | D7 | Initially require approval of each exact value-moving instruction. Persistent responsibilities may monitor, prepare and request approval. | Proactivity remains possible without unattended spending. Standing financial mandates require a later, separately approved scope and risk model. |
@@ -34,11 +36,11 @@ Historical Phase 1 contracts and the model-led-agent architecture were also read
 
 ## Decisions required before implementation
 
-1. **First financial release:** accept statement-based intelligence plus preparation/manual handoff, with live bank APIs and conversion conditional? If live connectivity is essential, accept that release is blocked on legitimate access rather than promise it at ₦0.
+1. **First financial release requirement is settled:** 20 existing personal source banks with authorized reads/payments and fee parity. The remaining architecture decision is the institutional implementation path; statements/manual handoff cannot substitute for launch completion.
 2. **Money and authority:** accept D1/D5/D7? Who may sign, approve, revoke access and resolve a lost-device/account-recovery case? Is unattended financial execution deferred?
 3. **Provider obligations and cost:** is the founder able to supply an eligible business relationship and accept provider-required KYC/AML/support obligations later? If not, keep financial execution in the user's separately onboarded provider app. Any future fees, gas and test funds need separate authorization and funding.
 4. **USD purpose:** salary/freelance payments, business collections or own-account transfers? Resident individuals or businesses? First-party or third-party senders? These determine receiving-account eligibility; “USD account” alone is insufficient.
-5. **Rail priority:** is Solana essential or optional? Accept delaying it rather than adding bridges if an approved provider supports another native-USDC network more reliably?
+5. **Rail commitment is settled:** Solana USDC and USD receiving/conversion remain core. Review implementation staging and dependencies without silently making those capabilities optional.
 6. **Data policy and baseline:** approve retention/deletion, model exposure of financial data and identity requirements; designate the accepted recovered codebase before engineering resumes.
 
 No recommendation in this document is marked approved. The engineering gates in [the roadmap](ENGINEERING_ROADMAP.md) are proposed acceptance criteria, not permission to implement, transact, merge or deploy.

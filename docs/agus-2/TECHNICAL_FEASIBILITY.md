@@ -2,6 +2,8 @@
 
 Investigated 9 November 2026. **No financial integration is established as working end to end.** Public read/quote tests below passed; no bank was linked, credential acquired, wallet funded, order created or transaction submitted. Budget spent: ₦0.
 
+Follow-up: [multi-bank connectivity research](MULTIBANK_CONNECTIVITY.md) adds bank-side open-source, current Remita consumer-product evidence, source-specific provider audits and corrected CBN document retrieval. This report remains the historical initial financial-rail investigation. Founder-confirmed requirements override its statement-first launch/optional-Solana recommendations; no product commitment was cancelled.
+
 ## Capability verdicts
 
 | Capability | Verdict for AGUS now | Decisive evidence / practical alternative |

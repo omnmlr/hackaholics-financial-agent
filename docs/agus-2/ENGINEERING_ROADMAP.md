@@ -2,6 +2,8 @@
 
 Date: 9 November 2026. **Proposed milestones only. No implementation starts in this task.** GitHub is the project record; no merge/deployment is authorized.
 
+**Supersession:** this is the initial pre-clarification proposal. Statement-based work is preparatory only and cannot satisfy the founder's financial launch. Solana USDC/USD capabilities are committed. The current [multi-bank engineering gates](MULTIBANK_CONNECTIVITY.md#engineering-sequence-after-founder-acceptance) require approved personal-source access, 20-bank qualification and fee parity; use those gates for architecture review.
+
 ## Priority and dependency order
 
 `Founder decisions + accepted recovery baseline → identity/authority contracts → useful financial read experience → conditional provider trials → separately authorized live execution`

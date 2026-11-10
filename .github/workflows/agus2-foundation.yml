@@ -1,0 +1,56 @@
+name: AGUS 2 foundation (isolated fixtures)
+on:
+  pull_request:
+  push:
+    branches: ["integration/agus2-**"]
+permissions:
+  contents: read
+concurrency:
+  group: agus2-foundation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      PAYMENT_MODE: fixture
+      AI_PROVIDER: none
+      AI_API_KEY: ""
+      PAYSTACK_SECRET_KEY: ""
+      AGUS_SOLANA_DEVNET_ENABLED: "false"
+      LIVE_TRANSFERS_ENABLED: "false"
+      LIVE_OWNER_AUTHORIZED: "false"
+      PAYSTACK_TRANSFERS_ENABLED: "false"
+      LIVE_WEBHOOK_VALIDATED: "false"
+      LIVE_RECONCILIATION_VALIDATED: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npx playwright install --with-deps chromium
+      - name: Select installed Chromium
+        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\n`)'
+      - name: Verify with external network blocked
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Install dependencies first, then deny all external egress, including
+          # subprocesses which replace their environment. Local fixtures work.
+          sudo iptables -I OUTPUT 1 ! -o lo -j REJECT
+          trap 'sudo iptables -D OUTPUT ! -o lo -j REJECT; sudo ip6tables -D OUTPUT ! -o lo -j REJECT' EXIT
+          sudo ip6tables -I OUTPUT 1 ! -o lo -j REJECT
+          AGUS_ENVIRONMENT=fixture npm run config:validate
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          npm run test:http
+          npm run test:agent-workspace
+          npm run test:agent-followup
+          npm run test:agent-runner

@@ -1,3 +1,4 @@
+import { validateDeclaredEnvironment } from "../environment";
 /** Devnet public-chain records only. No private key or wallet credential belongs here. */
 export const DEVNET_RPC = "https://api.devnet.solana.com" as const;
 export const DEVNET_GENESIS =
@@ -112,6 +113,7 @@ export class SolanaError extends Error {
   }
 }
 export function requireDevnet() {
+  validateDeclaredEnvironment();
   if (process.env.AGUS_SOLANA_DEVNET_ENABLED !== "true")
     throw new SolanaError("DEVNET_DISABLED", "Solana devnet is disabled", 503);
   if ((process.env.PAYMENT_MODE ?? "fixture") === "live")

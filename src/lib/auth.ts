@@ -20,9 +20,8 @@ export function sameOrigin(req: Request) {
   if (req.headers.get("origin") !== expected)
     throw new AppError("Request origin rejected", 403);
 }
-export async function login(password: string) {
+async function passwordAttempt(password: string, key: string) {
   const d = await db();
-  const key = "operator-login";
   const resetAt = new Date(Date.now() + 15 * 60000);
   const [a] = await d
     .insert(attempts)
@@ -37,7 +36,7 @@ export async function login(password: string) {
     .returning();
   if (a.attempts > 10)
     throw new AppError(
-      "Too many login attempts. Try again in 15 minutes.",
+      "Too many password attempts. Try again in 15 minutes.",
       429,
     );
   const stored = process.env.OPERATOR_PASSWORD_HASH;
@@ -49,14 +48,24 @@ export async function login(password: string) {
   if (!checkPassword(password, stored))
     throw new AppError("Invalid operator password", 401);
   await d.delete(attempts).where(eq(attempts.key, key));
+}
+/** Persistent, atomic per-owner financial step-up budget. Never issues a session.
+ * The caller must authenticate the owner before invoking this helper. Draft IDs,
+ * cookies and client device IDs must not partition the password-attempt budget. */
+export async function reauthenticate(owner: string, password: string) {
+  if (owner !== config().operator)
+    throw new AppError("Reauthentication required", 401);
+  await passwordAttempt(password, `financial-approval:${hash(owner)}`);
+}
+export async function login(password: string) {
+  await passwordAttempt(password, "operator-login");
+  const d = await db();
   const token = randomBytes(32).toString("hex");
-  await d
-    .insert(sessions)
-    .values({
-      tokenHash: hash(token),
-      operatorId: config().operator,
-      expiresAt: new Date(Date.now() + 60 * 60000),
-    });
+  await d.insert(sessions).values({
+    tokenHash: hash(token),
+    operatorId: config().operator,
+    expiresAt: new Date(Date.now() + 60 * 60000),
+  });
   return token;
 }
 export function cookieToken(req: Request) {

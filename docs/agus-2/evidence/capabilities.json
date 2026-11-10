@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "branch": "dev/agus2-agent-engine-20261109",
+    "commit": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+    "integrationBranch": "integration/agus2-foundation-20261110",
+    "approval": "User approved attached engineering plan and execution on 2026-11-10",
+    "plan": "docs/agus-2/APPROVED_ENGINEERING_PLAN.md"
+  },
+  "accepted": [
+    {
+      "commit": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+      "scope": "Existing application, Solana pipeline, durable agent execution; preserve intelligence behavior"
+    }
+  ],
+  "excluded": [
+    {
+      "commit": "5c2a995",
+      "branch": "feat/agus2-autonomous-engineering-sprint",
+      "scope": "Alternative autonomous executor, generic authorization, merchant-message adapter, shopping",
+      "reason": "Not merged, not imported into runtime; unsafe approval, retry, dispatch and evidence semantics"
+    },
+    {
+      "commit": "4f1237f",
+      "branch": "feature/agus-external-actions-opus",
+      "scope": "Overlapping shopping/external action runtime",
+      "reason": "Deferred by approved scope"
+    },
+    {
+      "commit": "144311e",
+      "branch": "experiment/agus-consumer-source-authority-2026-11-09",
+      "scope": "Banking research",
+      "reason": "Reference evidence only, no accepted bank connectivity"
+    },
+    {
+      "commit": "39e2e51",
+      "branch": "research/agus-2-solana-technical-validation-2026-11-09",
+      "scope": "RPC observations",
+      "reason": "Not execution policy; missing transaction never alone proves failure"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "banking-fixtures",
+      "environment": "fixture",
+      "classification": "simulated",
+      "genuineIntegration": false
+    },
+    {
+      "id": "personal-bank-source-connectivity",
+      "environment": "live",
+      "classification": "blocked",
+      "acceptedInstitutions": 0,
+      "genuineIntegration": false,
+      "gate": "Partner approval, issued credentials and institution-specific acceptance"
+    },
+    {
+      "id": "paystack-merchant-payout",
+      "environment": "sandbox",
+      "classification": "implemented-not-provider-accepted",
+      "personalSourcePayment": false,
+      "genuineIntegration": false
+    },
+    {
+      "id": "solana-wallet-transfers",
+      "environment": "devnet",
+      "classification": "fixture-verified-only",
+      "genuineIntegration": false,
+      "gate": "Owner connects and signs SOL and canonical test-USDC; independent finalized evidence"
+    },
+    {
+      "id": "native-android",
+      "environment": "development",
+      "classification": "not-implemented",
+      "genuineIntegration": false,
+      "gate": "Physical-device and wallet acceptance"
+    },
+    {
+      "id": "usd-receiving-conversion-ngn-settlement",
+      "environment": "live",
+      "classification": "blocked",
+      "genuineIntegration": false,
+      "gate": "Approved partner, eligibility and settlement evidence"
+    }
+  ],
+  "prohibitedScope": [
+    "AI intelligence development",
+    "UI redesign",
+    "monetization decisions",
+    "automatic deployment",
+    "escrow or advanced swaps before genuine Devnet proof"
+  ]
+}

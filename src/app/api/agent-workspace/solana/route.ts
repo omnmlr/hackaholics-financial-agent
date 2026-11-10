@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { operator, sameOrigin, checkPassword } from "@/lib/auth";
-import { AppError } from "@/lib/domain";
+import { operator, sameOrigin, reauthenticate } from "@/lib/auth";
 import { service } from "@/lib/solana";
 import { SolanaError } from "@/lib/solana/contracts";
 import {
@@ -67,10 +66,7 @@ export async function POST(req: Request) {
       void ignored;
       result = await solana.prepare(owner, args);
     } else if (input.action === "approve") {
-      // Reuse existing password verification. Model tools never expose this action.
-      const stored = process.env.OPERATOR_PASSWORD_HASH;
-      if (!stored || !checkPassword(input.password, stored))
-        throw new AppError("Approval password rejected", 403);
+      await reauthenticate(owner, input.password);
       result = await solana.approve(owner, input.id, {
         digest: input.digest,
         acknowledged: true,

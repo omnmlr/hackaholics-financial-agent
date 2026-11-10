@@ -8,7 +8,7 @@ import {
   login,
   logout,
   sessionCookie,
-  checkPassword,
+  reauthenticate,
 } from "@/lib/auth";
 import { mutate, readState } from "@/lib/db";
 import { provider, fixtureBeneficiaries } from "@/lib/paystack";
@@ -379,13 +379,8 @@ async function handle(req: Request) {
             password: z.string().max(256),
             reviewDigest: z.string().length(64),
           })
-          .parse(body); // Reuse rate-limited password authentication; immediately revoke the extra session.
-        const token = await login(password);
-        await logout(
-          new Request(req.url, { headers: { cookie: `ha_session=${token}` } }),
-        );
-        if (!checkPassword(password, process.env.OPERATOR_PASSWORD_HASH ?? ""))
-          throw new AppError("Reauthentication required", 401);
+          .parse(body);
+        await reauthenticate(actor, password);
         return reply(await approveBatch(actor, batchId, reviewDigest));
       }
       if (operation === "execute") {
@@ -409,10 +404,7 @@ async function handle(req: Request) {
             password: z.string().max(256),
           })
           .parse(body);
-        const token = await login(password);
-        await logout(
-          new Request(req.url, { headers: { cookie: `ha_session=${token}` } }),
-        );
+        await reauthenticate(actor, password);
         return reply(await finalizeOTP(actor, batchId, paymentId, otp));
       }
     }

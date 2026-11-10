@@ -22,6 +22,7 @@ export type PrepareTransfer = {
   /** Decimal text only, never a JS number. */
   amount: string;
   mint?: string;
+  reference?: string;
 };
 export type SolanaDraft = {
   id: string;
@@ -35,6 +36,7 @@ export type SolanaDraft = {
   recipient: string;
   asset: Asset;
   mint: string | null;
+  reference?: string;
   decimals: number;
   amount: string;
   amountAtoms: string;

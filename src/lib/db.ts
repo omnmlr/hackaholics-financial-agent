@@ -32,22 +32,40 @@ async function connect() {
   return liteDrizzle(new PGlite(path === ":memory:" ? undefined : path));
 }
 type DB = Awaited<ReturnType<typeof connect>>;
-const g = globalThis as unknown as { agentDB?: Promise<DB> };
+const g = globalThis as unknown as {
+  agentDB?: Promise<DB>;
+  agentNormalized?: boolean;
+};
 export function db() {
   return (g.agentDB ??= connect().then(async (d) => {
-    await d.execute(
-      sql`CREATE TABLE IF NOT EXISTS workflow_state (id integer PRIMARY KEY CHECK (id = 1), revision integer NOT NULL DEFAULT 0, payload jsonb NOT NULL)`,
-    );
-    await d.execute(
-      sql`CREATE TABLE IF NOT EXISTS operator_sessions (token_hash text PRIMARY KEY, operator_id text NOT NULL, expires_at timestamptz NOT NULL)`,
-    );
-    await d.execute(
-      sql`CREATE TABLE IF NOT EXISTS auth_attempts (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,
-    );
+    if (process.env.DATABASE_URL?.startsWith("postgres")) {
+      const { assertSchema } = await import("../server/migrations");
+      await assertSchema(d.$client as unknown as import("../server/sql").Sql);
+    } else {
+      await d.execute(
+        sql`CREATE TABLE IF NOT EXISTS workflow_state (id integer PRIMARY KEY CHECK (id = 1), revision integer NOT NULL DEFAULT 0, payload jsonb NOT NULL)`,
+      );
+      await d.execute(
+        sql`CREATE TABLE IF NOT EXISTS operator_sessions (token_hash text PRIMARY KEY, operator_id text NOT NULL, expires_at timestamptz NOT NULL)`,
+      );
+      await d.execute(
+        sql`CREATE TABLE IF NOT EXISTS auth_attempts (key text PRIMARY KEY, attempts integer NOT NULL, reset_at timestamptz NOT NULL)`,
+      );
+    }
     await d
       .insert(workflow)
       .values({ id: 1, revision: 0, payload: seedState() })
       .onConflictDoNothing();
+    const normalizedTable = await d.execute(
+      sql`SELECT to_regclass('agus_legacy_archive') AS name`,
+    );
+    g.agentNormalized =
+      Boolean(normalizedTable.rows[0]?.name) &&
+      (
+        await d.execute(
+          sql`SELECT 1 FROM agus_legacy_archive WHERE id='workflow_state:1'`,
+        )
+      ).rows.length === 1;
     return d;
   }));
 }
@@ -111,12 +129,47 @@ function upgradeState(s: State): State {
 }
 export async function readState() {
   const d = await db();
+  if (g.agentNormalized) {
+    const { hydrateLegacyFinancialState } =
+      await import("../server/legacy-storage");
+    const { transaction } = await import("../server/sql");
+    return transaction(async (tx) => {
+      const r = (
+        await tx.query(
+          "SELECT payload FROM workflow_state WHERE id=1 FOR SHARE",
+        )
+      ).rows[0];
+      return upgradeState(await hydrateLegacyFinancialState(tx, r.payload));
+    });
+  }
   const [r] = await d.select().from(workflow).where(eq(workflow.id, 1));
   return upgradeState(r.payload);
 }
 // Pure synchronous reducers may be replayed on CAS contention. Never call a provider in a reducer.
 export async function mutate<T>(fn: (s: State) => T): Promise<T> {
   const d = await db();
+  if (g.agentNormalized) {
+    const { transaction } = await import("../server/sql");
+    const { hydrateLegacyFinancialState, writeLegacyFinancialState } =
+      await import("../server/legacy-storage");
+    return transaction(async (tx) => {
+      const row = (
+        await tx.query(
+          "SELECT payload FROM workflow_state WHERE id=1 FOR UPDATE",
+        )
+      ).rows[0];
+      const state = upgradeState(
+        await hydrateLegacyFinancialState(tx, row.payload),
+      );
+      const result = fn(state);
+      await writeLegacyFinancialState(tx, state);
+      await tx.query(
+        "UPDATE workflow_state SET payload=$1,revision=revision+1 WHERE id=1",
+        [JSON.stringify({ ...state, batches: [], audit: [] })],
+      );
+      return result;
+    });
+  }
   for (let i = 0; i < 30; i++) {
     const [r] = await d.select().from(workflow).where(eq(workflow.id, 1));
     const s = upgradeState(structuredClone(r.payload));

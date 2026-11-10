@@ -16,6 +16,7 @@ export type SavedChat = { id: string; title: string; updatedAt: string };
 let initializing: Promise<void> | undefined;
 async function storage() {
   const d = await db();
+  if (process.env.DATABASE_URL?.startsWith("postgres")) return d;
   await (initializing ??= (async () => {
     await d.execute(sql`CREATE TABLE IF NOT EXISTS chat_history (
       owner text NOT NULL, id text NOT NULL, title text NOT NULL,

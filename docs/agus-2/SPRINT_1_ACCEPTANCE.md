@@ -112,8 +112,10 @@ Logs: `/tmp/agus2-final-{tests,solana,lint,http,workspace}.log`,
 `/tmp/agus2-{typecheck,build,devnet-probe,devnet-preview}.log`.
 Readiness screenshot: `/tmp/agus2-devnet-readiness.png`.
 
-Sprint 1 remains incomplete pending the owner interactions above. Sprints 2–4
-have not started; no shared-identity, live-bank, native-device or escrow acceptance
-is implied by this checkpoint. The acceptance server is left running for the
-owner interaction. The integration branch remains local; hosted CI is pending
-publication, and no merge or deployment has occurred.
+Sprint 1 genuine wallet execution remains pending human acceptance. The owner
+has separately authorized independent Sprint 2/3 work and mobile/P2P foundations;
+see [the platform checkpoint](PLATFORM_CHECKPOINT.md) for those implementations
+and their verification. This wallet checkpoint proves no live-bank, physical
+native-device or escrow execution. Its test tools and acceptance data remain
+preserved. The integration branch remains local; hosted CI is pending publication,
+and no merge or deployment has occurred.

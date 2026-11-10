@@ -36,7 +36,7 @@ export interface SolanaRpc {
 }
 
 /** No caller-provided URL, custom cluster, websocket or redirect is permitted. */
-export function pinnedDevnetRpc(): SolanaRpc {
+export function pinnedDevnetConnection() {
   const connection = new Connection(DEVNET_RPC, {
     commitment: "confirmed",
     disableRetryOnRateLimit: true,
@@ -66,6 +66,10 @@ export function pinnedDevnetRpc(): SolanaRpc {
       });
     },
   });
+  return connection;
+}
+export function pinnedDevnetRpc(): SolanaRpc {
+  const connection = pinnedDevnetConnection();
   return {
     endpoint: DEVNET_RPC,
     getGenesisHash: () => connection.getGenesisHash(),

@@ -62,8 +62,9 @@ export function initializeFinancialStorage() {
 }
 async function initialize() {
   const d = await db();
-  for (const statement of ddl.split(";").filter((s) => s.trim()))
-    await d.execute(sql.raw(statement));
+  if (!process.env.DATABASE_URL?.startsWith("postgres"))
+    for (const statement of ddl.split(";").filter((s) => s.trim()))
+      await d.execute(sql.raw(statement));
   await d.transaction(async (tx) => {
     const claim = await tx.execute(
       sql`INSERT INTO fm_seed VALUES ('agus-fictional-ng-v1') ON CONFLICT DO NOTHING RETURNING id`,

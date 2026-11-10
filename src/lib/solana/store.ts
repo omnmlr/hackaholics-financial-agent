@@ -13,6 +13,7 @@ async function initialize() {
   requireDevnet();
   return (initialization ??= (async () => {
     const d = await db();
+    if (process.env.DATABASE_URL?.startsWith("postgres")) return;
     // Separate development-only tables: never alter banking/auth/workflow schemas.
     await d.execute(sql`CREATE TABLE IF NOT EXISTS agus_solana_drafts (
       owner text NOT NULL,

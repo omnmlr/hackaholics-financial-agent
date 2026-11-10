@@ -12,6 +12,7 @@ let ready: Promise<void> | undefined;
 async function storage() {
   requireWorkspace();
   const d = await db();
+  if (process.env.DATABASE_URL?.startsWith("postgres")) return d;
   await (ready ??= d
     .execute(
       sql`CREATE TABLE IF NOT EXISTS agus2_agent_runs (

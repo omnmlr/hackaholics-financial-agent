@@ -40,6 +40,7 @@ const Prepare = z.strictObject({
   asset: z.enum(["SOL", "SPL"]),
   amount: z.string().min(1).max(280),
   mint: Address.optional(),
+  reference: Address.optional(),
 });
 const Digest = z.string().regex(/^[a-f0-9]{64}$/);
 const Approval = z.strictObject({
@@ -99,6 +100,7 @@ export function draftDigest(d: SolanaDraft): string {
   return sha256(
     JSON.stringify({
       version: 1,
+      ...(d.reference ? { reference: d.reference } : {}),
       id: d.id,
       owner: d.owner,
       network: d.network,
@@ -360,6 +362,7 @@ export function createSolanaService(
             original.recipient !== input.recipient ||
             original.asset !== input.asset ||
             original.mint !== (input.mint ?? null) ||
+            original.reference !== input.reference ||
             decimalToAtoms(input.amount, original.decimals).toString() !==
               original.amountAtoms
           )
@@ -495,6 +498,14 @@ export function createSolanaService(
           ),
         );
       }
+      if (input.reference) {
+        const reference = address(input.reference);
+        // Solana Pay discovery reference, read-only and never a signer. It is
+        // not an on-chain idempotency or settlement enforcement mechanism.
+        tx.instructions
+          .at(-1)!
+          .keys.push({ pubkey: reference, isSigner: false, isWritable: false });
+      }
       const latest = await rpcRead(() => rpc.getLatestBlockhash());
       address(latest.blockhash);
       integer(latest.lastValidBlockHeight);
@@ -546,6 +557,7 @@ export function createSolanaService(
         recipient: recipient.toBase58(),
         asset: input.asset,
         mint: input.mint ?? null,
+        ...(input.reference ? { reference: input.reference } : {}),
         decimals,
         amount: atomsToDecimal(atoms, decimals),
         amountAtoms: atoms.toString(),

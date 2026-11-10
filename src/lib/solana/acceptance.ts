@@ -197,6 +197,14 @@ export function verifyDevnetTransfer(
   }
   // Compiling a message promotes account permissions across all instructions;
   // compare the compiled messages to account for canonical permission promotion.
+  if (d.reference)
+    expected
+      .at(-1)!
+      .keys.push({
+        pubkey: new PublicKey(d.reference),
+        isSigner: false,
+        isWritable: false,
+      });
   const expectedTx = new Transaction({
     feePayer: sender,
     recentBlockhash: d.blockhash,

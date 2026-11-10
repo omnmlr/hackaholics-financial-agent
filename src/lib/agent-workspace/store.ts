@@ -53,6 +53,7 @@ let ready: Promise<void> | undefined;
 export async function initializeWorkspace() {
   requireWorkspace();
   const d = await db();
+  if (process.env.DATABASE_URL?.startsWith("postgres")) return d;
   await (ready ??= (async () => {
     await d.execute(sql`CREATE TABLE IF NOT EXISTS agus2_tasks (
       owner text NOT NULL,id text NOT NULL,version integer NOT NULL DEFAULT 0,

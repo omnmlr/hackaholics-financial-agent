@@ -377,6 +377,37 @@ describe("devnet preparation and authority", () => {
 });
 
 describe("wallet signing and single submission", () => {
+  it("binds a read-only Solana Pay reference into exact simulation, review and signing without granting it signer authority", async () => {
+    const s = setup(),
+      reference = Keypair.generate().publicKey.toBase58();
+    const draft = await s.service.prepare("alice", { ...s.input, reference });
+    const transaction = Transaction.from(
+      Buffer.from(draft.unsignedTransactionBase64, "base64"),
+    );
+    expect(transaction.instructions[0].keys.at(-1)).toMatchObject({
+      pubkey: new PublicKey(reference),
+      isSigner: false,
+      isWritable: false,
+    });
+    expect(draft.reference).toBe(reference);
+    expect(draft.simulation?.passed).toBe(true);
+    await s.service.approve("alice", draft.id, {
+      digest: draft.digest,
+      acknowledged: true,
+    });
+    const tampered = Transaction.from(
+      Buffer.from(draft.unsignedTransactionBase64, "base64"),
+    );
+    tampered.instructions[0].keys.at(-1)!.pubkey = Keypair.generate().publicKey;
+    tampered.sign(s.sender);
+    await expect(
+      s.service.submitSigned("alice", draft.id, {
+        digest: draft.digest,
+        signedTransactionBase64: tampered.serialize().toString("base64"),
+      }),
+    ).rejects.toMatchObject({ code: "INVALID_SIGNED_TRANSACTION" });
+    expect(s.rpc.sendRawTransaction).not.toHaveBeenCalled();
+  });
   it("cannot submit without human approval, with unsigned bytes, or altered instructions", async () => {
     const s = setup(),
       d = await s.prepare();

@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "db:migrate": "tsx --env-file-if-exists=.env.local scripts/migrate.ts",
+    "db:migrate": "node --env-file-if-exists=.env.local --import=tsx scripts/migrate.ts",
     "operator:password": "tsx scripts/password.ts",
     "payments:reconcile": "tsx --env-file-if-exists=.env.local scripts/reconcile.ts",
     "format": "prettier --write .",
@@ -36,13 +36,23 @@
     "test:agent-workspace": "node scripts/agent-workspace-smoke.mjs",
     "test:agent-followup": "node scripts/agent-workspace-smoke.mjs --followup",
     "test:agent-runner": "node scripts/agent-workspace-smoke.mjs --runner",
-    "test:personal-agent": "node scripts/personal-agent-smoke.mjs"
+    "test:personal-agent": "node scripts/personal-agent-smoke.mjs",
+    "platform:worker": "node --import=tsx scripts/platform-worker.ts",
+    "identity:invite": "node --import=tsx scripts/invite-user.ts",
+    "contracts:generate": "node scripts/generate-openapi.mjs && openapi-typescript packages/contracts/openapi.json -o packages/api-client/src/generated.ts",
+    "test:platform": "node scripts/run-platform-tests.mjs",
+    "test:platform:http": "node scripts/platform-http-smoke.mjs",
+    "mobile:typecheck": "npm run typecheck --workspace @agus/mobile",
+    "mobile:export:android": "npm run export:android --workspace @agus/mobile",
+    "p2p:fixture-trader": "node --import=tsx scripts/fixture-trader.ts"
   },
   "dependencies": {
+    "@better-auth/expo": "1.7.19",
     "@electric-sql/pglite": "^0.3.10",
     "@google/genai": "2.30.0",
     "@solana/web3.js": "^1.99.0",
     "@tailwindcss/postcss": "^4.1.0",
+    "better-auth": "1.7.19",
     "decimal.js": "10.6.0",
     "drizzle-orm": "^0.45.4",
     "lucide-react": "^0.468.0",
@@ -56,22 +66,27 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@solana/spl-token": "^0.4.15",
     "@types/node": "^22.18.0",
     "@types/pg": "^8.15.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "eslint": "^9.37.0",
     "eslint-plugin-react-hooks": "^7.0.0",
+    "openapi-typescript": "7.13.0",
     "playwright": "1.61.1",
     "prettier": "^3.9.10",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "typescript-eslint": "^8.57.0",
-    "vitest": "^5.0.4",
-    "@solana/spl-token": "^0.4.15"
+    "vitest": "^5.0.4"
   },
   "type": "module",
   "overrides": {
     "jayson": "5.0.0"
-  }
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }

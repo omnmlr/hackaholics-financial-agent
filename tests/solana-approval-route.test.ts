@@ -4,9 +4,14 @@ import { beforeEach, afterEach, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db, attempts, sessions } from "../src/lib/db";
 import { hash, login, reauthenticate } from "../src/lib/auth";
-import { POST } from "../src/app/api/agent-workspace/solana/route";
+import { POST, GET } from "../src/app/api/agent-workspace/solana/route";
+import { SolanaError } from "../src/lib/solana/contracts";
 
-const mocked = vi.hoisted(() => ({ approve: vi.fn() }));
+const mocked = vi.hoisted(() => ({
+  approve: vi.fn(),
+  get: vi.fn(),
+  list: vi.fn(),
+}));
 vi.mock("../src/lib/solana", () => ({ service: () => mocked }));
 const password = "fixture-step-up-only";
 let token: string;
@@ -23,7 +28,41 @@ beforeEach(async () => {
   await (await db()).delete(attempts);
   await (await db()).delete(sessions);
   mocked.approve.mockReset().mockResolvedValue({ state: "approved" });
+  mocked.get
+    .mockReset()
+    .mockResolvedValue({ owner: "approval-owner", state: "submitted" });
   token = await login(password);
+});
+it("exports only an authenticated owner's saved draft with private response headers", async () => {
+  const id = randomUUID();
+  const response = await GET(
+    new Request(
+      `http://localhost:3000/api/agent-workspace/solana?id=${id}&download=1`,
+      { headers: { cookie: `ha_session=${token}` } },
+    ),
+  );
+  expect(response.status).toBe(200);
+  expect(mocked.get).toHaveBeenCalledWith("approval-owner", id);
+  expect(response.headers.get("Content-Disposition")).toBe(
+    `attachment; filename="devnet-draft-${id}.json"`,
+  );
+  expect(response.headers.get("Cache-Control")).toContain("no-store");
+  const hidden = await GET(
+    new Request(
+      `http://localhost:3000/api/agent-workspace/solana?id=${id}&download=1`,
+    ),
+  );
+  expect(hidden.status).toBe(401);
+  mocked.get.mockRejectedValue(
+    new SolanaError("NOT_FOUND", "Draft not found", 404),
+  );
+  const other = await GET(
+    new Request(
+      `http://localhost:3000/api/agent-workspace/solana?id=${randomUUID()}`,
+      { headers: { cookie: `ha_session=${token}` } },
+    ),
+  );
+  expect(other.status).toBe(404);
 });
 afterEach(() => vi.unstubAllEnvs());
 function approve(

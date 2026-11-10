@@ -25,6 +25,7 @@ import {
   type SolanaDraft,
   type SolanaRpc,
 } from "../src/lib/solana";
+import { CIRCLE_DEVNET_USDC_MINT } from "../src/lib/solana/assets";
 
 class MemoryStore implements DraftStore {
   rows = new Map<string, SolanaDraft>();
@@ -165,6 +166,23 @@ function setup() {
 beforeEach(() => {
   process.env.AGUS_SOLANA_DEVNET_ENABLED = "true";
   process.env.PAYMENT_MODE = "fixture";
+});
+
+it("rejects a canonical Circle test-USDC mint response with incorrect decimals before preparing or sending", async () => {
+  const s = setup();
+  vi.mocked(s.rpc.getAccountInfo).mockImplementation(async (key) =>
+    key.toBase58() === CIRCLE_DEVNET_USDC_MINT ? mintInfo(9) : info(),
+  );
+  await expect(
+    s.service.prepare("alice", {
+      ...s.input,
+      asset: "SPL",
+      mint: CIRCLE_DEVNET_USDC_MINT,
+      amount: "1",
+    }),
+  ).rejects.toMatchObject({ code: "MINT_IDENTITY_MISMATCH" });
+  expect(s.store.rows.size).toBe(0);
+  expect(s.rpc.sendRawTransaction).not.toHaveBeenCalled();
 });
 
 describe("devnet exact decimal accounting", () => {

@@ -41,6 +41,14 @@
   ],
   "capabilities": [
     {
+      "id": "solana-public-devnet-genesis-mint-reads",
+      "environment": "devnet",
+      "classification": "verified-read-only",
+      "genuineIntegration": true,
+      "scope": "Public RPC genesis and canonical test-USDC mint only; no wallet ownership or transfer proven",
+      "evidence": "docs/agus-2/evidence/devnet-read-only-20261110.json"
+    },
+    {
       "id": "banking-fixtures",
       "environment": "fixture",
       "classification": "simulated",

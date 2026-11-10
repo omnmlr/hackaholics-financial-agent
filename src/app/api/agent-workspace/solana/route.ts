@@ -45,8 +45,20 @@ function failure(error: unknown) {
 }
 export async function GET(req: Request) {
   try {
+    const owner = await operator(req);
+    const url = new URL(req.url);
+    if (url.searchParams.has("id")) {
+      const id = z.uuid().parse(url.searchParams.get("id"));
+      const response = workspaceResponse(await service().get(owner, id));
+      if (url.searchParams.get("download") === "1")
+        response.headers.set(
+          "Content-Disposition",
+          `attachment; filename="devnet-draft-${id}.json"`,
+        );
+      return response;
+    }
     return workspaceResponse({
-      drafts: await service().list(await operator(req)),
+      drafts: await service().list(owner),
     });
   } catch (error) {
     return failure(error);

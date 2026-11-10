@@ -30,6 +30,8 @@ import {
 import { atomsToDecimal, decimalToAtoms, safeLamports } from "./money";
 import { pinnedDevnetRpc, type SolanaRpc } from "./rpc";
 import { durableDraftStore } from "./store";
+import { CIRCLE_DEVNET_USDC_MINT, CIRCLE_DEVNET_USDC_DECIMALS } from "./assets";
+import { base58 } from "./encoding";
 
 const Address = z.string().min(32).max(44);
 const Prepare = z.strictObject({
@@ -125,20 +127,6 @@ export function draftDigest(d: SolanaDraft): string {
       simulation: d.simulation,
     }),
   );
-}
-function base58(bytes: Uint8Array): string {
-  const alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-  let n = BigInt("0x" + Buffer.from(bytes).toString("hex"));
-  let out = "";
-  while (n) {
-    out = alphabet[Number(n % 58n)] + out;
-    n /= 58n;
-  }
-  for (const byte of bytes) {
-    if (byte) break;
-    out = "1" + out;
-  }
-  return out;
 }
 function chainAccount(info: AccountInfo<Buffer> | null) {
   if (!info || !info.owner.equals(TOKEN_PROGRAM_ID) || info.executable)
@@ -280,6 +268,15 @@ export function createSolanaService(
     try {
       const decoded = unpackMint(mint, chainAccount(info), TOKEN_PROGRAM_ID);
       if (!decoded.isInitialized || info!.data.length !== 82) throw new Error();
+      if (
+        mint.toBase58() === CIRCLE_DEVNET_USDC_MINT &&
+        decoded.decimals !== CIRCLE_DEVNET_USDC_DECIMALS
+      )
+        throw new SolanaError(
+          "MINT_IDENTITY_MISMATCH",
+          "Canonical Circle Devnet test-USDC must have six decimals",
+          502,
+        );
       return decoded;
     } catch (error) {
       if (error instanceof SolanaError) throw error;

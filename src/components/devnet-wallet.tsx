@@ -16,6 +16,7 @@ import type {
   WalletSnapshot,
 } from "@/lib/solana/contracts";
 import { BrandAsset } from "./brand-asset";
+import { devnetTokenLabel } from "@/lib/solana/assets";
 import styles from "./devnet-wallet.module.css";
 
 type PublicWalletKey = { toBase58(): string };
@@ -766,7 +767,10 @@ export function DevnetWallet({
                 <ul className={styles.tokens}>
                   {snapshot.tokens.map((token) => (
                     <li key={token.mint}>
-                      <strong>{token.amount} token units</strong>
+                      <strong>
+                        {token.amount}{" "}
+                        {devnetTokenLabel(token.mint, token.decimals)}
+                      </strong>
                       <code className={styles.address}>{token.mint}</code>
                       {token.accounts.some((account) => account.frozen) ? (
                         <p className={styles.muted}>
@@ -935,7 +939,10 @@ export function DevnetWallet({
               </dd>
               <dt>Amount</dt>
               <dd>
-                {active.amount} {active.asset === "SOL" ? "SOL" : "token units"}
+                {active.amount}{" "}
+                {active.asset === "SOL"
+                  ? "SOL"
+                  : devnetTokenLabel(active.mint, active.decimals)}
               </dd>
               {active.mint ? (
                 <>
@@ -1028,6 +1035,11 @@ export function DevnetWallet({
                 <code className={styles.address}>
                   {active.submission.signature}
                 </code>
+                <a
+                  href={`/api/agent-workspace/solana?id=${encodeURIComponent(active.id)}&download=1`}
+                >
+                  Download saved draft for independent verification
+                </a>
               </p>
             ) : null}
             {active.state === "prepared" || active.state === "approved" ? (

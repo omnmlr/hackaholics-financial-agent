@@ -9,6 +9,7 @@ import { reconcilePayment } from "../src/server/banking/payments";
 import { transaction } from "../src/server/sql";
 import { runResponsibilities } from "../src/server/responsibilities";
 import { expireUnfundedOrders } from "../src/server/p2p";
+import { reconcile as reconcileUsd } from "../src/server/usd/fixture";
 const worker = randomUUID();
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
@@ -26,7 +27,15 @@ do {
   }
   try {
     if (job.kind === "notification.in_app") await deliverNotification(job);
-    else if (job.kind === "bank.revoke") {
+    else if (job.kind === "usd.reconcile") {
+      const result = await reconcileUsd(
+        job.owner,
+        String(job.payload.conversionId),
+      );
+      if (["pending", "unknown"].includes(String(result.conversion_status)))
+        await retry(job, "RECONCILIATION_PENDING");
+      else await transaction((sql) => finish(sql, job));
+    } else if (job.kind === "bank.revoke") {
       await retryProviderRevocation(
         job.owner,
         String(job.payload.connectionId),

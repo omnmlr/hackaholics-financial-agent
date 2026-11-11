@@ -1,0 +1,25 @@
+[package]
+name = "agus-devnet-escrow"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "agus_devnet_escrow"
+
+[features]
+default = []
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
+bank-tests = ["dep:solana-program-test", "dep:solana-sdk", "dep:tokio"]
+
+[dependencies]
+anchor-lang = "=0.31.1"
+anchor-spl = { version = "=0.31.1", default-features = false, features = ["token", "token_2022"] }
+solana-program-test = { version = "=2.3.13", optional = true }
+solana-sdk = { version = "=2.3.1", optional = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"], optional = true }

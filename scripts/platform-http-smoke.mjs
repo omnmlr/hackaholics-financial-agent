@@ -7,6 +7,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { createServer } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
 import { Pool } from "pg";
+import { Keypair } from "@solana/web3.js";
 const source = process.env.AGUS_TEST_DATABASE_URL;
 if (!source?.startsWith("postgres"))
   throw new Error("AGUS_TEST_DATABASE_URL_REQUIRED");
@@ -134,7 +135,7 @@ try {
   );
   assert.equal(migration.status, 0, "HTTP test migrations failed");
   await admin.query(
-    `REVOKE CREATE ON SCHEMA public FROM PUBLIC;GRANT USAGE ON SCHEMA public TO "${role}";GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO "${role}";REVOKE INSERT,UPDATE,DELETE ON agus_migrations,agus_legacy_archive,agus_institutions,agus_institution_capabilities,agus_invitations FROM "${role}";GRANT UPDATE(consumed_at) ON agus_invitations TO "${role}"`,
+    `REVOKE CREATE ON SCHEMA public FROM PUBLIC;GRANT USAGE ON SCHEMA public TO "${role}";GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO "${role}";REVOKE INSERT,UPDATE,DELETE ON agus_migrations,agus_legacy_archive,agus_institutions,agus_institution_capabilities,agus_invitations,agus_fixture_escrow_authorities FROM "${role}";GRANT UPDATE(consumed_at) ON agus_invitations TO "${role}";REVOKE UPDATE,DELETE ON agus_legacy_authority,agus_p2p_events,agus_request_chain_observations FROM "${role}"`,
   );
   for (let n = 0; n < 2; n++)
     await admin.query(
@@ -267,6 +268,201 @@ try {
   );
   assert.match(receipts.data.data.at(-1).payload.label, /SIMULATED/);
   assert.equal(receipts.data.data.at(-1).payload.bankCreditVerified, false);
+  const self = (await user.request("/api/v1/me")).data,
+    counterparty = (await other.request("/api/v1/me")).data;
+  async function step(action, digest) {
+    const r = await user.request("/api/v1/step-up", {
+      action,
+      digest,
+      password,
+      code: totp(secret),
+    });
+    assert.equal(r.status, 200, `Step-up failed: ${r.data.error?.code}`);
+    return r.data.id;
+  }
+  for (const id of [self.user.id, counterparty.user.id])
+    await admin.query(
+      "INSERT INTO agus_trader_eligibility(owner,environment,eligible,evidence) VALUES($1,'fixture',true,'HTTP simulation fixture')",
+      [id],
+    );
+  const authorities = Array.from({ length: 4 }, () => randomUUID());
+  for (const id of authorities)
+    await admin.query(
+      "INSERT INTO agus_users(id,name,email,role) VALUES($1,'Fixture authority',$2,'operations')",
+      [id, `${id}@fixture.invalid`],
+    );
+  await admin.query(
+    "INSERT INTO agus_fixture_escrow_authorities(id,verifier,arbitrators) VALUES(1,$1,$2)",
+    [authorities[0], JSON.stringify(authorities.slice(1))],
+  );
+  assert.equal(
+    (
+      await other.request("/api/v1/p2p/offers", {
+        side: "buy",
+        availableAtoms: "1000000",
+        minimumAtoms: "1000000",
+        maximumAtoms: "1000000",
+        rateNumerator: "300000",
+        rateDenominator: "1",
+        expiresAt: new Date(Date.now() + 3600000).toISOString(),
+        paymentMethod: "bank-transfer-simulated",
+      })
+    ).status,
+    200,
+  );
+  const p2pQuote = await user.request("/api/v1/p2p/quotes", {
+    side: "sell",
+    amountAtoms: "1000000",
+  });
+  assert.equal(p2pQuote.status, 200);
+  const reservation = await user.request("/api/v1/p2p/reservations", {
+    quoteId: p2pQuote.data.id,
+    challengeId: await step("p2p.reserve", p2pQuote.data.instructionDigest),
+  });
+  assert.equal(reservation.status, 200);
+  const escrowReview = await user.request(
+    `/api/v1/p2p/orders/${reservation.data.id}/fixture/review?action=fund`,
+  );
+  assert.equal(escrowReview.status, 200);
+  const funded = await user.request(
+    `/api/v1/p2p/orders/${reservation.data.id}/fixture/fund`,
+    {
+      revision: escrowReview.data.instruction.revision,
+      challengeId: await step(
+        escrowReview.data.action,
+        escrowReview.data.instructionDigest,
+      ),
+    },
+  );
+  assert.equal(funded.status, 200);
+  assert.equal(funded.data.state, "escrow_funded");
+  assert.equal(funded.data.chainFinalityVerified, false);
+  assert.equal(
+    (
+      await user.request("/api/v1/usd/fixture/account", {
+        residency: "NG",
+        purpose: "freelance",
+      })
+    ).status,
+    200,
+  );
+  await admin.query("UPDATE agus_users SET role='operations' WHERE id=$1", [
+    counterparty.user.id,
+  ]);
+  const incoming = await other.request("/api/v1/usd/fixture/incoming", {
+    owner: self.user.id,
+    amountAtoms: "10000",
+    purpose: "freelance",
+  });
+  assert.equal(incoming.status, 200);
+  const destination = Keypair.generate().publicKey.toBase58();
+  const usdQuote = await user.request("/api/v1/usd/fixture/quotes", {
+    incomingId: incoming.data.id,
+    destination,
+    beneficiaryId: beneficiary.data.id,
+  });
+  assert.equal(usdQuote.status, 200);
+  const usdChallenge = await step(
+      usdQuote.data.action,
+      usdQuote.data.instructionDigest,
+    ),
+    conversionKey = randomUUID();
+  const conversion = await user.request(
+    "/api/v1/usd/fixture/conversions",
+    {
+      quoteId: usdQuote.data.id,
+      challengeId: usdChallenge,
+      loseResponse: true,
+    },
+    { key: conversionKey },
+  );
+  assert.equal(conversion.status, 200);
+  assert.equal(
+    (
+      await user.request(
+        "/api/v1/usd/fixture/conversions",
+        {
+          quoteId: usdQuote.data.id,
+          challengeId: usdChallenge,
+          loseResponse: true,
+        },
+        { key: conversionKey },
+      )
+    ).data.id,
+    conversion.data.id,
+  );
+  let usdState = (
+    await user.request(
+      `/api/v1/usd/fixture/conversions/${conversion.data.id}/reconcile`,
+      {},
+    )
+  ).data;
+  assert.equal(usdState.conversion_status, "succeeded");
+  assert.equal(usdState.delivery_status, "not_started");
+  for (const stage of ["deliver", "payout"]) {
+    const r = await user.request(
+      `/api/v1/usd/fixture/conversions/${conversion.data.id}/review?stage=${stage}`,
+    );
+    assert.equal(r.status, 200);
+    const effect = await user.request(
+      `/api/v1/usd/fixture/conversions/${conversion.data.id}/${stage}`,
+      {
+        revision: r.data.instruction.revision,
+        challengeId: await step(r.data.action, r.data.instructionDigest),
+      },
+    );
+    assert.equal(effect.status, 200);
+    usdState = (
+      await user.request(
+        `/api/v1/usd/fixture/conversions/${conversion.data.id}/reconcile`,
+        {},
+      )
+    ).data;
+  }
+  assert.equal(usdState.payout_status, "succeeded");
+  assert.equal(usdState.bankCreditVerified, false);
+  assert.equal(usdState.chainFinalityVerified, false);
+  assert.equal(
+    (
+      await other.request(
+        `/api/v1/usd/fixture/conversions/${conversion.data.id}`,
+      )
+    ).status,
+    404,
+  );
+  const request = await user.request("/api/v1/requests", {
+    recipient: destination,
+    asset: "SOL",
+    amountAtoms: "1000000",
+    expiresAt: new Date(Date.now() + 3600000).toISOString(),
+  });
+  assert.equal(request.status, 200);
+  const qr = await user.request(`/api/v1/requests/${request.data.id}/qr`);
+  assert.equal(qr.status, 200);
+  assert.match(qr.data.svg, /^<svg/);
+  assert.equal(qr.data.networkNotEnforcedByUri, true);
+  const disabledDiscovery = await user.request(
+    `/api/v1/requests/${request.data.id}/discover`,
+    {},
+  );
+  assert.equal(disabledDiscovery.status, 503);
+  assert.equal(disabledDiscovery.data.error.code, "DEVNET_DISABLED");
+  assert.equal(
+    (await other.request(`/api/v1/requests/${request.data.id}`)).status,
+    404,
+  );
+  assert.equal(
+    (
+      await user.request(`/api/v1/requests/${request.data.id}/cancel`, {
+        revision: 0,
+      })
+    ).status,
+    200,
+  );
+  assert.equal(
+    (await user.request(`/api/v1/requests/${request.data.id}/qr`)).status,
+    409,
+  );
   // Existing operator API uses the same normalized legacy storage cutover.
   assert.equal(
     (await legacy.request("/api/session", { password })).status,
@@ -303,6 +499,19 @@ try {
   await stop();
   await start();
   assert.equal(
+    (await user.request(`/api/v1/p2p/orders/${reservation.data.id}`)).data
+      .state,
+    "escrow_funded",
+  );
+  assert.equal(
+    (
+      await user.request(
+        `/api/v1/usd/fixture/conversions/${conversion.data.id}`,
+      )
+    ).data.payout_status,
+    "succeeded",
+  );
+  assert.equal(
     (await user.request(`/api/v1/payments/${prepared.data.id}`)).data.status,
     "succeeded",
   );
@@ -333,7 +542,7 @@ try {
       "Sensitive material appeared in server logs",
     );
   console.log(
-    "PASS: actual production HTTP -> Better Auth/TOTP -> least-privilege PostgreSQL -> simulated account/payment/receipt; owner isolation, duplicate claim, legacy normalized compatibility, restart recovery and remote revocation. Zero paid model, bank-provider or chain calls.",
+    "PASS: actual production HTTP -> Better Auth/TOTP -> least-privilege PostgreSQL -> simulated bank payment, P2P funding, staged USD conversion/delivery/payout and request QR; owner isolation, duplicate claims, legacy compatibility, restart recovery and revocation. Zero paid model, bank-provider or chain calls.",
   );
 } finally {
   await stop();

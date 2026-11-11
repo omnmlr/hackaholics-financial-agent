@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "baseline": {
     "branch": "dev/agus2-agent-engine-20261109",
     "commit": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
@@ -86,9 +86,9 @@
       "environment": "development",
       "classification": "foundation-bundle-verified-device-pending",
       "genuineIntegration": false,
-      "gate": "APK build requires more build storage or approved EAS account; physical installation, wallet and push acceptance pending",
+      "gate": "Complete SDK and sufficient free build storage, followed by physical installation, wallet and push acceptance; no paid EAS build invoked",
       "scope": "Typechecked Expo Android harness, SecureStore, server sessions, MWA exact signing and explicit durable submission recovery",
-      "evidence": "docs/agus-2/PLATFORM_CHECKPOINT.md"
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
     },
     {
       "id": "usd-receiving-conversion-ngn-settlement",
@@ -115,18 +115,57 @@
     },
     {
       "id": "payment-requests",
-      "environment": "devnet-fixture-tests",
+      "environment": "synthetic-signed-rpc-and-local-postgresql",
       "classification": "implementation-verified-genuine-settlement-pending",
       "genuineIntegration": false,
-      "scope": "Owned requests, Solana Pay URI/reference binding and finalized matching logic; no genuine settled request claimed"
+      "scope": "Owned QR/Solana Pay lifecycle, strict finalized SOL/classic TransferChecked receipt inspection, bounded external-wallet reference discovery, append-only receipt history and additional-payment manual review; no genuine paid request claimed",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
     },
     {
       "id": "p2p-marketplace-foundation",
       "environment": "fixture",
-      "classification": "simulated-reservations-verified-escrow-disabled",
+      "classification": "simulated-lifecycle-verified",
       "genuineIntegration": false,
-      "scope": "Fixture eligibility, offers, deterministic quotes, atomic reservations, unfunded cancellation/expiry, disputes",
-      "gate": "GENUINE_DEVNET_ACCEPTANCE_PENDING; no deployed escrow, funded execution, fiat verification or release"
+      "scope": "Offers, deterministic quotes, atomic reservations, durable fictional token funding, independent fixture verifier, cooperative release, mutual cancellation, fixed 2-of-3 arbitration and terminal replay protection",
+      "gate": "Genuine wallet execution and escrow deployment pending; simulated fiat verification is not bank settlement",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "anchor-test-usdc-escrow",
+      "environment": "local-native-and-compiled-sbf-bank",
+      "classification": "implemented-local-runtime-verified-not-deployed",
+      "genuineIntegration": false,
+      "nativeTestsPassed": 6,
+      "compiledSbfBankTestsPassed": 4,
+      "artifactSha256": "bba86a2d0f396849e96c24cd708fed364c95bec6e0bfe989add83778707d8a21",
+      "programAddressAccepted": false,
+      "gate": "Owner-controlled program address/rebuild, genuine wallet acceptance and approved Devnet deployment; verifier remains simulated",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "escrow-backend-bindings",
+      "environment": "local-postgresql-and-synthetic-rpc",
+      "classification": "templates-and-read-only-observer-verified",
+      "genuineIntegration": false,
+      "transactionPrepared": false,
+      "feeAndRentReviewed": false,
+      "genuineExecutionEnabled": false,
+      "scope": "Verified party-wallet association required; immutable terms, Rust-compatible instructions, finalized funding proof recorded separately from fixture ledger"
+    },
+    {
+      "id": "usd-partner-ports",
+      "environment": "disabled-live-boundaries",
+      "classification": "typed-interfaces-only",
+      "genuineIntegration": false,
+      "scope": "Eligibility, receiving, incoming funds, conversion, blockchain delivery, NGN payout and returns ports; real adapters throw USD_PARTNER_NOT_ACCEPTED"
+    },
+    {
+      "id": "usd-fixture-workflow",
+      "environment": "local-postgresql-fixture",
+      "classification": "simulated-lifecycle-verified",
+      "genuineIntegration": false,
+      "scope": "Fictional encrypted receiving details, immutable quotes/source allocation, duplicate-proof provider effects, staged conversion/delivery/payout, unknown reconciliation and unallocated-source returns",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
     }
   ],
   "prohibitedScope": [
@@ -134,6 +173,7 @@
     "UI redesign",
     "monetization decisions",
     "automatic deployment",
-    "escrow or advanced swaps before genuine Devnet proof"
-  ]
+    "genuine escrow deployment or advanced swap execution without human wallet acceptance and explicit release gates"
+  ],
+  "scopeClarification": "Subsequent user instructions explicitly authorize independently achievable local P2P and escrow implementation while wallet signing remains pending; approved plan file preserved unchanged."
 }

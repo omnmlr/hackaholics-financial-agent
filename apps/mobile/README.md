@@ -29,6 +29,8 @@ submit the saved signed instruction. Recover saved state before considering a
 replacement after any lost response. Network recovery and resume never submit.
 
 Only opaque `agus://open/{resource}/{uuid}` notification links are recognized.
+Supported resources include owned requests and participant P2P orders. Opening
+one retrieves its state; it does not approve, sign, submit or refund anything.
 Approval links, token query strings and arbitrary origins do not authenticate or
 submit. Remote revocation is checked at the server; local biometric success is
 not server authorization. Push denial/invalid tokens and absent EAS project
@@ -43,3 +45,10 @@ The current environment passed typecheck, Android bundle export and native
 prebuild. A debug APK build exceeded available build storage; no installable APK
 or device acceptance is included. See the platform checkpoint for evidence and
 the remaining external gates.
+
+Run `npm run mobile:build:storage` for a read-only storage/SDK report or
+`npm run mobile:build:preflight` for a failing exit code when a build cannot be
+attempted. The default 8 GiB free-space budget per volume is conservative, not an
+exact prediction. The current environment has insufficient space and its temporary
+SDK disappeared on restart. No paid EAS build was invoked. See the
+[current checkpoint](../../docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md).

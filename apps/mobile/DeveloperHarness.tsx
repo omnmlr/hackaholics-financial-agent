@@ -416,7 +416,11 @@ export default function DeveloperHarness() {
                       ? "payments"
                       : pendingLink.resourceType === "solana"
                         ? "solana"
-                        : "responsibilities";
+                        : pendingLink.resourceType === "p2p"
+                          ? "p2p/orders"
+                          : pendingLink.resourceType === "request"
+                            ? "requests"
+                            : "responsibilities";
                   setAccountState(
                     await apiRequest(`${path}/${pendingLink.resourceId}`),
                   );

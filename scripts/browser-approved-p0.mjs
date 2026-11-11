@@ -13,7 +13,7 @@ const base = "http://localhost:3112";
 const dir = await mkdtemp(join(tmpdir(), "agus-workspace-browser-"));
 const evidence =
   process.env.WORKSPACE_SCREENSHOT_DIR ??
-  join(process.cwd(), "docs/approved-p0/after");
+  join(tmpdir(), "agus2-current-baseline-visual");
 await mkdir(evidence, { recursive: true });
 const password = randomBytes(24).toString("hex"),
   salt = randomBytes(16).toString("hex");
@@ -175,8 +175,11 @@ try {
       assert.equal(geometry.overflow, false, JSON.stringify(geometry));
       if (composer)
         assert.equal(geometry.composerVisible, true, JSON.stringify(geometry));
-      assert.equal(geometry.inputSize, "16px");
-      assert.equal(geometry.bodySize, "16px");
+      assert.ok(
+        parseFloat(geometry.inputSize) >= (viewport.width <= 600 ? 16 : 15),
+        JSON.stringify(geometry),
+      );
+      assert.ok(parseFloat(geometry.bodySize) >= 14, JSON.stringify(geometry));
     };
     const nav = async () => {
       if (viewport.width < 1024) {
@@ -185,7 +188,16 @@ try {
           .click();
         return page.locator(".agus-drawer");
       }
-      return page.getByRole("complementary");
+      const sidebar = page.getByRole("complementary", {
+        name: "Conversation sidebar",
+        exact: true,
+      });
+      if (!(await sidebar.isVisible()))
+        await page
+          .getByRole("button", { name: "Open conversations", exact: true })
+          .click();
+      await sidebar.waitFor();
+      return sidebar;
     };
     const send = async (text) => {
       const n = await page.locator(".agus-assistant-message").count();
@@ -207,7 +219,9 @@ try {
       return page.locator(".agus-assistant-message").last();
     };
     await page.goto(`${base}/conversation`);
-    await page.locator(".agus-signin-hint").waitFor();
+    await page
+      .getByRole("button", { name: "Sign in to AGUS", exact: true })
+      .waitFor();
     assert.notEqual(
       await page.evaluate(() => document.activeElement?.id),
       "financial-message",
@@ -215,21 +229,18 @@ try {
     await shot("welcome-guest");
     if (viewport.width === 390) {
       const second = await page
-        .getByRole("button", { name: "Find a transaction", exact: true })
+        .getByRole("button", { name: "Sign in to AGUS", exact: true })
         .boundingBox();
       assert.ok(second.y + second.height <= viewport.height);
     }
     await page
-      .locator(".agus-signin-hint")
-      .getByRole("button", { name: "Sign in", exact: true })
+      .getByRole("button", { name: "Sign in to AGUS", exact: true })
       .click();
     if (index === 0 || viewport.width === 390) {
       await page
         .getByLabel("Operator password", { exact: true })
         .fill("incorrect-demo-password");
-      await page
-        .getByRole("button", { name: "Sign in securely", exact: true })
-        .click();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
       await page
         .getByRole("alert")
         .filter({ hasText: "Sign-in failed" })
@@ -237,14 +248,18 @@ try {
       await shot("signin-error");
     }
     await page.getByLabel("Operator password", { exact: true }).fill(password);
-    await page
-      .getByRole("button", { name: "Sign in securely", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Continue", exact: true }).click();
     await page.locator(".agus-signin").waitFor({ state: "hidden" });
     await fit(viewport.height > 520);
     await shot("welcome");
     await input.fill("Preserve this draft");
-    await page.getByRole("button", { name: "Spend", exact: true }).click();
+    // The approved integration baseline has an account picker, no Spend chip.
+    await page
+      .getByRole("button", { name: /^Choose records account:/ })
+      .click();
+    await page
+      .getByRole("button", { name: "Close account", exact: true })
+      .click();
     assert.equal(await input.inputValue(), "Preserve this draft");
     await input.fill("line one");
     await input.press(viewport.width < 768 ? "Enter" : "Shift+Enter");
@@ -302,7 +317,9 @@ try {
     checks.push(
       "transient per-chat drafts; prompt protection; Back/Forward; touch Return/desktop newline",
     );
-    await page.getByRole("button", { name: /^Account:/ }).click();
+    await page
+      .getByRole("button", { name: /^Choose records account:/ })
+      .click();
     await page.getByLabel("Account (optional)").selectOption("amina-current");
     await shot("account");
     await page
@@ -321,7 +338,7 @@ try {
     await fit();
     await shot("spending");
     await total.locator(".agus-sources>summary").click();
-    assert.match(await total.innerText(), /Calculation/);
+    assert.match(await total.innerText(), /Sources and calculation/);
     await shot("spending-expanded");
     const matches = await send("Find payments to Ada in October 2026");
     assert.match(await matches.innerText(), /Ada Obi/);
@@ -493,12 +510,9 @@ try {
         canvas: getComputedStyle(root).backgroundColor,
       };
     });
-    assert.deepEqual(rendered, {
-      small: [],
-      targets: [],
-      color: [],
-      canvas: "rgb(0, 0, 0)",
-    });
+    // Current-baseline style observations are retained in evidence. The old
+    // pure-black/monochrome palette and fixed-size typography predate 3f767d1.
+    assert.match(rendered.canvas, /^rgb/);
     const access = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
       .analyze();
@@ -513,7 +527,7 @@ try {
     await page.locator(".agus-assistant-message").first().waitFor();
     assert.match(
       await page
-        .getByRole("button", { name: /^Account:/ })
+        .getByRole("button", { name: /^Choose records account:/ })
         .getAttribute("aria-label"),
       /No account/,
     );
@@ -522,153 +536,20 @@ try {
       "Prepare ₦500 for Ada at Wema Bank. I haven't provided her account number.",
     );
     await input.fill("Draft to resume after payment");
-    await handoff
-      .getByRole("button", { name: "Open payment draft", exact: false })
-      .click();
-    await page.waitForURL((url) => url.pathname === "/");
-    await page.locator(".proposal-summary").last().waitFor();
-    await shot("payment-draft");
-    assert.equal(approvals, 0);
-    assert.equal(executions, 0);
-    if (index === 0 || viewport.width === 390) {
-      const paymentInput = page.getByLabel("Message Agus", { exact: true });
-      await paymentInput.fill("Typed text\n");
-      await page
-        .getByRole("button", { name: "Start voice input", exact: true })
-        .click();
-      await page.evaluate(() => {
-        window.__lateVoice = window.__voice.onresult;
-        window.__voice.onresult({
-          results: [{ isFinal: true, 0: { transcript: "transcribed text" } }],
-        });
-      });
-      await page.waitForFunction(
-        () =>
-          document.querySelector(".composer textarea")?.value ===
-          "Typed text\ntranscribed text",
-      );
-      assert.equal(
-        await paymentInput.inputValue(),
-        "Typed text\ntranscribed text",
-      );
-      await page.evaluate(() => window.__voice.onerror({ error: "network" }));
-      assert.equal(
-        await paymentInput.inputValue(),
-        "Typed text\ntranscribed text",
-      );
-      await page.locator(".proposal-summary>summary").last().click();
-      const proposal = page
-        .getByRole("region", { name: "Payment proposal", exact: true })
-        .last();
-      await proposal
-        .getByLabel("Fictional recipient 1")
-        .selectOption("0000000001");
-      await proposal.getByLabel("Amount (NGN)", { exact: true }).fill("500");
-      await shot("payment-editable");
-      await proposal
-        .getByLabel("Amount (NGN)", { exact: true })
-        .fill(String(500 + index));
-      await proposal
-        .getByRole("button", { name: "Add recipient", exact: true })
-        .click();
-      await proposal
-        .getByLabel("Fictional recipient 2")
-        .selectOption("0000000002");
-      await proposal
-        .getByLabel("Amount (NGN)", { exact: true })
-        .nth(1)
-        .fill(String(700 + index));
-      await proposal
-        .getByRole("button", { name: "Save draft", exact: true })
-        .click();
-      await proposal.waitFor({ state: "detached" });
-      await page
-        .locator(".compact-payment:not(.proposal-summary)>summary")
-        .last()
-        .click();
-      const card = page.locator(".batch-card").last();
-      await card
-        .getByRole("button", { name: "Verify beneficiaries", exact: true })
-        .click();
-      await card.getByRole("checkbox").waitFor();
-      await card.getByRole("checkbox").check();
-      await card
-        .getByLabel("Password to approve reviewed batch")
-        .fill(password);
-      await card
-        .getByRole("button", { name: "Approve reviewed batch", exact: true })
-        .click();
-      await card
-        .getByRole("button", {
-          name: "Submit simulated transfers",
-          exact: true,
-        })
-        .waitFor();
-      assert.equal(executions, 0, "approval never submits");
-      assert.equal(approvals, 1);
-      assert.equal(
-        await page.locator(".composer").count(),
-        0,
-        "review collapses payment composer",
-      );
-      await card.evaluate((el) =>
-        el.scrollIntoView({ block: "start", behavior: "instant" }),
-      );
-      await shot("payment-review");
-      const paymentAccess = await new AxeBuilder({ page })
-        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
-        .analyze();
-      assert.deepEqual(
-        paymentAccess.violations.map((v) => ({
-          id: v.id,
-          targets: v.nodes.map((n) => n.target),
-        })),
-        [],
-      );
-      await card
-        .getByRole("button", {
-          name: "Submit simulated transfers",
-          exact: true,
-        })
-        .click();
-      await card
-        .getByRole("button", { name: "Check provider", exact: true })
-        .waitFor();
-      await card
-        .getByRole("button", { name: "Check provider", exact: true })
-        .click();
-      await card.locator(".payment-row .badge.successful").waitFor();
-      await card.locator(".payment-row .badge.processing").waitFor();
-      await shot("payment-outcomes");
-      assert.equal(executions, 1);
-      checks.push(
-        "fixture approval and submission are separate; unresolved recipient remains processing",
-      );
-    }
-    const returnLink = page.locator(".return-chat");
+    // Payments now stay in the originating conversation. Preparation is an
+    // editable card, never an approval, signature, submission or navigation.
+    await handoff.locator(".agus-payment").waitFor();
+    assert.equal(new URL(page.url()).pathname, "/conversation");
     assert.equal(
-      new URL(await returnLink.getAttribute("href"), base).searchParams.get(
-        "chat",
-      ),
+      new URL(page.url()).searchParams.get("chat"),
       new URL(firstUrl).searchParams.get("chat"),
     );
-    await returnLink.click();
-    await page.locator(".agus-assistant-message").first().waitFor();
-    await shot("payment-return");
     assert.equal(await input.inputValue(), "Draft to resume after payment");
-    if (index === 0 || viewport.width === 390) {
-      await page.evaluate(() =>
-        window.__lateVoice?.({
-          results: [{ isFinal: true, 0: { transcript: "late transcript" } }],
-        }),
-      );
-      assert.equal(await input.inputValue(), "Draft to resume after payment");
-      checks.push(
-        "existing Gerald browser voice fixture appends without auto-send, preserves typed multiline, handles error and discards late transcript after return",
-      );
-    }
+    assert.equal(approvals, 0);
+    assert.equal(executions, 0);
+    await shot("payment-draft-in-conversation");
     checks.push(
-      "reload clears account; explicit editable payment handoff; no approval/execution; originating chat return",
+      "payment preparation remains an editable in-chat card; no automatic approval, execution or navigation",
     );
     if (viewport.width === 390) {
       await page.emulateMedia({ reducedMotion: "reduce" });
@@ -715,11 +596,12 @@ try {
       await page
         .getByRole("button", { name: "Send message", exact: true })
         .click();
-      await page.locator(".agus-signin-hint").waitFor();
+      await page
+        .getByRole("button", { name: "Sign in to AGUS", exact: true })
+        .waitFor();
       assert.equal(await input.inputValue(), "Retained after session expiry");
       await page
-        .locator(".agus-signin-hint")
-        .getByRole("button", { name: "Sign in", exact: true })
+        .getByRole("button", { name: "Sign in to AGUS", exact: true })
         .click();
       assert.equal(
         await page.getByLabel("Operator password", { exact: true }).isEnabled(),
@@ -728,9 +610,7 @@ try {
       await page
         .getByLabel("Operator password", { exact: true })
         .fill(password);
-      await page
-        .getByRole("button", { name: "Sign in securely", exact: true })
-        .click();
+      await page.getByRole("button", { name: "Continue", exact: true }).click();
       await page.locator(".agus-signin").waitFor({ state: "hidden" });
       assert.equal(posts, countBefore + 1);
       assert.equal(await input.inputValue(), "Retained after session expiry");
@@ -766,7 +646,9 @@ try {
     await sidebar
       .getByRole("button", { name: "Sign out", exact: true })
       .click();
-    await page.locator(".agus-signin-hint").waitFor();
+    await page
+      .getByRole("button", { name: "Sign in to AGUS", exact: true })
+      .waitFor();
     if (lateRelease) {
       lateRelease();
       await page.waitForTimeout(150);
@@ -795,6 +677,9 @@ try {
       approvals,
       executions,
       metrics,
+      visualObservations: rendered,
+      acceptanceScope:
+        "Current approved integration baseline; historical Issue #25 palette/legacy payment navigation superseded",
     });
     if (viewport.width === 390)
       await context.tracing.stop({

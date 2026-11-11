@@ -500,6 +500,17 @@ export function createSolanaService(
       }
       if (input.reference) {
         const reference = address(input.reference);
+        if (
+          tx.instructions.some(
+            (ix) =>
+              ix.programId.equals(reference) ||
+              ix.keys.some((key) => key.pubkey.equals(reference)),
+          )
+        )
+          throw new SolanaError(
+            "REFERENCE_COLLISION",
+            "The request reference must be a distinct read-only account",
+          );
         // Solana Pay discovery reference, read-only and never a signer. It is
         // not an on-chain idempotency or settlement enforcement mechanism.
         tx.instructions
@@ -809,6 +820,11 @@ export function createSolanaService(
             at: instant(),
             commitment,
             feeLamports: actualFee,
+            blockTime:
+              Number.isSafeInteger(transaction.blockTime) &&
+              transaction.blockTime! >= 0
+                ? transaction.blockTime
+                : null,
           },
         },
         "chain_verified",

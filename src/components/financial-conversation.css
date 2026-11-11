@@ -1420,6 +1420,10 @@ body:has(.agus-workspace) {
   .agus-drawer .agus-profile {
     padding-top: 0;
   }
+  .agus-drawer .agus-history {
+    flex: 0 0 auto;
+    max-height: 40dvh;
+  }
   .agus-drawer .agus-profile small {
     display: none;
   }

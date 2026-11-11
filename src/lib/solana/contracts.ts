@@ -63,6 +63,8 @@ export type SolanaDraft = {
     at: string;
     commitment: "confirmed" | "finalized";
     feeLamports: string;
+    /** RPC chain timestamp, if supplied. Observation time is not execution time. */
+    blockTime?: number | null;
   } | null;
   /** Absent only on historical drafts; these cannot acquire new signing authority. */
   simulation?: {

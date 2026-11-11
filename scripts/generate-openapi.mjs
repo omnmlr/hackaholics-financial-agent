@@ -346,7 +346,15 @@ operation(
 );
 operation("requests/{id}/match", "post", "matchRequestSettlement", "Resource");
 operation("requests/parse", "post", "parseSolanaPayRequest", "Resource");
-operation("p2p/offers", "get", "listSimulationOffers");
+operation(
+  "p2p/offers",
+  "get",
+  "listSimulationOffers",
+  null,
+  "Page",
+  false,
+  true,
+);
 operation(
   "p2p/offers",
   "post",
@@ -364,7 +372,15 @@ operation(
   "Resource",
   true,
 );
-operation("p2p/orders", "get", "listSimulationOrders");
+operation(
+  "p2p/orders",
+  "get",
+  "listSimulationOrders",
+  null,
+  "Page",
+  false,
+  true,
+);
 operation("p2p/orders/{id}", "get", "getSimulationOrder");
 operation("p2p/orders/{id}/cancel", "post", "cancelUnfundedOrder", "Revision");
 operation("usd", "get", "usdExternalIntegrationGates");
@@ -405,6 +421,195 @@ operation("memory/{id}", "post", "confirmOrForgetMemory", "Resource");
 operation("runs", "get", "listPreservedRuns");
 operation("runs/{id}", "get", "getPreservedRun");
 operation("runs/{id}", "post", "controlPreservedRun", "Resource");
+schemas.EscrowAction = ref("Approval");
+schemas.EscrowBinding = object({
+  buyerWallet: string,
+  sellerWallet: string,
+  buyerDestination: string,
+  sellerSource: string,
+});
+schemas.UsdOnboard = object({
+  residency: { type: "string", enum: ["NG"] },
+  purpose: { type: "string", enum: ["freelance", "salary"] },
+});
+schemas.UsdIncoming = object({
+  owner: uuid,
+  amountAtoms: { type: "string", pattern: "^[1-9][0-9]{0,8}$" },
+  purpose: { type: "string", enum: ["freelance", "salary"] },
+});
+schemas.UsdQuote = object(
+  { incomingId: uuid, destination: string, beneficiaryId: uuid },
+  ["incomingId", "destination"],
+);
+schemas.UsdConvert = object(
+  { quoteId: uuid, challengeId: uuid, loseResponse: { type: "boolean" } },
+  ["quoteId", "challengeId"],
+);
+schemas.OfferEdit = object({
+  revision,
+  offer: { anyOf: [ref("Resource"), { type: "null" }] },
+});
+operation("requests", "get", "listPaymentRequests", null, "Page", false, true);
+operation("requests/{id}/qr", "get", "paymentRequestQr");
+schemas.RequestDiscovery = object({ cursor: string }, []);
+schemas.RequestExternalSignature = object({
+  signature: { type: "string", minLength: 64, maxLength: 88 },
+});
+operation(
+  "requests/{id}/discover",
+  "post",
+  "discoverReferencePayments",
+  "RequestDiscovery",
+);
+operation(
+  "requests/{id}/match-external",
+  "post",
+  "matchExternalRequestPayment",
+  "RequestExternalSignature",
+);
+operation(
+  "requests/{id}/settlements",
+  "get",
+  "listRequestSettlements",
+  null,
+  "Page",
+  false,
+  true,
+);
+operation("p2p/escrow", "get", "devnetEscrowReadiness");
+operation("p2p/offers/{id}", "post", "editOrCloseSimulationOffer", "OfferEdit");
+operation("p2p/orders/{id}/fixture", "get", "getFixtureEscrow");
+operation("p2p/orders/{id}/fixture/review", "get", "reviewFixtureEscrowAction");
+const escrowActions = [
+  "fund",
+  "claim_fiat",
+  "verify_fiat",
+  "release",
+  "mutual_cancel",
+  "arbitrate_release",
+  "arbitrate_refund",
+];
+paths["/api/v1/p2p/orders/{id}/fixture/review"].get.parameters.push({
+  name: "action",
+  in: "query",
+  required: true,
+  schema: { type: "string", enum: escrowActions },
+});
+operation(
+  "p2p/orders/{id}/fixture/{action}",
+  "post",
+  "executeFixtureEscrowAction",
+  "EscrowAction",
+  "Resource",
+  true,
+);
+paths["/api/v1/p2p/orders/{id}/fixture/{action}"].post.parameters.find(
+  (p) => p.name === "action",
+).schema = { type: "string", enum: escrowActions };
+operation("p2p/orders/{id}/devnet-binding", "get", "getDevnetEscrowBinding");
+operation(
+  "p2p/orders/{id}/devnet-binding",
+  "post",
+  "bindDevnetEscrowInstructionTemplate",
+  "EscrowBinding",
+  "Resource",
+  true,
+);
+operation(
+  "p2p/orders/{id}/devnet-binding/reconcile",
+  "post",
+  "readFinalizedEscrowFunding",
+  "Resource",
+);
+operation("usd/fixture/account", "get", "getFixtureUsdAccount");
+operation(
+  "usd/fixture/account",
+  "post",
+  "onboardFixtureUsdAccount",
+  "UsdOnboard",
+  "Resource",
+  true,
+);
+operation(
+  "usd/fixture/incoming",
+  "get",
+  "listFixtureUsdIncoming",
+  null,
+  "Page",
+  false,
+  true,
+);
+operation(
+  "usd/fixture/incoming",
+  "post",
+  "recordFixtureUsdIncoming",
+  "UsdIncoming",
+  "Resource",
+  true,
+);
+operation(
+  "usd/fixture/quotes",
+  "post",
+  "quoteFixtureUsdConversion",
+  "UsdQuote",
+  "Resource",
+  true,
+);
+operation(
+  "usd/fixture/conversions",
+  "post",
+  "submitFixtureUsdConversion",
+  "UsdConvert",
+  "Resource",
+  true,
+);
+operation("usd/fixture/conversions/{id}", "get", "getFixtureUsdConversion");
+operation(
+  "usd/fixture/conversions/{id}/review",
+  "get",
+  "reviewFixtureUsdStage",
+);
+paths["/api/v1/usd/fixture/conversions/{id}/review"].get.parameters.push({
+  name: "stage",
+  in: "query",
+  required: true,
+  schema: { type: "string", enum: ["deliver", "payout"] },
+});
+operation(
+  "usd/fixture/conversions/{id}/deliver",
+  "post",
+  "deliverFixtureUsdc",
+  "Approval",
+  "Resource",
+  true,
+);
+operation(
+  "usd/fixture/conversions/{id}/payout",
+  "post",
+  "settleFixtureNgn",
+  "Approval",
+  "Resource",
+  true,
+);
+operation(
+  "usd/fixture/conversions/{id}/reconcile",
+  "post",
+  "reconcileFixtureUsdStages",
+  "Empty",
+);
+operation(
+  "usd/fixture/incoming/{id}/return-review",
+  "get",
+  "reviewFixtureUsdReturn",
+);
+operation(
+  "usd/fixture/incoming/{id}/return",
+  "post",
+  "returnFixtureUsdIncoming",
+  "Approval",
+  "Resource",
+  true,
+);
 const document = {
   openapi: "3.1.0",
   info: {

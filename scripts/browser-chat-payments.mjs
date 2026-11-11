@@ -728,12 +728,20 @@ try {
     );
     const totals = await send("Show my spending for October 2026");
     assert.equal(totals.reply.kind, "financial");
-    // Earlier viewport sessions share this durable workspace and posted transfers.
+    // Shared sessions create transfers at their actual submission time. Include
+    // only the October WAT window used by this financial query.
     const ledgerState = await (
       await page.request.get(`${base}/api/state`)
     ).json();
     const posted = ledgerState.batches
       .filter((b) => b.simulationSource?.accountId === "amina-current")
+      .filter((b) => {
+        const at = Date.parse(b.approval?.consumedAt ?? "");
+        return (
+          at >= Date.parse("2026-09-30T23:00:00Z") &&
+          at < Date.parse("2026-10-31T23:00:00Z")
+        );
+      })
       .flatMap((b) => b.payments)
       .filter((p) => p.status === "successful")
       .reduce((sum, p) => sum + p.amountKobo + (p.providerFeeKobo ?? 0), 0);

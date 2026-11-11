@@ -1,5 +1,10 @@
 # Shared platform and banking checkpoint — 10 November 2026
 
+Historical checkpoint. The subsequent
+[11 November marketplace/escrow checkpoint](MARKETPLACE_ESCROW_CHECKPOINT.md)
+records expanded implementations, updated visual verification and current gates.
+The results below describe this checkpoint's earlier state.
+
 Integration branch: `integration/agus2-foundation-20261110`, descended from the
 approved `3f767d17e35efb8e84a9fe4da05f231c8e6956b4` baseline. Sprint 0 and
 Sprint 1 tools remain preserved. **Genuine wallet execution is pending human

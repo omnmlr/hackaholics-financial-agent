@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { Sql } from "./sql";
 import { normalizeLegacy } from "./legacy-storage";
 
-export const SCHEMA_VERSION = "0013_record_observations.sql";
+export const SCHEMA_VERSION = "0017_external_request_receipts.sql";
 export async function migrate(
   client: Sql,
   directory = join(process.cwd(), "migrations"),

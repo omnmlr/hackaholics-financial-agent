@@ -6,6 +6,12 @@ it("opens only opaque notification resource IDs and rejects approval links, toke
     resourceType: "payment",
     resourceId: id,
   });
+  expect(parseNotificationLink(`agus://open/p2p/${id}`)?.resourceType).toBe(
+    "p2p",
+  );
+  expect(parseNotificationLink(`agus://open/request/${id}`)?.resourceType).toBe(
+    "request",
+  );
   for (const link of [
     `agus://approve/payment/${id}`,
     `agus://open/payment/${id}?token=sensitive`,
@@ -13,6 +19,9 @@ it("opens only opaque notification resource IDs and rejects approval links, toke
     `agus://open/solana/${id}/submit`,
     `agus://open/payment/${id}#approve`,
     `agus://open/payment/not-a-uuid`,
+    `agus://open/p2p/------------------------------------`,
+    `agus://attacker@open/p2p/${id}`,
+    `agus://open:444/request/${id}`,
   ])
     expect(parseNotificationLink(link)).toBeNull();
 });

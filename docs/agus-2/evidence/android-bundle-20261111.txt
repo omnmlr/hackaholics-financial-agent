@@ -1,0 +1,22 @@
+
+> hackaholics-financial-agent@0.1.0 mobile:export:android
+> npm run export:android --workspace @agus/mobile
+
+
+> @agus/mobile@0.1.0 export:android
+> expo export --platform android
+
+Expo Autolinking module resolution enabled
+Starting Metro Bundler
+
+ WARN  Attempted to import the module "/workspace/agus2-integration/node_modules/rpc-websockets" which is listed in the "exports" of "/workspace/agus2-integration/node_modules/rpc-websockets", however no match was resolved for this request (platform = android). Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API.
+ WARN  Attempted to import the module "/workspace/agus2-integration/node_modules/@noble/hashes/crypto.js" which is not listed in the "exports" of "/workspace/agus2-integration/node_modules/@noble/hashes" under the requested subpath "./crypto.js". Falling back to file-based resolution. Consider updating the call site or asking the package maintainer(s) to expose this API.
+Android Bundled 82575ms apps/mobile/index.ts (1090 modules)
+
+› android bundles (1):
+_expo/static/js/android/index-a4e3dd97dc85bf6c6b8390df2c40dca2.hbc (5.5MB)
+
+› Files (1):
+metadata.json (150B)
+
+Exported: dist

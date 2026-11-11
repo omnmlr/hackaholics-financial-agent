@@ -1,0 +1,30 @@
+running 4 tests
+test disputes_fixed_two_of_three_and_mutual_cancellation ... Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: TransferChecked
+Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: TransferChecked
+ok
+test fund_release_replay_destinations_and_independent_verifier ... Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: TransferChecked
+ok
+test invalid_terms_mint_destination_and_arbitrated_release ... Instruction: InitializeAccount3
+Instruction: InitializeAccount3
+Instruction: InitializeAccount3
+Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: TransferChecked
+ok
+test unused_counterparty_account_cannot_block_arbitration ... Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: SetAuthority
+Instruction: TransferChecked
+Instruction: InitializeAccount3
+Instruction: TransferChecked
+Instruction: CloseAccount
+Instruction: TransferChecked
+ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.60s

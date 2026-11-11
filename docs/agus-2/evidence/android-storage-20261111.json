@@ -1,0 +1,29 @@
+{
+  "mode": "read-only",
+  "minimumFreeGiBPerBuildVolume": 8,
+  "threshold": "conservative preflight budget, not an exact build-size prediction",
+  "volumes": [
+    {
+      "path": "/workspace/agus2-integration/apps/mobile",
+      "device": 27,
+      "freeBytes": "1521393664",
+      "totalBytes": "8417406976",
+      "freeGiB": 1.4169082641601562
+    },
+    {
+      "path": "/tmp",
+      "device": 34,
+      "freeBytes": "1915310080",
+      "totalBytes": "5226229760",
+      "freeGiB": 1.7837715148925781
+    }
+  ],
+  "sdkConfigured": false,
+  "sdkExists": false,
+  "javaHomeConfigured": false,
+  "enoughSpace": false,
+  "canAttemptBuild": false,
+  "cleanupPerformed": false,
+  "physicalAcceptance": "pending-human-device",
+  "guidance": "Use sufficient local storage, a single intended ABI and bounded Gradle workers. Do not delete source, signing material, databases, acceptance evidence or unrelated caches. No paid build service is invoked."
+}

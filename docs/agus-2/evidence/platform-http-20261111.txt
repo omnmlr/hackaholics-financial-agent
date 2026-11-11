@@ -1,0 +1,5 @@
+
+> hackaholics-financial-agent@0.1.0 test:platform:http
+> node scripts/platform-http-smoke.mjs
+
+PASS: actual production HTTP -> Better Auth/TOTP -> least-privilege PostgreSQL -> simulated bank payment, P2P funding, staged USD conversion/delivery/payout and request QR; owner isolation, duplicate claims, legacy compatibility, restart recovery and revocation. Zero paid model, bank-provider or chain calls.

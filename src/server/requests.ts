@@ -2,15 +2,30 @@ import { randomBytes } from "node:crypto";
 import { PublicKey } from "@solana/web3.js";
 import { z } from "zod";
 import { database, transaction } from "./sql";
-import { invariant } from "./errors";
+import { invariant, DomainError } from "./errors";
 import { operation } from "./idempotency";
 import { service } from "../lib/solana";
 import { atomsToDecimal, decimalToAtoms } from "../lib/solana/money";
 import { CIRCLE_DEVNET_USDC_MINT } from "../lib/solana/assets";
+import { MAX_U64 } from "../lib/solana/money";
+import QRCode from "qrcode";
+import { enqueue } from "./jobs";
+import { DEVNET_GENESIS, DEVNET_RPC } from "../lib/solana/contracts";
+import type { RequestChainReceipt } from "./request-chain";
+function publicKey(value: string) {
+  try {
+    return new PublicKey(value);
+  } catch {
+    throw new DomainError("INVALID_SOLANA_PAY_ADDRESS", 400);
+  }
+}
 export const RequestInput = z.strictObject({
   recipient: z.string().min(32).max(44),
   asset: z.enum(["SOL", "SPL"]),
-  amountAtoms: z.string().regex(/^[1-9][0-9]{0,19}$/),
+  amountAtoms: z
+    .string()
+    .regex(/^[1-9][0-9]{0,19}$/)
+    .refine((n) => BigInt(n) <= MAX_U64),
   expiresAt: z.iso.datetime(),
 });
 function view(row: Record<string, unknown>) {
@@ -24,23 +39,39 @@ function view(row: Record<string, unknown>) {
     label: "AGUS Devnet test payment",
   });
   if (row.mint) query.set("spl-token", String(row.mint));
+  const status =
+    row.status === "open" &&
+    new Date(String(row.expires_at)).getTime() <= Date.now()
+      ? "expired"
+      : row.status;
   return {
-    id: row.id,
+    id: String(row.id),
     reference: row.reference,
     recipient: row.recipient,
     asset: row.asset,
     mint: row.mint,
     amountAtoms: row.amount_atoms,
+    amount: {
+      atoms: String(row.amount_atoms),
+      currency: row.asset === "SOL" ? "SOL" : "USDC",
+      scale: Number(row.scale),
+    },
     scale: row.scale,
     expiresAt: row.expires_at,
-    status:
-      row.status === "open" && Date.parse(String(row.expires_at)) <= Date.now()
-        ? "expired"
-        : row.status,
+    status,
     revision: row.revision,
     network: "devnet",
     uri: `solana:${row.recipient}?${query}`,
+    payable: status === "open",
+    networkNotEnforcedByUri: true,
+    networkRequirement:
+      "Devnet must be selected and its genesis verified before signing; a Solana Pay URI alone does not select the wallet cluster.",
     settlementSignature: row.settlement_signature,
+    manualReviewRequired: row.status === "paid_multiple",
+    automaticRefundAuthorized: false,
+    cancelledAt: row.cancelled_at ?? null,
+    settlementObservedAt: row.settlement_observed_at ?? null,
+    settlementBlockTime: row.settlement_block_time ?? null,
   };
 }
 export async function createRequest(
@@ -48,7 +79,8 @@ export async function createRequest(
   key: string,
   input: z.infer<typeof RequestInput>,
 ) {
-  const recipient = new PublicKey(input.recipient);
+  input = RequestInput.parse(input);
+  const recipient = publicKey(input.recipient);
   invariant(recipient.toBase58() === input.recipient, "INVALID_RECIPIENT", 400);
   invariant(
     Date.parse(input.expiresAt) > Date.now() &&
@@ -95,6 +127,36 @@ export async function getRequest(owner: string, id: string) {
   invariant(row, "NOT_FOUND", 404);
   return view(row);
 }
+export async function listRequests(
+  owner: string,
+  after: string,
+  limit: number,
+) {
+  return (
+    await (
+      await database()
+    ).query(
+      "SELECT * FROM agus_payment_requests WHERE owner=$1 AND id>$2 ORDER BY id LIMIT $3",
+      [owner, after, limit],
+    )
+  ).rows.map(view);
+}
+export async function requestQr(owner: string, id: string) {
+  const row = await getRequest(owner, id);
+  invariant(row.payable && row.uri, "REQUEST_UNAVAILABLE", 409);
+  return {
+    id,
+    uri: row.uri,
+    svg: await QRCode.toString(row.uri, {
+      type: "svg",
+      errorCorrectionLevel: "M",
+      margin: 4,
+    }),
+    network: "devnet",
+    networkNotEnforcedByUri: true,
+    requiresExplicitReview: true,
+  };
+}
 export async function lookupRequest(reference: string) {
   const row = (
     await (
@@ -115,7 +177,7 @@ export async function cancelRequest(
     await (
       await database()
     ).query(
-      "UPDATE agus_payment_requests SET status='cancelled',revision=revision+1 WHERE owner=$1 AND id=$2 AND revision=$3 AND status='open' RETURNING *",
+      "UPDATE agus_payment_requests SET status='cancelled',cancelled_at=now(),revision=revision+1 WHERE owner=$1 AND id=$2 AND revision=$3 AND status='open' RETURNING *",
       [owner, id, revision],
     )
   ).rows[0];
@@ -180,11 +242,42 @@ export async function matchRequest(
   );
   invariant(
     draft.reference === link.reference &&
+      draft.network === "devnet" &&
+      draft.genesisHash === DEVNET_GENESIS &&
+      draft.rpcEndpoint === DEVNET_RPC &&
+      draft.decimals === Number(link.scale) &&
       draft.recipient === link.recipient &&
       draft.asset === link.asset &&
       draft.mint === link.mint &&
       draft.amountAtoms === link.amount_atoms,
     "REQUEST_SETTLEMENT_MISMATCH",
+    409,
+  );
+  return recordRequestReceipt(
+    requestId,
+    {
+      signature: draft.submission.signature,
+      sender: draft.sender,
+      slot: draft.confirmation.slot,
+      blockTime: draft.confirmation.blockTime ?? null,
+      amountAtoms: draft.amountAtoms,
+      asset: draft.asset,
+      mint: draft.mint,
+      genesisHash: DEVNET_GENESIS,
+      verification: "chain_finalized",
+    },
+    { owner: link.payer, draftId: draft.id },
+  );
+}
+export async function recordRequestReceipt(
+  requestId: string,
+  receipt: RequestChainReceipt,
+  payer?: { owner: string; draftId: string },
+) {
+  invariant(
+    receipt.genesisHash === DEVNET_GENESIS &&
+      receipt.verification === "chain_finalized",
+    "REQUEST_FINALITY_PENDING",
     409,
   );
   return transaction(async (tx) => {
@@ -194,38 +287,180 @@ export async function matchRequest(
         [requestId],
       )
     ).rows[0];
-    if (row.settlement_signature) {
-      invariant(
-        row.settlement_signature === draft.submission!.signature,
-        "REQUEST_ALREADY_SETTLED",
-      );
-      return view(row);
-    }
-    const status =
-      row.status === "cancelled"
-        ? "paid_after_cancellation"
-        : new Date(row.expires_at).getTime() <= Date.now()
-          ? "paid_after_expiry"
-          : "paid";
-    const updated = (
+    invariant(row, "NOT_FOUND", 404);
+    invariant(
+      receipt.amountAtoms === row.amount_atoms &&
+        receipt.asset === row.asset &&
+        receipt.mint === row.mint,
+      "REQUEST_SETTLEMENT_MISMATCH",
+      409,
+    );
+    const existing = (
       await tx.query(
-        "UPDATE agus_payment_requests SET status=$2,settlement_signature=$3,revision=revision+1 WHERE id=$1 RETURNING *",
-        [requestId, status, draft.submission!.signature],
+        "SELECT request_id,kind FROM agus_request_chain_observations WHERE signature=$1",
+        [receipt.signature],
       )
     ).rows[0];
-    return view(updated);
+    if (existing) {
+      invariant(
+        existing.request_id === requestId,
+        "REQUEST_SIGNATURE_ALREADY_ALLOCATED",
+      );
+      if (payer)
+        await enqueue(
+          tx,
+          payer.owner,
+          "notification.in_app",
+          `request:${requestId}:${receipt.signature}:${payer.owner}`,
+          {
+            resourceType: payer.owner === row.owner ? "request" : "solana",
+            resourceId: payer.owner === row.owner ? requestId : payer.draftId,
+          },
+        );
+      return {
+        ...view(row),
+        additionalPayment: existing.kind === "additional",
+        automaticRefundAuthorized: false,
+      };
+    }
+    const additional =
+      !!row.settlement_signature &&
+      row.settlement_signature !== receipt.signature;
+    const millis = (receipt.blockTime ?? -1) * 1000;
+    const chainAt =
+      receipt.blockTime !== null &&
+      Number.isSafeInteger(receipt.blockTime) &&
+      millis >= 0 &&
+      Number.isFinite(new Date(millis).getTime())
+        ? new Date(millis)
+        : null;
+    await tx.query(
+      "INSERT INTO agus_request_chain_observations(signature,request_id,kind,slot,sender,amount_atoms,asset,mint,block_time,evidence) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+      [
+        receipt.signature,
+        requestId,
+        additional ? "additional" : "primary",
+        receipt.slot,
+        receipt.sender,
+        receipt.amountAtoms,
+        receipt.asset,
+        receipt.mint,
+        chainAt,
+        JSON.stringify({
+          provider: "solana-public-rpc",
+          environment: "devnet",
+          verification: receipt.verification,
+          genesisHash: receipt.genesisHash,
+        }),
+      ],
+    );
+    if (!row.settlement_signature) {
+      const status = chainAt
+        ? row.status === "cancelled" &&
+          row.cancelled_at &&
+          chainAt.getTime() >= new Date(row.cancelled_at).getTime()
+          ? "paid_after_cancellation"
+          : chainAt.getTime() >= new Date(row.expires_at).getTime()
+            ? "paid_after_expiry"
+            : "paid"
+        : row.status === "cancelled" ||
+            new Date(row.expires_at).getTime() <= Date.now()
+          ? "paid_timing_unverified"
+          : "paid";
+      await tx.query(
+        "UPDATE agus_payment_requests SET status=$2,settlement_signature=$3,settlement_observed_at=now(),settlement_block_time=$4,revision=revision+1 WHERE id=$1",
+        [requestId, status, receipt.signature, chainAt],
+      );
+    } else if (additional)
+      await tx.query(
+        "UPDATE agus_payment_requests SET status='paid_multiple',revision=revision+1 WHERE id=$1",
+        [requestId],
+      );
+    for (const target of [
+      { owner: row.owner, resourceType: "request", resourceId: requestId },
+      ...(payer && payer.owner !== row.owner
+        ? [
+            {
+              owner: payer.owner,
+              resourceType: "solana",
+              resourceId: payer.draftId,
+            },
+          ]
+        : []),
+    ])
+      await enqueue(
+        tx,
+        target.owner,
+        "notification.in_app",
+        `request:${requestId}:${receipt.signature}:${target.owner}`,
+        { resourceType: target.resourceType, resourceId: target.resourceId },
+      );
+    const updated = (
+      await tx.query("SELECT * FROM agus_payment_requests WHERE id=$1", [
+        requestId,
+      ])
+    ).rows[0];
+    return {
+      ...view(updated),
+      additionalPayment: additional,
+      automaticRefundAuthorized: false,
+    };
   });
 }
+export async function requestReceipts(
+  owner: string,
+  id: string,
+  after: string,
+  limit: number,
+) {
+  await getRequest(owner, id);
+  return (
+    await (
+      await database()
+    ).query<{ id: string; asset: string; amount_atoms: string }>(
+      "SELECT signature AS id,signature,kind,slot,sender,amount_atoms,asset,mint,block_time,observed_at,evidence FROM agus_request_chain_observations WHERE request_id=$1 AND signature>$2 ORDER BY signature LIMIT $3",
+      [id, after, limit],
+    )
+  ).rows.map((row) => ({
+    ...row,
+    amount: {
+      atoms: row.amount_atoms,
+      currency: row.asset === "SOL" ? "SOL" : "USDC",
+      scale: row.asset === "SOL" ? 9 : 6,
+    },
+  }));
+}
 export function parseSolanaPay(uri: string) {
-  const url = new URL(uri);
+  invariant(uri.length <= 2048, "INVALID_SOLANA_PAY_URI", 400);
+  let url: URL;
+  try {
+    url = new URL(uri);
+  } catch {
+    throw new DomainError("INVALID_SOLANA_PAY_URI", 400);
+  }
   invariant(
     url.protocol === "solana:" &&
+      !url.host &&
+      !url.hash &&
       !url.pathname.startsWith("https:") &&
       url.pathname.length <= 44,
     "INVALID_SOLANA_PAY_URI",
     400,
   );
-  const recipient = new PublicKey(url.pathname).toBase58(),
+  const allowed = new Set([
+    "amount",
+    "reference",
+    "spl-token",
+    "label",
+    "message",
+  ]);
+  for (const key of url.searchParams.keys())
+    invariant(
+      allowed.has(key) && url.searchParams.getAll(key).length === 1,
+      "AMBIGUOUS_SOLANA_PAY_URI",
+      400,
+    );
+  const recipient = publicKey(url.pathname).toBase58(),
     mint = url.searchParams.get("spl-token"),
     reference = url.searchParams.get("reference"),
     amount = url.searchParams.get("amount");
@@ -235,7 +470,7 @@ export function parseSolanaPay(uri: string) {
     400,
   );
   invariant(reference && amount, "REQUEST_AMOUNT_REFERENCE_REQUIRED", 400);
-  new PublicKey(reference);
+  publicKey(reference);
   return {
     recipient,
     asset: mint ? "SPL" : "SOL",

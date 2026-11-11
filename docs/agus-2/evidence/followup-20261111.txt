@@ -1,0 +1,6 @@
+
+> hackaholics-financial-agent@0.1.0 test:agent-followup
+> node scripts/agent-workspace-smoke.mjs --followup
+
+PASS: owned submitted-draft FIXTURE -> real HTTP proposal -> in-chat human read-only approval/pause/resume/cancel. Zero model/chain calls; no signed transfer claimed.
+PASS: actual production HTTP/browser auth, task approval/idempotency, due delivery, stale rejection, memory confirmation/forget, mobile routes, in-chat approval/pause/resume/cancel, lazy wallet, persisted recovery, enabled devnet draft fixture; zero provider or chain calls.

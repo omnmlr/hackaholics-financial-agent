@@ -6,7 +6,11 @@ import { operation } from "./idempotency";
 import { instructionHash, consumeStepUp } from "./approvals";
 import type { Principal } from "./auth";
 import { CIRCLE_DEVNET_USDC_MINT } from "../lib/solana/assets";
-const atoms = z.string().regex(/^[1-9][0-9]{0,30}$/);
+import { MAX_U64 } from "../lib/solana/money";
+const atoms = z
+  .string()
+  .regex(/^[1-9][0-9]{0,19}$/)
+  .refine((n) => BigInt(n) <= MAX_U64);
 export const OfferInput = z.strictObject({
   side: z.enum(["buy", "sell"]),
   availableAtoms: atoms,
@@ -106,14 +110,17 @@ export async function quote(owner: string, input: z.infer<typeof QuoteInput>) {
       [owner, input.side, input.amountAtoms],
     )
   ).rows;
-  const priced = rows.map((offer) => ({
-    offer,
-    value:
-      (BigInt(input.amountAtoms) * BigInt(offer.rate_numerator) +
-        1000000n * BigInt(offer.rate_denominator) -
-        1n) /
-      (1000000n * BigInt(offer.rate_denominator)),
-  }));
+  const priced = rows
+    .map((offer) => ({
+      offer,
+      value:
+        (BigInt(input.amountAtoms) * BigInt(offer.rate_numerator) +
+          (input.side === "buy"
+            ? 1000000n * BigInt(offer.rate_denominator) - 1n
+            : 0n)) /
+        (1000000n * BigInt(offer.rate_denominator)),
+    }))
+    .filter((q) => q.value > 0n);
   priced.sort((a, b) =>
     a.value === b.value
       ? new Date(a.offer.created_at).getTime() -
@@ -206,7 +213,7 @@ export async function reserve(
       [offer.id, q.token_atoms],
     );
     await sql.query(
-      "INSERT INTO agus_p2p_orders(owner,id,counterparty,offer_id,quote_id,token_atoms,fiat_atoms,state,expires_at,instruction_hash,environment) VALUES($1,$2,$3,$4,$5,$6,$7,'awaiting_escrow',now()+interval '15 minutes',$8,'fixture')",
+      "INSERT INTO agus_p2p_orders(owner,id,counterparty,offer_id,quote_id,token_atoms,fiat_atoms,state,expires_at,instruction_hash,environment,buyer,seller) VALUES($1,$2,$3,$4,$5,$6,$7,'awaiting_escrow',now()+interval '15 minutes',$8,'fixture',$9,$10)",
       [
         p.id,
         op.id,
@@ -216,6 +223,8 @@ export async function reserve(
         q.token_atoms,
         q.fiat_atoms,
         q.instruction_hash,
+        offer.side === "sell" ? p.id : offer.owner,
+        offer.side === "sell" ? offer.owner : p.id,
       ],
     );
     return getOrder(p.id, op.id, sql);
@@ -236,7 +245,7 @@ export async function getOrder(
       token_atoms: string;
       fiat_atoms: string;
     }>(
-      "SELECT id,offer_id,quote_id,token_atoms,fiat_atoms,state,revision,expires_at,instruction_hash,environment FROM agus_p2p_orders WHERE (owner=$1 OR counterparty=$1) AND id=$2",
+      "SELECT id,offer_id,quote_id,buyer,seller,token_atoms,fiat_atoms,state,revision,expires_at,instruction_hash,environment FROM agus_p2p_orders WHERE (owner=$1 OR counterparty=$1) AND id=$2",
       [owner, id],
     )
   ).rows[0];
@@ -259,7 +268,7 @@ export async function cancelOrder(owner: string, id: string, revision: number) {
   return transaction(async (sql) => {
     const row = (
       await sql.query(
-        "SELECT * FROM agus_p2p_orders WHERE owner=$1 AND id=$2 FOR UPDATE",
+        "SELECT * FROM agus_p2p_orders WHERE (owner=$1 OR counterparty=$1) AND id=$2 FOR UPDATE",
         [owner, id],
       )
     ).rows[0];
@@ -270,7 +279,7 @@ export async function cancelOrder(owner: string, id: string, revision: number) {
       "ORDER_NOT_CANCELLABLE",
     );
     await sql.query(
-      "UPDATE agus_p2p_orders SET state='cancelled',revision=revision+1 WHERE id=$1",
+      "UPDATE agus_p2p_orders SET state='cancelled',revision=revision+1,capacity_restored=true WHERE id=$1",
       [id],
     );
     await sql.query(
@@ -278,6 +287,72 @@ export async function cancelOrder(owner: string, id: string, revision: number) {
       [row.offer_id, row.token_atoms],
     );
     return getOrder(owner, id, sql);
+  });
+}
+export async function updateOffer(
+  owner: string,
+  id: string,
+  revision: number,
+  input: z.infer<typeof OfferInput> | null,
+) {
+  fixture();
+  if (input) {
+    input = OfferInput.parse(input);
+    await eligible(owner);
+    invariant(
+      BigInt(input.minimumAtoms) <= BigInt(input.maximumAtoms) &&
+        BigInt(input.maximumAtoms) <= BigInt(input.availableAtoms),
+      "OFFER_LIMITS_INVALID",
+      400,
+    );
+    invariant(
+      Date.parse(input.expiresAt) > Date.now() &&
+        Date.parse(input.expiresAt) <= Date.now() + 86400000,
+      "OFFER_EXPIRY_INVALID",
+      400,
+    );
+  }
+  return transaction(async (sql) => {
+    const row = (
+      await sql.query(
+        "SELECT * FROM agus_p2p_offers WHERE owner=$1 AND id=$2 FOR UPDATE",
+        [owner, id],
+      )
+    ).rows[0];
+    invariant(row, "NOT_FOUND", 404);
+    invariant(
+      row.status === "open" && row.revision === revision,
+      "OFFER_REVISION_CONFLICT",
+    );
+    if (!input)
+      await sql.query(
+        "UPDATE agus_p2p_offers SET status='closed',revision=revision+1 WHERE id=$1",
+        [id],
+      );
+    else {
+      invariant(row.side === input.side, "OFFER_SIDE_IMMUTABLE", 400);
+      await sql.query(
+        "UPDATE agus_p2p_offers SET available_atoms=$2,minimum_atoms=$3,maximum_atoms=$4,rate_numerator=$5,rate_denominator=$6,expires_at=$7,revision=revision+1 WHERE id=$1",
+        [
+          id,
+          input.availableAtoms,
+          input.minimumAtoms,
+          input.maximumAtoms,
+          input.rateNumerator,
+          input.rateDenominator,
+          input.expiresAt,
+        ],
+      );
+    }
+    return {
+      ...(
+        await sql.query(
+          "SELECT id,status,revision FROM agus_p2p_offers WHERE id=$1",
+          [id],
+        )
+      ).rows[0],
+      simulated: true,
+    };
   });
 }
 export function escrowGate(): never {
@@ -293,11 +368,32 @@ export async function openDispute(
   return transaction(async (sql) => {
     await getOrder(owner, id, sql);
     const op = await operation(sql, owner, "p2p.dispute", key, { id, reason });
-    if (op.created)
+    if (op.created) {
+      const order = (
+        await sql.query(
+          "SELECT * FROM agus_p2p_orders WHERE id=$1 FOR UPDATE",
+          [id],
+        )
+      ).rows[0];
+      if (
+        !["cancelled", "expired", "completed", "refunded", "disputed"].includes(
+          order.state,
+        )
+      ) {
+        await sql.query(
+          "UPDATE agus_p2p_orders SET state=CASE WHEN EXISTS(SELECT 1 FROM agus_fixture_escrows WHERE order_id=$1) THEN 'disputed' ELSE state END,revision=revision+1 WHERE id=$1",
+          [id],
+        );
+        await sql.query(
+          "UPDATE agus_fixture_escrows SET state='disputed',cancellation_votes='[]',arbitration_votes='[]',arbitration_choice=NULL WHERE order_id=$1",
+          [id],
+        );
+      }
       await sql.query(
         "INSERT INTO agus_p2p_disputes(owner,id,order_id,reason) VALUES($1,$2,$3,$4)",
         [owner, op.id, id, reason],
       );
+    }
     return {
       id: op.id,
       orderId: id,
@@ -316,7 +412,7 @@ export async function expireUnfundedOrders() {
     ).rows;
     for (const row of rows) {
       await sql.query(
-        "UPDATE agus_p2p_orders SET state='expired',revision=revision+1 WHERE id=$1",
+        "UPDATE agus_p2p_orders SET state='expired',revision=revision+1,capacity_restored=true WHERE id=$1",
         [row.id],
       );
       await sql.query(

@@ -29,6 +29,10 @@ import { idempotencyKey, operation } from "@/server/idempotency";
 import { receiveFixtureEvent } from "@/server/banking/events";
 import { reauthorizeConnection } from "@/server/banking/reauthorize";
 import * as marketplace from "@/server/p2p";
+import * as fixtureEscrow from "@/server/p2p-fixture";
+import * as usd from "@/server/usd/fixture";
+import { usdCapabilities } from "@/server/usd/partners";
+import * as escrowBindings from "@/server/escrow/bindings";
 import {
   walletChallenge,
   associateWallet,
@@ -37,6 +41,10 @@ import {
   verifySubmissionReplay,
 } from "@/server/solana";
 import * as requests from "@/server/requests";
+import {
+  discoverRequest,
+  matchExternalRequest,
+} from "@/server/request-discovery";
 import { readWalletHistory } from "@/server/solana-history";
 import { atomsToDecimal } from "@/lib/solana/money";
 import { CIRCLE_DEVNET_USDC_MINT } from "@/lib/solana/assets";
@@ -125,37 +133,97 @@ async function handle(req: Request) {
           : payments.getPayment(p.id, id);
       }
       if (path[0] === "p2p") {
+        if (path[1] === "escrow")
+          return {
+            programId: "AYCkNeJSmk99TSDYq7tH7yRmAfv64vw6vA6SvT732yCi",
+            network: "devnet",
+            mint: CIRCLE_DEVNET_USDC_MINT,
+            genuineExecutionEnabled: false,
+            programAddressAccepted: false,
+            deploymentStatus:
+              "local-program-only; owner-controlled Devnet deployment pending",
+            gate: "GENUINE_DEVNET_ACCEPTANCE_PENDING",
+            verifier: "simulated-prototype-only",
+          };
+        if (path[1] === "orders" && path[2] && path[3] === "fixture") {
+          const id = z.uuid().parse(path[2]);
+          return path[4] === "review"
+            ? fixtureEscrow.fixtureReview(
+                p,
+                id,
+                fixtureEscrow.FixtureEscrowAction.parse(
+                  url.searchParams.get("action"),
+                ),
+              )
+            : fixtureEscrow.fixtureSnapshot(p, id);
+        }
+        if (path[1] === "orders" && path[2] && path[3] === "devnet-binding")
+          return escrowBindings.getBinding(p, z.uuid().parse(path[2]));
         if (path[1] === "orders" && path[2])
           return marketplace.getOrder(p.id, z.uuid().parse(path[2]));
-        if (path[1] === "orders")
+        if (path[1] === "orders") {
+          const { after, limit } = pageInput(url);
+          const rows = (
+            await sql.query<{ id: string }>(
+              "SELECT id,state,revision,expires_at,environment FROM agus_p2p_orders WHERE (owner=$1 OR counterparty=$1) AND id>$2 ORDER BY id LIMIT $3",
+              [p.id, after, limit + 1],
+            )
+          ).rows;
+          return { ...page(rows, limit), simulated: true };
+        }
+        if (path[1] === "offers") {
+          const { after, limit } = pageInput(url);
+          const rows = (
+            await sql.query<{
+              id: string;
+              available_atoms: string;
+              minimum_atoms: string;
+              maximum_atoms: string;
+            }>(
+              "SELECT o.id,o.side,o.available_atoms,o.minimum_atoms,o.maximum_atoms,o.rate_numerator,o.rate_denominator,o.revision,o.expires_at,o.environment FROM agus_p2p_offers o JOIN agus_trader_eligibility e ON e.owner=o.owner AND e.eligible=true AND e.environment='fixture' WHERE o.status='open' AND o.expires_at>now() AND o.available_atoms>0 AND o.id>$1 ORDER BY o.id LIMIT $2",
+              [after, limit + 1],
+            )
+          ).rows;
           return {
-            data: (
-              await sql.query(
-                "SELECT id,state,revision,expires_at,environment FROM agus_p2p_orders WHERE owner=$1 OR counterparty=$1 ORDER BY id",
-                [p.id],
-              )
-            ).rows,
+            ...page(
+              rows.map((r) => ({
+                ...r,
+                available: {
+                  atoms: r.available_atoms,
+                  currency: "USDC",
+                  scale: 6,
+                },
+                minimum: { atoms: r.minimum_atoms, currency: "USDC", scale: 6 },
+                maximum: { atoms: r.maximum_atoms, currency: "USDC", scale: 6 },
+                rateUnits: "NGN atomic units (scale 2) per USDC (scale 6)",
+              })),
+              limit,
+            ),
             simulated: true,
           };
-        if (path[1] === "offers")
-          return {
-            data: (
-              await sql.query(
-                "SELECT id,side,available_atoms,minimum_atoms,maximum_atoms,rate_numerator,rate_denominator,revision,expires_at,environment FROM agus_p2p_offers WHERE status='open' AND expires_at>now() ORDER BY created_at,id LIMIT 100",
-              )
-            ).rows,
-            simulated: true,
-          };
+        }
       }
-      if (path[0] === "usd")
-        return {
-          enabled: false,
-          receivingEnabled: false,
-          conversionEnabled: false,
-          ngnSettlementEnabled: false,
-          purpose: "personal freelance/salary receipts for Nigerian residents",
-          gate: "Approved partner eligibility, onboarding, product and settlement evidence required",
-        };
+      if (path[0] === "usd") {
+        if (path[1] === "fixture") {
+          if (path[2] === "account") return usd.account(p.id);
+          if (path[2] === "incoming" && !path[3]) {
+            const { after, limit } = pageInput(url);
+            return page(await usd.incoming(p.id, after, limit + 1), limit);
+          }
+          if (path[2] === "incoming" && path[3] && path[4] === "return-review")
+            return usd.returnReview(p.id, z.uuid().parse(path[3]));
+          if (path[2] === "conversions" && path[3])
+            return path[4] === "review"
+              ? usd.stageReview(
+                  p.id,
+                  z.uuid().parse(path[3]),
+                  usd.StageAction.parse(url.searchParams.get("stage")),
+                )
+              : usd.getConversion(p.id, z.uuid().parse(path[3]));
+          invariant(false, "NOT_FOUND", 404);
+        }
+        return usdCapabilities();
+      }
       if (path[0] === "me")
         return {
           user: {
@@ -221,10 +289,37 @@ async function handle(req: Request) {
           ? devnetView(await solana().get(p.id, z.uuid().parse(path[1])))
           : { data: (await solana().list(p.id)).map(devnetView) };
       }
-      if (path[0] === "requests")
+      if (path[0] === "requests") {
+        if (path[1] && path[2] === "settlements") {
+          const { after, limit } = pageInput(url);
+          return {
+            ...page(
+              await requests.requestReceipts(
+                p.id,
+                z.uuid().parse(path[1]),
+                after,
+                limit + 1,
+              ),
+              limit,
+            ),
+            historyComplete: false,
+            coverage:
+              "Recorded verified matches only; public RPC discovery may be incomplete.",
+          };
+        }
+        if (!path[1]) {
+          const { after, limit } = pageInput(url);
+          return page(
+            await requests.listRequests(p.id, after, limit + 1),
+            limit,
+          );
+        }
+        if (path[2] === "qr")
+          return requests.requestQr(p.id, z.uuid().parse(path[1]));
         return path[1] === "lookup"
           ? requests.lookupRequest(z.string().min(32).max(44).parse(path[2]))
           : requests.getRequest(p.id, z.uuid().parse(path[1]));
+      }
       if (path[0] === "jobs") {
         invariant(p.role === "operations", "FORBIDDEN", 403);
         return {
@@ -248,6 +343,68 @@ async function handle(req: Request) {
     }
     if (req.method === "POST") {
       const input = await body(req);
+      if (path[0] === "usd" && path[1] === "fixture") {
+        if (path[2] === "account")
+          return usd.onboard(
+            p.id,
+            idempotencyKey(req),
+            usd.OnboardInput.parse(input),
+          );
+        if (path[2] === "incoming" && !path[3])
+          return usd.recordIncoming(
+            p,
+            idempotencyKey(req),
+            usd.IncomingInput.parse(input),
+          );
+        if (path[2] === "quotes")
+          return usd.quote(
+            p.id,
+            idempotencyKey(req),
+            usd.ConversionInput.parse(input),
+          );
+        if (path[2] === "conversions" && !path[3]) {
+          const v = z
+            .strictObject({
+              quoteId: z.uuid(),
+              challengeId: z.uuid(),
+              loseResponse: z.boolean().optional(),
+            })
+            .parse(input);
+          return usd.submit(
+            p,
+            idempotencyKey(req),
+            v.quoteId,
+            v.challengeId,
+            v.loseResponse,
+          );
+        }
+        if (path[2] === "conversions" && path[3]) {
+          const id = z.uuid().parse(path[3]);
+          if (path[4] === "reconcile") {
+            z.strictObject({}).parse(input);
+            return usd.reconcile(p.id, id);
+          }
+          const v = ApprovalAction.parse(input);
+          return usd.submitStage(
+            p,
+            id,
+            idempotencyKey(req),
+            usd.StageAction.parse(path[4]),
+            v.revision,
+            v.challengeId,
+          );
+        }
+        if (path[2] === "incoming" && path[3] && path[4] === "return") {
+          const v = ApprovalAction.parse(input);
+          return usd.returnIncoming(
+            p,
+            z.uuid().parse(path[3]),
+            idempotencyKey(req),
+            v.revision,
+            v.challengeId,
+          );
+        }
+      }
       if (path[0] === "memory") {
         if (!path[1])
           return workspace(p.id).proposeMemory(
@@ -288,6 +445,22 @@ async function handle(req: Request) {
             z.strictObject({ uri: z.string().max(4096) }).parse(input).uri,
           );
         const id = z.uuid().parse(path[1]);
+        if (path[2] === "discover")
+          return discoverRequest(
+            p.id,
+            id,
+            z
+              .strictObject({ cursor: z.string().max(512).optional() })
+              .parse(input).cursor,
+          );
+        if (path[2] === "match-external")
+          return matchExternalRequest(
+            p.id,
+            id,
+            z
+              .strictObject({ signature: z.string().min(64).max(88) })
+              .parse(input).signature,
+          );
         if (path[2] === "cancel")
           return requests.cancelRequest(
             p.id,
@@ -389,6 +562,20 @@ async function handle(req: Request) {
           );
       }
       if (path[0] === "p2p") {
+        if (path[1] === "offers" && path[2]) {
+          const v = z
+            .strictObject({
+              revision: z.number().int().nonnegative(),
+              offer: marketplace.OfferInput.nullable(),
+            })
+            .parse(input);
+          return marketplace.updateOffer(
+            p.id,
+            z.uuid().parse(path[2]),
+            v.revision,
+            v.offer,
+          );
+        }
         if (path[1] === "offers")
           return marketplace.createOffer(
             p.id,
@@ -409,6 +596,34 @@ async function handle(req: Request) {
           );
         }
         if (path[1] === "orders" && path[2]) {
+          if (path[3] === "devnet-binding") {
+            const id = z.uuid().parse(path[2]);
+            if (path[4] === "reconcile")
+              return escrowBindings.reconcileBinding(
+                p,
+                id,
+                z
+                  .strictObject({ signature: z.string().min(64).max(88) })
+                  .parse(input).signature,
+              );
+            return escrowBindings.createBinding(
+              p,
+              id,
+              idempotencyKey(req),
+              escrowBindings.BindingInput.parse(input),
+            );
+          }
+          if (path[3] === "fixture") {
+            const v = ApprovalAction.parse(input);
+            return fixtureEscrow.fixtureAction(
+              p,
+              z.uuid().parse(path[2]),
+              idempotencyKey(req),
+              fixtureEscrow.FixtureEscrowAction.parse(path[4]),
+              v.revision,
+              v.challengeId,
+            );
+          }
           if (path[3] === "disputes")
             return marketplace.openDispute(
               p.id,
@@ -530,7 +745,7 @@ async function handle(req: Request) {
       if (path[0] === "step-up") {
         const v = z
           .strictObject({
-            action: z.string().regex(/^[a-z_.]{1,60}$/),
+            action: z.string().regex(/^[a-z][a-z0-9_.]{0,59}$/),
             digest: z.string().regex(/^[a-f0-9]{64}$/),
             password: z.string().min(1).max(256),
             code: z.string().regex(/^\d{6}$/),

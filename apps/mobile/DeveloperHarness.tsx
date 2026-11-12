@@ -24,11 +24,17 @@ import {
   unlockSession,
 } from "./src/session";
 import { connectAndroidWallet, signExactDraft } from "./src/wallet";
-import { parseNotificationLink } from "./src/policy";
+import {
+  canPrepareNewDraft,
+  parseNotificationLink,
+  shouldLockOnBackground,
+} from "./src/policy";
 import { registerNotifications } from "./src/notifications";
 export default function DeveloperHarness() {
   const busyRef = useRef(false),
-    ownerRef = useRef("");
+    ownerRef = useRef(""),
+    readyRef = useRef(false),
+    needsCodeRef = useRef(false);
   const pendingKey = () => `agus_pending_devnet_${ownerRef.current}`;
   const signedKey = () => `agus_signed_devnet_${ownerRef.current}`;
   const [ready, setReady] = useState(false),
@@ -41,6 +47,8 @@ export default function DeveloperHarness() {
     [password, setPassword] = useState(""),
     [code, setCode] = useState(""),
     [needsCode, setNeedsCode] = useState(false);
+  readyRef.current = ready;
+  needsCodeRef.current = needsCode;
   const [enrollment, setEnrollment] = useState<{
     uri: string;
     backupCodes: string[];
@@ -57,7 +65,13 @@ export default function DeveloperHarness() {
       useState<ReturnType<typeof parseNotificationLink>>(null);
   useEffect(() => {
     const state = AppState.addEventListener("change", (value) => {
-      if (value === "background") {
+      if (
+        value === "background" &&
+        shouldLockOnBackground({
+          ready: readyRef.current,
+          awaitingTwoFactor: needsCodeRef.current,
+        })
+      ) {
         lockSession();
         setReady(false);
         setPassword("");
@@ -209,7 +223,9 @@ export default function DeveloperHarness() {
             onPress={() =>
               void run(async () => {
                 if (needsCode) {
-                  const r = await auth.twoFactor.verifyTotp({ code });
+                  const r = await auth.twoFactor.verifyTotp({
+                    code: code.trim(),
+                  });
                   if (r.error) throw new Error("SIGN_IN_REJECTED");
                   setNeedsCode(false);
                   await refresh();
@@ -277,7 +293,9 @@ export default function DeveloperHarness() {
                 disabled={disabled}
                 onPress={() =>
                   void run(async () => {
-                    const r = await auth.twoFactor.verifyTotp({ code });
+                    const r = await auth.twoFactor.verifyTotp({
+                    code: code.trim(),
+                  });
                     if (r.error) throw new Error("TOTP_VERIFICATION_FAILED");
                     setEnrollment(null);
                     await refresh();
@@ -469,20 +487,12 @@ export default function DeveloperHarness() {
             disabled={disabled || !wallet}
             onPress={() =>
               void run(async () => {
-                if (
-                  draft &&
-                  ["submitting", "submitted", "unknown"].includes(draft.state)
-                )
-                  throw new Error("RECOVER_EXISTING_SUBMISSION");
                 const prior = await SecureStore.getItemAsync(pendingKey());
                 if (
-                  prior &&
-                  JSON.parse(prior).submitted &&
-                  (!draft ||
-                    draft.id !== JSON.parse(prior).draftId ||
-                    !["finalized", "failed", "expired", "cancelled"].includes(
-                      draft.state,
-                    ))
+                  !canPrepareNewDraft(
+                    draft,
+                    prior ? JSON.parse(prior) : null,
+                  )
                 )
                   throw new Error("RECOVER_EXISTING_SUBMISSION");
                 const id = Crypto.randomUUID();
@@ -502,14 +512,14 @@ export default function DeveloperHarness() {
                       "solana/prepare",
                       {
                         sender: wallet,
-                        recipient,
-                        asset: mint ? "SPL" : "SOL",
+                        recipient: recipient.trim(),
+                        asset: mint.trim() ? "SPL" : "SOL",
                         amount: {
-                          atoms: decimalToAtomic(amount, mint ? 6 : 9),
-                          currency: mint ? "USDC" : "SOL",
-                          scale: mint ? 6 : 9,
+                          atoms: decimalToAtomic(amount.trim(), mint.trim() ? 6 : 9),
+                          currency: mint.trim() ? "USDC" : "SOL",
+                          scale: mint.trim() ? 6 : 9,
                         },
-                        ...(mint ? { mint } : {}),
+                        ...(mint.trim() ? { mint: mint.trim() } : {}),
                       },
                       id,
                     ),
@@ -561,7 +571,7 @@ export default function DeveloperHarness() {
                           action: "solana.approve",
                           digest: draft.digest,
                           password,
-                          code,
+                          code: code.trim(),
                         });
                         setDraft(
                           DevnetDraft.parse(

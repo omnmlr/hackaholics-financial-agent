@@ -64,12 +64,20 @@ export async function freshSignIn(email: string, password: string) {
   await SecureStore.deleteItemAsync("agus_cookie");
   await SecureStore.deleteItemAsync("agus_session_data");
   unlocked = true;
-  return auth.signIn.email({ email, password });
+  try {
+    const result = await auth.signIn.email({ email: email.trim(), password });
+    if (result?.error) unlocked = false;
+    return result;
+  } catch (error) {
+    unlocked = false;
+    throw error;
+  }
 }
 export const api = createApiClient(apiOrigin, async (input, init) => {
   if (!unlocked) throw new Error("LOCAL_SESSION_LOCKED");
   const request = new Request(input, init);
-  request.headers.set("cookie", await auth.getCookie());
+  const cookie = await auth.getCookie();
+  if (cookie) request.headers.set("cookie", cookie);
   request.headers.set("origin", "agus://");
   const response = await fetch(request);
   if (response.status === 401) {
@@ -85,10 +93,11 @@ export async function apiRequest(
   idempotencyKey?: string,
 ) {
   if (!unlocked) throw new Error("LOCAL_SESSION_LOCKED");
+  const cookie = await auth.getCookie();
   const response = await fetch(apiOrigin + "/api/v1/" + path, {
     method: body === undefined ? "GET" : "POST",
     headers: {
-      cookie: await auth.getCookie(),
+      ...(cookie ? { cookie } : {}),
       origin: "agus://",
       ...(body === undefined ? {} : { "content-type": "application/json" }),
       ...(idempotencyKey ? { "idempotency-key": idempotencyKey } : {}),

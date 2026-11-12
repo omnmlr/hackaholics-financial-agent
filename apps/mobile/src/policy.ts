@@ -35,3 +35,36 @@ export function parseNotificationLink(value: string) {
 /** Lifecycle/network changes can refresh authenticated state only. They never
  * select a financial action, sign a wallet payload or broadcast a saved intent. */
 export const canAutomaticallySubmit = () => false;
+
+/** Keep an unauthenticated pending 2FA sign-in cookie alive while the user
+ * briefly switches to an authenticator app; lock every authenticated session. */
+export function shouldLockOnBackground(state: {
+  ready: boolean;
+  awaitingTwoFactor: boolean;
+}) {
+  return state.ready || !state.awaitingTwoFactor;
+}
+
+const UNRESOLVED_DRAFT_STATES = new Set(["submitting", "submitted", "unknown"]);
+const SETTLED_DRAFT_STATES = new Set([
+  "finalized",
+  "failed",
+  "expired",
+  "cancelled",
+]);
+
+export function canPrepareNewDraft(
+  currentDraft: { id: string; state: string } | null,
+  storedPending: PendingOperation | null,
+) {
+  if (currentDraft && UNRESOLVED_DRAFT_STATES.has(currentDraft.state))
+    return false;
+  if (
+    storedPending?.submitted &&
+    (!currentDraft ||
+      currentDraft.id !== storedPending.draftId ||
+      !SETTLED_DRAFT_STATES.has(currentDraft.state))
+  )
+    return false;
+  return true;
+}

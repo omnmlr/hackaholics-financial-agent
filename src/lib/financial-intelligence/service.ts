@@ -12,6 +12,8 @@ import { computeCashFlow, type CashFlowAnalysisResult } from "./analytics/cash-f
 import { computeSpendingBreakdown, type SpendingBreakdownResult } from "./analytics/categories";
 import { detectRecurringTransactions, type RecurringCommitment } from "./analytics/recurring";
 import { evaluateDataQuality, type DataQualityReport } from "./analytics/data-quality";
+import { FinancialIntelligenceRepository, type TransactionFilter } from "./repository";
+import { exportTransactionsToCsv, type CsvExportOptions } from "./export/csv-export";
 
 export interface RegisterAccountInput {
   ownerId: string;
@@ -39,27 +41,18 @@ export interface FinancialOverview {
   dataQuality: DataQualityReport;
 }
 
-export interface TransactionQueryFilter {
-  accountId?: string;
-  currency?: SupportedCurrency;
-  from?: string;
-  toExclusive?: string;
-  category?: string;
-  searchQuery?: string;
-  status?: string;
-  isInternalTransfer?: boolean;
-  limit?: number;
-  offset?: number;
-}
+export type TransactionQueryFilter = TransactionFilter;
 
 export class MultiAccountFinancialIntelligenceService {
-  private accounts = new Map<string, FinancialAccount>();
-  private transactions = new Map<string, FinancialTransaction>();
+  private inMemoryAccounts = new Map<string, FinancialAccount>();
+  private inMemoryTransactions = new Map<string, FinancialTransaction>();
+
+  constructor(private repository?: FinancialIntelligenceRepository) {}
 
   /**
    * Register a new financial account for a user.
    */
-  public registerAccount(input: RegisterAccountInput): FinancialAccount {
+  public async registerAccount(input: RegisterAccountInput): Promise<FinancialAccount> {
     const now = new Date().toISOString();
     const id = `acc_${randomUUID().slice(0, 10)}`;
 
@@ -77,43 +70,67 @@ export class MultiAccountFinancialIntelligenceService {
       metadata: input.metadata,
     };
 
-    this.accounts.set(id, account);
+    if (this.repository) {
+      await this.repository.saveAccount(account);
+    } else {
+      this.inMemoryAccounts.set(id, account);
+    }
+
     return account;
   }
 
   /**
    * Get all accounts owned by a user.
    */
-  public getAccounts(ownerId: string): FinancialAccount[] {
-    return Array.from(this.accounts.values()).filter((a) => a.ownerId === ownerId);
+  public async getAccounts(ownerId: string, tenantId = "default"): Promise<FinancialAccount[]> {
+    if (this.repository) {
+      return this.repository.listAccounts(ownerId, tenantId);
+    }
+    return Array.from(this.inMemoryAccounts.values()).filter(
+      (a) => a.ownerId === ownerId && a.tenantId === tenantId,
+    );
   }
 
   /**
    * Get specific account by id and ownerId.
    */
-  public getAccount(ownerId: string, accountId: string): FinancialAccount | null {
-    const acc = this.accounts.get(accountId);
-    if (!acc || acc.ownerId !== ownerId) return null;
+  public async getAccount(
+    ownerId: string,
+    accountId: string,
+    tenantId = "default",
+  ): Promise<FinancialAccount | null> {
+    if (this.repository) {
+      return this.repository.getAccount(ownerId, accountId, tenantId);
+    }
+    const acc = this.inMemoryAccounts.get(accountId);
+    if (!acc || acc.ownerId !== ownerId || acc.tenantId !== tenantId) return null;
     return acc;
   }
 
   /**
    * Ingest a bank statement for an account and immediately trigger cross-account reconciliation.
    */
-  public ingestStatement(
+  public async ingestStatement(
     ownerId: string,
     accountId: string,
     content: string | Buffer,
     fileName: string,
-  ): IngestionResult {
-    const account = this.getAccount(ownerId, accountId);
+    tenantId = "default",
+  ): Promise<IngestionResult> {
+    const account = await this.getAccount(ownerId, accountId, tenantId);
     if (!account) {
       throw new Error(`Account not found or access denied: ${accountId}`);
     }
 
-    const existingAccountTxs = Array.from(this.transactions.values()).filter(
-      (t) => t.accountId === accountId,
-    );
+    let existingAccountTxs: FinancialTransaction[] = [];
+    if (this.repository) {
+      const res = await this.repository.listTransactions(ownerId, { accountId }, tenantId);
+      existingAccountTxs = res.items;
+    } else {
+      existingAccountTxs = Array.from(this.inMemoryTransactions.values()).filter(
+        (t) => t.accountId === accountId,
+      );
+    }
 
     const result = ingestStatementFile({
       content,
@@ -125,13 +142,16 @@ export class MultiAccountFinancialIntelligenceService {
       existingTransactions: existingAccountTxs,
     });
 
-    // Store newly accepted transactions in transaction map
-    for (const tx of result.allTransactions) {
-      this.transactions.set(tx.id, tx);
+    if (this.repository) {
+      await this.repository.saveStatementImport(result.audit, result.format, undefined, tenantId);
+      await this.repository.saveTransactions(result.allTransactions);
+      await this.reconcile(ownerId, tenantId);
+    } else {
+      for (const tx of result.allTransactions) {
+        this.inMemoryTransactions.set(tx.id, tx);
+      }
+      await this.reconcile(ownerId, tenantId);
     }
-
-    // Automatically reconcile across user's owned accounts
-    this.reconcile(ownerId);
 
     return result;
   }
@@ -139,20 +159,30 @@ export class MultiAccountFinancialIntelligenceService {
   /**
    * Trigger cross-account internal transfer reconciliation across all accounts of the user.
    */
-  public reconcile(ownerId: string) {
-    const userAccounts = this.getAccounts(ownerId);
-    const userTxs = Array.from(this.transactions.values()).filter(
-      (t) => t.ownerId === ownerId,
-    );
+  public async reconcile(ownerId: string, tenantId = "default") {
+    const userAccounts = await this.getAccounts(ownerId, tenantId);
+    let userTxs: FinancialTransaction[] = [];
+
+    if (this.repository) {
+      const res = await this.repository.listTransactions(ownerId, {}, tenantId);
+      userTxs = res.items;
+    } else {
+      userTxs = Array.from(this.inMemoryTransactions.values()).filter(
+        (t) => t.ownerId === ownerId && t.tenantId === tenantId,
+      );
+    }
 
     const reconcileResult = reconcileCrossAccountTransfers({
       accounts: userAccounts,
       transactions: userTxs,
     });
 
-    // Update state with reconciled transactions
-    for (const tx of reconcileResult.transactions) {
-      this.transactions.set(tx.id, tx);
+    if (this.repository) {
+      await this.repository.saveTransactions(reconcileResult.transactions);
+    } else {
+      for (const tx of reconcileResult.transactions) {
+        this.inMemoryTransactions.set(tx.id, tx);
+      }
     }
 
     return reconcileResult;
@@ -161,13 +191,20 @@ export class MultiAccountFinancialIntelligenceService {
   /**
    * Apply and persist a user classification override (category or internal transfer status).
    */
-  public applyUserOverride(
+  public async applyUserOverride(
     ownerId: string,
     transactionId: string,
     override: UserClassificationOverride,
-  ): FinancialTransaction {
-    const tx = this.transactions.get(transactionId);
-    if (!tx || tx.ownerId !== ownerId) {
+    tenantId = "default",
+  ): Promise<FinancialTransaction> {
+    if (this.repository) {
+      const updatedTx = await this.repository.saveUserOverride(ownerId, transactionId, override, tenantId);
+      await this.reconcile(ownerId, tenantId);
+      return updatedTx;
+    }
+
+    const tx = this.inMemoryTransactions.get(transactionId);
+    if (!tx || tx.ownerId !== ownerId || tx.tenantId !== tenantId) {
       throw new Error(`Transaction not found or access denied: ${transactionId}`);
     }
 
@@ -182,7 +219,7 @@ export class MultiAccountFinancialIntelligenceService {
         confidence: override.isInternalTransfer ? "confirmed" : "not_internal",
         counterpartAccountId: override.counterpartAccountId,
         matchedBy: "user_override",
-        matchedAt: tx.userOverride.updatedAt,
+        matchedAt: tx.userOverride.updatedAt || new Date().toISOString(),
       };
       if (override.isInternalTransfer) {
         tx.category = "transfer";
@@ -193,31 +230,43 @@ export class MultiAccountFinancialIntelligenceService {
       tx.category = override.category;
     }
 
-    this.transactions.set(tx.id, tx);
-
-    // Re-run reconciliation to ensure consistency
-    this.reconcile(ownerId);
-
+    this.inMemoryTransactions.set(tx.id, tx);
+    await this.reconcile(ownerId, tenantId);
     return tx;
   }
 
   /**
    * Produce comprehensive evidence-based financial overview with auditability and data quality report.
    */
-  public getFinancialOverview(
+  public async getFinancialOverview(
     ownerId: string,
     currency: SupportedCurrency = "NGN",
-  ): FinancialOverview {
-    const userAccounts = this.getAccounts(ownerId);
-    const userTxs = Array.from(this.transactions.values()).filter(
-      (t) => t.ownerId === ownerId,
-    );
+    tenantId = "default",
+  ): Promise<FinancialOverview> {
+    const userAccounts = await this.getAccounts(ownerId, tenantId);
+    let userTxs: FinancialTransaction[] = [];
+
+    if (this.repository) {
+      const res = await this.repository.listTransactions(ownerId, {}, tenantId);
+      userTxs = res.items;
+    } else {
+      userTxs = Array.from(this.inMemoryTransactions.values()).filter(
+        (t) => t.ownerId === ownerId && t.tenantId === tenantId,
+      );
+    }
 
     const balances = computeAccountBalances(userAccounts, userTxs);
     const cashFlow = computeCashFlow({ transactions: userTxs, currency });
     const spending = computeSpendingBreakdown(userTxs, currency);
     const recurring = detectRecurringTransactions(userTxs, currency);
     const dataQuality = evaluateDataQuality(userAccounts, userTxs);
+
+    // Save balance observations if backed by repository
+    if (this.repository) {
+      for (const snap of balances.snapshots) {
+        await this.repository.saveBalanceSnapshot(snap, ownerId, tenantId);
+      }
+    }
 
     return {
       tagline: "Your money, and what's next.",
@@ -234,15 +283,20 @@ export class MultiAccountFinancialIntelligenceService {
   /**
    * Query filtered transactions with audit provenance.
    */
-  public queryTransactions(
+  public async queryTransactions(
     ownerId: string,
     filter: TransactionQueryFilter = {},
-  ): {
+    tenantId = "default",
+  ): Promise<{
     items: FinancialTransaction[];
     totalCount: number;
-  } {
-    let list = Array.from(this.transactions.values()).filter(
-      (t) => t.ownerId === ownerId,
+  }> {
+    if (this.repository) {
+      return this.repository.listTransactions(ownerId, filter, tenantId);
+    }
+
+    let list = Array.from(this.inMemoryTransactions.values()).filter(
+      (t) => t.ownerId === ownerId && t.tenantId === tenantId,
     );
 
     if (filter.accountId) {
@@ -281,7 +335,6 @@ export class MultiAccountFinancialIntelligenceService {
       );
     }
 
-    // Sort newest first
     list.sort((a, b) => Date.parse(b.postedAt) - Date.parse(a.postedAt));
 
     const totalCount = list.length;
@@ -292,5 +345,25 @@ export class MultiAccountFinancialIntelligenceService {
       items: list.slice(offset, offset + limit),
       totalCount,
     };
+  }
+
+  /**
+   * Export transactions for an owner to RFC 4180 CSV with formula injection defense.
+   */
+  public async exportTransactionsCsv(
+    ownerId: string,
+    filter: TransactionQueryFilter = {},
+    options?: CsvExportOptions,
+    tenantId = "default",
+  ): Promise<string> {
+    const { items } = await this.queryTransactions(
+      ownerId,
+      {
+        ...filter,
+        limit: 100_000,
+      },
+      tenantId,
+    );
+    return exportTransactionsToCsv(items, options);
   }
 }

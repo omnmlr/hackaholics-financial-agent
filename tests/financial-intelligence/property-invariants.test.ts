@@ -8,10 +8,10 @@ import { MultiAccountFinancialIntelligenceService } from "../../src/lib/financia
 
 describe("Financial Intelligence - Property Invariants & Security Boundaries", () => {
   describe("Invariant 1: Internal Transfer Neutrality on Net Worth", () => {
-    it("preserves total currency balance and external cash flow regardless of transfer volume", () => {
+    it("preserves total currency balance and external cash flow regardless of transfer volume", async () => {
       const service = new MultiAccountFinancialIntelligenceService();
 
-      const accA = service.registerAccount({
+      const accA = await service.registerAccount({
         ownerId: "user_invariants",
         institution: { code: "058", name: "GTBank", type: "commercial_bank" },
         accountNumberMasked: "******1001",
@@ -20,7 +20,7 @@ describe("Financial Intelligence - Property Invariants & Security Boundaries", (
         accountType: "checking",
       });
 
-      const accB = service.registerAccount({
+      const accB = await service.registerAccount({
         ownerId: "user_invariants",
         institution: { code: "044", name: "Access Bank", type: "commercial_bank" },
         accountNumberMasked: "******1002",
@@ -50,10 +50,10 @@ describe("Financial Intelligence - Property Invariants & Security Boundaries", (
         bCsv += `2026-11-0${idx + 2},Transfer from Account A,${naira}.00,Credit,${ref}\n`;
       });
 
-      service.ingestStatement("user_invariants", accA.id, aCsv, "a.csv");
-      service.ingestStatement("user_invariants", accB.id, bCsv, "b.csv");
+      await service.ingestStatement("user_invariants", accA.id, aCsv, "a.csv");
+      await service.ingestStatement("user_invariants", accB.id, bCsv, "b.csv");
 
-      const overview = service.getFinancialOverview("user_invariants", "NGN");
+      const overview = await service.getFinancialOverview("user_invariants", "NGN");
 
       // Net worth check:
       // Starting external: ₦1,000,000
@@ -77,10 +77,10 @@ describe("Financial Intelligence - Property Invariants & Security Boundaries", (
   });
 
   describe("Invariant 2: Conservation of Monetary Ledger", () => {
-    it("guarantees ending balance equals starting balance plus external changes", () => {
+    it("guarantees ending balance equals starting balance plus external changes", async () => {
       const service = new MultiAccountFinancialIntelligenceService();
 
-      const acc = service.registerAccount({
+      const acc = await service.registerAccount({
         ownerId: "user_conserve",
         institution: { code: "058", name: "GTBank", type: "commercial_bank" },
         accountNumberMasked: "******9999",
@@ -97,8 +97,8 @@ Date,Description,Amount,Type
 2026-11-04,Debit 2,100.00,Debit
 `.trim();
 
-      service.ingestStatement("user_conserve", acc.id, statement, "stmt.csv");
-      const overview = service.getFinancialOverview("user_conserve", "NGN");
+      await service.ingestStatement("user_conserve", acc.id, statement, "stmt.csv");
+      const overview = await service.getFinancialOverview("user_conserve", "NGN");
 
       // Inflows: 150.25 + 89.85 = 240.10 -> 24010 atoms
       // Outflows: 40.10 + 100.00 = 140.10 -> 14010 atoms
@@ -149,10 +149,10 @@ Date,Description,Amount,Type
   });
 
   describe("Invariant 5: Multi-User Isolation Boundary", () => {
-    it("completely isolates accounts, transactions, and overview between different users", () => {
+    it("completely isolates accounts, transactions, and overview between different users", async () => {
       const service = new MultiAccountFinancialIntelligenceService();
 
-      const userA_Acc = service.registerAccount({
+      const userA_Acc = await service.registerAccount({
         ownerId: "user_alice",
         institution: { code: "058", name: "GTBank", type: "commercial_bank" },
         accountNumberMasked: "******1111",
@@ -161,7 +161,7 @@ Date,Description,Amount,Type
         accountType: "checking",
       });
 
-      const userB_Acc = service.registerAccount({
+      const userB_Acc = await service.registerAccount({
         ownerId: "user_bob",
         institution: { code: "044", name: "Access Bank", type: "commercial_bank" },
         accountNumberMasked: "******2222",
@@ -170,28 +170,28 @@ Date,Description,Amount,Type
         accountType: "checking",
       });
 
-      service.ingestStatement(
+      await service.ingestStatement(
         "user_alice",
         userA_Acc.id,
         `Date,Description,Amount,Type\n2026-11-01,Alice Salary,500000.00,Credit\n`,
         "alice.csv",
       );
 
-      service.ingestStatement(
+      await service.ingestStatement(
         "user_bob",
         userB_Acc.id,
         `Date,Description,Amount,Type\n2026-11-01,Bob Salary,300000.00,Credit\n`,
         "bob.csv",
       );
 
-      const aliceOverview = service.getFinancialOverview("user_alice");
-      const bobOverview = service.getFinancialOverview("user_bob");
+      const aliceOverview = await service.getFinancialOverview("user_alice");
+      const bobOverview = await service.getFinancialOverview("user_bob");
 
       expect(aliceOverview.balances.currencySummaries.NGN.totalAtoms).toBe(50000000n);
       expect(bobOverview.balances.currencySummaries.NGN.totalAtoms).toBe(30000000n);
 
-      const aliceTxs = service.queryTransactions("user_alice");
-      const bobTxs = service.queryTransactions("user_bob");
+      const aliceTxs = await service.queryTransactions("user_alice");
+      const bobTxs = await service.queryTransactions("user_bob");
 
       expect(aliceTxs.totalCount).toBe(1);
       expect(bobTxs.totalCount).toBe(1);
@@ -199,9 +199,9 @@ Date,Description,Amount,Type
       expect(bobTxs.items[0].ownerId).toBe("user_bob");
 
       // User A cannot ingest statement or access account of User B
-      expect(() => {
-        service.ingestStatement("user_alice", userB_Acc.id, "Date,Description,Amount\n", "attack.csv");
-      }).toThrow(/Account not found or access denied/);
+      await expect(async () => {
+        await service.ingestStatement("user_alice", userB_Acc.id, "Date,Description,Amount\n", "attack.csv");
+      }).rejects.toThrow(/Account not found or access denied/);
     });
   });
 });

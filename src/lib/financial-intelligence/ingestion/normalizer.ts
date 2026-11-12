@@ -455,6 +455,15 @@ export function normalizeStatementRow(
   const refRaw = cols.reference !== undefined && row[cols.reference] ? row[cols.reference].trim() : undefined;
   const analysis = analyzeNarration(descRaw);
 
+  let statementBalanceAtoms: bigint | undefined;
+  if (cols.balance !== undefined && row[cols.balance]) {
+    try {
+      statementBalanceAtoms = parseMonetaryAtoms(row[cols.balance], currency);
+    } catch {
+      // Ignored if balance is non-numeric
+    }
+  }
+
   const txId = `tx_${fileHash.slice(0, 12)}_${rowNumber}`;
 
   return {
@@ -476,6 +485,7 @@ export function normalizeStatementRow(
     },
     category: analysis.category,
     reference: refRaw || analysis.reference,
+    statementBalanceAtoms,
     provenance: {
       importId,
       fileHash,

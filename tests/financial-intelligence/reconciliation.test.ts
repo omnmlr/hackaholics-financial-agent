@@ -200,10 +200,10 @@ describe("Financial Intelligence - Cross-Account Reconciliation Engine", () => {
     expect(debit.internalTransferMetadata?.confidence).toBe("unresolved");
   });
 
-  it("persists user classification overrides across future ingestion and reconciliation cycles", () => {
+  it("persists user classification overrides across future ingestion and reconciliation cycles", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const gtbAcc = service.registerAccount({
+    const gtbAcc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "Guaranty Trust Bank", type: "commercial_bank" },
       accountNumberMasked: "******1111",
@@ -212,7 +212,7 @@ describe("Financial Intelligence - Cross-Account Reconciliation Engine", () => {
       accountType: "checking",
     });
 
-    const kudaAcc = service.registerAccount({
+    const kudaAcc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "090267", name: "Kuda Bank", type: "microfinance" },
       accountNumberMasked: "******2222",
@@ -226,13 +226,13 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 01-Nov-2026,01-Nov-2026,GTB001,35000.00,,65000.00,TRF TO EMERGENCY RESERVE
 `.trim();
 
-    service.ingestStatement("user_gerald", gtbAcc.id, gtbCsv, "gtb.csv");
+    await service.ingestStatement("user_gerald", gtbAcc.id, gtbCsv, "gtb.csv");
 
-    const txsBefore = service.queryTransactions("user_gerald");
+    const txsBefore = await service.queryTransactions("user_gerald");
     const transferTx = txsBefore.items[0];
 
     // User explicitly overrides: confirms it as internal transfer to kudaAcc
-    service.applyUserOverride("user_gerald", transferTx.id, {
+    await service.applyUserOverride("user_gerald", transferTx.id, {
       isInternalTransfer: true,
       counterpartAccountId: kudaAcc.id,
       notes: "Emergency reserve transfer to Kuda vault",
@@ -244,10 +244,10 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 05-Nov-2026,05-Nov-2026,GTB002,1200.00,,63800.00,POS PURCHASE
 `.trim();
-    service.ingestStatement("user_gerald", gtbAcc.id, gtbCsv2, "gtb_part2.csv");
+    await service.ingestStatement("user_gerald", gtbAcc.id, gtbCsv2, "gtb_part2.csv");
 
     // Verify user override persisted!
-    const txsAfter = service.queryTransactions("user_gerald");
+    const txsAfter = await service.queryTransactions("user_gerald");
     const overriddenTx = txsAfter.items.find((t) => t.id === transferTx.id)!;
 
     expect(overriddenTx.internalTransferMetadata?.isInternalTransfer).toBe(true);

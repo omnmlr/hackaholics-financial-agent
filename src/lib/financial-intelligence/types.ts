@@ -60,23 +60,40 @@ export type FinancialAccount = z.infer<typeof FinancialAccountSchema>;
 
 export const BalanceSourceSchema = z.enum([
   "statement_import",
+  "statement_closing_balance",
+  "statement_opening_balance",
   "sync",
   "manual",
+  "reconciled_verified",
   "reconciled_ledger",
+  "unverified_estimate",
 ]);
 export type BalanceSource = z.infer<typeof BalanceSourceSchema>;
+
+export type BalanceConfidence = "verified" | "reconstructed_estimate" | "unverified";
+
+export interface EvidenceProvenance {
+  sourceType: string;
+  importId?: string;
+  fileHash?: string;
+  rowNumber?: number;
+  transactionId?: string;
+  observedAt: string;
+}
 
 export interface AccountBalanceSnapshot {
   accountId: string;
   currency: SupportedCurrency;
-  availableAtoms: bigint | null;
+  availableAtoms: bigint | null; // NULL if not verified!
   currentAtoms: bigint | null;
   ledgerAtoms: bigint | null;
   scale: number;
   asOf: string; // ISO 8601
   source: BalanceSource;
+  confidence: BalanceConfidence;
   isStale: boolean;
   stalenessReason?: string;
+  evidenceProvenance?: EvidenceProvenance;
 }
 
 export const TransactionStatusSchema = z.enum([
@@ -131,12 +148,14 @@ export interface TransactionProvenance {
   importedAt: string;
 }
 
+export type { IngestionAuditRecord } from "./ingestion/idempotency";
+
 export interface UserClassificationOverride {
   category?: TransactionCategory;
   isInternalTransfer?: boolean;
   counterpartAccountId?: string;
   notes?: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface FinancialTransaction {
@@ -161,6 +180,7 @@ export interface FinancialTransaction {
   };
   category: TransactionCategory;
   reference?: string;
+  statementBalanceAtoms?: bigint;
   internalTransferMetadata?: InternalTransferMetadata;
   userOverride?: UserClassificationOverride;
   provenance: TransactionProvenance;

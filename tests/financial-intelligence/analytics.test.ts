@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { MultiAccountFinancialIntelligenceService } from "../../src/lib/financial-intelligence/service";
 
 describe("Financial Intelligence - Analytics & Evidence-Based Insights", () => {
-  it("computes isolated balances per currency without cross-currency contamination", () => {
+  it("computes isolated balances per currency without cross-currency contamination", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const gtbNgn = service.registerAccount({
+    const gtbNgn = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "GTBank", type: "commercial_bank" },
       accountNumberMasked: "******1234",
@@ -14,7 +14,7 @@ describe("Financial Intelligence - Analytics & Evidence-Based Insights", () => {
       accountType: "savings",
     });
 
-    const mercuryUsd = service.registerAccount({
+    const mercuryUsd = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "MERC", name: "Mercury Bank", type: "commercial_bank" },
       accountNumberMasked: "******5678",
@@ -23,7 +23,7 @@ describe("Financial Intelligence - Analytics & Evidence-Based Insights", () => {
       accountType: "checking",
     });
 
-    const phantomUsdc = service.registerAccount({
+    const phantomUsdc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "SOL", name: "Phantom Wallet", type: "crypto_wallet" },
       accountNumberMasked: "7x...9qW",
@@ -38,7 +38,7 @@ Trans Date,Description,Amount,Type
 2026-11-01,Salary Inflow,500000.00,Credit
 2026-11-02,Groceries,35000.00,Debit
 `.trim();
-    service.ingestStatement("user_gerald", gtbNgn.id, ngnCsv, "ngn.csv");
+    await service.ingestStatement("user_gerald", gtbNgn.id, ngnCsv, "ngn.csv");
 
     // Ingest USD statement
     const usdCsv = `
@@ -46,7 +46,7 @@ Date,Description,Amount,Type
 2026-11-01,Client Consulting,2500.00,Credit
 2026-11-03,GitHub Co-Pilot,20.00,Debit
 `.trim();
-    service.ingestStatement("user_gerald", mercuryUsd.id, usdCsv, "usd.csv");
+    await service.ingestStatement("user_gerald", mercuryUsd.id, usdCsv, "usd.csv");
 
     // Ingest USDC statement
     const usdcCsv = `
@@ -54,9 +54,9 @@ Date,Description,Amount,Type
 2026-11-01,Grant Funding,1000.000000,Credit
 2026-11-04,Escrow Transfer,100.000000,Debit
 `.trim();
-    service.ingestStatement("user_gerald", phantomUsdc.id, usdcCsv, "usdc.csv");
+    await service.ingestStatement("user_gerald", phantomUsdc.id, usdcCsv, "usdc.csv");
 
-    const overview = service.getFinancialOverview("user_gerald");
+    const overview = await service.getFinancialOverview("user_gerald");
 
     expect(overview.tagline).toBe("Your money, and what's next.");
 
@@ -76,10 +76,10 @@ Date,Description,Amount,Type
     expect(usdcSummary.formatted).toBe("900.000000 USDC");
   });
 
-  it("strictly excludes internal transfers and reversals from true cash flow and spending", () => {
+  it("strictly excludes internal transfers and reversals from true cash flow and spending", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const gtb = service.registerAccount({
+    const gtb = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "GTBank", type: "commercial_bank" },
       accountNumberMasked: "******1234",
@@ -88,7 +88,7 @@ Date,Description,Amount,Type
       accountType: "checking",
     });
 
-    const kuda = service.registerAccount({
+    const kuda = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "090267", name: "Kuda", type: "microfinance" },
       accountNumberMasked: "******5678",
@@ -112,7 +112,7 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 03-Nov-2026,03-Nov-2026,REF004,,10000.00,149946.25,FAILED NIP REVERSAL / REF 777
 `.trim();
 
-    service.ingestStatement("user_gerald", gtb.id, gtbCsv, "gtb.csv");
+    await service.ingestStatement("user_gerald", gtb.id, gtbCsv, "gtb.csv");
 
     // Kuda:
     // Received internal transfer: +₦50,000 (Internal)
@@ -123,9 +123,9 @@ Date,Description,Amount,Balance,Type,Reference
 2026-11-04,POS/WEB/DOMINOS PIZZA,15000.00,35000.00,Debit,REF005
 `.trim();
 
-    service.ingestStatement("user_gerald", kuda.id, kudaCsv, "kuda.csv");
+    await service.ingestStatement("user_gerald", kuda.id, kudaCsv, "kuda.csv");
 
-    const overview = service.getFinancialOverview("user_gerald");
+    const overview = await service.getFinancialOverview("user_gerald");
 
     // True income should be ₦200,000.00 (NOT ₦260,000.00)
     expect(overview.cashFlow.overall.grossIncomeAtoms).toBe(20000000n);
@@ -146,10 +146,10 @@ Date,Description,Amount,Balance,Type,Reference
     expect(overview.cashFlow.excludedInternalTransfersCount).toBe(2);
   });
 
-  it("produces granular bank charges deep dive with supporting transaction references", () => {
+  it("produces granular bank charges deep dive with supporting transaction references", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const acc = service.registerAccount({
+    const acc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "GTBank", type: "commercial_bank" },
       accountNumberMasked: "******1234",
@@ -167,9 +167,9 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 05-Nov-2026,05-Nov-2026,F5,53.75,,9788.25,TRANSFER CHARGE AND VAT
 `.trim();
 
-    service.ingestStatement("user_gerald", acc.id, statement, "charges.csv");
+    await service.ingestStatement("user_gerald", acc.id, statement, "charges.csv");
 
-    const overview = service.getFinancialOverview("user_gerald");
+    const overview = await service.getFinancialOverview("user_gerald");
     const charges = overview.spending.bankCharges;
 
     expect(charges.chargeCount).toBe(5);
@@ -195,10 +195,10 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
     expect(trf.totalAtoms).toBe(5375n); // ₦53.75
   });
 
-  it("detects recurring subscription commitments and predicts next charge date", () => {
+  it("detects recurring subscription commitments and predicts next charge date", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const acc = service.registerAccount({
+    const acc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "GTBank", type: "commercial_bank" },
       accountNumberMasked: "******1234",
@@ -215,9 +215,9 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 01-Nov-2026,01-Nov-2026,NET03,4500.00,,81000.00,POS/WEB/NETFLIX.COM AMSTERDAM NL
 `.trim();
 
-    service.ingestStatement("user_gerald", acc.id, statement, "netflix.csv");
+    await service.ingestStatement("user_gerald", acc.id, statement, "netflix.csv");
 
-    const overview = service.getFinancialOverview("user_gerald");
+    const overview = await service.getFinancialOverview("user_gerald");
     const recurring = overview.recurringCommitments;
 
     expect(recurring.length).toBe(1);
@@ -230,10 +230,10 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
     expect(sub.predictedNextAt).toBeDefined();
   });
 
-  it("evaluates data quality health score, missing statement periods, and stale accounts", () => {
+  it("evaluates data quality health score, missing statement periods, and stale accounts", async () => {
     const service = new MultiAccountFinancialIntelligenceService();
 
-    const acc = service.registerAccount({
+    const acc = await service.registerAccount({
       ownerId: "user_gerald",
       institution: { code: "058", name: "GTBank", type: "commercial_bank" },
       accountNumberMasked: "******1234",
@@ -249,9 +249,9 @@ Trans Date,Value Date,Reference,Debits,Credits,Balance,Remarks
 15-Mar-2026,15-Mar-2026,R2,2000.00,,48000.00,GROCERIES
 `.trim();
 
-    service.ingestStatement("user_gerald", acc.id, statement, "gap.csv");
+    await service.ingestStatement("user_gerald", acc.id, statement, "gap.csv");
 
-    const overview = service.getFinancialOverview("user_gerald");
+    const overview = await service.getFinancialOverview("user_gerald");
     const dq = overview.dataQuality;
 
     expect(dq.identifiedGaps.length).toBe(1);

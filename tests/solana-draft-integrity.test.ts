@@ -4,7 +4,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { Keypair, SystemProgram, Transaction } from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import { sql } from "drizzle-orm";
 import { afterEach, expect, it, vi } from "vitest";
 import { db } from "../src/lib/db";
@@ -17,6 +17,9 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.resetModules();
   vi.doUnmock("../src/lib/solana/rpc");
+  const g = globalThis as { agentDB?: unknown; agentNormalized?: unknown };
+  delete g.agentDB;
+  delete g.agentNormalized;
 });
 
 function makeMockRpc(): SolanaRpc {
@@ -364,4 +367,140 @@ it("preserves compatibility with pre-existing jsonb drafts and approves via HTTP
   expect(draftDigest(tampered)).not.toBe(existingDraft.digest);
   const client = (await db()).$client;
   if ("close" in client) await client.close();
+}, 60_000);
+
+it("validates end-to-end Devnet SOL and canonical Circle test-USDC prepare -> approve -> sign -> submit -> finalize lifecycle on PGlite", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "agus-solana-e2e-"));
+  vi.stubEnv("NODE_ENV", "test");
+  vi.stubEnv("DATABASE_URL", `pglite://${directory}/db`);
+  vi.stubEnv("PAYMENT_MODE", "fixture");
+  vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
+  vi.resetModules();
+
+  const { createSolanaService } = await import("../src/lib/solana/service");
+  const { CIRCLE_DEVNET_USDC_MINT } = await import("../src/lib/solana/assets");
+  const { TOKEN_PROGRAM_ID, getAssociatedTokenAddressSync } = await import("../src/lib/solana/classic-spl");
+  const { db } = await import("../src/lib/db");
+
+  const senderKey = Keypair.generate();
+  const recipientKey = Keypair.generate();
+  const usdcMint = new PublicKey(CIRCLE_DEVNET_USDC_MINT);
+  const blockhash = Keypair.generate().publicKey.toBase58();
+  const senderAta = getAssociatedTokenAddressSync(usdcMint, senderKey.publicKey);
+
+  const mintData = Buffer.alloc(82);
+  mintData[44] = 6;
+  mintData[45] = 1;
+
+  const senderAtaData = Buffer.alloc(165);
+  usdcMint.toBuffer().copy(senderAtaData, 0);
+  senderKey.publicKey.toBuffer().copy(senderAtaData, 32);
+  senderAtaData.writeBigUInt64LE(5_000_000n, 64);
+  senderAtaData[108] = 1;
+
+  const submittedRaw = new Map<string, Transaction>();
+  const mockRpc: SolanaRpc = {
+    endpoint: DEVNET_RPC,
+    getGenesisHash: async () => DEVNET_GENESIS,
+    getBalance: async () => 5_000_000_000,
+    getAccountInfo: async (address) => {
+      if (address.equals(usdcMint)) {
+        return { data: mintData, owner: TOKEN_PROGRAM_ID, lamports: 1_461_600, executable: false, rentEpoch: 0 };
+      }
+      if (address.equals(recipientKey.publicKey)) {
+        return { data: Buffer.alloc(0), owner: SystemProgram.programId, lamports: 100_000_000, executable: false, rentEpoch: 0 };
+      }
+      return null;
+    },
+    getTokenAccountsByOwner: async () => [
+      {
+        pubkey: senderAta,
+        account: { data: senderAtaData, owner: TOKEN_PROGRAM_ID, lamports: 2_039_280, executable: false, rentEpoch: 0 },
+      },
+    ],
+    getLatestBlockhash: async () => ({ blockhash, lastValidBlockHeight: 1000 }),
+    getFeeForMessage: async () => 5000,
+    getMinimumBalanceForRentExemption: async () => 2_039_280,
+    getBlockHeight: async () => 950,
+    simulateTransaction: async () => ({ err: null, slot: 520_800_001, unitsConsumed: 210 }),
+    sendRawTransaction: async (raw) => {
+      const tx = Transaction.from(raw);
+      const { base58 } = await import("../src/lib/solana/encoding");
+      const sig = base58(tx.signature!);
+      submittedRaw.set(sig, tx);
+      return sig;
+    },
+    getSignatureStatus: async (sig) =>
+      submittedRaw.has(sig) ? { slot: 520_800_005, confirmations: null, err: null, confirmationStatus: "finalized" } : null,
+    getTransaction: async (sig) => {
+      const tx = submittedRaw.get(sig);
+      if (!tx) return null;
+      return {
+        slot: 520_800_005,
+        blockTime: 1_762_900_000,
+        version: "legacy",
+        transaction: { message: tx.compileMessage(), signatures: [sig] },
+        meta: {
+          err: null,
+          fee: 5000,
+          preBalances: [5_000_000_000],
+          postBalances: [4_998_995_000],
+          innerInstructions: [],
+          logMessages: [],
+        },
+      } as never;
+    },
+  };
+
+  const svc = createSolanaService({ rpc: mockRpc, now: () => new Date("2026-11-12T10:00:00.000Z") });
+
+  try {
+    for (const input of [
+      { asset: "SOL" as const, amount: "0.001" },
+      { asset: "SPL" as const, mint: CIRCLE_DEVNET_USDC_MINT, amount: "1.25" },
+    ]) {
+      const prepared = await svc.prepare("owner-e2e", {
+        sender: senderKey.publicKey.toBase58(),
+        recipient: recipientKey.publicKey.toBase58(),
+        ...input,
+      });
+      expect(prepared.state).toBe("prepared");
+      if (input.asset === "SPL") {
+        expect(prepared.createsRecipientTokenAccount).toBe(true);
+        expect(BigInt(prepared.estimatedRentLamports)).toBe(2_039_280n);
+      }
+
+      const approved = await svc.approve("owner-e2e", prepared.id, {
+        digest: prepared.digest,
+        acknowledged: true,
+      });
+      expect(approved.state).toBe("approved");
+
+      const tx = Transaction.from(Buffer.from(approved.unsignedTransactionBase64, "base64"));
+      tx.sign(senderKey);
+      const signedBase64 = tx.serialize().toString("base64");
+
+      const submitted = await svc.submitSigned("owner-e2e", approved.id, {
+        digest: approved.digest,
+        signedTransactionBase64: signedBase64,
+      });
+      expect(submitted.state).toBe("submitted");
+      expect(submitted.submission?.signature).toBeTruthy();
+
+      await expect(
+        svc.submitSigned("owner-e2e", approved.id, {
+          digest: approved.digest,
+          signedTransactionBase64: signedBase64,
+        }),
+      ).rejects.toMatchObject({ code: "APPROVAL_REQUIRED", status: 403 });
+
+      const finalized = await svc.reconcile("owner-e2e", submitted.id);
+      expect(finalized.state).toBe("finalized");
+      expect(finalized.confirmation).toMatchObject({ commitment: "finalized", feeLamports: "5000" });
+    }
+  } finally {
+    const client = (await db()).$client;
+    if ("close" in client) await client.close();
+    await rm(directory, { recursive: true, force: true });
+  }
 }, 60_000);

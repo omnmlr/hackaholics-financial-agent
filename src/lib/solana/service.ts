@@ -126,7 +126,14 @@ export function draftDigest(d: SolanaDraft): string {
       messageBase64: d.messageBase64,
       messageDigest: d.messageDigest,
       unsignedTransactionBase64: d.unsignedTransactionBase64,
-      simulation: d.simulation,
+      simulation: d.simulation
+        ? {
+            at: d.simulation.at,
+            slot: d.simulation.slot,
+            unitsConsumed: d.simulation.unitsConsumed,
+            passed: d.simulation.passed,
+          }
+        : undefined,
     }),
   );
 }

@@ -52,7 +52,9 @@
     "test:marketplace": "node scripts/run-marketplace-tests.mjs",
     "build:escrow:sbf": "node scripts/build-escrow-sbf.mjs",
     "test:escrow:sbf": "node scripts/test-escrow-sbf.mjs",
-    "test:zcash": "node --import=tsx --test tests/zcash-*.test.mjs"
+    "test:zcash": "node --import=tsx --test tests/zcash-*.test.mjs",
+    "zcash:probe": "node --import=tsx scripts/verify-zcash-testnet-transfer.ts --probe",
+    "zcash:acceptance": "node --import=tsx scripts/verify-zcash-testnet-transfer.ts --evidence"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.19",

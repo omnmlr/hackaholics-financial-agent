@@ -2,7 +2,16 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   serverExternalPackages: ["@electric-sql/pglite", "pg"],
   poweredByHeader: false,
-  outputFileTracingIncludes: { "/api/product/[[...path]]": ["./migrations/0019_web_product.sql"] },
+  outputFileTracingIncludes: {
+    "/api/product/[[...path]]": [
+      "./migrations/0019_web_product.sql",
+      "./migrations/0020_conversational_payments.sql",
+    ],
+    "/api/conversation": [
+      "./migrations/0019_web_product.sql",
+      "./migrations/0020_conversational_payments.sql",
+    ],
+  },
   async headers() {
     return [
       {

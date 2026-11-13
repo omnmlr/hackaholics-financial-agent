@@ -56,6 +56,7 @@ export function runJournal(owner: string) {
       conversationId: string;
       goal: string;
       accountIds: string[];
+      privacyMode?: boolean;
     }) {
       const id = z.uuid().parse(input.id ?? randomUUID());
       IdSchema.parse(input.conversationId);
@@ -68,6 +69,7 @@ export function runJournal(owner: string) {
         conversationId: input.conversationId,
         goal: redactAgentText(input.goal),
         accountIds: input.accountIds,
+        ...(input.privacyMode ? { privacyMode: true } : {}),
         state: "queued",
         version: 0,
         createdAt: at,
@@ -83,6 +85,7 @@ export function runJournal(owner: string) {
       if (
         saved.conversationId !== run.conversationId ||
         saved.goal !== run.goal ||
+        Boolean(saved.privacyMode) !== Boolean(run.privacyMode) ||
         JSON.stringify(saved.accountIds) !== JSON.stringify(run.accountIds)
       )
         throw new AppError(

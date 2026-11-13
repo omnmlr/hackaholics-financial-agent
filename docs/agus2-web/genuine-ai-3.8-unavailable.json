@@ -1,0 +1,18 @@
+{
+  "provider": "gemini",
+  "model": "gemini-3.8-flash",
+  "httpStatus": 200,
+  "syntheticRecordsOnly": true,
+  "replyKind": "general",
+  "reply": "This work did not finish.  The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+  "execution": {
+    "id": "a191122a-e36e-4348-9f42-11269d19a3cd",
+    "state": "interrupted",
+    "plan": [],
+    "steps": [],
+    "reason": "MODEL_HTTP_503"
+  },
+  "noPaymentExecutionAuthorized": true,
+  "genuineProviderCallAttempted": true,
+  "successfulInference": false
+}

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createHash } from "node:crypto";
 import type { FunctionDeclaration } from "@google/genai";
 import { operator } from "../auth";
 import { AppError } from "../domain";
@@ -46,6 +47,12 @@ export async function runPersonalConversation(
   input: z.infer<typeof ConversationInput>,
   model: ToolModel = createGeminiToolModel(),
 ) {
+  input = {
+    ...input,
+    privacyMode:
+      !!input.privacyMode ||
+      /\b(?:privately|shielded|privacy mode)\b/i.test(input.text),
+  };
   const owner = await operator(req);
   const journal = runJournal(owner);
   const run = input.resumeRunId
@@ -55,10 +62,12 @@ export async function runPersonalConversation(
         conversationId: input.conversationId,
         goal: input.text,
         accountIds: input.accountIds,
+        privacyMode: input.privacyMode,
       });
   if (
     run.conversationId !== input.conversationId ||
     run.goal !== redactAgentText(input.text) ||
+    Boolean(run.privacyMode) !== Boolean(input.privacyMode) ||
     JSON.stringify(run.accountIds) !== JSON.stringify(input.accountIds)
   )
     throw new AppError("Resume instructions do not match the saved run", 409);
@@ -78,7 +87,9 @@ export async function runPersonalConversation(
     personalToolDefinitions.prepare_responsibility.schema.omit({
       requestId: true,
     });
-  const tools: AgentTool[] = (personal?.declarations ?? []).map((d) => ({
+  const tools: AgentTool[] = (
+    input.privacyMode ? [] : (personal?.declarations ?? [])
+  ).map((d) => ({
     declaration:
       d.name === "prepare_responsibility"
         ? declaration(d.name, d.description ?? "", ResponsibilitySchema)
@@ -143,18 +154,120 @@ export async function runPersonalConversation(
       "Read the signed-in user's imported statement balances, income/spending with internal transfers excluded, open invoices and independently verified testnet payment states. Use for money owed, received payments, obligations, imported accounts or what to do next. Statements are user-provided historical records, not live bank balances; invoices are not cash. Currencies stay separate. Never infer Zcash receipt from a public transaction ID. This tool cannot move money, approve or settle anything.",
       Empty,
     ),
-    schema: Empty, effect: "read", volatile: true,
+    schema: Empty,
+    effect: "read",
+    volatile: true,
     async execute() {
       const { productSnapshot } = await import("../web-product/service");
       const snapshot = await productSnapshot(owner);
+      const { listPaymentPlans } =
+        await import("../web-product/conversational-payments");
+      const outgoing = await listPaymentPlans(owner);
       return {
-        summary: "Read user-owned imported financial records and evidence-based invoice states.",
+        summary:
+          "Read user-owned imported financial records and evidence-based invoice states.",
+        data: input.privacyMode
+          ? {
+              privacyMode: true,
+              asOf: snapshot.asOf,
+              openObligationCount: snapshot.invoices.filter(
+                (i) => i.state === "open",
+              ).length,
+              pendingPaymentCount:
+                snapshot.requests.filter((r) => r.state === "pending").length +
+                outgoing.filter((p) =>
+                  ["submitting", "pending", "unknown"].includes(p.state),
+                ).length,
+              disclosure:
+                "Recipient addresses, invoice counterparties/amounts, balances, statement records and wallet metadata are withheld from the model in Privacy Mode. Details remain available in the authenticated owner UI. Information typed by the user into this chat is still model-visible after key redaction.",
+            }
+          : {
+              asOf: snapshot.asOf,
+              intelligence: snapshot.intelligence,
+              accounts: snapshot.accounts,
+              invoices: snapshot.invoices
+                .slice(0, 30)
+                .map(
+                  ({
+                    title,
+                    counterparty,
+                    direction,
+                    currency,
+                    amount,
+                    dueAt,
+                    state,
+                  }) => ({
+                    title,
+                    counterparty,
+                    direction,
+                    currency,
+                    amount,
+                    dueAt,
+                    state,
+                  }),
+                ),
+              payments: snapshot.requests
+                .slice(0, 30)
+                .map(({ asset, amount, network, state, evidence }) => ({
+                  asset,
+                  amount,
+                  network,
+                  state,
+                  verified: !!evidence,
+                  source: evidence?.source,
+                })),
+              bankConnection: "Coming soon; no authorized live bank connection",
+              outgoingPayments: outgoing
+                .slice(0, 20)
+                .map((p) =>
+                  p.privacy
+                    ? { privacy: true, state: p.state, detailsWithheld: true }
+                    : {
+                        asset: p.asset,
+                        amount: p.amount,
+                        recipientLabel: p.recipientLabel,
+                        state: p.state,
+                        verified: !!p.evidence,
+                      },
+                ),
+            },
+      };
+    },
+  });
+  tools.push({
+    declaration: declaration(
+      "prepare_digital_payment",
+      "Prepare a Pollar USDC standard payment or a Zcash ZEC shielded payment review from the user's original current words. No execution or approval. Missing details and unsupported privacy routes remain blocked. Recipient wallet addresses are entered only in the trusted owner UI and never returned to this model. Do not claim a BTC payout is made private by Zcash.",
+      Empty,
+    ),
+    schema: Empty,
+    effect: "proposal",
+    idempotent: true,
+    async execute(_args, ctx) {
+      const hash = createHash("sha256")
+        .update(`${owner}:${ctx.key}`)
+        .digest("hex");
+      const id = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+      const { preparePaymentIntent } =
+        await import("../web-product/conversational-payments");
+      const plan = await preparePaymentIntent(
+        owner,
+        { id, text: input.text, privacyMode: !!input.privacyMode },
+        "agent-prepared",
+      );
+      return {
+        summary:
+          "A saved payment review is ready for the owner to complete; no payment is approved or executed.",
         data: {
-          asOf: snapshot.asOf, intelligence: snapshot.intelligence, accounts: snapshot.accounts,
-          invoices: snapshot.invoices.slice(0, 30).map(({ title, counterparty, direction, currency, amount, dueAt, state }) => ({ title, counterparty, direction, currency, amount, dueAt, state })),
-          payments: snapshot.requests.slice(0, 30).map(({ asset, amount, network, state, evidence }) => ({ asset, amount, network, state, verified: !!evidence, source: evidence?.source })),
-          bankConnection: "Coming soon; no authorized live bank connection",
+          paymentPlanId: plan.id,
+          state: plan.state,
+          asset: plan.asset,
+          privacy: plan.privacy,
+          blockers: plan.blockers,
+          recipientLabel: plan.recipientLabel,
+          amount: plan.amount,
         },
+        awaitingUser: true,
       };
     },
   });
@@ -166,7 +279,7 @@ export async function runPersonalConversation(
     preparation = false,
     focus?: string,
   ): Promise<ToolResult> => {
-    if (!financialReady())
+    if (input.privacyMode || !financialReady())
       return {
         summary:
           "Authorized personal-bank access is not configured. Ordinary planning and user-stated calculations remain available.",
@@ -338,9 +451,23 @@ export async function runPersonalConversation(
   const reply = await createPersonalAgent({
     model: budgeted,
     journal,
-    tools,
-    history,
-    context,
+    history: input.privacyMode ? [] : history,
+    context: input.privacyMode
+      ? {
+          privacyMode: true,
+          disclosure:
+            "Private mode omits saved conversation history, account details, memory and responsibility metadata. Only the current user message and minimized tool responses are provided. Wallet signing and approval remain outside the model. Zcash does not make Bitcoin private.",
+        }
+      : context,
+    tools: input.privacyMode
+      ? tools.filter((tool) =>
+          [
+            "calculate",
+            "read_agus_financial_snapshot",
+            "prepare_digital_payment",
+          ].includes(tool.declaration.name ?? ""),
+        )
+      : tools,
     signal: req.signal,
   }).run({ id: run.id, resume: !!input.resumeRunId });
   return { ...reply, evidence: { ...reply.evidence, modelCalls } };

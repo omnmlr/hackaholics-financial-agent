@@ -62,6 +62,7 @@ export type ProductEvent = {
   text: string;
   invoiceId?: string;
   requestId?: string;
+  paymentPlanId?: string;
 };
 export const RequestInput = z.strictObject({
   id: z.uuid(),
@@ -75,8 +76,12 @@ export function atomic(value: string, scale: number): bigint {
   if (!/^(?:0|[1-9]\d{0,8})(?:\.\d+)?$/.test(value))
     throw new Error("Invalid amount");
   const [whole, fraction = ""] = value.split(".");
-  if (fraction.length > scale) throw new Error(`Use at most ${scale} decimal places`);
-  return BigInt(whole) * 10n ** BigInt(scale) + BigInt(fraction.padEnd(scale, "0") || "0");
+  if (fraction.length > scale)
+    throw new Error(`Use at most ${scale} decimal places`);
+  return (
+    BigInt(whole) * 10n ** BigInt(scale) +
+    BigInt(fraction.padEnd(scale, "0") || "0")
+  );
 }
 
 export type ProductSnapshot = {
@@ -116,8 +121,18 @@ export type ProductSnapshot = {
     nextAction: string;
   };
   capabilities: {
-    pollar: { configured: boolean; publicKey: string | null; issuer: string | null; sdkVersion: string; network: "testnet" };
-    zcash: { verificationConfigured: boolean; receivingAddress: string | null; network: "testnet" };
+    pollar: {
+      configured: boolean;
+      publicKey: string | null;
+      issuer: string | null;
+      sdkVersion: string;
+      network: "testnet";
+    };
+    zcash: {
+      verificationConfigured: boolean;
+      receivingAddress: string | null;
+      network: "testnet";
+    };
     ai: { configured: boolean; provider: string };
     bank: "coming-soon";
     session: "single-operator";

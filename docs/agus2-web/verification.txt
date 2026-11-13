@@ -1,0 +1,104 @@
+Full unit/integration suite
+> hackaholics-financial-agent@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  92 passed | 4 skipped (96)
+      Tests  1531 passed | 47 skipped (1578)
+   Start at  15:01:37
+   Duration  186.29s (tests 84%, import 16%)
+
+TypeScript
+> hackaholics-financial-agent@0.1.0 typecheck
+> tsc --noEmit
+
+ESLint
+> hackaholics-financial-agent@0.1.0 lint
+> eslint .
+
+Production build
+> hackaholics-financial-agent@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.1 (webpack)
+✓ Running next.config.ts took 34ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 12.1s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/6) ...
+  Generating static pages using 2 workers (1/6) 
+  Generating static pages using 2 workers (2/6) 
+  Generating static pages using 2 workers (4/6) 
+✓ Generating static pages using 2 workers (6/6) in 837ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/[...path]
+├ ƒ /api/agent-runs
+├ ƒ /api/agent-workspace
+├ ƒ /api/agent-workspace/solana
+├ ƒ /api/auth/[...all]
+├ ƒ /api/conversation
+├ ƒ /api/conversation/payment-draft
+├ ƒ /api/conversations
+├ ƒ /api/financial-agent
+├ ƒ /api/product/[[...path]]
+├ ƒ /api/v1/[...path]
+├ ○ /api/v1/openapi
+├ ƒ /conversation
+├ ○ /devnet
+└ ○ /responsibilities
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+Production HTTP safety smoke
+> hackaholics-financial-agent@0.1.0 test:http
+> node scripts/http-smoke.mjs
+
+PASS: production Next.js HTTP smoke — login, route protection, two recipients, verification, approval, explicit submission, duplicate rejection, reconciliation, persisted status chat, CSV. No provider network calls or real money.
+
+Responsive browser acceptance
+> hackaholics-financial-agent@0.1.0 test:browser:web
+> node scripts/browser-agus-web.mjs
+
+[
+  {
+    "width": 1440,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 820,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 390,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 320,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  }
+]

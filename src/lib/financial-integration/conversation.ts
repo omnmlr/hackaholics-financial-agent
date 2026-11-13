@@ -31,6 +31,7 @@ export const ConversationInput = z.strictObject({
   text: z.string().trim().min(1).max(4000),
   requestId: z.uuid().optional(),
   resumeRunId: z.uuid().optional(),
+  privacyMode: z.boolean().optional(),
   accountIds: z
     .array(IdSchema)
     .max(5)
@@ -63,15 +64,22 @@ export async function financialConversationTurn(
   specialistModel?: ToolModel,
   readOnly = false,
 ) {
+  if (input.privacyMode)
+    throw new AppError(
+      "Detailed financial-source tools are withheld in Privacy Mode. Use the personal agent’s minimized snapshot or the trusted owner view.",
+      403,
+    );
   const capability = await authorizedFinancialAccess(req);
   const clock = () => new Date().toISOString();
   const {
     requestId: ignoredRequest,
     resumeRunId: ignoredResume,
+    privacyMode: ignoredPrivacy,
     ...parsed
   } = ConversationInput.parse(input);
   void ignoredRequest;
   void ignoredResume;
+  void ignoredPrivacy;
   const owner = await operator(req);
   const state = await readState();
   const messages = state.messages.filter(

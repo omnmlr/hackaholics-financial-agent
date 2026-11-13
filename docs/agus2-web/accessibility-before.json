@@ -1,0 +1,86 @@
+[
+  {
+    "id": "color-contrast",
+    "impact": "serious",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "nodes": [
+      {
+        "html": "<span class=\"workspace_workspaceLabel__Ym_kd\">PERSONAL WORKSPACE</span>",
+        "target": [
+          ".workspace_workspaceLabel__Ym_kd"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.57 (foreground color: #686868, background color: #090909, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<small>Private operator session</small>",
+        "target": [
+          "div > small"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.07 (foreground color: #717171, background color: #090909, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<div class=\"workspace_breadcrumb__RPuUs\">",
+        "target": [
+          ".workspace_breadcrumb__RPuUs"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.44 (foreground color: #777777, background color: #090909, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<small>NGN</small>",
+        "target": [
+          "div:nth-child(1) > .workspace_summaryLabel__i8qEs > small"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.63 (foreground color: #777777, background color: #202020, font size: 6.0pt (8px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<p>No statement balance yet</p>",
+        "target": [
+          ".workspace_summaryAmounts__DR_kt > div:nth-child(1) > p"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.09 (foreground color: #757575, background color: #111111, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<small>USD VALUE</small>",
+        "target": [
+          "div:nth-child(2) > .workspace_summaryLabel__i8qEs > small"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.63 (foreground color: #777777, background color: #202020, font size: 6.0pt (8px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<p>No verified USD valuation</p>",
+        "target": [
+          ".workspace_summaryAmounts__DR_kt > div:nth-child(2) > p"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.09 (foreground color: #757575, background color: #111111, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<span>An invoice becomes settled only when receiving evidence is verified.</span>",
+        "target": [
+          ".workspace_panelFoot__U00Rc > span"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 4.01 (foreground color: #737373, background color: #101010, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<small class=\"workspace_railCaption__DWbc_\">Separate payment pathways. Test assets have no cash value.</small>",
+        "target": [
+          ".workspace_railCaption__DWbc_"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.48 (foreground color: #666666, background color: #080808, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<span>",
+        "target": [
+          "footer > span:nth-child(1)"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.28 (foreground color: #626262, background color: #080808, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      },
+      {
+        "html": "<span>Your money, and what’s next.</span>",
+        "target": [
+          "footer > span:nth-child(2)"
+        ],
+        "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.28 (foreground color: #626262, background color: #080808, font size: 6.8pt (9px), font weight: normal). Expected contrast ratio of 4.5:1"
+      }
+    ]
+  }
+]

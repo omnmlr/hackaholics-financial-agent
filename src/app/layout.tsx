@@ -6,9 +6,9 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 export const metadata: Metadata = {
-  title: "agus.",
+  title: "AGUS — Your money, and what's next.",
   description:
-    "A financial conversation workspace with clearly labeled fictional demo data.",
+    "Your personal financial agent. Understand your records, manage responsibilities, and follow evidence-based testnet payments.",
 };
 export default function RootLayout({
   children,

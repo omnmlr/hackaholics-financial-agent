@@ -137,6 +137,27 @@ export async function runPersonalConversation(
     },
   });
   const Empty = z.strictObject({});
+  tools.push({
+    declaration: declaration(
+      "read_agus_financial_snapshot",
+      "Read the signed-in user's imported statement balances, income/spending with internal transfers excluded, open invoices and independently verified testnet payment states. Use for money owed, received payments, obligations, imported accounts or what to do next. Statements are user-provided historical records, not live bank balances; invoices are not cash. Currencies stay separate. Never infer Zcash receipt from a public transaction ID. This tool cannot move money, approve or settle anything.",
+      Empty,
+    ),
+    schema: Empty, effect: "read", volatile: true,
+    async execute() {
+      const { productSnapshot } = await import("../web-product/service");
+      const snapshot = await productSnapshot(owner);
+      return {
+        summary: "Read user-owned imported financial records and evidence-based invoice states.",
+        data: {
+          asOf: snapshot.asOf, intelligence: snapshot.intelligence, accounts: snapshot.accounts,
+          invoices: snapshot.invoices.slice(0, 30).map(({ title, counterparty, direction, currency, amount, dueAt, state }) => ({ title, counterparty, direction, currency, amount, dueAt, state })),
+          payments: snapshot.requests.slice(0, 30).map(({ asset, amount, network, state, evidence }) => ({ asset, amount, network, state, verified: !!evidence, source: evidence?.source })),
+          bankConnection: "Coming soon; no authorized live bank connection",
+        },
+      };
+    },
+  });
   const financialReady = () =>
     process.env.FINANCIAL_DEMO_ENABLED === "true" &&
     config().mode === "fixture";

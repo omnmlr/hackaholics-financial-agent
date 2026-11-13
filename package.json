@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preview:web": "node scripts/agus-web-preview.mjs",
+    "test:web": "vitest run tests/web-product.test.ts tests/pollar-sdk.test.ts",
+    "test:browser:web": "node scripts/browser-agus-web.mjs",
     "config:validate": "node --import=tsx scripts/validate-environment.ts",
     "solana:acceptance": "node --import=tsx scripts/verify-devnet-transfer.ts",
     "preview:devnet": "node scripts/devnet-acceptance-preview.mjs",
@@ -57,6 +60,8 @@
     "@better-auth/expo": "1.7.19",
     "@electric-sql/pglite": "^0.3.10",
     "@google/genai": "2.30.0",
+    "@pollar/core": "^0.12.0",
+    "@scure/base": "^1.2.6",
     "@solana/web3.js": "^1.99.0",
     "@tailwindcss/postcss": "^4.1.0",
     "better-auth": "1.7.19",

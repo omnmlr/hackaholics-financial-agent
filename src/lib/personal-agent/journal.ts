@@ -5,7 +5,7 @@ import { db } from "../db";
 import { AppError } from "../domain";
 import { IdSchema } from "../financial-data/contracts";
 import { requireWorkspace } from "../agent-workspace/store";
-import { redactAgentText } from "./privacy";
+import { redactAgentText, privateAgentText } from "./privacy";
 import type { AgentRun, ExecutionStep, PlanStep, RunStatus } from "./contracts";
 
 let ready: Promise<void> | undefined;
@@ -67,7 +67,9 @@ export function runJournal(owner: string) {
         id,
         owner,
         conversationId: input.conversationId,
-        goal: redactAgentText(input.goal),
+        goal: input.privacyMode
+          ? privateAgentText(input.goal)
+          : redactAgentText(input.goal),
         accountIds: input.accountIds,
         ...(input.privacyMode ? { privacyMode: true } : {}),
         state: "queued",

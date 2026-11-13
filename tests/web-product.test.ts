@@ -48,6 +48,7 @@ const zaddr = bech32.encode(
 );
 const owner = "web-test-owner";
 let token = "";
+let password = "";
 function invoice(currency: InvoiceInput["currency"] = "USDC"): InvoiceInput {
   return {
     id: randomUUID(),
@@ -87,8 +88,8 @@ function api(
   });
 }
 beforeAll(async () => {
-  const password = randomBytes(22).toString("hex"),
-    salt = randomBytes(16).toString("hex");
+  password = randomBytes(22).toString("hex");
+  const salt = randomBytes(16).toString("hex");
   Object.assign(process.env, {
     DATABASE_URL: "pglite://:memory:",
     PAYMENT_MODE: "fixture",
@@ -214,15 +215,41 @@ describe("Web financial boundaries", () => {
   });
   it("reserves one explicit SDK submission and rejects a duplicate or foreign send", async () => {
     const { req } = await request();
+    const digest = currentRequest(req).reviewDigest!;
     expect(
-      (await beginPollarSubmission(owner, req.id)).submissionStartedAt,
-    ).toBeTruthy();
-    await expect(beginPollarSubmission(owner, req.id)).rejects.toThrow(
-      /another send/,
-    );
+      (
+        await POST(
+          api(`/requests/${req.id}/submit-intent`, { acknowledged: true }),
+        )
+      ).status,
+    ).toBe(400);
     await expect(
-      beginPollarSubmission("another-owner", req.id),
-    ).rejects.toThrow(/not found/);
+      beginPollarSubmission(owner, req.id, "wrong password", digest),
+    ).rejects.toThrow(/password/);
+    await expect(
+      beginPollarSubmission(owner, req.id, password, "0".repeat(64)),
+    ).rejects.toThrow(/instructions changed/);
+    expect(
+      (await beginPollarSubmission(owner, req.id, password, digest))
+        .submissionStartedAt,
+    ).toBeTruthy();
+    await expect(
+      beginPollarSubmission(owner, req.id, password, digest),
+    ).rejects.toThrow(/another send/);
+    await expect(
+      beginPollarSubmission("another-owner", req.id, password, digest),
+    ).rejects.toThrow(/Reauthentication/);
+  });
+  it("rejects the configured USDC issuer as an invoice recipient", async () => {
+    const inv = await createInvoice(owner, invoice());
+    await expect(
+      createPaymentRequest(owner, {
+        id: randomUUID(),
+        invoiceId: inv.id,
+        rail: "pollar-stellar",
+        recipient: issuer,
+      }),
+    ).rejects.toThrow(/issuer address/);
   });
   it("never accepts a client transaction ID or forged client evidence as settlement", async () => {
     const { inv, req } = await request();

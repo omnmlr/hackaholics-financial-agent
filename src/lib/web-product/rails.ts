@@ -89,6 +89,11 @@ export async function verifyStellar(
   request: PaymentRequest,
   transactionId: string,
 ): Promise<VerificationEvidence> {
+  if (request.recipient === request.issuer)
+    throw new AppError(
+      "An issuer-address payment is not an accepted recipient settlement.",
+      409,
+    );
   const tx = await readStellarTestnet(`/transactions/${transactionId}`);
   if (
     tx.successful !== true ||

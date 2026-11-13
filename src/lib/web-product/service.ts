@@ -1,4 +1,5 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
+import { reauthenticate } from "../auth";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
@@ -82,9 +83,27 @@ export function currentRequest(
   request: PaymentRequest,
   now = Date.now(),
 ): PaymentRequest {
+  const reviewDigest = createHash("sha256")
+    .update(
+      JSON.stringify([
+        request.id,
+        request.owner,
+        request.invoiceId,
+        request.rail,
+        request.network,
+        request.recipient,
+        request.asset,
+        request.issuer ?? null,
+        request.amount,
+        request.memo,
+        request.expiresAt,
+        "100000",
+      ]),
+    )
+    .digest("hex");
   return request.state === "pending" && Date.parse(request.expiresAt) <= now
-    ? { ...request, state: "expired" }
-    : request;
+    ? { ...request, state: "expired", reviewDigest }
+    : { ...request, reviewDigest };
 }
 
 async function invoiceRow(
@@ -214,6 +233,10 @@ export async function createPaymentRequest(
       input.rail === "pollar-stellar"
         ? pollarConfiguration().issuer
         : undefined;
+    if (input.rail === "pollar-stellar" && issuer && input.recipient === issuer)
+      throw new AppError(
+        "That is the USDC issuer address, not the recipient’s wallet. Use a separate controlled receiving account with the appropriate trustline.",
+      );
     if (
       input.rail === "pollar-stellar" &&
       (!stellarAddress(input.recipient) || !issuer)
@@ -419,8 +442,14 @@ export async function cancelRequest(owner: string, id: string) {
 }
 
 /** Reserve exactly one explicit SDK send attempt; never retry an uncertain POST. */
-export async function beginPollarSubmission(owner: string, id: string) {
+export async function beginPollarSubmission(
+  owner: string,
+  id: string,
+  password: string,
+  reviewDigest: string,
+) {
   await initializeProduct();
+  await reauthenticate(owner, password);
   return transaction(async (sql) => {
     const rows = await sql.query(
       "SELECT payload FROM agus_web_requests WHERE owner=$1 AND id=$2 FOR UPDATE",
@@ -435,6 +464,11 @@ export async function beginPollarSubmission(owner: string, id: string) {
     )
       throw new AppError(
         "This request cannot start another send. Check wallet history and verify any existing transaction.",
+        409,
+      );
+    if (request.reviewDigest !== reviewDigest)
+      throw new AppError(
+        "Payment request instructions changed; review them again before authorizing.",
         409,
       );
     request.submissionStartedAt = new Date().toISOString();
@@ -608,17 +642,15 @@ export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
         source: "statement import",
       };
     }),
-    transactions: txs.items
-      .slice(0, 100)
-      .map((tx) => ({
-        id: tx.id,
-        description: tx.cleanDescription || tx.rawDescription,
-        amount: formatMonetaryAmount(tx.amountAtoms, tx.currency),
-        currency: tx.currency,
-        postedAt: tx.postedAt,
-        category: tx.userOverride?.category ?? tx.category,
-        internal: tx.internalTransferMetadata?.isInternalTransfer ?? false,
-      })),
+    transactions: txs.items.slice(0, 100).map((tx) => ({
+      id: tx.id,
+      description: tx.cleanDescription || tx.rawDescription,
+      amount: formatMonetaryAmount(tx.amountAtoms, tx.currency),
+      currency: tx.currency,
+      postedAt: tx.postedAt,
+      category: tx.userOverride?.category ?? tx.category,
+      internal: tx.internalTransferMetadata?.isInternalTransfer ?? false,
+    })),
     intelligence: {
       naira: hasNaira ? ngn.formatted : null,
       importedAccountCount: accounts.length,

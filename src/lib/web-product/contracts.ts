@@ -53,6 +53,7 @@ export type PaymentRequest = {
   lastCheckedAt?: string;
   lastCheck?: string;
   submissionStartedAt?: string;
+  reviewDigest?: string;
   evidence?: VerificationEvidence;
 };
 export type ProductEvent = {

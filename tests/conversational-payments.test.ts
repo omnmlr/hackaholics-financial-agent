@@ -181,6 +181,27 @@ describe("Conversational payment authorization", () => {
     );
     expect(z.quote).toBeUndefined();
   });
+  it("blocks the USDC issuer as a destination and rejects boolean-only authorization", async () => {
+    const p = await plan();
+    const blocked = await updatePaymentPlan(owner, p.id, {
+      recipientLabel: "Daniel",
+      recipientAddress: issuer,
+      amount: "10",
+      asset: "USDC",
+      privacy: false,
+    });
+    expect(blocked.state).toBe("blocked");
+    expect(blocked.blockers.join(" ")).toMatch(/issuer address/);
+    expect(
+      (
+        await POST(
+          req(`/api/product/payment-plans/${p.id}/approve`, {
+            acknowledged: true,
+          }),
+        )
+      ).status,
+    ).toBe(400);
+  });
   it("isolates plans and saved contact resolution by authenticated owner", async () => {
     const p = await plan();
     await expect(getPaymentPlan("another-owner", p.id)).rejects.toThrow(
@@ -446,7 +467,7 @@ describe("Privacy Mode model boundary", () => {
       {
         conversationId: randomUUID(),
         requestId: randomUUID(),
-        text: "Tell me how Privacy Mode works.",
+        text: `Tell me how Privacy Mode works for ${recipient}; memo: confidential-current-memo`,
         accountIds: [],
         privacyMode: true,
       },
@@ -454,6 +475,7 @@ describe("Privacy Mode model boundary", () => {
     );
     const prompts = snapshots.join("\n");
     expect(prompts).not.toContain(recipient);
+    expect(prompts).not.toContain("confidential-current-memo");
     expect(prompts).not.toContain("987654321");
     expect(prompts).not.toContain('"name":"list_saved_runs"');
     expect(prompts).not.toContain('"name":"solana_wallet_balances"');

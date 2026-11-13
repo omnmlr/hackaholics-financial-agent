@@ -44,6 +44,7 @@ export function PollarWallet({
   const [error, setError] = useState("");
   const [outcome, setOutcome] = useState("");
   const [reviewed, setReviewed] = useState(false);
+  const [requestPassword, setRequestPassword] = useState("");
   const sending = useRef(false);
   useEffect(() => {
     alive.current = true;
@@ -141,6 +142,7 @@ export function PollarWallet({
       !request ||
       !verified ||
       !reviewed ||
+      !requestPassword ||
       sending.current ||
       request.submissionStartedAt ||
       !request.issuer
@@ -150,6 +152,7 @@ export function PollarWallet({
     setBusy(true);
     setError("");
     try {
+      const selectedSource = sdk.getWallet()?.address;
       // Recheck the actual remote application, not just our requested SDK network.
       const app = await sdk.getAppConfig();
       if (!isStellarTestnetApp(app))
@@ -158,7 +161,14 @@ export function PollarWallet({
         );
       await productApi(`product/requests/${request.id}/submit-intent`, {
         acknowledged: true,
+        password: requestPassword,
+        reviewDigest: request.reviewDigest,
       });
+      setRequestPassword("");
+      if (!selectedSource || sdk.getWallet()?.address !== selectedSource)
+        throw new Error(
+          "The selected wallet changed after review. Check the saved request; no automatic send retry is authorized.",
+        );
       const result = await sdk.sendPayment({
         chain: "STELLAR",
         destination: request.recipient,
@@ -488,9 +498,19 @@ export function PollarWallet({
                     I reviewed the address, asset, amount, memo and maximum 0.01
                     XLM network fee. Send test assets once.
                   </label>
+                  <label className={s.form}>
+                    Re-enter operator password
+                    <input
+                      type="password"
+                      value={requestPassword}
+                      onChange={(e) => setRequestPassword(e.target.value)}
+                      maxLength={256}
+                      autoComplete="current-password"
+                    />
+                  </label>
                   <button
                     type="button"
-                    disabled={!reviewed || busy}
+                    disabled={!reviewed || !requestPassword || busy}
                     className={s.primary}
                     onClick={() => void send()}
                   >

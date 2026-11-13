@@ -215,11 +215,20 @@ async function handle(req: Request) {
         );
       }
       if (path[0] === "requests" && path[1] && path[2] === "submit-intent") {
-        z.strictObject({ acknowledged: z.literal(true) }).parse(
-          await body(req),
-        );
+        const input = z
+          .strictObject({
+            acknowledged: z.literal(true),
+            password: z.string().max(256),
+            reviewDigest: z.string().length(64),
+          })
+          .parse(await body(req));
         return workspaceResponse(
-          await beginPollarSubmission(owner, z.uuid().parse(path[1])),
+          await beginPollarSubmission(
+            owner,
+            z.uuid().parse(path[1]),
+            input.password,
+            input.reviewDigest,
+          ),
         );
       }
     }

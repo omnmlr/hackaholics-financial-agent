@@ -143,6 +143,14 @@ function assess(plan: PaymentPlan) {
     blockers.push(
       "Use a shielded Sapling testnet receiving address (ztestsapling…).",
     );
+  if (
+    plan.rail === "pollar-stellar" &&
+    plan.recipientAddress &&
+    plan.recipientAddress === pollarConfiguration().issuer
+  )
+    blockers.push(
+      "This is the USDC issuer address, not your recipient’s wallet. Choose a separate controlled recipient account with the required USDC trustline.",
+    );
   if (plan.rail === "pollar-stellar" && !pollarConfiguration().configured)
     blockers.push(
       "Pollar onboarding and signing need this app’s publishable Stellar testnet key and exact USDC issuer.",
@@ -385,6 +393,7 @@ export function validateStellarEnvelope(
   if (
     op.type !== "payment" ||
     op.destination !== plan.recipientAddress ||
+    op.destination === issuer ||
     op.asset.isNative() ||
     op.asset.getCode() !== "USDC" ||
     op.asset.getIssuer() !== issuer ||

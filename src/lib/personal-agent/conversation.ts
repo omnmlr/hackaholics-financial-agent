@@ -16,7 +16,7 @@ import {
   type ToolModel,
 } from "../model-led-agent/model";
 import { AgentError } from "../financial-agent/protocol";
-import { redactAgentText } from "./privacy";
+import { redactAgentText, privateAgentText, privateModelData } from "./privacy";
 import {
   financialConversationTurn,
   type ConversationInput,
@@ -66,7 +66,10 @@ export async function runPersonalConversation(
       });
   if (
     run.conversationId !== input.conversationId ||
-    run.goal !== redactAgentText(input.text) ||
+    run.goal !==
+      (input.privacyMode
+        ? privateAgentText(input.text)
+        : redactAgentText(input.text)) ||
     Boolean(run.privacyMode) !== Boolean(input.privacyMode) ||
     JSON.stringify(run.accountIds) !== JSON.stringify(input.accountIds)
   )
@@ -79,7 +82,14 @@ export async function runPersonalConversation(
       if (modelCalls >= ENGINE_LIMITS.models)
         throw new AgentError("MODEL_LIMIT");
       modelCalls++;
-      return model.generate(args);
+      return model.generate(
+        input.privacyMode
+          ? {
+              ...args,
+              contents: privateModelData(args.contents) as typeof args.contents,
+            }
+          : args,
+      );
     },
   };
   const personal = personalTools(owner);
@@ -217,19 +227,17 @@ export async function runPersonalConversation(
                   source: evidence?.source,
                 })),
               bankConnection: "Coming soon; no authorized live bank connection",
-              outgoingPayments: outgoing
-                .slice(0, 20)
-                .map((p) =>
-                  p.privacy
-                    ? { privacy: true, state: p.state, detailsWithheld: true }
-                    : {
-                        asset: p.asset,
-                        amount: p.amount,
-                        recipientLabel: p.recipientLabel,
-                        state: p.state,
-                        verified: !!p.evidence,
-                      },
-                ),
+              outgoingPayments: outgoing.slice(0, 20).map((p) =>
+                p.privacy
+                  ? { privacy: true, state: p.state, detailsWithheld: true }
+                  : {
+                      asset: p.asset,
+                      amount: p.amount,
+                      recipientLabel: p.recipientLabel,
+                      state: p.state,
+                      verified: !!p.evidence,
+                    },
+              ),
             },
       };
     },

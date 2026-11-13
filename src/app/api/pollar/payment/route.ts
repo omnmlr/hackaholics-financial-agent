@@ -33,7 +33,7 @@ const Input = z.discriminatedUnion("action", [
     action: z.literal("approve_and_submit"),
     draftId: z.string().min(1),
     digest: z.string().min(32),
-    password: z.string().min(1).optional(),
+    password: z.string().min(1),
   }),
   z.strictObject({
     action: z.literal("verify"),
@@ -99,14 +99,14 @@ export async function POST(req: Request) {
     }
 
     if (input.action === "approve_and_submit") {
-      if (input.password) {
-        await reauthenticate(owner, input.password);
-      }
+      await reauthenticate(owner, input.password);
       const execution = await defaultPollarAdapter.authorizeAndExecute(
         owner,
         input.draftId,
-        input.digest,
-        true,
+        {
+          digest: input.digest,
+          password: input.password,
+        },
       );
       return workspaceResponse({ execution });
     }

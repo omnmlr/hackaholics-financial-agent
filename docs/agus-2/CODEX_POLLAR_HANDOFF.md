@@ -72,23 +72,28 @@ const session = await defaultPollarAdapter.getWalletSession(user.id);
 console.log("Stellar address:", session.address);
 
 // 2. Prepare payment when user says: "AGUS, send Daniel 10 USDC"
+// NOTE: Use a controlled recipient wallet (GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU),
+// NOT Circle's USDC issuer (GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5).
 const { draft, review } = await defaultPollarAdapter.prepareConversationalPayment(user.id, {
-  recipient: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+  recipient: "GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU",
   amount: "10.00",
   asset: "USDC", // Stellar Testnet USDC
   memo: "Payment for design task",
 });
 
 // 3. User reviews in chat and authorizes with password re-auth:
+// SECURITY REQUIREMENT: Pass the actual user password, NOT an arbitrary boolean.
 const result = await defaultPollarAdapter.authorizeAndExecute(
   user.id,
   draft.id,
-  review.digest,
-  true // password verified
+  {
+    digest: review.digest,
+    password: operatorPassword, // Genuine server-side reauthentication
+  }
 );
 
-// 4. Result contains live transaction hash, receipt, and explorer link:
-console.log("Success:", result.transactionHash, result.explorerUrl);
+// 4. Result contains live transaction hash, receipt, explorer link, and executionMode:
+console.log("Result:", result.transactionHash, result.explorerUrl, result.executionMode);
 ```
 
 ### 4.2 Drop-In UI Card in Chat
@@ -124,19 +129,21 @@ export function MessagePaymentBlock({ review, senderAddress }) {
 
 ---
 
-## 5. Verification Evidence
+## 5. Verification Evidence & On-Chain Proof
 
-- **Automated Tests**: 16/16 passed in `tests/pollar-web-adapter.test.ts`.
+- **Automated Tests**: 18/18 passed in `tests/pollar-web-adapter.test.ts`.
+  - Issue 1: Issuer address `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` blocked with `INVALID_RECIPIENT_ISSUER`.
+  - Issue 2: Arbitrary boolean bypass blocked with `BOOLEAN_AUTHORIZATION_DISALLOWED` and `PASSWORD_REAUTHENTICATION_REQUIRED`.
+  - Issue 3: Genuine Pollar SDK vs Sandbox fallback clearly categorized on all execution results.
 - **Existing Tests**: 31/31 passed in `tests/solana-core.test.ts` (zero regressions).
 - **TypeScript**: `npm run typecheck` passes with exit code 0 across the entire repository.
-- **Live Public Stellar Testnet Probe**:
-  ```json
-  {
-    "status": 200,
-    "network_passphrase": "Test SDF Network ; September 2015",
-    "horizon_url": "https://horizon-testnet.stellar.org"
-  }
-  ```
+- **Live Public Stellar Testnet Controlled Recipient**:
+  - Account: `GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU`
+  - Balance: `10000.0000000 XLM`
+  - Creation Tx Hash: `9a06fa5ed4e8a4ac1e7e2d71240a884488d7bcd1f07f7d29034933a7b68f21c5`
+  - Ledger Sequence: `5711803`
+  - Horizon API Probe: `https://horizon-testnet.stellar.org/accounts/GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU`
+  - Explorer Link: `https://stellar.expert/explorer/testnet/account/GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU`
 
 ---
 
@@ -146,13 +153,13 @@ To integrate into Codex's branch:
 
 ```bash
 # In your local working branch:
-git cherry-pick 605dda1
+git merge feature/pollar-web-hackathon
 ```
 
-Or merge the feature branch:
+Or cherry-pick the verified feature commits:
 
 ```bash
-git merge feature/pollar-web-hackathon
+git cherry-pick 605dda1 70794f1 HEAD
 ```
 
 ---

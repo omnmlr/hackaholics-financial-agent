@@ -32,6 +32,10 @@ export function PollarPaymentCard({
   const [result, setResult] = useState<PollarExecutionResult | null>(null);
 
   const handleAuthorize = async () => {
+    if (!password || password.trim() === "") {
+      setError("Owner approval password is required to authorize this payment.");
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     try {
@@ -47,7 +51,7 @@ export function PollarPaymentCard({
             action: "approve_and_submit",
             draftId: review.draftId,
             digest: review.digest,
-            ...(password ? { password } : {}),
+            password,
           }),
         });
         const data = await res.json();

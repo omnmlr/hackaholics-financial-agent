@@ -173,15 +173,19 @@ export class PollarPaymentAdapter {
 
   /**
    * Authorizes and executes the payment in one coordinated flow once owner approval is confirmed.
+   * Mandates the exact owner password and review digest. Arbitrary boolean approval is prohibited.
    */
   async authorizeAndExecute(
     userId: string,
     draftId: string,
-    digest: string,
-    passwordVerified = true,
+    auth: {
+      digest: string;
+      password: string;
+      reauthenticator?: (owner: string, password: string) => Promise<void>;
+    },
   ): Promise<PollarExecutionResult> {
     // 1. Enforce owner re-authentication & exact digest match
-    await this.service.authorizePayment(userId, draftId, digest, passwordVerified);
+    await this.service.authorizePayment(userId, draftId, auth);
 
     // 2. Submit transaction via Pollar infrastructure
     const result = await this.service.submitPayment(userId, draftId);

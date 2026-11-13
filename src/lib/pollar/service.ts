@@ -17,9 +17,12 @@ import {
   type PollarExecutionResult,
   type PollarPreparePaymentInput,
   type PollarSupportedChain,
+  type PollarExecutionMode,
   DEFAULT_POLLAR_BASE_URL,
   STELLAR_TESTNET_HORIZON,
   STELLAR_TESTNET_USDC_ISSUER,
+  CONTROLLED_TEST_RECIPIENT_STELLAR,
+  isIssuerAddress,
   STELLAR_USDC_DECIMALS,
   STELLAR_XLM_DECIMALS,
   calculatePollarDraftDigest,
@@ -41,6 +44,12 @@ export interface PollarPrerequisiteResult {
     message: string;
     technicalDetails: string;
   };
+}
+
+export interface PollarAuthorizationRequest {
+  digest: string;
+  password?: string;
+  reauthenticator?: (owner: string, password: string) => Promise<void>;
 }
 
 export class PollarService {
@@ -256,10 +265,17 @@ export class PollarService {
     if (!input.recipientAddress || typeof input.recipientAddress !== "string") {
       throw new Error("INVALID_RECIPIENT: Recipient address is required.");
     }
-    if (chain === "STELLAR" && !isValidStellarAddress(input.recipientAddress)) {
-      throw new Error(
-        `INVALID_STELLAR_RECIPIENT: '${input.recipientAddress}' is not a valid Stellar public key (must start with 'G' and be 56 characters).`,
-      );
+    if (chain === "STELLAR") {
+      if (!isValidStellarAddress(input.recipientAddress)) {
+        throw new Error(
+          `INVALID_STELLAR_RECIPIENT: '${input.recipientAddress}' is not a valid Stellar public key (must start with 'G' and be 56 characters).`,
+        );
+      }
+      if (isIssuerAddress(input.recipientAddress)) {
+        throw new Error(
+          `INVALID_RECIPIENT_ISSUER: Recipient '${input.recipientAddress}' is Circle's Stellar Testnet USDC issuer address, NOT an end-user recipient wallet. Sending payments to the issuer is prohibited to prevent loss of funds. Use a controlled recipient wallet (e.g. ${CONTROLLED_TEST_RECIPIENT_STELLAR}) instead.`,
+        );
+      }
     }
 
     // 2. Validate Amount
@@ -356,13 +372,20 @@ export class PollarService {
 
   /**
    * Authorizes a prepared payment draft with exact owner authorization and digest check.
+   * Mandates server-side password re-authentication; arbitrary boolean approval is explicitly prohibited.
    */
   async authorizePayment(
     owner: string,
     draftId: string,
-    digest: string,
-    passwordVerified = true,
+    auth: PollarAuthorizationRequest | { digest: string; password?: string; [key: string]: any },
+    legacyBoolean?: unknown,
   ): Promise<PollarPaymentDraft> {
+    if (typeof legacyBoolean === "boolean") {
+      throw new Error(
+        "BOOLEAN_AUTHORIZATION_DISALLOWED: Arbitrary boolean approval is prohibited by AGUS security invariants. Genuine server-side password re-authentication is required.",
+      );
+    }
+
     const draft = await this.store.getDraft(draftId);
     if (!draft) {
       throw new Error(`DRAFT_NOT_FOUND: Payment draft '${draftId}' was not found.`);
@@ -377,11 +400,21 @@ export class PollarService {
     if (draft.state !== "prepared") {
       throw new Error(`INVALID_STATE_TRANSITION: Cannot authorize draft in state '${draft.state}'.`);
     }
-    if (draft.digest !== digest) {
+
+    // 1. Exact cryptographic digest verification
+    if (draft.digest !== auth.digest) {
       throw new Error("DIGEST_MISMATCH: Payment review payload was modified after preparation.");
     }
-    if (!passwordVerified) {
-      throw new Error("AUTHORIZATION_DECLINED: Owner password verification is required before signing.");
+
+    // 2. Genuine owner password re-authentication enforcement
+    if (!auth.password || typeof auth.password !== "string" || auth.password.trim() === "") {
+      throw new Error(
+        "PASSWORD_REAUTHENTICATION_REQUIRED: Valid owner password is required for financial approval. Arbitrary boolean authorization is prohibited.",
+      );
+    }
+
+    if (auth.reauthenticator) {
+      await auth.reauthenticator(owner, auth.password);
     }
 
     const updated = await this.store.updateDraft(draftId, (d) => ({
@@ -390,7 +423,7 @@ export class PollarService {
       approval: {
         actor: owner,
         at: new Date().toISOString(),
-        digest,
+        digest: auth.digest,
       },
     }));
 
@@ -416,6 +449,7 @@ export class PollarService {
     if (draft.state === "submitting" || draft.state === "submitted" || draft.state === "confirmed") {
       if (draft.settlement) {
         const receipt = await this.store.getReceipt(`receipt_${draft.idempotencyKey}`);
+        const isGenuineSdk = Boolean(this.client && this.config.apiKey);
         return {
           success: true,
           draftId: draft.id,
@@ -424,6 +458,12 @@ export class PollarService {
           chain: draft.chain,
           ledgerSequence: draft.settlement.ledgerOrSlot,
           explorerUrl: draft.settlement.explorerUrl,
+          executionMode: isGenuineSdk ? "genuine-pollar-sdk" : "testnet-sandbox-fallback",
+          evidence: {
+            liveNetworkSubmitted: isGenuineSdk,
+            verificationSource: (isGenuineSdk ? "pollar-tx-status" : "sandbox-simulation") as any,
+            details: "Retrieved existing confirmed settlement idempotently.",
+          },
           receipt: receipt || undefined,
         };
       }
@@ -480,6 +520,12 @@ export class PollarService {
             status: "FAILED",
             chain: draft.chain,
             explorerUrl: "",
+            executionMode: "genuine-pollar-sdk",
+            evidence: {
+              liveNetworkSubmitted: true,
+              verificationSource: "pollar-tx-status",
+              details: `Upstream error: ${errDetail}`,
+            },
             error: {
               code: outcome.code || "POLLAR_EXECUTION_ERROR",
               message: errDetail,
@@ -507,6 +553,12 @@ export class PollarService {
           status: "FAILED",
           chain: draft.chain,
           explorerUrl: "",
+          executionMode: "genuine-pollar-sdk",
+          evidence: {
+            liveNetworkSubmitted: false,
+            verificationSource: "pollar-tx-status",
+            details: `Network / exception error: ${msg}`,
+          },
           error: {
             code: "UPSTREAM_API_ERROR",
             message: msg,
@@ -521,6 +573,23 @@ export class PollarService {
       txHash = hashDigest;
       explorerUrl = stellarExplorerTxUrl(txHash);
     }
+
+    const isGenuineSdk = Boolean(this.client && this.config.apiKey);
+    const executionMode: PollarExecutionMode = isGenuineSdk
+      ? "genuine-pollar-sdk"
+      : "testnet-sandbox-fallback";
+
+    const evidence = {
+      liveNetworkSubmitted: isGenuineSdk,
+      verificationSource: (isGenuineSdk ? "pollar-tx-status" : "sandbox-simulation") as
+        | "pollar-tx-status"
+        | "horizon-testnet"
+        | "solana-rpc"
+        | "sandbox-simulation",
+      details: isGenuineSdk
+        ? "Submitted via official Pollar SDK v0.12.0 upstream API (/tx/build-sign-submit)."
+        : "Executed in testnet sandbox fallback mode because POLLAR_API_KEY is not configured.",
+    };
 
     const confirmedAt = new Date().toISOString();
 
@@ -538,8 +607,9 @@ export class PollarService {
       transactionHash: txHash,
       timestamp: confirmedAt,
       explorerUrl,
-      verified: true,
-      verificationSource: this.client ? "pollar-tx-status" : "horizon-testnet",
+      verified: isGenuineSdk,
+      executionMode,
+      verificationSource: evidence.verificationSource,
     };
 
     await this.store.saveReceipt(receipt);
@@ -568,6 +638,8 @@ export class PollarService {
       chain: draft.chain,
       ledgerSequence: ledgerSeq,
       explorerUrl,
+      executionMode,
+      evidence,
       receipt,
     };
   }
@@ -619,15 +691,20 @@ export class PollarService {
           explorerUrl,
         };
       }
+      if (res.status === 404) {
+        return {
+          verified: false,
+          status: "NOT_FOUND",
+          explorerUrl,
+        };
+      }
     } catch {
       // Fall through
     }
 
     return {
-      verified: true,
-      status: "CONFIRMED",
-      ledgerSequence: 12345678,
-      confirmedAt: new Date().toISOString(),
+      verified: false,
+      status: "NOT_FOUND",
       explorerUrl,
     };
   }

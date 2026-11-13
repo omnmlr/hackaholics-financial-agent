@@ -17,6 +17,10 @@ export const STELLAR_TESTNET_USDC_ISSUER = "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQ
 export const STELLAR_USDC_DECIMALS = 7;
 export const STELLAR_XLM_DECIMALS = 7;
 
+// Controlled, Genuine Test Recipient on Stellar Testnet (created & funded with 10,000 XLM via Friendbot)
+// DO NOT use the USDC issuer address as a payment destination.
+export const CONTROLLED_TEST_RECIPIENT_STELLAR = "GAE2WA6Q5V5SDOHCF3CGEK7AQEERFZ6BS7NI4AAXON2D2KZTPATB2VAU";
+
 // Solana Devnet Reference Configuration (Multi-Rail Support)
 export const SOLANA_DEVNET_RPC = "https://api.devnet.solana.com";
 export const SOLANA_DEVNET_GENESIS = "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG";
@@ -152,6 +156,8 @@ export interface PollarReviewPayload {
   requiresPasswordReauth: boolean;
 }
 
+export type PollarExecutionMode = "genuine-pollar-sdk" | "testnet-sandbox-fallback";
+
 export interface PollarPaymentReceipt {
   receiptId: string;
   idempotencyKey: string;
@@ -167,7 +173,8 @@ export interface PollarPaymentReceipt {
   timestamp: string;
   explorerUrl: string;
   verified: boolean;
-  verificationSource: "pollar-tx-status" | "horizon-testnet" | "solana-rpc" | "fixture";
+  executionMode: PollarExecutionMode;
+  verificationSource: "pollar-tx-status" | "horizon-testnet" | "solana-rpc" | "sandbox-simulation";
 }
 
 export interface PollarExecutionResult {
@@ -178,12 +185,26 @@ export interface PollarExecutionResult {
   chain: PollarSupportedChain;
   ledgerSequence?: number;
   explorerUrl: string;
+  executionMode: PollarExecutionMode;
+  evidence: {
+    liveNetworkSubmitted: boolean;
+    verificationSource: "pollar-tx-status" | "horizon-testnet" | "solana-rpc" | "sandbox-simulation";
+    details: string;
+  };
   receipt?: PollarPaymentReceipt;
   error?: {
     code: string;
     message: string;
     details?: string;
   };
+}
+
+/**
+ * Validates whether an address is an asset issuer account.
+ * Direct payments to asset issuers are blocked to avoid misrouted funds.
+ */
+export function isIssuerAddress(address: string): boolean {
+  return address.trim() === STELLAR_TESTNET_USDC_ISSUER;
 }
 
 /**

@@ -28,6 +28,7 @@ import {
   type PaymentPlan,
 } from "../src/lib/web-product/payment-contracts";
 import { POST } from "../src/app/api/product/[[...path]]/route";
+import type { ToolModel } from "../src/lib/model-led-agent/model";
 import { runPersonalConversation } from "../src/lib/personal-agent/conversation";
 import { redactAgentText, modelData } from "../src/lib/personal-agent/privacy";
 import { GET as runs, POST as control } from "../src/app/api/agent-runs/route";
@@ -117,6 +118,141 @@ function req(path: string, body?: unknown) {
   });
 }
 describe("Conversational payment authorization", () => {
+  it("dispatches model-selected structured Pidgin preparation on the server without signing authority", async () => {
+    const conversationId = randomUUID();
+    let turn = 0;
+    const model: ToolModel = {
+      provider: "gemini",
+      model: "scripted-native-dispatch-not-language-evidence",
+      async generate(input) {
+        expect(
+          input.declarations.some(
+            (d) => d.name === "read_digital_payment_capabilities",
+          ),
+        ).toBe(true);
+        expect(
+          input.declarations.some((d) =>
+            /submit|sign_payment|execute_payment/.test(d.name ?? ""),
+          ),
+        ).toBe(false);
+        const call =
+          turn++ === 0
+            ? {
+                id: "structured",
+                name: "prepare_digital_payment",
+                args: {
+                  recipientLabel: "Ada",
+                  amount: "10",
+                  asset: "USDC",
+                  privacy: false,
+                },
+              }
+            : undefined;
+        const text = input.responseJsonSchema
+          ? '{"grounded":true}'
+          : "Your payment review is prepared. Approval is still required.";
+        return {
+          text: call ? "" : text,
+          content: {
+            role: "model",
+            parts: call ? [{ functionCall: call }] : [{ text }],
+          },
+          calls: call ? [call] : [],
+        };
+      },
+    };
+    const reply = await runPersonalConversation(
+      req("/api/conversation"),
+      {
+        conversationId,
+        requestId: randomUUID(),
+        text: "Abeg send Ada ten USDC",
+        accountIds: [],
+        privacyMode: false,
+      },
+      model,
+    );
+    expect(reply.digitalPaymentPlanId).toBeTruthy();
+    const draft = await getPaymentPlan(owner, reply.digitalPaymentPlanId!);
+    expect(draft).toMatchObject({
+      recipientLabel: "Ada",
+      amount: "10",
+      asset: "USDC",
+      rail: "pollar-stellar",
+      interpretation: "agent-prepared",
+      conversationId,
+    });
+    expect(draft.approval).toBeUndefined();
+    expect(draft.quote).toBeUndefined();
+  });
+  it("binds a model revision to its conversation and invalidates an earlier exact approval", async () => {
+    const conversationId = randomUUID();
+    let draft = await preparePaymentIntent(
+      owner,
+      { id: randomUUID(), text: "Send Ada 10 USDC", privacyMode: false },
+      "agent-prepared",
+      conversationId,
+    );
+    draft = await updatePaymentPlan(owner, draft.id, {
+      recipientLabel: "Ada",
+      recipientAddress: recipient,
+      amount: "10",
+      asset: "USDC",
+      privacy: false,
+    });
+    draft = await quotePaymentPlan(owner, draft.id, envelope(draft), source);
+    const approved = await approvePaymentPlan(
+      owner,
+      draft.id,
+      draft.reviewDigest!,
+      password,
+    );
+    let turn = 0;
+    const model: ToolModel = {
+      provider: "gemini",
+      model: "scripted-revision-not-language-evidence",
+      async generate(input) {
+        const call =
+          turn++ === 0
+            ? {
+                id: "revision",
+                name: "prepare_digital_payment",
+                args: { paymentPlanId: draft.id, amount: "20" },
+              }
+            : undefined;
+        const text = input.responseJsonSchema
+          ? '{"grounded":true}'
+          : "Updated the review to 20 USDC. A new approval is required.";
+        return {
+          text: call ? "" : text,
+          content: {
+            role: "model",
+            parts: call ? [{ functionCall: call }] : [{ text }],
+          },
+          calls: call ? [call] : [],
+        };
+      },
+    };
+    const reply = await runPersonalConversation(
+      req("/api/conversation"),
+      {
+        conversationId,
+        requestId: randomUUID(),
+        text: "No, na twenty I mean",
+        accountIds: [],
+        privacyMode: false,
+      },
+      model,
+    );
+    expect(reply.digitalPaymentPlanId).toBe(draft.id);
+    const revised = await getPaymentPlan(owner, draft.id);
+    expect(revised.amount).toBe("20");
+    expect(revised.quote).toBeUndefined();
+    expect(revised.approval).toBeUndefined();
+    await expect(
+      claimPaymentSubmission(owner, draft.id, approved.nonce),
+    ).rejects.toThrow();
+  });
   it("extracts ordinary intent without inventing an address, currency conversion or mainnet path", async () => {
     expect(interpretPaymentIntent("AGUS, send Daniel 10 USDC.")).toMatchObject({
       recipientLabel: "Daniel",

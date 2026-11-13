@@ -1,3 +1,5 @@
+> **Archived upstream claims, not integration acceptance.** See [the source audit](INTEGRATION.md) for exclusions, actual verification and remaining blockers.
+
 # AGUS 2.0 — Zcash Shielded Conversational Payments
 ## Codex Integration Handoff & Technical Specification
 **Event:** BlockchainUNN Conference 5.0 — Intelligence Without Borders Hackathon  

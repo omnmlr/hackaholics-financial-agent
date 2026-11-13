@@ -102,6 +102,7 @@ export type AgentReply = {
   };
   handoff?: { kind: "existing_payment_draft" };
   paymentDraftId?: string;
+  digitalPaymentPlanId?: string;
   payments?: import("./presentation").PaymentPresentation;
   accountAction?: "choose_demo_account";
   evidence: {

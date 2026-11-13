@@ -54,7 +54,9 @@
     "test:escrow": "cargo test --manifest-path escrow/Cargo.toml --locked --features bank-tests",
     "test:marketplace": "node scripts/run-marketplace-tests.mjs",
     "build:escrow:sbf": "node scripts/build-escrow-sbf.mjs",
-    "test:escrow:sbf": "node scripts/test-escrow-sbf.mjs"
+    "test:escrow:sbf": "node scripts/test-escrow-sbf.mjs",
+    "test:browser:pollar": "node scripts/browser-agus-pollar.mjs",
+    "verify:agent:language": "node scripts/verify-agent-language.mjs"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.19",

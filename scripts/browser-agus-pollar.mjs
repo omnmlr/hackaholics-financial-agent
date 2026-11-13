@@ -1,3 +1,4 @@
+/* global URL */
 // Actual official SDK + browser/API/SQL. All provider/network HTTP is MOCKED.
 // No genuine credentials, signing keys, blockchain submissions or balances.
 import { chromium } from "playwright";
@@ -81,7 +82,7 @@ try {
         ready = true;
         break;
       }
-    } catch {}
+    } catch { /* production server is starting */ }
     await new Promise((r) => setTimeout(r, 200));
   }
   assert.ok(ready, output);
@@ -175,6 +176,8 @@ try {
           },
         ],
       };
+    } else if (path.endsWith("/cosign/requests")) {
+      content = { requests: [] };
     } else if (path.endsWith("/wallet/assets")) {
       content = { chains: [{ chain: "STELLAR", exists: true, assets: [] }] };
     } else if (path.endsWith("/tx/build")) {
@@ -259,6 +262,10 @@ try {
   });
   assert.equal(invoice.status(), 201);
   const savedInvoice = await invoice.json();
+  await page.reload();
+  await page
+    .getByRole("heading", { name: "Your money", exact: true })
+    .waitFor();
   await page
     .getByRole("textbox", { name: "Ask AGUS", exact: true })
     .fill("Send Example recipient 10 USDC");
@@ -312,6 +319,9 @@ try {
     .click();
   await dialog
     .getByRole("button", { name: "Sign & send approved test payment" })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Confirm wallet signing", exact: true })
     .click();
   await dialog.getByRole("button", { name: "Check settlement" }).waitFor();
   let state = await (await context.request.get(`${base}/api/product`)).json();
@@ -385,6 +395,7 @@ try {
         fullPage: true,
       })
       .catch(() => {});
+  console.error(JSON.stringify({ sends, paths, errors }));
   console.error(output);
   throw error;
 } finally {

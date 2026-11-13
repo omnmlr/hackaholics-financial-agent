@@ -2455,7 +2455,7 @@ function Assistant({
   const mode = useRef(privacyMode);
   useEffect(() => {
     if (mode.current !== privacyMode) {
-      conversation.current = null;
+      if (!privacyMode) conversation.current = null;
       mode.current = privacyMode;
     }
   }, [privacyMode]);
@@ -2511,7 +2511,10 @@ function Assistant({
       setMessages((m) => [...m, { role: "user", text }]);
       setQuestion("");
       try {
-        if (looksLikePaymentIntent(text)) {
+        if (
+          !snapshot.capabilities.ai.configured &&
+          looksLikePaymentIntent(text)
+        ) {
           const plan = await productApi<PaymentPlan>("product/payment-plans", {
             id: crypto.randomUUID(),
             text,
@@ -2554,6 +2557,13 @@ function Assistant({
             id: conversation.current!,
           },
         ]);
+        if (result.reply.digitalPaymentPlanId) {
+          const plan = await productApi<PaymentPlan>(
+            `product/payment-plans/${result.reply.digitalPaymentPlanId}`,
+          );
+          setSelectedPlan(plan);
+          if (plan.privacy) setPrivacyMode(true);
+        }
         await refresh();
       } catch (e) {
         setError(

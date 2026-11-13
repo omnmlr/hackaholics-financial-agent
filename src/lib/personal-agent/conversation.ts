@@ -51,7 +51,7 @@ export async function runPersonalConversation(
     ...input,
     privacyMode:
       !!input.privacyMode ||
-      /\b(?:privately|shielded|privacy mode)\b/i.test(input.text),
+      /\b(?:private|privately|shielded|privacy mode)\b/i.test(input.text),
   };
   const owner = await operator(req);
   const journal = runJournal(owner);
@@ -242,30 +242,167 @@ export async function runPersonalConversation(
       };
     },
   });
+  // Model-selected proposals only. Exact addresses, credentials, approval and
+  // signing remain in the authenticated owner/provider boundary.
+  const {
+    listPaymentPlans,
+    getPaymentPlan,
+    preparePaymentIntent,
+    updatePaymentPlan,
+    verifyOutgoingPayment,
+  } = await import("../web-product/conversational-payments");
+  const paymentContext = (await listPaymentPlans(owner))
+    .filter((plan) => plan.conversationId === input.conversationId)
+    .slice(0, 5)
+    .map(({ id, recipientLabel, amount, asset, privacy, state }) => ({
+      id,
+      recipientLabel,
+      amount,
+      asset,
+      privacy,
+      state,
+    }));
+  let preparedPaymentPlanId: string | undefined;
+  const PrepareDigital = z.strictObject({
+    recipientLabel: z.string().trim().min(1).max(100).optional(),
+    amount: z
+      .string()
+      .regex(/^(?:0|[1-9]\d{0,8})(?:\.\d{1,8})?$/)
+      .optional(),
+    asset: z
+      .enum(["USDC", "ZEC", "BTC", "ETH", "SOL", "NGN", "USD"])
+      .optional(),
+    privacy: z.boolean().optional(),
+    paymentPlanId: z.uuid().optional(),
+  });
   tools.push({
     declaration: declaration(
-      "prepare_digital_payment",
-      "Prepare a Pollar USDC standard payment or a Zcash ZEC shielded payment review from the user's original current words. No execution or approval. Missing details and unsupported privacy routes remain blocked. Recipient wallet addresses are entered only in the trusted owner UI and never returned to this model. Do not claim a BTC payout is made private by Zcash.",
+      "read_digital_payment_capabilities",
+      "Discover actual Pollar standard and Zcash private payment support before preparing a digital payment. Includes unavailable prerequisites. Never implies mainnet access or a cross-chain bridge.",
       Empty,
     ),
     schema: Empty,
+    effect: "read",
+    idempotent: true,
+    async execute() {
+      const { pollarConfiguration } = await import("../web-product/rails");
+      return {
+        summary:
+          "Testnet payment capabilities. Only an owner-approved wallet can sign; no model spending tool exists.",
+        data: {
+          network: "testnet",
+          pollar: {
+            asset: "USDC",
+            configured: pollarConfiguration().configured,
+            standard: true,
+            shielded: false,
+          },
+          zcash: {
+            asset: "ZEC",
+            shieldedRequests: true,
+            shieldedSending: false,
+            receivingVerificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
+          },
+          bankLinking: false,
+          mainnet: false,
+        },
+      };
+    },
+  });
+  tools.push({
+    declaration: declaration(
+      "read_digital_payment_status",
+      "Read the owner's saved digital payment status. For submitted payments, independently check network evidence. Prepared and approved states are not sent. No signing, retries or spending. IDs and sanitized terms are available in conversationPaymentReviews.",
+      z.strictObject({ paymentPlanId: z.uuid() }),
+    ),
+    schema: z.strictObject({ paymentPlanId: z.uuid() }),
+    effect: "read",
+    idempotent: true,
+    async execute(rawArgs) {
+      const args = z.strictObject({ paymentPlanId: z.uuid() }).parse(rawArgs);
+      let plan = await getPaymentPlan(owner, args.paymentPlanId);
+      let verification = "No submitted transaction to check.";
+      if (["submitting", "pending", "unknown"].includes(plan.state)) {
+        try {
+          plan = await verifyOutgoingPayment(owner, plan.id);
+          verification =
+            plan.state === "confirmed"
+              ? "Independently verified on Stellar testnet."
+              : "Not confirmed.";
+        } catch {
+          verification =
+            "Independent confirmation is unavailable or pending. Do not resend.";
+        }
+      }
+      return {
+        summary: verification,
+        data: {
+          paymentPlanId: plan.id,
+          state: plan.state,
+          recipientLabel: plan.recipientLabel,
+          amount: plan.amount,
+          asset: plan.asset,
+          privacy: plan.privacy,
+          network: "testnet",
+          confirmed: plan.state === "confirmed",
+          blockers: plan.blockers,
+        },
+      };
+    },
+  });
+  tools.push({
+    declaration: declaration(
+      "prepare_digital_payment",
+      "Prepare a Pollar USDC standard payment or Zcash ZEC shielded review. Interpret English/Pidgin, typos and contextual revisions into structured recipientLabel, amount, asset and privacy. Do not guess ambiguous currencies or recipients: ask. For a correction, use paymentPlanId from conversationPaymentReviews; this invalidates prior quotes and approval. No execution, approval, wallet address or credential arguments. Never claim a request URI sends funds. Empty arguments retain the legacy extraction fallback only.",
+      PrepareDigital,
+    ),
+    schema: PrepareDigital,
     effect: "proposal",
     idempotent: true,
-    async execute(_args, ctx) {
+    async execute(rawArgs, ctx) {
+      const args = PrepareDigital.parse(rawArgs);
       const hash = createHash("sha256")
         .update(`${owner}:${ctx.key}`)
         .digest("hex");
       const id = `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
-      const { preparePaymentIntent } =
-        await import("../web-product/conversational-payments");
-      const plan = await preparePaymentIntent(
-        owner,
-        { id, text: input.text, privacyMode: !!input.privacyMode },
-        "agent-prepared",
-      );
+      let plan;
+      if (args.paymentPlanId) {
+        const previous = await getPaymentPlan(owner, args.paymentPlanId);
+        if (previous.conversationId !== input.conversationId)
+          throw new AppError(
+            "Choose a payment in this conversation before revising it.",
+            409,
+          );
+        const sameRecipient =
+          (!args.recipientLabel ||
+            args.recipientLabel === previous.recipientLabel) &&
+          (!args.asset || args.asset === previous.asset);
+        plan = await updatePaymentPlan(owner, previous.id, {
+          recipientLabel: args.recipientLabel ?? previous.recipientLabel,
+          recipientAddress: sameRecipient
+            ? (previous.recipientAddress ?? "")
+            : "",
+          amount: args.amount ?? previous.amount ?? "",
+          asset: args.asset ?? previous.asset ?? "UNSPECIFIED",
+          privacy: !!input.privacyMode || (args.privacy ?? previous.privacy),
+          saveContact: false,
+        });
+      } else {
+        const structured = args.recipientLabel || args.amount || args.asset;
+        const text = structured
+          ? `Send ${args.recipientLabel ?? ""} ${args.amount ?? ""} ${args.asset ?? ""}${args.privacy || input.privacyMode ? " privately" : ""}${/\bmainnet\b/i.test(input.text) ? " on mainnet" : ""}`
+          : input.text;
+        plan = await preparePaymentIntent(
+          owner,
+          { id, text, privacyMode: !!input.privacyMode },
+          "agent-prepared",
+          input.conversationId,
+        );
+      }
+      preparedPaymentPlanId = plan.id;
       return {
         summary:
-          "A saved payment review is ready for the owner to complete; no payment is approved or executed.",
+          "A saved payment review is ready. No approval, signing or payment occurred.",
         data: {
           paymentPlanId: plan.id,
           state: plan.state,
@@ -427,6 +564,7 @@ export async function runPersonalConversation(
     },
   ]);
   const context = {
+    conversationPaymentReviews: paymentContext,
     confirmedUserStatements: saved.memories
       .filter((m) => m.confirmed)
       .slice(-8),
@@ -463,8 +601,9 @@ export async function runPersonalConversation(
     context: input.privacyMode
       ? {
           privacyMode: true,
+          conversationPaymentReviews: paymentContext,
           disclosure:
-            "Private mode omits saved conversation history, account details, memory and responsibility metadata. Only the current user message and minimized tool responses are provided. Wallet signing and approval remain outside the model. Zcash does not make Bitcoin private.",
+            "Private mode omits saved conversation history, account details, memory and responsibility metadata. Only the current message, minimal pending terms for this conversation and minimized tool responses are provided. Wallet signing and approval remain outside the model. Zcash does not make Bitcoin private.",
         }
       : context,
     tools: input.privacyMode
@@ -473,10 +612,23 @@ export async function runPersonalConversation(
             "calculate",
             "read_agus_financial_snapshot",
             "prepare_digital_payment",
+            "read_digital_payment_capabilities",
+            "read_digital_payment_status",
           ].includes(tool.declaration.name ?? ""),
         )
       : tools,
     signal: req.signal,
   }).run({ id: run.id, resume: !!input.resumeRunId });
-  return { ...reply, evidence: { ...reply.evidence, modelCalls } };
+  return {
+    ...reply,
+    ...(preparedPaymentPlanId && reply.execution?.reason
+      ? {
+          text: "Your payment review is saved. Chat couldn’t finish the reply; please try again later.",
+        }
+      : {}),
+    ...(preparedPaymentPlanId
+      ? { digitalPaymentPlanId: preparedPaymentPlanId }
+      : {}),
+    evidence: { ...reply.evidence, modelCalls },
+  };
 }

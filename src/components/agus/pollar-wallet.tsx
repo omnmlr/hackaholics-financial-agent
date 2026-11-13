@@ -5,6 +5,7 @@ import type {
   PollarClient,
   AuthState,
   WalletBalanceContent,
+  PendingConfirmation,
 } from "@pollar/core";
 import type {
   PaymentRequest,
@@ -23,6 +24,7 @@ export function PollarWallet({
   paymentPlan,
   approvalNonce,
   onPlanChange,
+  onError,
 }: {
   config: ProductSnapshot["capabilities"]["pollar"];
   request?: PaymentRequest;
@@ -31,6 +33,7 @@ export function PollarWallet({
   paymentPlan?: PaymentPlan;
   approvalNonce?: string;
   onPlanChange?: (plan: PaymentPlan) => void;
+  onError?: (message: string) => void;
 }) {
   const client = useRef<PollarClient | null>(null);
   const subscriptions = useRef<(() => void)[]>([]);
@@ -46,6 +49,9 @@ export function PollarWallet({
   const [reviewed, setReviewed] = useState(false);
   const [requestPassword, setRequestPassword] = useState("");
   const sending = useRef(false);
+  const approvedXdr = useRef<string | undefined>(undefined);
+  const approvedRequest = useRef<PaymentRequest | undefined>(undefined);
+  const [confirmations, setConfirmations] = useState<PendingConfirmation[]>([]);
   useEffect(() => {
     alive.current = true;
     return () => {
@@ -85,6 +91,29 @@ export function PollarWallet({
       }
       client.current = sdk;
       subscriptions.current = [
+        sdk.onConfirmationRequest((pending) => {
+          const matched = pending.filter((confirmation) => {
+            const expected = approvedRequest.current;
+            const asset = confirmation.details?.asset as
+              { code?: string; issuer?: string } | undefined;
+            const valid =
+              sending.current &&
+              confirmation.network === "STELLAR" &&
+              ((confirmation.kind === "sign_and_send" &&
+                confirmation.unsignedXdr === approvedXdr.current &&
+                !!approvedXdr.current) ||
+                (confirmation.kind === "build_sign_submit" &&
+                  confirmation.operation === "payment" &&
+                  !!expected &&
+                  confirmation.details?.destination === expected.recipient &&
+                  confirmation.details?.amount === expected.amount &&
+                  asset?.code === "USDC" &&
+                  asset?.issuer === expected.issuer));
+            if (!valid) confirmation.reject();
+            return valid;
+          });
+          if (alive.current) setConfirmations(matched);
+        }),
         sdk.onAuthStateChange((state) => {
           if (!alive.current) return;
           setAuth(state);
@@ -165,6 +194,7 @@ export function PollarWallet({
         reviewDigest: request.reviewDigest,
       });
       setRequestPassword("");
+      approvedRequest.current = request;
       if (!selectedSource || sdk.getWallet()?.address !== selectedSource)
         throw new Error(
           "The selected wallet changed after review. Check the saved request; no automatic send retry is authorized.",
@@ -204,6 +234,8 @@ export function PollarWallet({
     } finally {
       setBusy(false);
       sending.current = false;
+      approvedXdr.current = undefined;
+      approvedRequest.current = undefined;
     }
   }
 
@@ -302,11 +334,16 @@ export function PollarWallet({
         throw new Error(
           "The selected wallet changed. No further signing attempt is authorized.",
         );
+      approvedXdr.current = send.unsignedXdr;
       const result = await sdk.signAndSubmitTx(send.unsignedXdr);
       const hash =
         result.status === "success" || result.status === "pending"
           ? result.hash
           : undefined;
+      if (!hash)
+        onError?.(
+          "The wallet did not return a submitted transaction. Check settlement before trying another payment.",
+        );
       const outcome = await productApi<PaymentPlan>(
         `product/payment-plans/${plan.id}/outcome`,
         {
@@ -342,6 +379,9 @@ export function PollarWallet({
           /* reservation remains consumed */
         }
       }
+      onError?.(
+        "The wallet outcome is uncertain. Check settlement before trying another payment.",
+      );
       setError(
         e instanceof Error
           ? e.message
@@ -350,6 +390,8 @@ export function PollarWallet({
     } finally {
       setBusy(false);
       sending.current = false;
+      approvedXdr.current = undefined;
+      approvedRequest.current = undefined;
     }
   }
 
@@ -362,6 +404,30 @@ export function PollarWallet({
         <span className={s.pill}>Stellar testnet</span>
       </div>
       <p className={s.muted}>Connect by email or with your wallet.</p>
+      {confirmations.map((confirmation) => (
+        <div className={s.notice} key={confirmation.id}>
+          <div>
+            <strong>Confirm in your wallet</strong>
+            <p>Send the Testnet payment you just approved?</p>
+            <div className={s.buttonRow}>
+              <button
+                type="button"
+                className={s.primary}
+                onClick={confirmation.confirm}
+              >
+                Confirm wallet signing
+              </button>
+              <button
+                type="button"
+                className={s.secondary}
+                onClick={confirmation.reject}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
       {!config.configured ? (
         <div className={s.notice}>Wallet connection unavailable.</div>
       ) : !ready ? (

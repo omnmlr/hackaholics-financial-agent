@@ -347,6 +347,7 @@ export function PaymentReview({
               paymentPlan={plan}
               approvalNonce={nonce}
               onPlanChange={onChange}
+              onError={setError}
             />
           </div>
         )}

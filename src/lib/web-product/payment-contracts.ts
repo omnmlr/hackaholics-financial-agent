@@ -15,6 +15,7 @@ export type PaymentPlanState =
 export type PaymentPlan = {
   id: string;
   owner: string;
+  conversationId?: string;
   interpretation: "local-intent-parser" | "agent-prepared";
   originalIntent: string;
   recipientLabel: string;

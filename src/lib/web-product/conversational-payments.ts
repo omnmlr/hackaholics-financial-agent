@@ -183,6 +183,7 @@ export async function preparePaymentIntent(
   owner: string,
   raw: unknown,
   interpretation: PaymentPlan["interpretation"] = "local-intent-parser",
+  conversationId?: string,
 ) {
   const input = IntentInput.parse(raw);
   await initializeProduct();
@@ -210,6 +211,7 @@ export async function preparePaymentIntent(
     const plan: PaymentPlan = {
       id: input.id,
       owner,
+      ...(conversationId ? { conversationId } : {}),
       interpretation,
       originalIntent: cleanedIntent,
       ...extracted,

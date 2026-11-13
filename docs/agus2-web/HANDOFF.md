@@ -22,7 +22,8 @@ Set `AGUS_PREVIEW_ORIGIN` to an exact forwarded HTTPS origin if accessing throug
 
 ## What is implemented
 
-- Monochrome responsive overview, separate Naira statement balance and digital-asset USD valuation, collapsible summary and independent amount masking.
+- Refined consumer Home with historical balances only when imported, separate currencies, amount masking/collapse, a working conversation composer and direct send/request/private actions. No invented portfolio valuation or generic insight cards.
+- Optional first-action onboarding, persisted per owner across restarts, with skip/replay and no wallet requirement. Disabled bank linking uses a concise Coming soon control.
 - Original AGUS companion, black-first typography and navigation, desktop sidebar and mobile navigation.
 - Existing authenticated single-operator session entry, server logout/revocation and password reauthentication for conversational payment approval. This is **not** a new multi-user consumer login: people using the same operator login share its records.
 - Persisted receivable/payable obligations linked to the existing responsibility service. Reminder approval/pause/resume stays separate from payment authority.
@@ -31,26 +32,26 @@ Set `AGUS_PREVIEW_ORIGIN` to an exact forwarded HTTPS origin if accessing throug
 - Conversational standard/private payment proposals, exact trusted recipient review, user-saved contacts, linked payable obligations and explicit blocked states for unsupported currencies, privacy routes or networks.
 - Pollar SDK transaction build/signing boundary: parse the actual provider-built Stellar envelope; match amount, asset, issuer, recipient, memo and selected source; cap network fee at 0.01 XLM; require expiry; bind password approval to the exact envelope; consume one authorization before wallet signing. Interrupted sends remain non-retryable until independently checked.
 - Activity and obligation links back to outgoing reviews/receipts. Independently confirmed payments complete only the matching obligation/responsibility; changed obligations require separate review.
-- Existing personal agent connected to imported financial records and saved obligations. Deterministic snapshot and local payment-intent parser are labelled separately from model inference.
+- Existing personal agent connected to imported financial records and saved obligations. Configured chat dispatches through the server-side native Gemini engine. Capability, structured payment preparation/revision and status tools are registered with the actual model. A local extraction fallback is available only when AI is not configured. Sources remain inspectable.
 - Privacy Mode closes the companion’s eyes **and** restricts backend model context/tools. It omits saved history/memory, account values and private wallet metadata; private addresses are entered in the owner view. Viewing/spending-key redaction is enforced before model serialization. What the user types into chat may still be visible to the model.
 - Existing full conversation, legacy approval/payment workflows and Solana devnet workspace remain available at `/conversation` and `/devnet`.
 
 ## Genuine, mocked and blocked
 
-| Capability | Evidence / status |
-| --- | --- |
-| Web application, SQL persistence and authenticated APIs | Genuine local production application. Browser acceptance exercises the API and database. |
-| Multi-account intelligence | Integrated from `feature/multi-account-intelligence` at `2031112ecdaaf99781786eaedf1695c75bbac433`. The initial checkout `292d0b1` was its ancestor; integration used a verified fast-forward on a dedicated branch. Existing migration checksums were preserved. |
-| Gemini financial guidance | **Genuine successful call** using `gemini-3.5-flash-lite`, including `read_agus_financial_snapshot`. Both API and browser evidence are retained. A separate `gemini-3.8-flash` attempt returned provider HTTP 503; no fallback transaction or fabricated response was produced. |
-| Official Pollar SDK | `@pollar/core@0.12.0` installed and used. SDK initialization/config/balance calls are tested with controlled transport. Actual onboarding and signing remain **unverified**, pending this app’s testnet key, issuer and wallet access. |
-| Stellar network | Genuine Horizon testnet root responded with the testnet passphrase and ledger metadata. Receipt validation uses the fixed testnet endpoint. This read is **not** proof of any settlement. |
-| Pollar send authorization | Real server logic and actual Stellar XDR parsing, with controlled test envelopes/receipts. No genuine sponsor testnet transfer was made. Fee-bump/multi-operation envelopes deliberately require further integration review. |
-| Zcash requests | Real ZIP 321 encoding, shielded Sapling testnet address encoding/checksum checks, base64url memo and wallet URI/QR. This does not prove receipt or enforce a shielded sending account. |
-| Zcash receiving verification | Implemented read-only `zcashd` receiving-wallet RPC contract and verified with mocked transport. Requires synchronized testnet wallet viewing access, exact recipient/amount/memo and at least 3 confirmations. No genuine receiving-wallet connection was available. |
-| Zcash shielded sending | **Blocked.** Needs the AG-ZCASH sender-wallet adapter, shielded funding, genuine fee quote, signing policy and verified outcome contract. AGUS does not claim to have sent a ZEC payment. |
-| Private BTC payout / Pollar–Zcash bridge | Unsupported and explicitly blocked. No currency swap or bridge is fabricated. |
-| Browser confirmed receipts | `*-mocked-*-confirmed.png` screenshots use mocked sponsor transport. They are UI/integration acceptance evidence, never proof of an on-chain transaction. |
-| Live banking / mainnet | Unavailable / disabled. Imported balances are historical user-supplied records, not live available funds. Test assets are excluded from cash/portfolio valuation. |
+| Capability                                              | Evidence / status                                                                                                                                                                                                                                                               |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Web application, SQL persistence and authenticated APIs | Genuine local production application. Browser acceptance exercises the API and database.                                                                                                                                                                                        |
+| Multi-account intelligence                              | Integrated from `feature/multi-account-intelligence` at `2031112ecdaaf99781786eaedf1695c75bbac433`. The initial checkout `292d0b1` was its ancestor; integration used a verified fast-forward on a dedicated branch. Existing migration checksums were preserved.               |
+| Gemini financial guidance                               | **Genuine successful call** using `gemini-3.5-flash-lite`, including `read_agus_financial_snapshot`. Both API and browser evidence are retained. A separate `gemini-3.8-flash` attempt returned provider HTTP 503; no fallback transaction or fabricated response was produced. |
+| Official Pollar SDK                                     | `@pollar/core@0.12.0` installed and used. SDK initialization/config/balance calls are tested with controlled transport. Actual onboarding and signing remain **unverified**, pending this app’s testnet key, issuer and wallet access.                                          |
+| Stellar network                                         | Genuine Horizon testnet root responded with the testnet passphrase and ledger metadata. Receipt validation uses the fixed testnet endpoint. This read is **not** proof of any settlement.                                                                                       |
+| Pollar send authorization                               | Real server logic and actual Stellar XDR parsing, with controlled test envelopes/receipts. No genuine sponsor testnet transfer was made. Fee-bump/multi-operation envelopes deliberately require further integration review.                                                    |
+| Zcash requests                                          | Real ZIP 321 encoding, shielded Sapling testnet address encoding/checksum checks, base64url memo and wallet URI/QR. This does not prove receipt or enforce a shielded sending account.                                                                                          |
+| Zcash receiving verification                            | Implemented read-only `zcashd` receiving-wallet RPC contract and verified with mocked transport. Requires synchronized testnet wallet viewing access, exact recipient/amount/memo and at least 3 confirmations. No genuine receiving-wallet connection was available.           |
+| Zcash shielded sending                                  | **Blocked.** The published AG-ZCASH web sender is simulated; an actual authorized sender-wallet adapter, funding, quote and outcome contract are still required. AGUS does not claim to have sent a ZEC payment.                                                                |
+| Private BTC payout / Pollar–Zcash bridge                | Unsupported and explicitly blocked. No currency swap or bridge is fabricated.                                                                                                                                                                                                   |
+| Browser confirmed receipts                              | `*-mocked-*-confirmed.png` screenshots use mocked sponsor transport. They are UI/integration acceptance evidence, never proof of an on-chain transaction.                                                                                                                       |
+| Live banking / mainnet                                  | Unavailable / disabled. Imported balances are historical user-supplied records, not live available funds. Test assets are excluded from cash/portfolio valuation.                                                                                                               |
 
 ## Verification
 
@@ -63,26 +64,30 @@ npm test
 npm run build
 npm run test:http
 npm run test:browser:web
+npm run test:browser:pollar
 # Optional genuine inference; synthetic records only:
 AI_MODEL=gemini-3.5-flash-lite NODE_USE_ENV_PROXY=1 node scripts/verify-web-ai.mjs
+AI_MODEL=gemini-3.5-flash-lite NODE_USE_ENV_PROXY=1 npm run verify:agent:language
 ```
 
 `acceptance/results.json` records browser acceptance at **1440, 820, 390 and 320 px**, no horizontal overflow and no browser JavaScript errors. It covers sessions/revocation, amount masking, summary collapse, invoice creation, statement import, snapshot guidance, request QR, failed verification, mocked confirmation, conversational payment reviews, Privacy Mode and unsupported private BTC.
 
-`tests/web-product.test.ts`, `tests/pollar-sdk.test.ts` and `tests/conversational-payments.test.ts` cover owner spoofing, cross-owner isolation, URI encoding, monetary precision, mismatched currency/recipient/issuer/memo/fee/source, immutable envelope approval, password checks, one-use authorization, interrupted sends, rejected client-provided receipts, independent settlement and responsibility completion.
+`tests/web-product.test.ts`, `tests/pollar-sdk.test.ts`, `tests/conversational-payments.test.ts`, `tests/sponsor-protocol-integration.test.ts` and `tests/web-product-restart.test.ts` cover owner spoofing, cross-owner isolation, URI encoding, monetary precision, mismatched currency/recipient/issuer/memo/fee/source, immutable envelope approval, password checks, one-use authorization, interrupted sends, rejected client-provided receipts, independent settlement and responsibility completion.
 
 See `verification.txt` for the final captured command results. `genuine-ai.json` and `genuine-ai-browser.json` contain synthetic-only live-model evidence.
 
-Final automated suite: **1,531 passed; 47 skipped** (92 passing test files, 4 skipped). The skipped suites require additional environment capabilities and do not establish provider/network acceptance. Ten axe checks of overview, accounts, assistant, payment review and settings at desktop/mobile widths report zero WCAG A/AA rule violations. This is an automated check, not a complete accessibility certification.
+Final automated suite: **1,547 passed; 47 skipped** (94 passing test files, 4 skipped). Command evidence is recorded in `verification.txt`. The skipped suites require additional environment capabilities and do not establish provider/network acceptance. Eleven axe checks of onboarding, Home, accounts, assistant, payment review and settings at desktop/mobile widths report zero WCAG A/AA rule violations. This is an automated check, not a complete accessibility certification.
+
+Genuine language acceptance is **partial**: `genuine-language.json` records successful Pidgin USDC preparation, prepare-only follow-up and missing-balance reasoning. Private ZEC preparation and its 0.05→0.02 correction executed model-selected tools, but final narration hit provider quota. Later cases and the new genuine payment browser check did not complete. The runner stops on quota; no further automatic inference retries are scheduled.
 
 ## Repeatable demo
 
-1. Sign in. Show the empty overview, separate currencies and unavailable valuations.
+1. Sign in. Choose or skip first-action onboarding. Show the empty Home, Ask AGUS composer and payment actions. Imported historical balances appear only after an explicit import.
 2. Download/import `public/demo/sample-statement.csv` in Accounts. It is explicitly fictional. Show the historical ₦117,950.00 statement balance, provenance and Activity. Re-import into the same account to show deduplication.
 3. Create a USDC receivable for a fictional international client. Show the linked responsibility and separately enable its in-app reminder.
 4. Prepare the Pollar request after the testnet issuer is configured. Connect Pollar through email/Freighter when the publishable key is available. Show the exact recipient, asset, amount, memo and pending state.
 5. Create a separate ZEC receivable and ZIP 321 request using a real wallet-generated Sapling testnet receiving address. Explain that shielded receipt needs authorized receiving-wallet evidence, not a public transaction ID.
-6. In Assistant type **“Send Daniel 10 USDC.”** Complete the recipient address in the trusted review. Without credentials, show the accurate blocked state. With a working app key and funded wallet, get the actual provider-built quote, re-enter the operator password, explicitly authorize wallet signing, then check independent settlement.
+6. In Ask AGUS type **“Send Daniel 10 USDC.”** Complete the recipient address in the trusted review. Without sponsor credentials, show the accurate blocked state. With Gemini configured, start with “Abeg send Ada 10 USDC” to show actual server-side capability selection and structured preparation. With a working app key and funded wallet, get the actual provider-built quote, re-enter the operator password, explicitly authorize wallet signing, then check independent settlement.
 7. Type **“Send Daniel 0.2 ZEC privately.”** Show Privacy Mode, closed eyes, minimized model context and the truthful missing sender-adapter state. A ZIP 321 handoff alone is not claimed as execution.
 8. Type a private BTC request. Show the unsupported privacy explanation and no silent asset substitution.
 9. Ask the live personal agent to read the saved financial snapshot and explain remaining obligations. Inspect Activity and the corresponding receipt where genuine settlement evidence is available.
@@ -107,9 +112,9 @@ Deployment approval concerns only the dedicated preview service. No real-money f
 
 ## Sponsor handoff integration boundaries
 
-The founder will forward AG-POLLAR and AG-ZCASH handoffs. Their worktrees are not available in this Cloud workspace. Do not wait idly or assume unpushed work is complete.
+Both sponsor branches have been fetched and reviewed. Compatible protocol/network code was selectively integrated; unsafe synthesized wallet/balance/confirmation paths were excluded. See `sponsor-audit/INTEGRATION.md` for exact findings and source SHAs. The original upstream handoffs are retained as claims, not proof.
 
-Review the delivered SHA, ancestry, source, tests, configuration, network restrictions and private-data handling before integrating. Keep the existing adapter/domain split:
+Keep the existing adapter/domain split:
 
 - `src/components/agus/pollar-wallet.tsx`: official browser SDK, user-held signing interaction, real application-network guard and balance availability.
 - `src/lib/web-product/rails.ts`: request standards and independent receiving verifiers.

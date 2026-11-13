@@ -1,3 +1,5 @@
+> **Archived upstream claims, not integration acceptance.** See [the source audit](INTEGRATION.md) for exclusions, actual verification and remaining blockers.
+
 # Codex Handoff: AGUS 2.0 Pollar Web SDK Integration
 
 **Target Event:** BlockchainUNN Conference 5.0 (Intelligence Without Borders)  

@@ -5,7 +5,7 @@ import { db } from "../db";
 import { AppError } from "../domain";
 import { IdSchema } from "../financial-data/contracts";
 import { requireWorkspace } from "../agent-workspace/store";
-import { redactAgentText } from "./privacy";
+import { redactAgentText, privateAgentText } from "./privacy";
 import type { AgentRun, ExecutionStep, PlanStep, RunStatus } from "./contracts";
 
 let ready: Promise<void> | undefined;
@@ -56,6 +56,7 @@ export function runJournal(owner: string) {
       conversationId: string;
       goal: string;
       accountIds: string[];
+      privacyMode?: boolean;
     }) {
       const id = z.uuid().parse(input.id ?? randomUUID());
       IdSchema.parse(input.conversationId);
@@ -66,8 +67,11 @@ export function runJournal(owner: string) {
         id,
         owner,
         conversationId: input.conversationId,
-        goal: redactAgentText(input.goal),
+        goal: input.privacyMode
+          ? privateAgentText(input.goal)
+          : redactAgentText(input.goal),
         accountIds: input.accountIds,
+        ...(input.privacyMode ? { privacyMode: true } : {}),
         state: "queued",
         version: 0,
         createdAt: at,
@@ -83,6 +87,7 @@ export function runJournal(owner: string) {
       if (
         saved.conversationId !== run.conversationId ||
         saved.goal !== run.goal ||
+        Boolean(saved.privacyMode) !== Boolean(run.privacyMode) ||
         JSON.stringify(saved.accountIds) !== JSON.stringify(run.accountIds)
       )
         throw new AppError(

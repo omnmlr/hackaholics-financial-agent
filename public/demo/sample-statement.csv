@@ -1,0 +1,6 @@
+Date,Description,Debit,Credit,Balance,Reference
+2026-11-01,Fictional client project payment,,150000.00,150000.00,DEMO-CLIENT-001
+2026-11-02,Fictional internet subscription,15000.00,,135000.00,DEMO-INTERNET-002
+2026-11-03,Fictional grocery purchase,12500.00,,122500.00,DEMO-GROCERY-003
+2026-11-04,Fictional transport expense,4500.00,,118000.00,DEMO-TRANSPORT-004
+2026-11-05,Fictional bank charge,50.00,,117950.00,DEMO-CHARGE-005

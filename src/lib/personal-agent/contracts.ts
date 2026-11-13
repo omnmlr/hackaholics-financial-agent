@@ -65,6 +65,7 @@ export type AgentRun = {
   conversationId: string;
   goal: string;
   accountIds: string[];
+  privacyMode?: boolean;
   state: RunStatus;
   version: number;
   createdAt: string;

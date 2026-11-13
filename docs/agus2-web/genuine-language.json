@@ -1,0 +1,285 @@
+{
+  "classification": "Genuine Gemini server inference; synthetic names only; no payment authorized or executed",
+  "model": "gemini-3.5-flash-lite",
+  "transcripts": [
+    {
+      "text": "Abeg send Ada 10 USDC.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "I have prepared a payment review to send **10 USDC** to **Ada** on the testnet, but I cannot complete the transfer automatically. \n\nHere is what is currently missing and required before any approval or transfer can happen:\n1. **Recipient's Exact Testnet Address:** A name alone (`Ada`) cannot resolve to a blockchain wallet address.\n2. **Pollar Onboarding & Signing:** Pollar onboarding and signing require the app's publishable Stellar testnet key and exact USDC issuer configuration.\n\n*Note: No funds have been sent, and preparation does not execute a payment or grant signing authority.*",
+      "kind": "general",
+      "execution": {
+        "id": "5f555f05-b185-4955-9c00-20b1a2e39cf6",
+        "state": "waiting_user",
+        "plan": [],
+        "steps": [
+          {
+            "sequence": 1,
+            "tool": "read_digital_payment_capabilities",
+            "state": "succeeded",
+            "summary": "Testnet payment capabilities. Only an owner-approved wallet can sign; no model spending tool exists."
+          },
+          {
+            "sequence": 2,
+            "tool": "prepare_digital_payment",
+            "state": "succeeded",
+            "summary": "A saved payment review is ready. No approval, signing or payment occurred."
+          }
+        ]
+      },
+      "plan": {
+        "id": "f2e1fcf3-9377-4afb-841e-ac7c8b10fba4",
+        "recipientLabel": "Ada",
+        "amount": "10",
+        "asset": "USDC",
+        "rail": "pollar-stellar",
+        "privacy": false,
+        "state": "needs_details",
+        "approved": false,
+        "quoted": false
+      }
+    },
+    {
+      "text": "Don't send am yet, just prepare everything.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "I understand\u2014we are not sending anything yet, just preparing the details. \n\nI have refreshed the preparation for your request (`10 USDC` for `Ada`, payment plan ID `f2e1fcf3-9377-4afb-841e-ac7c8b10fba4`). \n\n### What is currently prepared:\n* **Recipient:** Ada\n* **Amount:** 10 USDC\n* **Network / Asset:** Testnet standard USDC (via Pollar capabilities)\n* **Status:** Prepared in your review queue (`needs_details`)\n\n### What remains before any future approval or submission:\n1. **Recipient's Exact Wallet Address:** A name alone (`Ada`) cannot automatically resolve to a blockchain address.\n2. **Pollar Integration Setup:** Pollar signing and onboarding require configuring the app's publishable Stellar testnet key and USDC issuer.\n\nWhenever you want to update the recipient address or revise the plan, just let me know. No funds have been sent, and preparation does not execute a transfer.",
+      "kind": "general",
+      "execution": {
+        "id": "40de1876-cb0a-4de6-a003-39bd2e6c658a",
+        "state": "waiting_user",
+        "plan": [],
+        "steps": [
+          {
+            "sequence": 1,
+            "tool": "read_digital_payment_capabilities",
+            "state": "succeeded",
+            "summary": "Testnet payment capabilities. Only an owner-approved wallet can sign; no model spending tool exists."
+          },
+          {
+            "sequence": 2,
+            "tool": "prepare_digital_payment",
+            "state": "succeeded",
+            "summary": "A saved payment review is ready. No approval, signing or payment occurred."
+          }
+        ]
+      },
+      "plan": {
+        "id": "f2e1fcf3-9377-4afb-841e-ac7c8b10fba4",
+        "recipientLabel": "Ada",
+        "amount": "10",
+        "asset": "USDC",
+        "rail": "pollar-stellar",
+        "privacy": false,
+        "state": "needs_details",
+        "approved": false,
+        "quoted": false
+      }
+    },
+    {
+      "text": "How much I still get after the transfer?",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "I cannot calculate your exact balance after the transfer because **no USDC balance is currently available in your imported financial records**. \n\nYour financial snapshot shows:\n* **Imported Accounts:** 0\n* **Current USDC Balance:** Unknown / Not imported\n* **Prepared Transfer:** 10 USDC to Ada (Status: `needs_details`, not executed)\n\nIf you would like to share or import your current USDC balance, I can help calculate the remaining amount. Otherwise, I can only confirm that 10 USDC is currently sitting in your preparation review queue and has not been sent.",
+      "kind": "general",
+      "execution": {
+        "id": "e7e4d8a2-d595-4015-9309-d473eb596fd1",
+        "state": "completed",
+        "plan": [],
+        "steps": [
+          {
+            "sequence": 1,
+            "tool": "read_agus_financial_snapshot",
+            "state": "succeeded",
+            "summary": "Read user-owned imported financial records and evidence-based invoice states."
+          },
+          {
+            "sequence": 2,
+            "tool": "calculate",
+            "state": "failed",
+            "code": "INVALID_ARGUMENT"
+          }
+        ]
+      },
+      "plan": null
+    },
+    {
+      "text": "Omo, I wan send Chidi 0.05 ZEC, make e private.",
+      "privacyMode": true,
+      "httpStatus": 200,
+      "reply": "Completed steps are saved: User-facing plan updated; plan status alone is not execution evidence. Testnet payment capabilities. Only an owner-approved wallet can sign; no model spending tool exists. A saved payment review is ready. No approval, signing or payment occurred. Further work remains unfinished. The model provider returned a rate or quota limit. The run can be inspected and explicitly resumed where safe.",
+      "kind": "general",
+      "execution": {
+        "id": "8aca14aa-0f54-41b0-884a-e8fd2b49b256",
+        "state": "interrupted",
+        "plan": [
+          {
+            "id": "check_capabilities",
+            "kind": "tool",
+            "status": "done",
+            "evidence": [
+              2
+            ],
+            "description": "Check digital payment capabilities to confirm Zcash private payment support"
+          },
+          {
+            "id": "prepare_payment",
+            "kind": "tool",
+            "status": "done",
+            "evidence": [
+              3
+            ],
+            "description": "Prepare the private ZEC payment for Chidi"
+          }
+        ],
+        "steps": [
+          {
+            "sequence": 1,
+            "tool": "update_plan",
+            "state": "succeeded",
+            "summary": "User-facing plan updated; plan status alone is not execution evidence."
+          },
+          {
+            "sequence": 2,
+            "tool": "read_digital_payment_capabilities",
+            "state": "succeeded",
+            "summary": "Testnet payment capabilities. Only an owner-approved wallet can sign; no model spending tool exists."
+          },
+          {
+            "sequence": 3,
+            "tool": "prepare_digital_payment",
+            "state": "succeeded",
+            "summary": "A saved payment review is ready. No approval, signing or payment occurred."
+          },
+          {
+            "sequence": 4,
+            "tool": "update_plan",
+            "state": "succeeded",
+            "summary": "User-facing plan updated; plan status alone is not execution evidence."
+          }
+        ],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": {
+        "id": "b5efaeec-e08e-4a0c-824e-7200b7ca8511",
+        "recipientLabel": "Chidi",
+        "amount": "0.05",
+        "asset": "ZEC",
+        "rail": "zcash",
+        "privacy": true,
+        "state": "needs_details",
+        "approved": false,
+        "quoted": false
+      }
+    },
+    {
+      "text": "No, na 0.02 I mean.",
+      "privacyMode": true,
+      "httpStatus": 200,
+      "reply": "Completed steps are saved: A saved payment review is ready. No approval, signing or payment occurred. Further work remains unfinished. The model provider returned a rate or quota limit. The run can be inspected and explicitly resumed where safe.",
+      "kind": "general",
+      "execution": {
+        "id": "3af1f44d-d37b-4a9f-8f00-50d6ecad1229",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [
+          {
+            "sequence": 1,
+            "tool": "prepare_digital_payment",
+            "state": "succeeded",
+            "summary": "A saved payment review is ready. No approval, signing or payment occurred."
+          }
+        ],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": {
+        "id": "b5efaeec-e08e-4a0c-824e-7200b7ca8511",
+        "recipientLabel": "Chidi",
+        "amount": "0.02",
+        "asset": "ZEC",
+        "rail": "zcash",
+        "privacy": true,
+        "state": "needs_details",
+        "approved": false,
+        "quoted": false
+      }
+    },
+    {
+      "text": "Wetin happen to that payment we discussed yesterday?",
+      "privacyMode": true,
+      "httpStatus": 200,
+      "reply": "This work did not finish. The model provider returned a rate or quota limit. The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+      "kind": "general",
+      "execution": {
+        "id": "4bf460be-874e-4e75-9c72-9b6a3b000f05",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": null
+    },
+    {
+      "text": "That guy still dey owe me fifty dollars.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "This work did not finish. The model provider returned a rate or quota limit. The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+      "kind": "general",
+      "execution": {
+        "id": "0d2fa209-7f28-4b81-8581-d9d6533847b4",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": null
+    },
+    {
+      "text": "Remember say Ada go pay me next week.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "This work did not finish. The model provider returned a rate or quota limit. The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+      "kind": "general",
+      "execution": {
+        "id": "2915db4d-2a32-44ab-8f85-d36659e807ff",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": null
+    },
+    {
+      "text": "Send 10 USDC to Ada and tell me when it goes through.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "This work did not finish. The model provider returned a rate or quota limit. The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+      "kind": "general",
+      "execution": {
+        "id": "1dff4424-62a8-47d7-84af-a8e71230f1c7",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": null
+    },
+    {
+      "text": "Abeg snd Ada 5 USDC, jus prepare am.",
+      "privacyMode": false,
+      "httpStatus": 200,
+      "reply": "This work did not finish. The model provider returned a rate or quota limit. The saved run records the interruption; no unrecorded outcome is claimed. You can inspect it and explicitly resume supported work.",
+      "kind": "general",
+      "execution": {
+        "id": "2ff132d1-9fa0-4e54-8538-092b10700efd",
+        "state": "interrupted",
+        "plan": [],
+        "steps": [],
+        "reason": "MODEL_HTTP_429"
+      },
+      "plan": null
+    }
+  ],
+  "passed": false,
+  "limitation": "Provider MODEL_HTTP_429 interrupted the private preparation narration and later cases. Pidgin standard preparation, prepare-only follow-up and missing-balance answer completed. Private ZEC proposal and 0.05\u21920.02 correction were persisted after genuine model-selected tools, but their final replies were interrupted. Later language cases and the new browser-specific genuine payment check were not established."
+}

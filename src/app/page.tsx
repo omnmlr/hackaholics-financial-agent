@@ -1,3 +1,4 @@
+import { AgusWorkspace } from "@/components/agus/workspace";
 import { FinancialConversation } from "@/components/financial-conversation";
 import { config } from "@/lib/config";
 import { redirect } from "next/navigation";
@@ -16,5 +17,7 @@ export default async function Page({
         : "";
     redirect(`/conversation?payments=history${chat}`);
   }
-  return <FinancialConversation paymentMode={config().mode} />;
+  const mode = config().mode;
+  if (mode === "live") return <FinancialConversation paymentMode={mode} />;
+  return <AgusWorkspace paymentMode={mode} />;
 }

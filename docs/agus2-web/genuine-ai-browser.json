@@ -1,0 +1,19 @@
+{
+  "genuineProvider": true,
+  "status": 200,
+  "execution": {
+    "id": "86fb3585-32d2-4551-ba4b-76b29d73c2d1",
+    "state": "completed",
+    "plan": [],
+    "steps": [
+      {
+        "sequence": 1,
+        "tool": "read_agus_financial_snapshot",
+        "state": "succeeded",
+        "summary": "Read user-owned imported financial records and evidence-based invoice states."
+      }
+    ]
+  },
+  "reply": "Based on your saved AGUS financial snapshot as of today, here is the financial information currently available and your recommended next step:\n\n### Available Financial Information\n* **Imported Accounts & Balances:** None imported yet.\n* **Income & Spending (Internal transfers excluded):** ₦0.00 income, ₦0.00 spending recorded.\n* **Invoices & Payments:** No open invoices or verified independent payment records are present in the snapshot.\n* **Bank Connection:** No authorized live bank connection is configured.\n\n### Next Step\n* **Start with a statement or an obligation:** You can import a statement or record your current financial obligations so that AGUS can help you track, analyze, and plan from verified source data.",
+  "errors": []
+}

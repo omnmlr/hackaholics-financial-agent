@@ -75,6 +75,7 @@ export async function POST(req: Request) {
           text: run.goal,
           accountIds: run.accountIds,
           resumeRunId: run.id,
+          ...(run.privacyMode ? { privacyMode: true } : {}),
         }),
       }),
     );

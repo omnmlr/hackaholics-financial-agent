@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preview:web": "node scripts/agus-web-preview.mjs",
+    "test:web": "vitest run tests/web-product.test.ts tests/pollar-sdk.test.ts tests/conversational-payments.test.ts tests/web-product-restart.test.ts tests/sponsor-protocol-integration.test.ts",
+    "test:browser:web": "node scripts/browser-agus-web.mjs",
     "config:validate": "node --import=tsx scripts/validate-environment.ts",
     "solana:acceptance": "node --import=tsx scripts/verify-devnet-transfer.ts",
     "preview:devnet": "node scripts/devnet-acceptance-preview.mjs",
@@ -51,13 +54,18 @@
     "test:escrow": "cargo test --manifest-path escrow/Cargo.toml --locked --features bank-tests",
     "test:marketplace": "node scripts/run-marketplace-tests.mjs",
     "build:escrow:sbf": "node scripts/build-escrow-sbf.mjs",
-    "test:escrow:sbf": "node scripts/test-escrow-sbf.mjs"
+    "test:escrow:sbf": "node scripts/test-escrow-sbf.mjs",
+    "test:browser:pollar": "node scripts/browser-agus-pollar.mjs",
+    "verify:agent:language": "node scripts/verify-agent-language.mjs"
   },
   "dependencies": {
     "@better-auth/expo": "1.7.19",
     "@electric-sql/pglite": "^0.3.10",
     "@google/genai": "2.30.0",
+    "@pollar/core": "^0.12.0",
+    "@scure/base": "^1.2.6",
     "@solana/web3.js": "^1.99.0",
+    "@stellar/stellar-base": "^15.0.0",
     "@tailwindcss/postcss": "^4.1.0",
     "better-auth": "1.7.19",
     "decimal.js": "10.6.0",

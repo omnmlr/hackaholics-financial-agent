@@ -1,0 +1,210 @@
+TypeScript
+
+> hackaholics-financial-agent@0.1.0 typecheck
+> tsc --noEmit
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+ESLint
+
+> hackaholics-financial-agent@0.1.0 lint
+> eslint .
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+Full automated suite
+
+> hackaholics-financial-agent@0.1.0 test
+> vitest run
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  94 passed | 4 skipped (98)
+      Tests  1547 passed | 47 skipped (1594)
+   Start at  19:05:29
+   Duration  199.80s (tests 82%, import 18%)
+
+    Isolate  98 workers spawned · ~114ms startup each (spawn + environment, per file)
+             at least ~11.11s faster with isolate: false — reuses workers across files instead of one per file
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+Final focused web/security suite
+
+> hackaholics-financial-agent@0.1.0 test:web
+> vitest run tests/web-product.test.ts tests/pollar-sdk.test.ts tests/conversational-payments.test.ts tests/web-product-restart.test.ts tests/sponsor-protocol-integration.test.ts
+
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  5 passed (5)
+      Tests  38 passed (38)
+   Start at  19:11:13
+   Duration  14.45s (tests 84%, import 14%, transform 2%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+Production build
+
+> hackaholics-financial-agent@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.4.1 (webpack)
+✓ Running next.config.ts took 37ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 8.4s
+  Running TypeScript ...
+  Finished TypeScript in 4.1s ...
+  Collecting page data using 2 workers ...
+  Generating static pages using 2 workers (0/6) ...
+  Generating static pages using 2 workers (1/6) 
+  Generating static pages using 2 workers (2/6) 
+  Generating static pages using 2 workers (4/6) 
+✓ Generating static pages using 2 workers (6/6) in 643ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/[...path]
+├ ƒ /api/agent-runs
+├ ƒ /api/agent-workspace
+├ ƒ /api/agent-workspace/solana
+├ ƒ /api/auth/[...all]
+├ ƒ /api/conversation
+├ ƒ /api/conversation/payment-draft
+├ ƒ /api/conversations
+├ ƒ /api/financial-agent
+├ ƒ /api/product/[[...path]]
+├ ƒ /api/v1/[...path]
+├ ○ /api/v1/openapi
+├ ƒ /conversation
+├ ○ /devnet
+└ ○ /responsibilities
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+HTTP smoke (fixture bank transport)
+
+> hackaholics-financial-agent@0.1.0 test:http
+> node scripts/http-smoke.mjs
+
+PASS: production Next.js HTTP smoke — login, route protection, two recipients, verification, approval, explicit submission, duplicate rejection, reconciliation, persisted status chat, CSV. No provider network calls or real money.
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+Responsive browser acceptance (mocked network)
+
+> hackaholics-financial-agent@0.1.0 test:browser:web
+> node scripts/browser-agus-web.mjs
+
+[
+  {
+    "width": 1440,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 820,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 390,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  },
+  {
+    "width": 320,
+    "passed": true,
+    "noOverflow": true,
+    "jsErrors": [],
+    "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+  }
+]
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice
+
+
+Official Pollar SDK browser acceptance (mocked network)
+
+> hackaholics-financial-agent@0.1.0 test:browser:pollar
+> node scripts/browser-agus-pollar.mjs
+
+{
+  "classification": "MOCKED provider and Horizon HTTP; real official SDK/browser/API/SQL; no real funds or settlement",
+  "sdk": "@pollar/core@0.12.0",
+  "passed": true,
+  "wrongPasswordBlocked": true,
+  "singleProviderSigningCall": 1,
+  "nonceReplayStatus": 403,
+  "providerSuccessWithoutHorizonRemainedPending": true,
+  "linkedObligationSettledOnlyAfterMockedNetworkEvidence": true,
+  "paths": [
+    "/v3/applications/config",
+    "/v3/auth/session",
+    "/v3/auth/email",
+    "/v3/auth/email/verify-code",
+    "/v3/auth/session/status/mock-browser-session",
+    "/v3/auth/login",
+    "/v3/cosign/requests",
+    "/v3/applications/config",
+    "/v3/tx/build",
+    "/v3/applications/config",
+    "/v3/applications/config",
+    "/v3/tx/sign-and-send"
+  ],
+  "jsErrors": []
+}
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.2
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.2
+npm notice To update run: npm install -g npm@12.2.2
+npm notice

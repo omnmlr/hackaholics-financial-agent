@@ -6,10 +6,12 @@ const config: NextConfig = {
     "/api/product/[[...path]]": [
       "./migrations/0019_web_product.sql",
       "./migrations/0020_conversational_payments.sql",
+      "./migrations/0021_web_preferences.sql",
     ],
     "/api/conversation": [
       "./migrations/0019_web_product.sql",
       "./migrations/0020_conversational_payments.sql",
+      "./migrations/0021_web_preferences.sql",
     ],
   },
   async headers() {

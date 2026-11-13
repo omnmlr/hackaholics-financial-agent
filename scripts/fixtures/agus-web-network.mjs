@@ -15,6 +15,23 @@ globalThis.fetch = async (input, init) => {
       await readFile(process.env.AGUS_TEST_TRANSPORT_FILE, "utf8"),
     );
     if (url.startsWith("https://horizon-testnet.stellar.org/")) {
+      if (fixture.outgoing) {
+        if (
+          !fixture.confirmed ||
+          !url.endsWith(`/transactions/${fixture.transactionHash}`)
+        )
+          return Response.json({}, { status: 404 });
+        return Response.json({
+          hash: fixture.transactionHash,
+          successful: true,
+          memo_type: "text",
+          memo: fixture.memo,
+          created_at: new Date().toISOString(),
+          operation_count: 1,
+          ledger: 123456,
+          fee_charged: "100",
+        });
+      }
       if (!url.includes("a".repeat(64)))
         return Response.json({}, { status: 404 });
       if (url.includes("/operations?"))

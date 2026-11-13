@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "preview:web": "node scripts/agus-web-preview.mjs",
-    "test:web": "vitest run tests/web-product.test.ts tests/pollar-sdk.test.ts tests/conversational-payments.test.ts tests/web-product-restart.test.ts",
+    "test:web": "vitest run tests/web-product.test.ts tests/pollar-sdk.test.ts tests/conversational-payments.test.ts tests/web-product-restart.test.ts tests/sponsor-protocol-integration.test.ts",
     "test:browser:web": "node scripts/browser-agus-web.mjs",
     "config:validate": "node --import=tsx scripts/validate-environment.ts",
     "solana:acceptance": "node --import=tsx scripts/verify-devnet-transfer.ts",

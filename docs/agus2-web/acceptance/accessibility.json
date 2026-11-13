@@ -1,6 +1,11 @@
 [
   {
     "width": 1440,
+    "view": "onboarding",
+    "violations": []
+  },
+  {
+    "width": 1440,
     "view": "overview",
     "violations": []
   },

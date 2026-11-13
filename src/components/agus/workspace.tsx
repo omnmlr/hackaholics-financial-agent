@@ -55,6 +55,8 @@ import {
 } from "@/lib/web-product/payment-contracts";
 import s from "./workspace.module.css";
 
+type ChatLaunch = { id: string; text?: string; draft?: string };
+
 type Tab =
   | "Overview"
   | "Assistant"
@@ -63,11 +65,11 @@ type Tab =
   | "Activity"
   | "Settings";
 const navigation = [
-  { name: "Overview", icon: Home },
-  { name: "Assistant", icon: MessageCircle },
-  { name: "Obligations", icon: Layers3 },
-  { name: "Accounts", icon: Wallet },
-  { name: "Activity", icon: Clock3 },
+  { name: "Overview", label: "Home", icon: Home },
+  { name: "Assistant", label: "Ask AGUS", icon: MessageCircle },
+  { name: "Obligations", label: "Obligations", icon: Layers3 },
+  { name: "Accounts", label: "Accounts", icon: Wallet },
+  { name: "Activity", label: "Activity", icon: Clock3 },
 ] as const;
 const date = (value: string, full = false) =>
   new Date(value).toLocaleDateString("en-NG", {
@@ -162,7 +164,7 @@ function Empty({
 }: {
   icon?: typeof Layers3;
   title: string;
-  text: string;
+  text?: string;
   children?: ReactNode;
 }) {
   return (
@@ -171,7 +173,7 @@ function Empty({
         <Icon size={24} strokeWidth={1.3} />
       </div>
       <h3>{title}</h3>
-      <p>{text}</p>
+      {text && <p>{text}</p>}
       {children}
     </div>
   );
@@ -201,6 +203,39 @@ export function AgusWorkspace({
   const [filter, setFilter] = useState("all");
   const [tasks, setTasks] = useState<Responsibility[]>([]);
   const [sample, setSample] = useState(false);
+  const [homeMessage, setHomeMessage] = useState("");
+  const [chatLaunch, setChatLaunch] = useState<ChatLaunch>();
+  const [replayOnboarding, setReplayOnboarding] = useState(false);
+  const [networkStatus, setNetworkStatus] = useState("");
+  const [onboardingBusy, setOnboardingBusy] = useState(false);
+  const [onboardingError, setOnboardingError] = useState("");
+  const startChat = (draft = "", text?: string) => {
+    setChatLaunch({ id: crypto.randomUUID(), draft, text });
+    setTab("Assistant");
+    window.scrollTo({ top: 0, behavior: "instant" });
+  };
+  async function finishOnboarding(next?: "chat" | "payment" | "obligation") {
+    if (onboardingBusy) return;
+    setOnboardingBusy(true);
+    setOnboardingError("");
+    try {
+      await productApi("product/preferences", { onboardingCompleted: true });
+      setSnapshot((old) =>
+        old ? { ...old, preferences: { onboardingCompleted: true } } : old,
+      );
+      setReplayOnboarding(false);
+      if (next === "chat") startChat();
+      if (next === "payment") startChat("Send ");
+      if (next === "obligation") {
+        setSample(false);
+        setModal("invoice");
+      }
+    } catch {
+      setOnboardingError("Couldn’t save your choice. Please try again.");
+    } finally {
+      setOnboardingBusy(false);
+    }
+  }
   const refresh = useCallback(async () => {
     try {
       const data = await productApi<ProductSnapshot>("product");
@@ -331,9 +366,9 @@ export function AgusWorkspace({
         <button className={s.brandButton} onClick={() => navigate("Overview")}>
           <Brand />
         </button>
-        <span className={s.workspaceLabel}>PERSONAL WORKSPACE</span>
+        <span className={s.workspaceLabel}>YOUR SPACE</span>
         <nav>
-          {navigation.map(({ name, icon: Icon }) => (
+          {navigation.map(({ name, label, icon: Icon }) => (
             <button
               key={name}
               className={`${s.navItem} ${tab === name ? s.navActive : ""}`}
@@ -341,7 +376,7 @@ export function AgusWorkspace({
               aria-current={tab === name ? "page" : undefined}
             >
               <Icon size={18} strokeWidth={1.6} />
-              {name}
+              {label}
               {name === "Obligations" && outstanding.length > 0 && (
                 <span className={s.navCount}>{outstanding.length}</span>
               )}
@@ -352,13 +387,6 @@ export function AgusWorkspace({
           <Plus size={16} /> New obligation
         </button>
         <div className={s.sidebarBottom}>
-          <div className={s.sidebarNote}>
-            <Companion />
-            <p>
-              A little context.
-              <br />A clearer next step.
-            </p>
-          </div>
           <button
             className={`${s.navItem} ${tab === "Settings" ? s.navActive : ""}`}
             onClick={() => navigate("Settings")}
@@ -366,13 +394,13 @@ export function AgusWorkspace({
             <Settings2 size={18} strokeWidth={1.6} /> Settings
           </button>
           <button className={s.navItem} onClick={() => setModal("help")}>
-            <CircleHelp size={18} strokeWidth={1.6} /> About this workspace
+            <CircleHelp size={18} strokeWidth={1.6} /> About AGUS
           </button>
           <div className={s.profile}>
             <span className={s.avatar}>Y</span>
             <div>
               <strong>Your workspace</strong>
-              <small>Private operator session</small>
+              <small>Personal space</small>
             </div>
             <button
               aria-label="Sign out"
@@ -398,7 +426,9 @@ export function AgusWorkspace({
           </div>
           <div className={s.breadcrumb}>
             Your workspace <ChevronRight size={13} />
-            <strong>{tab}</strong>
+            <strong>
+              {navigation.find((item) => item.name === tab)?.label ?? tab}
+            </strong>
           </div>
           <div className={s.topActions}>
             <button
@@ -406,20 +436,14 @@ export function AgusWorkspace({
               aria-pressed={privacyMode}
               onClick={() => {
                 setPrivacyMode(!privacyMode);
-                notify(
-                  privacyMode
-                    ? "Standard mode. Existing private payment reviews stay private."
-                    : "Privacy Mode on. Private wallet details stay out of the model’s tools.",
-                );
+                notify(privacyMode ? "Privacy Mode off" : "Privacy Mode on");
               }}
               aria-label="Privacy Mode"
             >
               <ShieldCheck size={14} />
               <span>{privacyMode ? "Privacy on" : "Privacy"}</span>
             </button>
-            <span className={s.testnet}>
-              <span /> Testnet workspace
-            </span>
+
             <button
               className={s.iconButton}
               aria-label="Refresh workspace"
@@ -446,15 +470,6 @@ export function AgusWorkspace({
           </div>
         </header>
         <main className={s.main}>
-          {privacyMode && (
-            <div className={s.privacyBanner}>
-              <ShieldCheck size={15} />
-              <span>
-                Privacy Mode · wallet details stay in your trusted review. What
-                you type in chat may still reach the AI provider.
-              </span>
-            </div>
-          )}
           {error && (
             <div className={s.errorBanner} role="alert">
               <span>{error}</span>
@@ -471,27 +486,15 @@ export function AgusWorkspace({
             <>
               <div className={s.pageHeading}>
                 <div>
-                  <p className={s.eyebrow}>
-                    {date(snapshot.asOf, true)} · YOUR MONEY, IN PERSPECTIVE
-                  </p>
-                  <h1>
-                    Make room for <span>what’s next.</span>
-                  </h1>
-                  <p className={s.subtitle}>
-                    Your money, responsibilities, and a clearer way forward.
-                  </p>
+                  <p className={s.eyebrow}>{date(snapshot.asOf, true)}</p>
+                  <h1>Your money</h1>
                 </div>
-                <button
-                  className={s.secondary}
-                  onClick={() => openInvoiceForm()}
-                >
-                  <Plus size={16} /> New obligation
-                </button>
+                <Companion />
               </div>
               <section className={s.summary} aria-label="Financial summary">
                 <div className={s.summaryHeader}>
                   <span>
-                    <Wallet size={15} /> Your financial picture
+                    <Wallet size={15} /> Overview
                   </span>
                   <div>
                     <button
@@ -519,32 +522,61 @@ export function AgusWorkspace({
                 </div>
                 {!collapsed && (
                   <>
-                    <div className={s.summaryAmounts}>
-                      <div>
-                        <span className={s.summaryLabel}>
-                          Naira <small>NGN</small>
-                        </span>
-                        <strong>{amount(snapshot.intelligence.naira)}</strong>
-                        <p>
-                          {snapshot.intelligence.naira
-                            ? "Imported statement balance"
-                            : "No statement balance yet"}
-                        </p>
+                    {snapshot.accounts.length ? (
+                      <div className={s.balanceGrid}>
+                        {snapshot.intelligence.naira && (
+                          <div>
+                            <span className={s.summaryLabel}>Naira · NGN</span>
+                            <strong>
+                              {amount(snapshot.intelligence.naira)}
+                            </strong>
+                            <p>Imported statements</p>
+                          </div>
+                        )}
+                        {snapshot.accounts
+                          .filter(
+                            (account) =>
+                              account.currency !== "NGN" ||
+                              !snapshot.intelligence.naira,
+                          )
+                          .map((account) => (
+                            <div key={account.id}>
+                              <span className={s.summaryLabel}>
+                                {account.label} · {account.currency}
+                              </span>
+                              <strong>{amount(account.amount)}</strong>
+                              <p>
+                                Statement ·{" "}
+                                {account.asOf
+                                  ? date(account.asOf)
+                                  : "Balance unavailable"}
+                              </p>
+                            </div>
+                          ))}
                       </div>
-                      <div>
-                        <span className={s.summaryLabel}>
-                          Digital assets <small>USD VALUE</small>
+                    ) : (
+                      <div className={s.balanceEmpty}>
+                        <span className={s.accountIcon}>
+                          <Wallet size={23} strokeWidth={1.4} />
                         </span>
-                        <strong>{amount(null)}</strong>
-                        <p>No verified USD valuation</p>
+                        <div>
+                          <h2>A place for your accounts</h2>
+                          <p>Add a statement to see your money here.</p>
+                        </div>
+                        <button
+                          className={s.secondary}
+                          onClick={() => setModal("import")}
+                        >
+                          <Plus size={15} /> Add account
+                        </button>
                       </div>
-                    </div>
+                    )}
                     <div className={s.summaryFooter}>
                       <span>
                         <span className={s.tinyDot} />
                         {snapshot.accounts.length
                           ? `${snapshot.accounts.length} imported ${snapshot.accounts.length === 1 ? "account" : "accounts"} · historical records`
-                          : "Your accounts, when you’re ready"}
+                          : "Accounts"}
                       </span>
                       <button onClick={() => navigate("Accounts")}>
                         View accounts <ArrowUpRight size={14} />
@@ -553,129 +585,117 @@ export function AgusWorkspace({
                   </>
                 )}
               </section>
-              <section className={s.nextMove}>
-                <Companion large />
-                <div>
-                  <p className={s.eyebrow}>A NOTE FROM AGUS</p>
-                  <h2>
-                    {outstanding.length
-                      ? "Let’s keep the next step in sight."
-                      : "Good decisions start with a little context."}
-                  </h2>
-                  <p>{snapshot.intelligence.nextAction}</p>
-                  <button
-                    className={s.textButton}
-                    onClick={() => navigate("Assistant")}
-                  >
-                    Think it through with AGUS <ArrowRight size={15} />
-                  </button>
+              <section className={s.homeAsk} aria-label="Ask AGUS">
+                <div className={s.askTitle}>
+                  <MessageCircle size={19} strokeWidth={1.4} />
+                  <h2>Ask AGUS</h2>
+                  <span>What’s on your mind?</span>
                 </div>
-                <span className={s.noteDecoration} aria-hidden="true">
-                  ✦
-                </span>
-              </section>
-              <div className={s.overviewGrid}>
-                <section className={s.panel}>
-                  <div className={s.sectionHead}>
-                    <div>
-                      <p className={s.eyebrow}>KEEPING THINGS MOVING</p>
-                      <h2>Your obligations</h2>
-                    </div>
-                    <button
-                      className={s.textButton}
-                      onClick={() => navigate("Obligations")}
-                    >
-                      View all <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                  {outstanding.length ? (
-                    <div className={s.invoiceList}>
-                      {outstanding.slice(0, 4).map((item) => (
-                        <InvoiceRow
-                          key={item.id}
-                          invoice={item}
-                          masked={masked}
-                          onClick={() => setSelected(item.id)}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <Empty
-                      title="Nothing left in the back of your mind."
-                      text="Keep track of money owed, client invoices, and commitments in one place."
-                    >
-                      <button
-                        className={s.secondary}
-                        onClick={() => openInvoiceForm()}
-                      >
-                        <Plus size={15} /> Add your first obligation
-                      </button>
-                    </Empty>
-                  )}
-                  <div className={s.panelFoot}>
-                    <ShieldCheck size={14} />
-                    <span>
-                      An invoice becomes settled only when receiving evidence is
-                      verified.
-                    </span>
-                  </div>
-                </section>
-                <section className={s.pathways}>
-                  <p className={s.eyebrow}>MORE WAYS FORWARD</p>
-                  <h2>
-                    Two pathways.
-                    <br /> One clear record.
-                  </h2>
-                  <p className={s.muted}>
-                    Request a payment in the asset that works for you.
-                  </p>
+                <form
+                  className={s.homeComposer}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (homeMessage.trim()) {
+                      startChat("", homeMessage.trim());
+                      setHomeMessage("");
+                    }
+                  }}
+                >
+                  <input
+                    aria-label="Ask AGUS"
+                    placeholder="Ask a question or describe a payment…"
+                    value={homeMessage}
+                    onChange={(e) => setHomeMessage(e.target.value)}
+                    maxLength={4000}
+                  />
                   <button
-                    className={s.railCard}
-                    onClick={() => navigate("Accounts")}
+                    className={s.sendButton}
+                    aria-label="Start conversation"
+                    disabled={!homeMessage.trim()}
                   >
-                    <span className={s.railSymbol}>p.</span>
-                    <div>
-                      <strong>Pollar</strong>
-                      <span>USDC · Stellar testnet</span>
-                    </div>
-                    <ArrowUpRight size={18} />
+                    <ArrowUp size={20} />
+                  </button>
+                </form>
+                <div className={s.quickActions}>
+                  <button onClick={() => startChat("Send ")}>
+                    <ArrowUpRight size={17} />
+                    <span>Send money</span>
+                  </button>
+                  <button onClick={() => openInvoiceForm()}>
+                    <ArrowDownLeft size={17} />
+                    <span>Request payment</span>
                   </button>
                   <button
-                    className={s.railCard}
                     onClick={() => {
-                      navigate("Obligations");
-                      notify(
-                        "Choose a ZEC invoice to create a private payment request.",
-                      );
+                      setPrivacyMode(true);
+                      startChat("Send privately ");
                     }}
                   >
-                    <span className={s.railSymbol}>Ƶ</span>
-                    <div>
-                      <strong>Zcash</strong>
-                      <span>Private requests · ZEC testnet</span>
-                    </div>
-                    <ArrowUpRight size={18} />
+                    <ShieldCheck size={17} />
+                    <span>Private payment</span>
                   </button>
-                  <small className={s.railCaption}>
-                    Separate payment pathways. Test assets have no cash value.
-                  </small>
+                </div>
+              </section>
+              {pending.length > 0 && (
+                <section className={s.pendingBar} aria-label="Pending payments">
+                  <Clock3 size={18} />
+                  <span>
+                    {pending.length}{" "}
+                    {pending.length === 1
+                      ? "payment request"
+                      : "payment requests"}{" "}
+                    awaiting payment
+                  </span>
+                  <button
+                    className={s.textButton}
+                    onClick={() => setSelected(pending[0].invoiceId)}
+                  >
+                    View <ArrowRight size={14} />
+                  </button>
                 </section>
-              </div>
-              <footer className={s.pageFooter}>
-                <span>
-                  <LockKeyhole size={12} /> Your context stays in your
-                  workspace.
-                </span>
-                <span>Your money, and what&apos;s next.</span>
-              </footer>
+              )}
+              <section className={s.homeObligations}>
+                <div className={s.sectionHead}>
+                  <h2>Obligations</h2>
+                  <button
+                    className={s.textButton}
+                    onClick={() => navigate("Obligations")}
+                  >
+                    View all <ArrowUpRight size={14} />
+                  </button>
+                </div>
+                {outstanding.length ? (
+                  outstanding
+                    .slice(0, 3)
+                    .map((item) => (
+                      <InvoiceRow
+                        key={item.id}
+                        invoice={item}
+                        masked={masked}
+                        onClick={() => setSelected(item.id)}
+                      />
+                    ))
+                ) : (
+                  <button
+                    className={s.addObligationRow}
+                    onClick={() => openInvoiceForm()}
+                  >
+                    <span className={s.activityIcon}>
+                      <Plus size={19} />
+                    </span>
+                    <span>
+                      Add an obligation<small>Keep track of what’s owed.</small>
+                    </span>
+                    <ChevronRight size={16} />
+                  </button>
+                )}
+              </section>
             </>
           )}
           {tab === "Obligations" && (
             <>
               <PageHeading
-                eyebrow="MONEY HAS CONTEXT"
-                title="Keep your commitments clear."
-                subtitle="What’s owed, who it’s with, and what happens next."
+                title="Obligations"
                 action={
                   <button
                     className={s.primary}
@@ -749,8 +769,8 @@ export function AgusWorkspace({
                   ))
                 ) : (
                   <Empty
-                    title="A clear slate."
-                    text="Add a client invoice or a commitment. AGUS will keep the amount, date and next action together."
+                    title="No obligations yet"
+                    text="Track money owed to you or by you."
                   >
                     <button
                       className={s.primary}
@@ -848,9 +868,7 @@ export function AgusWorkspace({
           {tab === "Accounts" && (
             <>
               <PageHeading
-                eyebrow="THE WHOLE PICTURE"
-                title="Every account. Clear context."
-                subtitle="Imported Naira records and digital assets, kept in their own currencies."
+                title="Accounts"
                 action={
                   <button
                     className={s.primary}
@@ -860,14 +878,11 @@ export function AgusWorkspace({
                   </button>
                 }
               />
-              <div className={s.notice}>
-                <ShieldCheck size={17} />
-                <span>
-                  Live Nigerian bank connections are{" "}
-                  <strong>Coming Soon</strong>. Statement imports are
-                  historical, user-provided records.
-                </span>
-              </div>
+              <button className={s.bankComingSoon} disabled>
+                <LockKeyhole size={17} />
+                <span>Link bank account</span>
+                <small>Coming soon</small>
+              </button>
               <section className={s.panel}>
                 <div className={s.sectionHead}>
                   <h2>Imported accounts</h2>
@@ -913,8 +928,8 @@ export function AgusWorkspace({
                 ) : (
                   <Empty
                     icon={Wallet}
-                    title="Your accounts belong here."
-                    text="Import a CSV statement to see balances, spending and transfers across your accounts."
+                    title="Add your first account"
+                    text="Start with a statement."
                   >
                     <button
                       className={s.secondary}
@@ -934,14 +949,11 @@ export function AgusWorkspace({
                     </span>
                     <span className={s.pill}>Testnet</span>
                   </div>
-                  <p className={s.muted}>
-                    Create a ZIP 321 request with a shielded Sapling receiving
-                    address and a unique invoice memo.
-                  </p>
+                  <p className={s.muted}>Receive ZEC at a shielded address.</p>
                   <div className={s.notice}>
                     {snapshot.capabilities.zcash.verificationConfigured
-                      ? "Receiving-wallet verification is configured. Settlement still requires a matching amount, memo and 3 confirmations."
-                      : "Payment requests work without a wallet connection. Settlement verification needs an authorized, synchronized receiving wallet."}
+                      ? "Receiving wallet connected. Payments need 3 confirmations."
+                      : "Requests available. Receiving wallet needed to verify payment."}
                   </div>
                   <button
                     className={s.secondary}
@@ -955,14 +967,11 @@ export function AgusWorkspace({
                     Create a ZEC invoice <ArrowUpRight size={15} />
                   </button>
                   <p className={s.fine}>
-                    A public transaction ID cannot reveal a shielded recipient
-                    or amount. Never share seeds or viewing keys with AGUS.
+                    Never share wallet recovery phrases or viewing keys.
                   </p>
                 </section>
               </div>
-              <Link className={s.legacyLink} href="/devnet">
-                Open existing Solana devnet workspace <ArrowUpRight size={14} />
-              </Link>
+
               {!!snapshot.intelligence.warnings.length && (
                 <div className={s.notice}>
                   <div>
@@ -976,14 +985,10 @@ export function AgusWorkspace({
           )}
           {tab === "Activity" && (
             <>
-              <PageHeading
-                eyebrow="THE RECORD, WITH RECEIPTS"
-                title="Nothing gets lost in the story."
-                subtitle="Saved invoices, requests and verified outcomes. No guessed payment states."
-              />
+              <PageHeading title="Activity" />
               <section className={s.panel}>
                 <div className={s.sectionHead}>
-                  <h2>Workspace activity</h2>
+                  <h2>Recent activity</h2>
                   <span className={s.pill}>
                     {snapshot.events.length} events
                   </span>
@@ -1028,11 +1033,7 @@ export function AgusWorkspace({
                     </div>
                   ))
                 ) : (
-                  <Empty
-                    icon={Clock3}
-                    title="Your story starts here."
-                    text="Create an obligation or import a statement. Its activity will be saved here."
-                  />
+                  <Empty icon={Clock3} title="No activity yet" />
                 )}
               </section>
               {!!snapshot.transactions.length && (
@@ -1070,6 +1071,7 @@ export function AgusWorkspace({
           )}
           {tab === "Assistant" && (
             <Assistant
+              launch={chatLaunch}
               snapshot={snapshot}
               refresh={refresh}
               privacyMode={privacyMode}
@@ -1078,11 +1080,7 @@ export function AgusWorkspace({
           )}
           {tab === "Settings" && (
             <>
-              <PageHeading
-                eyebrow="YOUR WORKSPACE, YOUR TERMS"
-                title="A little more control."
-                subtitle="Privacy, connections, and what’s actually available."
-              />
+              <PageHeading title="Settings" />
               <section className={s.panel}>
                 <h2>Privacy & session</h2>
                 <div className={s.settingRow}>
@@ -1131,6 +1129,20 @@ export function AgusWorkspace({
                 </div>
               </section>
               <section className={s.panel}>
+                <div className={s.settingRow}>
+                  <div>
+                    <strong>Getting started</strong>
+                    <p>Choose your first action.</p>
+                  </div>
+                  <button
+                    className={s.secondary}
+                    onClick={() => setReplayOnboarding(true)}
+                  >
+                    Explore AGUS
+                  </button>
+                </div>
+              </section>
+              <section className={s.panel}>
                 <h2>Connection status</h2>
                 {[
                   ["Nigerian bank connectivity", "Coming Soon"],
@@ -1168,6 +1180,35 @@ export function AgusWorkspace({
                   and Zcash are independent pathways.
                 </span>
               </div>
+              <details className={s.networkDetails}>
+                <summary>Network details</summary>
+                <p className={s.fine}>
+                  Zcash Testnet · public network connection only.
+                </p>
+                <button
+                  className={s.textButton}
+                  disabled={busy}
+                  onClick={() =>
+                    void action(async () => {
+                      const health = await productApi<{
+                        live: boolean;
+                        tipHeight: number;
+                      }>("product/zcash-network");
+                      setNetworkStatus(
+                        health.live
+                          ? `Connected · block ${health.tipHeight.toLocaleString("en-NG")}`
+                          : "Network unavailable",
+                      );
+                    })
+                  }
+                >
+                  Check Zcash connection <RefreshCw size={13} />
+                </button>
+                {networkStatus && <p role="status">{networkStatus}</p>}
+              </details>
+              <Link className={s.legacyLink} href="/devnet">
+                Solana Devnet <ArrowUpRight size={14} />
+              </Link>
               <Link className={s.legacyLink} href="/conversation">
                 Open the existing full agent workspace{" "}
                 <ArrowUpRight size={14} />
@@ -1177,7 +1218,7 @@ export function AgusWorkspace({
         </main>
       </div>
       <nav className={s.mobileNav} aria-label="Mobile navigation">
-        {navigation.map(({ name, icon: Icon }) => (
+        {navigation.map(({ name, label, icon: Icon }) => (
           <button
             key={name}
             onClick={() => navigate(name)}
@@ -1185,15 +1226,7 @@ export function AgusWorkspace({
             aria-current={tab === name ? "page" : undefined}
           >
             <Icon size={20} strokeWidth={1.6} />
-            <span>
-              {name === "Obligations"
-                ? "Obligations"
-                : name === "Overview"
-                  ? "Home"
-                  : name === "Assistant"
-                    ? "AGUS"
-                    : name}
-            </span>
+            <span>{name === "Assistant" ? "AGUS" : label}</span>
           </button>
         ))}
       </nav>
@@ -1203,9 +1236,62 @@ export function AgusWorkspace({
           {toast}
         </div>
       )}
+      {(!snapshot.preferences.onboardingCompleted || replayOnboarding) && (
+        <Dialog title="Welcome to AGUS" close={() => void finishOnboarding()}>
+          <div className={s.onboarding}>
+            <Companion large />
+            <p>Where would you like to start?</p>
+            <div className={s.onboardingActions}>
+              <button
+                disabled={onboardingBusy}
+                onClick={() => void finishOnboarding("chat")}
+              >
+                <MessageCircle size={22} />
+                <span>
+                  Talk to AGUS<small>Ask about your money.</small>
+                </span>
+                <ArrowUpRight size={18} />
+              </button>
+              <button
+                disabled={onboardingBusy}
+                onClick={() => void finishOnboarding("payment")}
+              >
+                <ArrowUpRight size={22} />
+                <span>
+                  Make a payment<small>Start with a name and amount.</small>
+                </span>
+                <ArrowUpRight size={18} />
+              </button>
+              <button
+                disabled={onboardingBusy}
+                onClick={() => void finishOnboarding("obligation")}
+              >
+                <Layers3 size={22} />
+                <span>
+                  Keep track of what’s owed
+                  <small>Add your first obligation.</small>
+                </span>
+                <ArrowUpRight size={18} />
+              </button>
+            </div>
+            {onboardingError && (
+              <p className={s.error} role="alert">
+                {onboardingError}
+              </p>
+            )}
+            <button
+              className={s.textButton}
+              disabled={onboardingBusy}
+              onClick={() => void finishOnboarding()}
+            >
+              Skip for now <ArrowRight size={14} />
+            </button>
+          </div>
+        </Dialog>
+      )}
       {modal === "invoice" && (
         <Dialog
-          title={sample ? "Try a sample invoice" : "Give it a little context."}
+          title={sample ? "Try a sample invoice" : "New obligation"}
           eyebrow="NEW OBLIGATION"
           close={() => setModal(null)}
         >
@@ -1219,14 +1305,14 @@ export function AgusWorkspace({
               await refresh();
               setModal(null);
               setSelected(saved.id);
-              notify("Obligation saved. Your reminder is ready for review.");
+              notify("Obligation saved");
             }}
           />
         </Dialog>
       )}
       {modal === "import" && (
         <Dialog
-          title="Bring your records together."
+          title="Import statement"
           eyebrow="STATEMENT IMPORT"
           close={() => setModal(null)}
         >
@@ -1297,12 +1383,7 @@ export function AgusWorkspace({
       )}
       {selectedPayment && (
         <Dialog
-          title={
-            selectedPayment.privacy
-              ? "Private payment review"
-              : "Payment review & receipt"
-          }
-          eyebrow="SAVED CONVERSATIONAL PAYMENT"
+          title={selectedPayment.privacy ? "Private payment" : "Review payment"}
           close={() => setSelectedPayment(undefined)}
         >
           <PaymentReview
@@ -1326,17 +1407,17 @@ function PageHeading({
   subtitle,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   action?: ReactNode;
 }) {
   return (
     <div className={s.pageHeading}>
       <div>
-        <p className={s.eyebrow}>{eyebrow}</p>
+        {eyebrow && <p className={s.eyebrow}>{eyebrow}</p>}
         <h1>{title}</h1>
-        <p className={s.subtitle}>{subtitle}</p>
+        {subtitle && <p className={s.subtitle}>{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -1394,15 +1475,9 @@ function SignIn({ onSuccess }: { onSuccess: () => Promise<void> }) {
               <br />
               and <span>what&apos;s next.</span>
             </h1>
-            <p>
-              Money comes with people, plans, and promises.
-              <br />
-              Let’s make sense of it together.
-            </p>
           </div>
           <footer>
-            <span>AGUS 2.0</span>
-            <span>Intelligence Without Borders</span>
+            <span>AGUS</span>
           </footer>
         </section>
         <section className={s.signInForm}>
@@ -1410,12 +1485,7 @@ function SignIn({ onSuccess }: { onSuccess: () => Promise<void> }) {
             <span className={s.pill}>
               <LockKeyhole size={12} /> Private workspace
             </span>
-            <h2>
-              A clearer next step
-              <br />
-              starts here.
-            </h2>
-            <p className={s.muted}>Sign in to your AGUS workspace.</p>
+            <h2>Welcome back.</h2>
             <form
               className={s.form}
               onSubmit={async (e) => {
@@ -1467,13 +1537,10 @@ function SignIn({ onSuccess }: { onSuccess: () => Promise<void> }) {
                 securely <ArrowRight size={16} />
               </button>
             </form>
-            <p className={s.fine}>
-              <ShieldCheck size={14} /> Testnet payments only. No real money
-              moves.
-            </p>
+
             <div className={s.loginDisclosure}>
-              One operator identity · saved records are shared by anyone using
-              this login. No live bank connection is claimed.
+              Shared preview login. Anyone using this password can see saved
+              records.
             </div>
           </div>
         </section>
@@ -1995,6 +2062,7 @@ function RequestDetails({
   copy,
 }: {
   request: PaymentRequest;
+  launch?: ChatLaunch;
   snapshot: ProductSnapshot;
   refresh: () => Promise<void>;
   copy: (text: string) => Promise<void>;
@@ -2360,17 +2428,21 @@ function AssistantProse({ text }: { text: string }) {
 }
 
 function Assistant({
+  launch,
   snapshot,
   refresh,
   privacyMode,
   setPrivacyMode,
 }: {
+  launch?: ChatLaunch;
   snapshot: ProductSnapshot;
   refresh: () => Promise<void>;
   privacyMode: boolean;
   setPrivacyMode: (value: boolean) => void;
 }) {
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(launch?.draft ?? "");
+  const launched = useRef<string | undefined>(undefined);
+  const composer = useRef<HTMLTextAreaElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<
@@ -2430,90 +2502,95 @@ function Assistant({
       setBusy(false);
     }
   }
-  async function ask(text: string) {
-    if (!text.trim() || busy) return;
-    setBusy(true);
-    setError("");
-    conversation.current ??= crypto.randomUUID();
-    setMessages((m) => [...m, { role: "user", text }]);
-    setQuestion("");
-    try {
-      if (looksLikePaymentIntent(text)) {
-        const plan = await productApi<PaymentPlan>("product/payment-plans", {
-          id: crypto.randomUUID(),
+  const ask = useCallback(
+    async (text: string) => {
+      if (!text.trim() || busy) return;
+      setBusy(true);
+      setError("");
+      conversation.current ??= crypto.randomUUID();
+      setMessages((m) => [...m, { role: "user", text }]);
+      setQuestion("");
+      try {
+        if (looksLikePaymentIntent(text)) {
+          const plan = await productApi<PaymentPlan>("product/payment-plans", {
+            id: crypto.randomUUID(),
+            text,
+            privacyMode,
+          });
+          setPlans((old) => [plan, ...old]);
+          setSelectedPlan(plan);
+          if (plan.privacy) setPrivacyMode(true);
+          setMessages((old) => [
+            ...old,
+            {
+              role: "assistant",
+              text:
+                plan.state === "needs_details"
+                  ? "Who should receive this? Add their payment details."
+                  : plan.state === "blocked"
+                    ? "This payment isn’t available yet. See the review for details."
+                    : "Review your payment details to continue.",
+            },
+          ]);
+          return;
+        }
+        if (!snapshot.capabilities.ai.configured)
+          throw new Error(
+            "Chat is unavailable. You can still prepare a payment or view your financial summary.",
+          );
+        const result = await productApi<{ reply: AgentReply }>("conversation", {
+          conversationId: conversation.current,
+          requestId: crypto.randomUUID(),
           text,
+          accountIds: [],
           privacyMode,
         });
-        setPlans((old) => [plan, ...old]);
-        setSelectedPlan(plan);
-        if (plan.privacy) setPrivacyMode(true);
-        setMessages((old) => [
-          ...old,
+        setMessages((m) => [
+          ...m,
           {
             role: "assistant",
-            text: `Your ${plan.privacy ? "private" : "standard"} payment intent is saved for review. ${plan.state === "needs_details" ? "I need the exact recipient details before anything can be sent." : plan.state === "blocked" ? "A required capability is unavailable; the review explains the blocker." : "Connect the designated test wallet to obtain a genuine provider quote."} No payment has been approved or sent.`,
-            source: "Local intent parser · saved payment proposal",
+            text: result.reply.text,
+            source: `${snapshot.capabilities.ai.provider} · ${result.reply.execution?.steps.filter((step) => step.state === "succeeded").length ?? 0} completed tool steps`,
+            id: conversation.current!,
           },
         ]);
-        return;
-      }
-      if (!snapshot.capabilities.ai.configured)
-        throw new Error(
-          "The language model is not configured. You can still describe a USDC or ZEC payment, complete its trusted review, or read the financial snapshot.",
+        await refresh();
+      } catch (e) {
+        setError(
+          e instanceof Error
+            ? e.message
+            : "The model could not respond. Your saved records are unchanged.",
         );
-      const result = await productApi<{ reply: AgentReply }>("conversation", {
-        conversationId: conversation.current,
-        requestId: crypto.randomUUID(),
-        text,
-        accountIds: [],
-        privacyMode,
-      });
-      setMessages((m) => [
-        ...m,
-        {
-          role: "assistant",
-          text: result.reply.text,
-          source: `${snapshot.capabilities.ai.provider} · ${result.reply.execution?.steps.filter((step) => step.state === "succeeded").length ?? 0} completed tool steps`,
-          id: conversation.current!,
-        },
-      ]);
-      await refresh();
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "The model could not respond. Your saved records are unchanged.",
-      );
-      setQuestion(text);
-    } finally {
-      setBusy(false);
+        setQuestion(text);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, privacyMode, refresh, setPrivacyMode, snapshot.capabilities.ai],
+  );
+  useEffect(() => {
+    if (!launch || launched.current === launch.id || busy) return;
+    launched.current = launch.id;
+    if (launch.text) void ask(launch.text);
+    else {
+      setQuestion(launch.draft ?? "");
+      composer.current?.focus();
     }
-  }
+  }, [launch, busy, ask]);
   return (
     <div className={s.assistantPage}>
-      <PageHeading
-        eyebrow="YOUR THINKING PARTNER"
-        title="A little context goes a long way."
-        subtitle="Ask about your records, commitments, or your next financial move."
-      />
+      <PageHeading title="Ask AGUS" />
       <section className={s.assistantPanel}>
         <div className={s.chatScroll}>
           {!messages.length && (
             <div className={s.assistantWelcome}>
               <Companion large />
               <h2>What’s on your mind?</h2>
-              <p>
-                I can bring your imported records, open obligations
-                <br className={s.desktopOnly} /> and payment evidence into the
-                conversation.
-              </p>
+
               <div className={s.promptGrid}>
                 <button onClick={() => void guidance()}>
                   <FileText size={18} />
-                  <span>
-                    Show my financial picture
-                    <small>Calculated from saved records</small>
-                  </span>
+                  <span>My financial summary</span>
                   <ArrowUpRight size={16} />
                 </button>
                 <button
@@ -2525,10 +2602,7 @@ function Assistant({
                   }
                 >
                   <MessageCircle size={18} />
-                  <span>
-                    Help me find my next step
-                    <small>Ask the personal agent</small>
-                  </span>
+                  <span>What’s due next?</span>
                   <ArrowUpRight size={16} />
                 </button>
               </div>
@@ -2536,12 +2610,22 @@ function Assistant({
           )}
           {!messages.length && (
             <div className={s.paymentExamples}>
-              <span>OR PREPARE A PAYMENT</span>
-              <button onClick={() => void ask("Send Daniel 10 USDC")}>
-                “Send Daniel 10 USDC” <ArrowUpRight size={13} />
+              <button
+                onClick={() => {
+                  setQuestion("Send ");
+                  composer.current?.focus();
+                }}
+              >
+                Send money <ArrowUpRight size={14} />
               </button>
-              <button onClick={() => void ask("Send Daniel 0.2 ZEC privately")}>
-                “Send Daniel 0.2 ZEC privately” <ShieldCheck size={13} />
+              <button
+                onClick={() => {
+                  setPrivacyMode(true);
+                  setQuestion("Send privately ");
+                  composer.current?.focus();
+                }}
+              >
+                Private payment <ShieldCheck size={14} />
               </button>
             </div>
           )}
@@ -2560,14 +2644,18 @@ function Assistant({
                 ) : (
                   <p>{message.text}</p>
                 )}
-                {message.source && <small>{message.source}</small>}
+                {message.source && (
+                  <details className={s.messageDetails}>
+                    <summary>Sources</summary>
+                    <small>{message.source}</small>
+                  </details>
+                )}
                 {message.id && (
                   <Link
                     className={s.textButton}
                     href={`/conversation?chat=${encodeURIComponent(message.id)}`}
                   >
-                    Open full conversation & review actions{" "}
-                    <ArrowUpRight size={13} />
+                    View actions <ArrowUpRight size={13} />
                   </Link>
                 )}
               </div>
@@ -2575,7 +2663,7 @@ function Assistant({
           ))}
           {!!plans.length && (
             <div className={s.savedPlans}>
-              <p className={s.eyebrow}>SAVED PAYMENT REVIEWS</p>
+              <p className={s.eyebrow}>PAYMENTS</p>
               {plans.slice(0, 8).map((plan) => (
                 <button
                   className={s.paymentCard}
@@ -2618,12 +2706,7 @@ function Assistant({
             {error}
           </div>
         )}
-        {!snapshot.capabilities.ai.configured && (
-          <div className={s.chatNotice}>
-            Free-form AI chat needs a model connection. Payment intents use a
-            labelled local parser; financial snapshots use saved data.
-          </div>
-        )}
+
         <form
           className={s.composer}
           onSubmit={(e) => {
@@ -2632,8 +2715,9 @@ function Assistant({
           }}
         >
           <textarea
+            ref={composer}
             aria-label="Message AGUS"
-            placeholder="e.g. Send Daniel 10 USDC…"
+            placeholder="Message AGUS…"
             rows={1}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -2655,28 +2739,20 @@ function Assistant({
           </button>
         </form>
         <div className={s.composerFooter}>
-          <span>AGUS proposes. You decide.</span>
+          <span>{privacyMode ? "Privacy Mode on" : ""}</span>
           <button
             className={s.textButton}
             disabled={busy}
             onClick={() => void guidance()}
           >
-            Read financial snapshot <ArrowUpRight size={12} />
+            Financial summary <ArrowUpRight size={12} />
           </button>
         </div>
       </section>
-      <Link className={s.legacyLink} href="/conversation">
-        Open the full agent, memory and existing payment workflows{" "}
-        <ArrowUpRight size={14} />
-      </Link>
+
       {selectedPlan && (
         <Dialog
-          title={
-            selectedPlan.privacy
-              ? "A private payment, with clear limits."
-              : "Your payment. Your approval."
-          }
-          eyebrow="CONVERSATIONAL PAYMENT REVIEW"
+          title={selectedPlan.privacy ? "Private payment" : "Review payment"}
           close={() => {
             setSelectedPlan(undefined);
             void refresh();

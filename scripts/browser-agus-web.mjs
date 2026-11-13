@@ -111,11 +111,24 @@ try {
     const page = await context.newPage();
     const audit = async (view) => {
       if (![1440, 390].includes(width)) return;
-      const report = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
-      const violations = report.violations.map((item) => ({ id: item.id, impact: item.impact, targets: item.nodes.map((node) => node.target) }));
+      const report = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+        .analyze();
+      const violations = report.violations.map((item) => ({
+        id: item.id,
+        impact: item.impact,
+        targets: item.nodes.map((node) => node.target),
+      }));
       accessibility.push({ width, view, violations });
-      await writeFile(join(evidence, "accessibility.json"), JSON.stringify(accessibility, null, 2));
-      assert.deepEqual(violations, [], `Accessibility violations in ${width}px ${view}`);
+      await writeFile(
+        join(evidence, "accessibility.json"),
+        JSON.stringify(accessibility, null, 2),
+      );
+      assert.deepEqual(
+        violations,
+        [],
+        `Accessibility violations in ${width}px ${view}`,
+      );
     };
     const errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
@@ -139,8 +152,37 @@ try {
     await page.getByLabel("Operator password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in securely" }).click();
     await page
-      .getByRole("heading", { name: "Make room for what’s next." })
+      .getByRole("heading", { name: "Your money", exact: true })
       .waitFor();
+    if (width === 1440) {
+      const onboarding = page.getByRole("dialog", { name: "Welcome to AGUS" });
+      await onboarding.waitFor();
+      await audit("onboarding");
+      await page.screenshot({
+        path: join(evidence, "1440-onboarding.png"),
+        fullPage: true,
+      });
+      await onboarding.getByRole("button", { name: "Skip for now" }).click();
+      await onboarding.waitFor({ state: "hidden" });
+      await page.reload();
+      await page
+        .getByRole("heading", { name: "Your money", exact: true })
+        .waitFor();
+      assert.equal(
+        await onboarding.count(),
+        0,
+        "Onboarding completion persists after reload",
+      );
+      await nav("Settings").click();
+      await page.getByRole("button", { name: "Explore AGUS" }).click();
+      await onboarding.getByRole("button", { name: "Make a payment" }).click();
+      await page.getByRole("textbox", { name: "Message AGUS" }).waitFor();
+      assert.equal(
+        await page.getByRole("textbox", { name: "Message AGUS" }).inputValue(),
+        "Send ",
+      );
+      await nav("Home").click();
+    }
     await fit();
     await audit("overview");
     await page
@@ -272,10 +314,8 @@ try {
       fullPage: true,
     });
     await audit("accounts");
-    await nav(width < 700 ? "AGUS" : "Assistant").click();
-    await page
-      .getByRole("button", { name: "Show my financial picture" })
-      .click();
+    await nav(width < 700 ? "AGUS" : "Ask AGUS").click();
+    await page.getByRole("button", { name: "My financial summary" }).click();
     await page
       .getByText(/combined balance anchored to your imported Naira statements/)
       .waitFor();
@@ -285,23 +325,33 @@ try {
       fullPage: true,
     });
     await audit("assistant");
-    const composer = page.getByRole("textbox", { name: "Message AGUS" });
-    await composer.fill("Send Daniel 10 USDC");
+    await nav("Home").click();
+    const beforePlans = await (
+      await context.request.get(`${base}/api/product/payment-plans`)
+    ).json();
     await page
-      .getByRole("button", { name: "Send message", exact: true })
-      .click();
+      .getByRole("textbox", { name: "Ask AGUS", exact: true })
+      .fill("Send Daniel 10 USDC");
+    await page.getByRole("button", { name: "Start conversation" }).click();
+    const composer = page.getByRole("textbox", { name: "Message AGUS" });
     await dialog
-      .getByRole("heading", { name: "Your payment. Your approval." })
+      .getByRole("heading", { name: "Review payment", exact: true })
       .waitFor();
+    const afterPlans = await (
+      await context.request.get(`${base}/api/product/payment-plans`)
+    ).json();
+    assert.equal(
+      afterPlans.plans.length,
+      beforePlans.plans.length + 1,
+      "Home creates exactly one payment proposal",
+    );
     await dialog
       .getByRole("textbox", { name: "Exact recipient address", exact: true })
       .fill(recipient);
     await dialog
-      .getByRole("checkbox", { name: "I checked this exact recipient address" })
+      .getByRole("checkbox", { name: "I checked the recipient address" })
       .check();
-    await dialog
-      .getByRole("button", { name: "Save exact payment details" })
-      .click();
+    await dialog.getByRole("button", { name: "Continue", exact: true }).click();
     await dialog
       .getByRole("heading", { name: "This payment is blocked." })
       .waitFor();
@@ -323,7 +373,7 @@ try {
         .getByRole("button", { name: "Send message", exact: true })
         .click();
       await dialog
-        .getByRole("heading", { name: "A private payment, with clear limits." })
+        .getByRole("heading", { name: "Private payment", exact: true })
         .waitFor();
       assert.equal(
         await page
@@ -341,11 +391,11 @@ try {
         .fill(zaddr);
       await dialog
         .getByRole("checkbox", {
-          name: "I checked this exact recipient address",
+          name: "I checked the recipient address",
         })
         .check();
       await dialog
-        .getByRole("button", { name: "Save exact payment details" })
+        .getByRole("button", { name: "Continue", exact: true })
         .click();
       await dialog.getByText(/Shielded sending is unavailable/).waitFor();
       assert.equal(

@@ -16,11 +16,12 @@ it("retains invoices and consumed signing authority across a process restart wit
     import {Account,Asset,Keypair,Memo,Networks,Operation,TransactionBuilder} from '@stellar/stellar-base';
     import {db} from './src/lib/db.ts';
     import {workspace} from './src/lib/agent-workspace/store.ts';
-    import {createInvoice,productSnapshot} from './src/lib/web-product/service.ts';
+    import {createInvoice,productSnapshot,completeOnboarding} from './src/lib/web-product/service.ts';
     import {preparePaymentIntent,updatePaymentPlan,quotePaymentPlan,approvePaymentPlan,claimPaymentSubmission,getPaymentPlan,listPaymentPlans} from './src/lib/web-product/conversational-payments.ts';
     globalThis.fetch=async()=>{throw new Error('Network forbidden in restart test')};
     const owner='web-restart-owner';
     if(process.argv[1]==='before') {
+      await completeOnboarding(owner);
       const source=Keypair.random().publicKey(),recipient=Keypair.random().publicKey(),issuer=Keypair.random().publicKey();
       process.env.POLLAR_TESTNET_USDC_ISSUER=issuer;
       const invoice=await createInvoice(owner,{id:randomUUID(),title:'Fictional restart obligation',counterparty:'Fictional recipient',direction:'payable',currency:'USDC',amount:'10',dueAt:new Date(Date.now()+86400000).toISOString(),note:'Test only'});
@@ -38,7 +39,7 @@ it("retains invoices and consumed signing authority across a process restart wit
       let duplicateRejected=false;
       try {await claimPaymentSubmission(owner,plan.id,saved.nonce)} catch(e) {duplicateRejected=e.status===403}
       const state=await productSnapshot(owner),tasks=(await workspace(owner).snapshot()).tasks;
-      console.log(JSON.stringify({state:plan.state,approvalConsumed:!!plan.approval?.consumedAt,duplicateRejected,invoiceState:state.invoices.find(i=>i.id===saved.invoiceId).state,taskState:tasks.find(t=>t.id===saved.invoiceId).state,foreignPlans:(await listPaymentPlans('another-owner')).length}));
+      console.log(JSON.stringify({onboardingCompleted:state.preferences.onboardingCompleted,state:plan.state,approvalConsumed:!!plan.approval?.consumedAt,duplicateRejected,invoiceState:state.invoices.find(i=>i.id===saved.invoiceId).state,taskState:tasks.find(t=>t.id===saved.invoiceId).state,foreignPlans:(await listPaymentPlans('another-owner')).length}));
     }
     await (await db()).$client.close();
   `;
@@ -71,6 +72,7 @@ it("retains invoices and consumed signing authority across a process restart wit
   try {
     run("before");
     expect(JSON.parse(run("after"))).toEqual({
+      onboardingCompleted: true,
       state: "submitting",
       approvalConsumed: true,
       duplicateRejected: true,

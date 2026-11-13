@@ -3163,3 +3163,283 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Quiet, action-led home and first-use flow. */
+.balanceGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 28px;
+  padding: 28px;
+}
+.balanceGrid strong {
+  display: block;
+  font-size: 42px;
+  letter-spacing: -1.5px;
+  font-weight: 450;
+  margin: 10px 0 5px;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.balanceGrid p {
+  font-size: 11px;
+  color: #999;
+}
+.balanceEmpty {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 32px 26px;
+}
+.balanceEmpty h2 {
+  font-size: 18px;
+}
+.balanceEmpty p {
+  color: #999;
+  font-size: 12px;
+  margin-top: 5px;
+}
+.balanceEmpty > button {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.homeAsk {
+  margin: 28px 0 34px;
+  padding: 26px;
+  border: 1px solid #303030;
+  border-radius: 14px;
+  background: radial-gradient(ellipse at 0 0, #1c1c1c, #101010 65%);
+}
+.askTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.askTitle h2 {
+  font-size: 17px;
+}
+.askTitle > span {
+  margin-left: auto;
+  font-size: 12px;
+  color: #999;
+}
+.homeComposer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px 7px 4px;
+  border: 1px solid #414141;
+  border-radius: 12px;
+  background: #080808;
+}
+.root .homeComposer input {
+  border: none;
+  background: transparent;
+  min-width: 0;
+  padding: 12px;
+}
+.homeComposer .sendButton {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+}
+.quickActions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+.quickActions button {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #303030;
+  border-radius: 8px;
+  padding: 12px 8px;
+  color: #ddd;
+  font-size: 12px;
+  background: #161616;
+  min-height: 46px;
+}
+.quickActions button:hover {
+  background: #252525;
+  border-color: #555;
+}
+.homeObligations {
+  margin-top: 28px;
+}
+.homeObligations .sectionHead {
+  padding: 0 0 17px;
+}
+.addObligationRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  text-align: left;
+  padding: 20px 0;
+  border-top: 1px solid #252525;
+  border-bottom: 1px solid #252525;
+}
+.addObligationRow > span:nth-child(2) {
+  flex: 1;
+  font-size: 13px;
+}
+.addObligationRow small {
+  display: block;
+  color: #999;
+  margin-top: 3px;
+}
+.pendingBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #353535;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 12px;
+}
+.pendingBar > span {
+  flex: 1;
+}
+.bankComingSoon {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 18px;
+  border: 1px solid #333;
+  border-radius: 10px;
+  margin-bottom: 22px;
+  text-align: left;
+}
+.root .bankComingSoon:disabled {
+  opacity: 0.65;
+}
+.bankComingSoon small {
+  margin-left: auto;
+}
+.onboarding {
+  text-align: center;
+  padding: 12px 0 8px;
+}
+.onboarding > .companion {
+  margin: 12px auto 28px;
+}
+.onboarding > p {
+  font-size: 16px;
+  color: #c0c0c0;
+}
+.onboardingActions {
+  display: grid;
+  gap: 12px;
+  margin: 28px 0 18px;
+}
+.onboardingActions > button {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #161616;
+  border: 1px solid #343434;
+  padding: 19px;
+  border-radius: 12px;
+  width: 100%;
+}
+.onboardingActions > button:hover {
+  background: #222;
+  border-color: #666;
+}
+.onboardingActions > button > span {
+  flex: 1;
+  font-size: 14px;
+}
+.onboardingActions small {
+  display: block;
+  color: #999;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.messageDetails {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 10px;
+}
+.messageDetails summary {
+  cursor: pointer;
+}
+@media (min-width: 701px) {
+  .sidebar nav {
+    margin-top: 3px;
+  }
+}
+@media (max-width: 700px) {
+  .balanceEmpty {
+    padding: 23px 18px;
+    gap: 13px;
+    flex-wrap: wrap;
+  }
+  .balanceEmpty .accountIcon {
+    display: none;
+  }
+  .balanceEmpty > div {
+    width: 100%;
+  }
+  .balanceEmpty > button {
+    margin: 4px 0 0;
+  }
+  .balanceGrid {
+    padding: 23px 18px;
+    gap: 20px;
+  }
+  .balanceGrid strong {
+    font-size: 34px;
+  }
+  .homeAsk {
+    margin: 22px 0 28px;
+    padding: 18px 14px;
+  }
+  .askTitle {
+    margin: 0 2px 18px;
+  }
+  .askTitle > span {
+    display: none;
+  }
+  .root .homeComposer input {
+    font-size: 13px;
+    padding: 10px 7px;
+  }
+  .quickActions {
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .quickActions button {
+    flex-direction: column;
+    gap: 8px;
+    font-size: 10px;
+    padding: 13px 4px;
+  }
+  .homeObligations {
+    margin-top: 24px;
+  }
+  .homeObligations .sectionHead h2 {
+    font-size: 17px;
+  }
+  .onboardingActions > button {
+    padding: 17px 13px;
+    gap: 13px;
+  }
+  .onboardingActions small {
+    font-size: 11px;
+  }
+}
+.networkDetails {
+  margin: 22px 0;
+  color: #aaa;
+  font-size: 12px;
+}
+.networkDetails summary {
+  cursor: pointer;
+  padding: 10px 0;
+}

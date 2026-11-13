@@ -1,3 +1,4 @@
+import { isIssuerAddress } from "../pollar/network";
 import { randomUUID, createHash } from "node:crypto";
 import {
   TransactionBuilder,
@@ -146,7 +147,7 @@ function assess(plan: PaymentPlan) {
   if (
     plan.rail === "pollar-stellar" &&
     plan.recipientAddress &&
-    plan.recipientAddress === pollarConfiguration().issuer
+    isIssuerAddress(plan.recipientAddress ?? "", pollarConfiguration().issuer)
   )
     blockers.push(
       "This is the USDC issuer address, not your recipient’s wallet. Choose a separate controlled recipient account with the required USDC trustline.",
@@ -393,7 +394,7 @@ export function validateStellarEnvelope(
   if (
     op.type !== "payment" ||
     op.destination !== plan.recipientAddress ||
-    op.destination === issuer ||
+    isIssuerAddress(op.destination, issuer) ||
     op.asset.isNative() ||
     op.asset.getCode() !== "USDC" ||
     op.asset.getIssuer() !== issuer ||

@@ -16,6 +16,7 @@ import {
   currentRequest,
   beginPollarSubmission,
   cancelRequest,
+  completeOnboarding,
 } from "../src/lib/web-product/service";
 import {
   stellarAddress,
@@ -107,6 +108,35 @@ beforeAll(async () => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Web financial boundaries", () => {
+  it("persists onboarding for its owner and rejects preference identity injection", async () => {
+    const isolatedOwner = `onboarding-${randomUUID()}`;
+    expect(
+      (await productSnapshot(isolatedOwner)).preferences.onboardingCompleted,
+    ).toBe(false);
+    await completeOnboarding(isolatedOwner);
+    await completeOnboarding(isolatedOwner);
+    expect(
+      (await productSnapshot(isolatedOwner)).preferences.onboardingCompleted,
+    ).toBe(true);
+    expect(
+      (await productSnapshot("another-onboarding-owner")).preferences
+        .onboardingCompleted,
+    ).toBe(false);
+    const injected = await POST(
+      api("/preferences", { onboardingCompleted: true, owner: isolatedOwner }),
+    );
+    expect(injected.status).toBe(400);
+    const foreign = await POST(
+      api("/preferences", { onboardingCompleted: true }, "invalid-session"),
+    );
+    expect(foreign.status).toBe(401);
+    expect(
+      (await POST(api("/preferences", { onboardingCompleted: true }))).status,
+    ).toBe(200);
+    expect((await productSnapshot(owner)).preferences.onboardingCompleted).toBe(
+      true,
+    );
+  });
   it("uses exact atomic amounts and rejects extra precision, negative amounts and mainnet receivers", () => {
     expect(atomic("12345678.12345678", 8)).toBe(1234567812345678n);
     expect(() => atomic("0.001", 2)).toThrow();

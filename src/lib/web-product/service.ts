@@ -1,3 +1,4 @@
+import { isIssuerAddress } from "../pollar/network";
 import { randomUUID, createHash } from "node:crypto";
 import { reauthenticate } from "../auth";
 import { readFile } from "node:fs/promises";
@@ -43,6 +44,7 @@ export async function initializeProduct() {
       for (const name of [
         "0019_web_product.sql",
         "0020_conversational_payments.sql",
+        "0021_web_preferences.sql",
       ]) {
         const migration = await readFile(
           join(process.cwd(), "migrations", name),
@@ -233,7 +235,10 @@ export async function createPaymentRequest(
       input.rail === "pollar-stellar"
         ? pollarConfiguration().issuer
         : undefined;
-    if (input.rail === "pollar-stellar" && issuer && input.recipient === issuer)
+    if (
+      input.rail === "pollar-stellar" &&
+      isIssuerAddress(input.recipient, issuer)
+    )
       throw new AppError(
         "That is the USDC issuer address, not the recipient’s wallet. Use a separate controlled receiving account with the appropriate trustline.",
       );
@@ -582,25 +587,39 @@ export async function importStatement(owner: string, raw: unknown) {
   });
 }
 
+export async function completeOnboarding(owner: string) {
+  const sql = await initializeProduct();
+  await sql.query(
+    "INSERT INTO agus_web_preferences(owner,onboarding_completed) VALUES($1,TRUE) ON CONFLICT(owner) DO UPDATE SET onboarding_completed=TRUE",
+    [owner],
+  );
+  return { onboardingCompleted: true };
+}
+
 export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
   const sql = await initializeProduct();
   const repo = new FinancialIntelligenceRepository(sql);
-  const [accounts, txs, invoiceRows, requestRows, events] = await Promise.all([
-    repo.listAccounts(owner),
-    repo.listTransactions(owner),
-    sql.query(
-      "SELECT payload FROM agus_web_invoices WHERE owner=$1 ORDER BY created_at DESC LIMIT 200",
-      [owner],
-    ),
-    sql.query(
-      "SELECT payload FROM agus_web_requests WHERE owner=$1 ORDER BY created_at DESC LIMIT 200",
-      [owner],
-    ),
-    sql.query(
-      "SELECT payload FROM agus_web_events WHERE owner=$1 ORDER BY at DESC,id LIMIT 100",
-      [owner],
-    ),
-  ]);
+  const [accounts, txs, invoiceRows, requestRows, events, preferences] =
+    await Promise.all([
+      repo.listAccounts(owner),
+      repo.listTransactions(owner),
+      sql.query(
+        "SELECT payload FROM agus_web_invoices WHERE owner=$1 ORDER BY created_at DESC LIMIT 200",
+        [owner],
+      ),
+      sql.query(
+        "SELECT payload FROM agus_web_requests WHERE owner=$1 ORDER BY created_at DESC LIMIT 200",
+        [owner],
+      ),
+      sql.query(
+        "SELECT payload FROM agus_web_events WHERE owner=$1 ORDER BY at DESC,id LIMIT 100",
+        [owner],
+      ),
+      sql.query(
+        "SELECT onboarding_completed FROM agus_web_preferences WHERE owner=$1",
+        [owner],
+      ),
+    ]);
   const balances = computeAccountBalances(accounts, txs.items);
   const cash = computeCashFlow({ transactions: txs.items, currency: "NGN" });
   const invoices: Invoice[] = invoiceRows.rows.map((r) => r.payload);
@@ -619,6 +638,9 @@ export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
     );
   return {
     owner,
+    preferences: {
+      onboardingCompleted: preferences.rows[0]?.onboarding_completed === true,
+    },
     asOf: new Date().toISOString(),
     invoices,
     requests: requestRows.rows.map((r) => currentRequest(r.payload)),

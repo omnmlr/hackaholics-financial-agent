@@ -14,6 +14,7 @@ import {
   importStatement,
   financialGuidance,
   initializeProduct,
+  completeOnboarding,
 } from "@/lib/web-product/service";
 import {
   FinancialIntelligenceRepository,
@@ -63,6 +64,17 @@ async function handle(req: Request) {
     const path = url.pathname.replace(/^\/api\/product\/?/, "").split("/");
     if (req.method === "GET") {
       if (!path[0]) return workspaceResponse(await productSnapshot(owner));
+      if (path[0] === "zcash-network" && !path[1]) {
+        const { LightwalletdClient } =
+          await import("@/lib/zcash/lightwalletd-client");
+        const health = await new LightwalletdClient().checkHealth();
+        return workspaceResponse({
+          ...health,
+          endpoint: "testnet.zec.rocks:443",
+          observedAt: new Date().toISOString(),
+          classification: "public-network-read-only",
+        });
+      }
       if (path[0] === "payment-plans")
         return workspaceResponse(
           path[1]
@@ -101,6 +113,12 @@ async function handle(req: Request) {
       }
     }
     if (req.method === "POST") {
+      if (path[0] === "preferences" && !path[1]) {
+        z.strictObject({ onboardingCompleted: z.literal(true) }).parse(
+          await body(req),
+        );
+        return workspaceResponse(await completeOnboarding(owner));
+      }
       if (path[0] === "payment-plans") {
         if (!path[1])
           return workspaceResponse(

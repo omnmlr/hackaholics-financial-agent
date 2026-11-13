@@ -1,4 +1,6 @@
-import { bech32, base32 } from "@scure/base";
+import { buildZip321Uri, validateZcashAddress } from "../zcash/zip321";
+import { STELLAR_TESTNET_HORIZON, isIssuerAddress } from "../pollar/network";
+import { base32 } from "@scure/base";
 import { AppError } from "../domain";
 import {
   atomic,
@@ -23,17 +25,9 @@ export function stellarAddress(value: string): boolean {
   }
 }
 
-/** ZIP 173 Sapling encoding. Mainnet receivers are intentionally excluded. */
+/** Only checksum-validated shielded receivers supported by this integration. */
 export function zcashTestnetAddress(value: string): boolean {
-  try {
-    const decoded = bech32.decode(value as `${string}1${string}`, 200);
-    return (
-      decoded.prefix === "ztestsapling" &&
-      bech32.fromWords(decoded.words).length === 43
-    );
-  } catch {
-    return false;
-  }
+  return validateZcashAddress(value, "testnet").valid;
 }
 
 export function zcashUri(
@@ -47,10 +41,13 @@ export function zcashUri(
     );
   if (atomic(amount, 8) <= 0n)
     throw new AppError("Enter a positive ZEC amount.");
-  const bytes = Buffer.from(memo, "utf8");
-  if (bytes.length > 512) throw new AppError("The Zcash memo is too long.");
-  // ZIP 321 encodes memo bytes as unpadded base64url, never plain text.
-  return `zcash:${recipient}?${new URLSearchParams({ amount, memo: bytes.toString("base64url"), label: "AGUS testnet payment" })}`;
+  return buildZip321Uri({
+    address: recipient,
+    amountAtoms: atomic(amount, 8),
+    memo,
+    label: "AGUS testnet payment",
+    network: "testnet",
+  });
 }
 
 export function pollarConfiguration() {
@@ -66,7 +63,7 @@ export function pollarConfiguration() {
 }
 
 export async function readStellarTestnet(path: string) {
-  const response = await fetch(`https://horizon-testnet.stellar.org${path}`, {
+  const response = await fetch(`${STELLAR_TESTNET_HORIZON}${path}`, {
     signal: AbortSignal.timeout(12000),
     cache: "no-store",
     headers: { Accept: "application/json" },
@@ -89,7 +86,7 @@ export async function verifyStellar(
   request: PaymentRequest,
   transactionId: string,
 ): Promise<VerificationEvidence> {
-  if (request.recipient === request.issuer)
+  if (isIssuerAddress(request.recipient, request.issuer))
     throw new AppError(
       "An issuer-address payment is not an accepted recipient settlement.",
       409,

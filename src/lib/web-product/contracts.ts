@@ -87,6 +87,7 @@ export function atomic(value: string, scale: number): bigint {
 
 export type ProductSnapshot = {
   owner: string;
+  preferences: { onboardingCompleted: boolean };
   asOf: string;
   invoices: Invoice[];
   requests: PaymentRequest[];

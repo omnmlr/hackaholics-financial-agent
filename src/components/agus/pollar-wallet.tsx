@@ -361,16 +361,9 @@ export function PollarWallet({
         </span>
         <span className={s.pill}>Stellar testnet</span>
       </div>
-      <p className={s.muted}>
-        Email or wallet onboarding, balances and explicit test payments through
-        the official Pollar SDK.
-      </p>
+      <p className={s.muted}>Connect by email or with your wallet.</p>
       {!config.configured ? (
-        <div className={s.notice}>
-          Wallet setup required. Add a Pollar publishable testnet key and its
-          USDC issuer in the server environment. No wallet or balance is
-          fabricated.
-        </div>
+        <div className={s.notice}>Wallet connection unavailable.</div>
       ) : !ready ? (
         <button
           className={s.primary}

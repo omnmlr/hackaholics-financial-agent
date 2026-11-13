@@ -77,11 +77,6 @@ export function PaymentReview({
           {plan.privacy ? "Private payment" : "Standard payment"} · testnet
         </span>
       </div>
-      <div className={s.notice}>
-        {plan.interpretation === "local-intent-parser"
-          ? "Prepared from your words with the local intent parser. Check the details before approving."
-          : "Prepared by your personal agent. Check the details here; your wallet handles signing."}
-      </div>
       {editing && canEdit ? (
         <form
           className={s.form}
@@ -175,13 +170,11 @@ export function PaymentReview({
               checked={privacy}
               onChange={(e) => setPrivacy(e.target.checked)}
             />{" "}
-            Require a shielded Zcash payment. A public Stellar payment will stay
-            blocked while this is selected.
+            Private payment · shielded Zcash only.
           </label>
           <label className={s.checkbox}>
             <input type="checkbox" name="saveContact" /> Save this name and
-            address as my testnet contact. This is a user-supplied alias, not
-            verified identity.
+            address as a contact.
           </label>
           <label>
             Link an existing obligation{" "}
@@ -202,9 +195,8 @@ export function PaymentReview({
             </select>
           </label>
           <label className={s.checkbox}>
-            <input type="checkbox" required /> I checked this exact recipient
-            address and explicitly chose testnet. Saving details does not
-            approve or send anything.
+            <input type="checkbox" required /> I checked the recipient address.
+            This is a Testnet payment.
           </label>
           <button className={s.primary} disabled={busy}>
             {busy ? (
@@ -212,7 +204,7 @@ export function PaymentReview({
             ) : (
               <ShieldCheck size={16} />
             )}{" "}
-            Save exact payment details
+            Continue
           </button>
         </form>
       ) : (
@@ -242,7 +234,7 @@ export function PaymentReview({
               </dd>
             </div>
             <div>
-              <dt>Payment pathway</dt>
+              <dt>Network</dt>
               <dd>
                 {plan.rail === "pollar-stellar"
                   ? "Pollar · Stellar testnet"
@@ -259,8 +251,8 @@ export function PaymentReview({
               <dt>Fee quote</dt>
               <dd>
                 {plan.quote
-                  ? `${Number(plan.quote.feeStroops) / 10000000} XLM · parsed from exact provider envelope`
-                  : "Unavailable · no fee quote has been received"}
+                  ? `${Number(plan.quote.feeStroops) / 10000000} XLM · network fee`
+                  : "Not quoted yet"}
               </dd>
             </div>
             <div>

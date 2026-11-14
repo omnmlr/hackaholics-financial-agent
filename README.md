@@ -6,7 +6,7 @@ Your money, and what's next.
 
 AGUS combines Gemini conversations, Pidgin understanding, persistent financial memory, owner-reviewed reminders and testnet payment workflows in the approved Counterpart interface.
 
-**Verified Zcash receiving:** Gemini created a private0.1ZEC invoice with a fresh native-wallet-controlled Orchard Unified receiver and ZIP321QR. A public faucet funded it. The authenticated NU7-compatible receiving wallet independently decrypted10,000,000zatoshis, and AGUS automatically settled the invoice and completed its reminder at3confirmations. [Actual receiving-wallet evidence and screenshots](docs/zcash-native/README.md).
+**Verified Zcash receiving:** Gemini created a private 0.1 ZEC invoice with a fresh native-wallet-controlled Orchard Unified receiver and ZIP-321 QR. A public faucet funded it. The authenticated NU7-compatible receiving wallet independently decrypted 10,000,000 zatoshis, and AGUS automatically settled the invoice and completed its reminder at 3 confirmations. [Actual receiving-wallet evidence and screenshots](docs/zcash-native/README.md).
 
 Transaction: `f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082`
 

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AGUS — Composition board</title>
+    <style>
+      @font-face {
+        font-family: Manrope;
+        src: url("./assets/manrope.ttf");
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        width: 1600px;
+        padding: 55px 60px 35px;
+        background: #202020;
+        color: #eee;
+        font-family: Manrope, Arial, sans-serif;
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 40px;
+      }
+      .eyebrow {
+        font-size: 10px;
+        color: #aaa;
+        letter-spacing: 2px;
+        margin-bottom: 14px;
+      }
+      h1 {
+        font-size: 50px;
+        font-weight: 400;
+        letter-spacing: -2px;
+        margin: 0;
+      }
+      p {
+        font-size: 12px;
+        color: #aaa;
+        line-height: 1.8;
+        margin: 0;
+        max-width: 470px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1120px 300px;
+        gap: 60px;
+        margin-top: 35px;
+        align-items: start;
+      }
+      figure {
+        margin: 0;
+      }
+      figcaption {
+        font-size: 10px;
+        letter-spacing: 1.5px;
+        color: #aaa;
+        margin-bottom: 14px;
+        display: flex;
+        justify-content: space-between;
+      }
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 5px;
+        border: 1px solid #444;
+      }
+      .footer {
+        margin-top: 35px;
+        border-top: 1px solid #444;
+        padding-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10px;
+        color: #aaa;
+        line-height: 1.9;
+      }
+      .footer strong {
+        color: #ddd;
+        font-weight: 400;
+      }
+      .mobile-note {
+        font-size: 10px;
+        color: #999;
+        line-height: 1.8;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="board"></div>
+    <script>
+      const d =
+        new URLSearchParams(location.search).get("direction") === "margin"
+          ? "margin"
+          : "orbit";
+      const name = d === "orbit" ? "01 / Orbit" : "02 / Margin";
+      document.querySelector("#board").innerHTML =
+        `<div class="top"><div><div class="eyebrow">AGUS — THE LIVING INTERFACE</div><h1>${name}</h1></div><p>${d === "orbit" ? "A spacious, atmospheric world. The companion has presence, the typography has confidence, and the next step is always clear." : "An editorial approach. Silver surfaces make room for clarity; a black companion room brings warmth and character."}</p></div>${["home", "assistant"].map((view, i) => `<div class="row"><figure><figcaption><span>${view.toUpperCase()} / DESKTOP</span><span>1440 PX VIEWPORT</span></figcaption><img src="./previews/${d}-desktop-${view}.png"></figure><div><figure><figcaption><span>${view.toUpperCase()} / MOBILE</span><span>390 × 844</span></figcaption><img src="./previews/${d}-mobile-${view}.png"></figure><p class="mobile-note">${i === 0 ? "A phone composition with a bottom-centered AGUS control and five clear destinations. Scroll to explore the complete starting point." : "An expressive companion, focused reading space and a composer above the persistent navigation. Messages scroll independently."}</p></div></div>`).join("")}<div class="footer"><span><strong>Your money, and what’s next.</strong><br>AGUS / Creative exploration / November 2026</span><span>Empty financial state · Sample conversation · No real funds or connected accounts<br>Vector brand study based on supplied artwork · Not a production redesign</span></div>`;
+    </script>
+  </body>
+</html>

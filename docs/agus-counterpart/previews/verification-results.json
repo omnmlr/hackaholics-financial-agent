@@ -1,0 +1,190 @@
+{
+  "result": "passed",
+  "layouts": [
+    {
+      "width": 320,
+      "screen": "home",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 320,
+      "screen": "conversation",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 320,
+      "screen": "accounts",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 320,
+      "screen": "obligations",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 320,
+      "screen": "activity",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 320,
+      "screen": "review",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "home",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "conversation",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "accounts",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "obligations",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "activity",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 390,
+      "screen": "review",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "home",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "conversation",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "accounts",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "obligations",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "activity",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 768,
+      "screen": "review",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "home",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "conversation",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "accounts",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "obligations",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "activity",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1024,
+      "screen": "review",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "home",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "conversation",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "accounts",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "obligations",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "activity",
+      "overflow": false,
+      "navigation": 5
+    },
+    {
+      "width": 1440,
+      "screen": "review",
+      "overflow": false,
+      "navigation": 5
+    }
+  ],
+  "authorization": "Explicit review checkbox and correct demo code required; authorization never implies submission or settlement",
+  "financialConsistency": "Bank, wallet, combined balance, upcoming obligations, fees and remaining source balance reconcile",
+  "browserErrors": [],
+  "externalRequests": [],
+  "financialApiRequests": []
+}

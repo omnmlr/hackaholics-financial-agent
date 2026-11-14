@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AGUS · Counterpart · Design review</title>
+    <style>
+      @font-face {
+        font-family: General;
+        src: url("./assets/general-sans-400.woff2");
+      }
+      @font-face {
+        font-family: General;
+        src: url("./assets/general-sans-500.woff2");
+        font-weight: 500;
+      }
+      @font-face {
+        font-family: Plex;
+        src: url("./assets/plex-mono.ttf");
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #242424;
+        color: #f2f2ed;
+        font-family: General, Arial, sans-serif;
+      }
+      .page {
+        width: 1600px;
+        height: 1100px;
+        padding: 43px 60px 30px;
+        position: relative;
+        overflow: hidden;
+        break-after: page;
+      }
+      .board-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 31px;
+      }
+      .board-eyebrow {
+        font:
+          9px Plex,
+          monospace;
+        letter-spacing: 2px;
+        color: #aaa;
+        margin-bottom: 10px;
+      }
+      h1 {
+        font-size: 46px;
+        line-height: 1.1;
+        letter-spacing: -1.7px;
+        font-weight: 500;
+        margin: 0;
+      }
+      .board-header p {
+        font-size: 12px;
+        color: #aaa;
+        line-height: 1.7;
+        max-width: 440px;
+        margin: 0 0 2px;
+      }
+      .frames {
+        display: grid;
+        grid-template-columns: 1120px 300px;
+        gap: 60px;
+        align-items: start;
+      }
+      figure {
+        margin: 0;
+        min-width: 0;
+      }
+      figcaption {
+        font:
+          9px Plex,
+          monospace;
+        color: #aaa;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 13px;
+        letter-spacing: 0.5px;
+      }
+      figure img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid #555;
+        border-radius: 4px;
+      }
+      .board-footer {
+        position: absolute;
+        left: 60px;
+        right: 60px;
+        bottom: 30px;
+        border-top: 1px solid #484848;
+        padding-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        font-size: 10px;
+        color: #aaa;
+      }
+      .board-footer strong {
+        font-weight: 400;
+        color: #ddd;
+      }
+      .overview {
+        width: 1800px;
+        padding: 45px 50px 35px;
+      }
+      .overview .board-header {
+        margin-bottom: 30px;
+      }
+      .overview h1 {
+        font-size: 48px;
+      }
+      .desktop-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+      }
+      .desktop-grid figcaption {
+        margin-bottom: 10px;
+      }
+      .mobile-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 22px;
+      }
+      .mobile-grid figcaption {
+        font-size: 8px;
+        letter-spacing: 0.2px;
+      }
+      .overview-footer {
+        border-top: 1px solid #484848;
+        margin-top: 30px;
+        padding-top: 20px;
+        color: #aaa;
+        font-size: 11px;
+        display: flex;
+        justify-content: space-between;
+      }
+      @page {
+        size: 1600px 1100px;
+        margin: 0;
+      }
+      @media print {
+        body {
+          print-color-adjust: exact;
+          -webkit-print-color-adjust: exact;
+        }
+        .page {
+          height: 1100px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="board"></div>
+    <script>
+      const screens = [
+        ["home", "Home", "Money overview"],
+        ["conversation", "AGUS", "Payment preparation"],
+        ["accounts", "Accounts & wallets", "Balances and networks"],
+        ["obligations", "Obligations", "Payables, receivables and follow-ups"],
+        ["activity", "Activity", "Financial operations"],
+        ["review", "Payment review", "Review and authorization"],
+      ];
+      const query = new URLSearchParams(location.search),
+        screen = query.get("screen"),
+        type = query.get("type");
+      function fig(key, title, device) {
+        return `<figure><figcaption><span>${title.toUpperCase()} / ${device.toUpperCase()}</span><span>${device === "desktop" ? "1440 × 1040" : "390 × 900"}</span></figcaption><img src="./previews/${device}-${key}.png" alt="${title}"></figure>`;
+      }
+      if (type) {
+        document.querySelector("#board").innerHTML =
+          `<div class="overview"><div class="board-header"><div><div class="board-eyebrow">AGUS / COUNTERPART</div><h1>${type === "desktop" ? "AGUS / Desktop" : "AGUS / Mobile"}</h1></div><p>One direction. Six connected screens.<br>Fictional data. Visual exploration only.</p></div><div class="${type === "desktop" ? "desktop-grid" : "mobile-grid"}">${screens.map(([key, title], i) => fig(key, `0${i + 1} ${title}`, type === "desktop" ? "desktop" : "mobile")).join("")}${type === "mobile" ? fig("authorization", "Authorization", "mobile") : ""}</div><div class="overview-footer"><span>Your money, and what's next.</span><span>Home · AGUS · Money · Obligations · Activity · Payments</span></div></div>`;
+      } else {
+        document.querySelector("#board").innerHTML = screens
+          .filter((x) => !screen || x[0] === screen)
+          .map(
+            ([key, title, description], i) =>
+              `<section class="page"><div class="board-header"><div><div class="board-eyebrow">AGUS / COUNTERPART / VISUAL EXPLORATION</div><h1>${String(screens.findIndex((x) => x[0] === key) + 1).padStart(2, "0")} / ${title}</h1></div><p>${description}</p></div><div class="frames">${fig(key, title, "desktop")}${fig(key, title, "mobile")}</div><div class="board-footer"><span><strong>Your money, and what's next.</strong></span><span>All data is fictional · No financial connections · No real payment authorization or execution</span></div></section>`,
+          )
+          .join("");
+      }
+    </script>
+  </body>
+</html>

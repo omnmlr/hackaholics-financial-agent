@@ -1,0 +1,58 @@
+[
+  {
+    "direction": "orbit",
+    "device": "desktop",
+    "view": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "orbit",
+    "device": "desktop",
+    "view": "assistant",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "orbit",
+    "device": "mobile",
+    "view": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "orbit",
+    "device": "mobile",
+    "view": "assistant",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "margin",
+    "device": "desktop",
+    "view": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "margin",
+    "device": "desktop",
+    "view": "assistant",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "margin",
+    "device": "mobile",
+    "view": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "direction": "margin",
+    "device": "mobile",
+    "view": "assistant",
+    "overflow": false,
+    "errors": []
+  }
+]

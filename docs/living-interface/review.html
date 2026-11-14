@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AGUS — Two ways to feel alive</title>
+    <style>
+      @font-face {
+        font-family: Manrope;
+        src: url("./assets/manrope.ttf");
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        background: #111;
+        color: #eee;
+        margin: 0;
+        font:
+          14px Manrope,
+          Arial,
+          sans-serif;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+      header {
+        padding: 32px 5%;
+        display: flex;
+        justify-content: space-between;
+        border-bottom: 1px solid #333;
+        align-items: center;
+      }
+      header > span {
+        font-size: 12px;
+        letter-spacing: 2px;
+      }
+      header a {
+        font-size: 11px;
+        color: #aaa;
+      }
+      main {
+        max-width: 1600px;
+        margin: auto;
+        padding: 60px 5%;
+      }
+      h1 {
+        font-size: clamp(38px, 5vw, 70px);
+        font-weight: 400;
+        letter-spacing: -3px;
+        margin: 0 0 24px;
+        line-height: 1.1;
+      }
+      p {
+        color: #aaa;
+        line-height: 1.9;
+        max-width: 720px;
+        font-size: 13px;
+      }
+      .intro {
+        margin-bottom: 70px;
+      }
+      .direction {
+        margin: 60px 0 100px;
+      }
+      .direction-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 30px;
+      }
+      .direction-header h2 {
+        font-size: 35px;
+        font-weight: 400;
+        letter-spacing: -1px;
+        margin: 0;
+      }
+      .number {
+        font-size: 12px;
+        color: #888;
+        margin-right: 15px;
+      }
+      .direction-header p {
+        font-size: 12px;
+        margin: 8px 0 0;
+      }
+      .button {
+        display: inline-block;
+        padding: 13px 20px;
+        background: #eee;
+        color: #111;
+        border-radius: 5px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+      .screen-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 280px;
+        gap: 40px;
+        align-items: start;
+      }
+      .screen {
+        margin: 0;
+        min-width: 0;
+      }
+      .screen figcaption {
+        font-size: 10px;
+        color: #aaa;
+        display: flex;
+        justify-content: space-between;
+        margin: 0 0 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .screen img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid #333;
+        border-radius: 5px;
+      }
+      .desktop-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+      .mobile-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+      }
+      .detail-links {
+        display: flex;
+        gap: 25px;
+        margin-top: 28px;
+        font-size: 11px;
+        color: #aaa;
+        flex-wrap: wrap;
+      }
+      .detail-links a {
+        text-decoration: underline;
+        text-underline-offset: 5px;
+      }
+      .notes {
+        padding-top: 35px;
+        border-top: 1px solid #333;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 60px;
+      }
+      .notes h3 {
+        font-size: 17px;
+        font-weight: 400;
+      }
+      .notes p {
+        font-size: 12px;
+      }
+      .notes ul {
+        color: #aaa;
+        font-size: 12px;
+        line-height: 2;
+        padding-left: 16px;
+      }
+      .notes a {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+      }
+      footer {
+        padding: 35px 5%;
+        color: #999;
+        font-size: 11px;
+        border-top: 1px solid #333;
+      }
+      @media (max-width: 800px) {
+        main {
+          padding-top: 40px;
+        }
+        .screen-grid {
+          grid-template-columns: 1fr;
+        }
+        .mobile-stack {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 18px;
+        }
+        .direction-header {
+          align-items: flex-start;
+        }
+        .direction-header h2 {
+          font-size: 28px;
+        }
+        .direction-header p {
+          font-size: 11px;
+        }
+        .button {
+          font-size: 10px;
+          padding: 12px;
+        }
+        .notes {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+        .screen figcaption {
+          font-size: 8px;
+        }
+        header > span {
+          font-size: 10px;
+        }
+        header a {
+          font-size: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <span>AGUS / THE LIVING INTERFACE</span
+      ><a href="./README.md">Exploration notes ↗</a>
+    </header>
+    <main>
+      <section class="intro">
+        <h1>Two ways<br />to feel alive.</h1>
+        <p>
+          Two distinct interpretations of your financial companion. Both start
+          with the same idea: your money deserves clarity, character and a
+          little company. Explore the home and assistant experiences on desktop
+          and mobile, then try the interactive prototypes.
+        </p>
+        <p>
+          Visual exploration only. The screens use an empty financial state and
+          a clearly identified sample conversation.
+        </p>
+      </section>
+      <div id="directions"></div>
+      <section class="notes">
+        <div>
+          <h3>What’s ready to explore</h3>
+          <ul>
+            <li>
+              Home and assistant, independently composed for desktop and phone.
+            </li>
+            <li>
+              Five destinations, with conversations separate from activity.
+            </li>
+            <li>Six expressive companion states and reduced-motion support.</li>
+            <li>
+              A composer, saved-conversation access and payment-method
+              discovery.
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3>What the concepts don’t imply</h3>
+          <p>
+            Payments, uploads, speech and account connections are inactive.
+            Pollar and Zcash are marked as proposed. This checkout currently
+            uses Paystack. The mascot and wordmark are vector studies
+            reconstructed from the supplied raster reference; use the original
+            master artwork for production.
+          </p>
+          <p>
+            <a href="./README.md"
+              >Read the source inspection, decisions and verification notes ↗</a
+            >
+          </p>
+        </div>
+      </section>
+    </main>
+    <footer>
+      Your money, and what’s next. &nbsp; / &nbsp; AGUS creative exploration,
+      November 2026.
+    </footer>
+    <script>
+      const names = {
+        orbit: [
+          "Orbit",
+          "Atmospheric black. Spacious composition. A companion at the center of gravity.",
+        ],
+        margin: [
+          "Margin",
+          "Silver reading surfaces. Editorial typography. A dedicated room for your companion.",
+        ],
+      };
+      document.querySelector("#directions").innerHTML = Object.entries(names)
+        .map(
+          ([key, [name, description]], i) =>
+            `<section class="direction"><div class="direction-header"><div><h2><span class="number">0${i + 1}</span>${name}</h2><p>${description}</p></div><a class="button" href="./index.html?direction=${key}">Explore ${name} ↗</a></div><div class="screen-grid"><div class="desktop-stack">${["home", "assistant"].map((view) => `<figure class="screen"><figcaption><span>${view} / Desktop</span><span>1440 px</span></figcaption><a href="./previews/${key}-desktop-${view}.png"><img src="./previews/${key}-desktop-${view}.png" alt="${name} ${view}, desktop composition"></a></figure>`).join("")}</div><div class="mobile-stack">${["home", "assistant"].map((view) => `<figure class="screen"><figcaption><span>${view} / Mobile</span><span>390 px</span></figcaption><a href="./previews/${key}-mobile-${view}.png"><img src="./previews/${key}-mobile-${view}.png" alt="${name} ${view}, mobile composition"></a></figure>`).join("")}</div></div><div class="detail-links"><a href="./index.html?direction=${key}&view=assistant">Open assistant</a><a href="./index.html?direction=${key}&view=money">Explore Money</a><a href="./previews/${key}-companion-states.png">View six companion states</a><a href="./previews/${key}-mobile-home-full.png">Full mobile home</a><a href="./previews/${key}-board.png">Download composition board</a></div></section>`,
+        )
+        .join("");
+    </script>
+  </body>
+</html>

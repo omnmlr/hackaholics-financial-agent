@@ -4,7 +4,7 @@
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
 import { spawn } from "node:child_process";
-import { randomBytes, scryptSync } from "node:crypto";
+import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -183,6 +183,97 @@ try {
         await page.getByRole("textbox", { name: "Message AGUS" }).inputValue(),
         "Send ",
       );
+      await nav("Home").click();
+    }
+    if (width === 1440) {
+      for (const status of ["awaiting_approval", "active", "paused"]) {
+        const created = await context.request.post(
+          `${base}/api/agent-workspace`,
+          {
+            headers: { origin: base },
+            data: {
+              action: "create_task",
+              input: {
+                requestId: randomUUID(),
+                title: `Cancellation acceptance ${status}`,
+                objective: "Isolated synthetic reminder cancellation check",
+                dueAt: new Date(Date.now() + 86400000).toISOString(),
+              },
+            },
+          },
+        );
+        assert.ok(created.ok());
+        let task = (await created.json()).result;
+        if (status !== "awaiting_approval") {
+          const r = await context.request.post(`${base}/api/agent-workspace`, {
+            headers: { origin: base },
+            data: {
+              action: "approve",
+              id: task.id,
+              version: task.version,
+              acknowledged: true,
+            },
+          });
+          assert.ok(r.ok());
+          task = (await r.json()).result;
+        }
+        if (status === "paused") {
+          const r = await context.request.post(`${base}/api/agent-workspace`, {
+            headers: { origin: base },
+            data: {
+              action: "pause",
+              id: task.id,
+              version: task.version,
+              acknowledged: true,
+            },
+          });
+          assert.ok(r.ok());
+          task = (await r.json()).result;
+        }
+        await nav("Obligations").click();
+        await page
+          .getByRole("button", { name: "Refresh workspace", exact: true })
+          .click();
+        const row = page.locator(`[data-reminder-id="${task.id}"]`);
+        await row
+          .getByRole("button", { name: "Cancel reminder", exact: true })
+          .click();
+        const confirm = page.getByRole("dialog", {
+          name: "Cancel reminder?",
+          exact: true,
+        });
+        await confirm
+          .getByRole("button", { name: "Keep reminder", exact: true })
+          .click();
+        const unchanged = await (
+          await context.request.get(`${base}/api/agent-workspace`)
+        ).json();
+        assert.equal(
+          unchanged.tasks.find((t) => t.id === task.id).state,
+          status,
+        );
+        await row
+          .getByRole("button", { name: "Cancel reminder", exact: true })
+          .click();
+        await confirm
+          .getByRole("button", { name: "Cancel reminder", exact: true })
+          .click();
+        await confirm.waitFor({ state: "hidden" });
+        assert.equal(
+          await row
+            .getByRole("button", { name: "Cancel reminder", exact: true })
+            .count(),
+          0,
+        );
+        assert.match(await row.textContent(), /cancelled/);
+        const saved = await (
+          await context.request.get(`${base}/api/agent-workspace`)
+        ).json();
+        assert.equal(
+          saved.tasks.find((t) => t.id === task.id).state,
+          "cancelled",
+        );
+      }
       await nav("Home").click();
     }
     // First-use actions must state exactly what they add.

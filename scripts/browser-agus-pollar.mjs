@@ -431,16 +431,16 @@ try {
   await moneyWallet
     .getByRole("button", { name: "Connect with Pollar", exact: true })
     .click();
-  await moneyWallet
-    .getByLabel("Your email", { exact: true })
-    .fill("fictional@example.test");
-  await moneyWallet
-    .getByRole("button", { name: "Continue with email", exact: true })
-    .click();
-  await moneyWallet.getByLabel("Email verification code").fill("123456");
-  await moneyWallet
-    .getByRole("button", { name: "Verify Pollar code", exact: true })
-    .click();
+  assert.equal(
+    await moneyWallet.getByLabel("Your email", { exact: true }).isVisible(),
+    false,
+    "Money reuses the authenticated SDK session",
+  );
+  assert.equal(
+    paths.filter((path) => path.endsWith("/auth/session")).length,
+    1,
+    "One SDK authentication session across payment review and Money",
+  );
   await moneyWallet.getByText("Active on testnet", { exact: true }).waitFor();
   await moneyWallet
     .getByRole("button", { name: "Read wallet balances", exact: true })
@@ -461,6 +461,7 @@ try {
     providerSuccessWithoutHorizonRemainedPending: true,
     linkedObligationSettledOnlyAfterMockedNetworkEvidence: true,
     moneyWalletConnectionAndBalanceRead: true,
+    authenticatedSessionReusedAcrossViews: true,
     paths,
     jsErrors: errors,
   };

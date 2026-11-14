@@ -212,9 +212,8 @@ function SavedRecords({
         </button>
       </div>
       <p>
-        Only the displayed scope is authorized here. Reminders are delivered
-        when the responsibilities runner is operating; approval does not
-        authorize messages, purchases or payments.
+        In-app only. Delivery requires the reminder runner. Approval never
+        authorizes payments or external messages.
       </p>
       {error && <p role="alert">{error}</p>}
       <p role="status">{busy ? "Saving…" : status}</p>

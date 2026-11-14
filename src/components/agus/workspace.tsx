@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import { existingReminderRequest } from "./reminder-request";
 import { PersonalAction } from "../personal-action";
 import { FinancialResponse } from "../financial-response";
 import { useVoiceInput } from "../use-voice-input";
@@ -58,7 +59,7 @@ import type { AgentReply } from "@/lib/financial-agent/agent";
 import { productApi } from "./api";
 import { AgusBrand as Brand, AgusCompanion as Companion } from "./identity";
 import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
-import { PollarWallet } from "./pollar-wallet";
+import { PollarWallet, clearPollarSession } from "./pollar-wallet";
 import { PaymentReview } from "./payment-review";
 import {
   looksLikePaymentIntent,
@@ -202,6 +203,9 @@ export function AgusWorkspace({
   const [selected, setSelected] = useState<string>();
   const [selectedPayment, setSelectedPayment] = useState<PaymentPlan>();
   const [filter, setFilter] = useState("all");
+  const [cancelTask, setCancelTask] = useState<Responsibility>();
+  const [cancelError, setCancelError] = useState("");
+  const cancelling = useRef(false);
   const [tasks, setTasks] = useState<Responsibility[]>([]);
   const [paymentPlans, setPaymentPlans] = useState<PaymentPlan[]>([]);
   const [sample, setSample] = useState(false);
@@ -461,6 +465,7 @@ export function AgusWorkspace({
               onClick={() =>
                 void action(async () => {
                   await productApi("session", undefined, "DELETE");
+                  clearPollarSession();
                   setPhase("out");
                   setSnapshot(undefined);
                 })
@@ -894,11 +899,18 @@ export function AgusWorkspace({
                     to enable it.
                   </p>
                   {tasks.slice(0, 20).map((task) => (
-                    <div className={s.taskRow} key={task.id}>
+                    <div
+                      className={s.taskRow}
+                      key={task.id}
+                      data-reminder-id={task.id}
+                    >
                       <div>
                         <strong>{task.title}</strong>
                         <small>
                           {date(task.dueAt)} · {task.state.replaceAll("_", " ")}
+                          <br />
+                          Created {date(task.createdAt, true)} ·{" "}
+                          {task.id.slice(-8)}
                         </small>
                       </div>
                       {task.state === "awaiting_approval" && (
@@ -953,6 +965,20 @@ export function AgusWorkspace({
                           }
                         >
                           Resume
+                        </button>
+                      )}
+                      {["awaiting_approval", "active", "paused"].includes(
+                        task.state,
+                      ) && (
+                        <button
+                          className={s.textButton}
+                          disabled={busy}
+                          onClick={() => {
+                            setCancelError("");
+                            setCancelTask(task);
+                          }}
+                        >
+                          Cancel reminder
                         </button>
                       )}
                     </div>
@@ -1227,6 +1253,7 @@ export function AgusWorkspace({
                     onClick={() =>
                       void action(async () => {
                         await productApi("session", undefined, "DELETE");
+                        clearPollarSession();
                         setPhase("out");
                         setSnapshot(undefined);
                       })
@@ -1356,6 +1383,81 @@ export function AgusWorkspace({
           </button>
         ))}
       </nav>
+      {cancelTask && (
+        <Dialog
+          title="Cancel reminder?"
+          close={() => {
+            if (!cancelling.current) setCancelTask(undefined);
+          }}
+        >
+          <p>
+            <strong>{cancelTask.title}</strong>
+          </p>
+          <p className={s.muted}>{cancelTask.objective}</p>
+          <p className={s.fine}>
+            Due{" "}
+            {new Date(cancelTask.dueAt).toLocaleString("en-NG", {
+              timeZone: "Africa/Lagos",
+            })}{" "}
+            WAT · {cancelTask.id.slice(-8)}
+          </p>
+          <p>This stops this reminder. The saved record remains.</p>
+          {cancelError && (
+            <p className={s.error} role="alert">
+              {cancelError}
+            </p>
+          )}
+          <div className={s.buttonRow}>
+            <button
+              className={s.secondary}
+              disabled={busy}
+              onClick={() => setCancelTask(undefined)}
+            >
+              Keep reminder
+            </button>
+            <button
+              className={s.primary}
+              disabled={busy}
+              onClick={async () => {
+                if (cancelling.current) return;
+                cancelling.current = true;
+                setBusy(true);
+                setCancelError("");
+                try {
+                  const saved = await productApi<{ result: Responsibility }>(
+                    "agent-workspace",
+                    {
+                      action: "cancel",
+                      id: cancelTask.id,
+                      version: cancelTask.version,
+                      acknowledged: true,
+                    },
+                  );
+                  setTasks((old) =>
+                    old.map((t) =>
+                      t.id === saved.result.id ? saved.result : t,
+                    ),
+                  );
+                  setCancelTask(undefined);
+                  notify("Reminder cancelled");
+                  await refresh();
+                } catch (e) {
+                  setCancelError(
+                    e instanceof Error
+                      ? e.message
+                      : "Cancellation could not be confirmed. Refresh and review the record.",
+                  );
+                } finally {
+                  cancelling.current = false;
+                  setBusy(false);
+                }
+              }}
+            >
+              Cancel reminder
+            </button>
+          </div>
+        </Dialog>
+      )}
       {contextOpen && tab !== "Assistant" && (
         <Dialog
           title={`AGUS · ${navigation.find((item) => item.name === tab)?.label ?? tab}`}
@@ -2643,6 +2745,7 @@ function Assistant({
       id?: string;
       planId?: string;
       reply?: AgentReply;
+      createdAt?: string;
     }[]
   >([]);
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
@@ -2671,6 +2774,11 @@ function Assistant({
     discardVoice();
     stopSpeech();
   }, [privacyMode, discardVoice, stopSpeech]);
+  const retryIdentity = useRef<{
+    conversationId: string;
+    text: string;
+    id: string;
+  } | null>(null);
   const inFlight = useRef(false);
   const activeChatKey = `agus.activeConversation:${snapshot.owner}`;
   const rememberChat = useCallback(
@@ -2688,7 +2796,7 @@ function Assistant({
     conversation.current = id;
     setMessages(
       turns.flatMap((turn) => [
-        { role: "user", text: turn.text },
+        { role: "user", text: turn.text, createdAt: turn.createdAt },
         {
           role: "assistant",
           text: turn.reply.text,
@@ -2862,13 +2970,22 @@ function Assistant({
         voice.isVoiceLocked()
       )
         return;
+      if (existingReminderRequest(messages, text)) {
+        setError(
+          "This request already has a saved reminder in this conversation. Review it below. To create a separate reminder, ask explicitly for another.",
+        );
+        return;
+      }
       speech.stop();
       inFlight.current = true;
       setBusy(true);
       setError("");
       conversation.current ??= crypto.randomUUID();
       if (!privacyMode) rememberChat(conversation.current);
-      setMessages((m) => [...m, { role: "user", text }]);
+      setMessages((m) => [
+        ...m,
+        { role: "user", text, createdAt: new Date().toISOString() },
+      ]);
       setQuestion("");
       try {
         if (
@@ -2902,13 +3019,23 @@ function Assistant({
           throw new Error(
             "Gemini chat is not configured. Check the server connection in Settings; payment preparation and statement summaries remain available.",
           );
+        if (
+          retryIdentity.current?.conversationId !== conversation.current ||
+          retryIdentity.current?.text !== text
+        )
+          retryIdentity.current = {
+            conversationId: conversation.current,
+            text,
+            id: crypto.randomUUID(),
+          };
         const result = await productApi<{ reply: AgentReply }>("conversation", {
           conversationId: conversation.current,
-          requestId: crypto.randomUUID(),
+          requestId: retryIdentity.current.id,
           text,
           accountIds: [],
           privacyMode,
         });
+        retryIdentity.current = null;
         setMessages((m) => [
           ...m,
           {
@@ -2961,6 +3088,7 @@ function Assistant({
       voice,
       speech,
       spokenReplies,
+      messages,
     ],
   );
   useEffect(() => {
@@ -3102,7 +3230,10 @@ function Assistant({
                   {message.role === "assistant" ? "AGUS" : "You"}
                 </span>
                 {message.role === "assistant" ? (
-                  message.reply ? (
+                  message.reply &&
+                  (message.reply.presentation ||
+                    message.reply.savings ||
+                    message.reply.payments) ? (
                     <FinancialResponse
                       reply={message.reply}
                       choose={(text) => {

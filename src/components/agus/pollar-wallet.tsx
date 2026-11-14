@@ -16,6 +16,15 @@ import { productApi } from "./api";
 import { isStellarTestnetApp } from "./pollar-safety";
 import s from "./workspace.module.css";
 
+// Browser-only, ephemeral SDK session. No credential is copied to AGUS records.
+let activeSigner: symbol | null = null;
+let sharedWallet: { key: string; sdk: PollarClient } | null = null;
+export function clearPollarSession() {
+  activeSigner = null;
+  sharedWallet?.sdk.destroy();
+  sharedWallet = null;
+}
+
 export function PollarWallet({
   config,
   request,
@@ -48,16 +57,19 @@ export function PollarWallet({
   const [outcome, setOutcome] = useState("");
   const [reviewed, setReviewed] = useState(false);
   const [requestPassword, setRequestPassword] = useState("");
+  const signer = useRef(Symbol("pollar-review"));
   const sending = useRef(false);
   const approvedXdr = useRef<string | undefined>(undefined);
   const approvedRequest = useRef<PaymentRequest | undefined>(undefined);
   const [confirmations, setConfirmations] = useState<PendingConfirmation[]>([]);
   useEffect(() => {
+    const signerId = signer.current;
     alive.current = true;
     return () => {
       alive.current = false;
       subscriptions.current.forEach((stop) => stop());
-      client.current?.destroy();
+      if (activeSigner === signerId) activeSigner = null;
+      // Keep the one SDK session across Counterpart destinations.
       client.current = null;
     };
   }, []);
@@ -70,28 +82,39 @@ export function PollarWallet({
     try {
       const { PollarClient, createMemoryAdapter } =
         await import("@pollar/core");
-      const sdk = new PollarClient({
-        apiKey: config.publicKey,
-        stellarNetwork: "testnet",
-        storage: createMemoryAdapter(),
-        logLevel: "silent",
-        confirmation: "auto",
-      });
+      if (sharedWallet && sharedWallet.key !== config.publicKey)
+        clearPollarSession();
+      const sdk =
+        sharedWallet?.sdk ??
+        new PollarClient({
+          apiKey: config.publicKey,
+          stellarNetwork: "testnet",
+          storage: createMemoryAdapter(),
+          logLevel: "silent",
+          confirmation: "auto",
+        });
       await sdk.ready();
       const app = await sdk.getAppConfig();
       if (!isStellarTestnetApp(app)) {
-        sdk.destroy();
+        if (!sharedWallet) sdk.destroy();
         throw new Error(
-          "Pollar must verify a Stellar testnet application before onboarding or payment is enabled.",
+          "Pollar could not verify this testnet application. Check the publishable key and allow this HTTPS origin in the Pollar dashboard before connecting.",
         );
       }
       if (!alive.current) {
-        sdk.destroy();
+        if (!sharedWallet) sdk.destroy();
         return;
       }
+      if (!sharedWallet)
+        sdk.onConfirmationRequest((pending) => {
+          if (!activeSigner) pending.forEach((request) => request.reject());
+        });
+      sharedWallet = { key: config.publicKey, sdk };
       client.current = sdk;
       subscriptions.current = [
         sdk.onConfirmationRequest((pending) => {
+          // A passive Money panel must never reject another view’s approved request.
+          if (!sending.current || activeSigner !== signer.current) return;
           const matched = pending.filter((confirmation) => {
             const expected = approvedRequest.current;
             const asset = confirmation.details?.asset as
@@ -173,10 +196,12 @@ export function PollarWallet({
       !reviewed ||
       !requestPassword ||
       sending.current ||
+      activeSigner !== null ||
       request.submissionStartedAt ||
       !request.issuer
     )
       return;
+    activeSigner = signer.current;
     sending.current = true;
     setBusy(true);
     setError("");
@@ -233,6 +258,7 @@ export function PollarWallet({
       );
     } finally {
       setBusy(false);
+      if (activeSigner === signer.current) activeSigner = null;
       sending.current = false;
       approvedXdr.current = undefined;
       approvedRequest.current = undefined;
@@ -312,9 +338,11 @@ export function PollarWallet({
       !verified ||
       busy ||
       sending.current ||
+      activeSigner !== null ||
       plan.quote?.sourceAddress !== wallet?.address
     )
       return;
+    activeSigner = signer.current;
     sending.current = true;
     setBusy(true);
     setError("");
@@ -389,6 +417,7 @@ export function PollarWallet({
       );
     } finally {
       setBusy(false);
+      if (activeSigner === signer.current) activeSigner = null;
       sending.current = false;
       approvedXdr.current = undefined;
       approvedRequest.current = undefined;

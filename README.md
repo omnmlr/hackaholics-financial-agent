@@ -2,7 +2,24 @@
 
 Your money, and what's next.
 
-**Live authenticated application:** https://agusweb.up.railway.app
+## ORGANIZERS & JUDGES — DEMO LOGIN
+
+| What you need | Details |
+| --- | --- |
+| **Open the live app** | **https://agusweb.up.railway.app** |
+| **Password** | **`abcdefghijklmn`** |
+| **Username / email** | **Not required for the AGUS login** |
+
+1. Open **https://agusweb.up.railway.app**.
+2. Enter **`abcdefghijklmn`** in **Operator password**.
+3. Click **Sign in securely**.
+
+**No installation, sign-up or wallet connection is required to explore the app.** This is the shared hackathon demo login for organizers and judges. Payments are Testnet/demo only.
+
+**See the verified Zcash demo:** open **Obligations → Orchard shielded receiving demo**. It shows the real 0.1 Testnet ZEC receipt and completed reminder.
+
+**Current implementation:** [Counterpart branch](https://github.com/omnmlr/hackaholics-financial-agent/tree/implementation/agus-counterpart-20261114) · [Real receiving-wallet evidence](https://github.com/omnmlr/hackaholics-financial-agent/blob/implementation/agus-counterpart-20261114/docs/zcash-native/README.md)
+
 
 AGUS combines Gemini conversations, Pidgin understanding, persistent financial memory, owner-reviewed reminders and testnet payment workflows in the approved Counterpart interface.
 
@@ -12,7 +29,7 @@ Transaction: `f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082`
 
 The native wallet is durable and isolated; viewing/spending credentials stay outside the browser and Gemini. Outgoing ZEC remains disabled. The original synthetic sender is not used. Pollar's official SDK returns200 for the current origin / Pollux / Testnet; owner authentication and exact approval remain necessary for a real Pollar transfer. Mainnet execution is disabled. Legacy Paystack remains in fixture mode.
 
-See the [native wallet boundary](services/zcash-receiving/README.md), [outgoing-signer assessment](docs/zcash-native/OUTGOING-ASSESSMENT.md) and [prior full release acceptance](docs/release-pass/README.md). Credentials are not published in this repository.
+See the [native wallet boundary](services/zcash-receiving/README.md), [outgoing-signer assessment](docs/zcash-native/OUTGOING-ASSESSMENT.md) and [prior full release acceptance](docs/release-pass/README.md). The shared demo login is published above for judging. Infrastructure secrets and wallet keys are not published in this repository.
 
 ## Historical engineering checkpoints
 

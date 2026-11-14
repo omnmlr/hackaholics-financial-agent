@@ -2976,6 +2976,47 @@ function Assistant({
         );
         return;
       }
+      // A new chat must not silently duplicate an identical saved reminder.
+      if (!conversation.current) {
+        const normalize = (value: string) =>
+          value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-NG");
+        const candidates = savedChats
+          .filter(
+            (chat) => normalize(chat.title) === normalize(text).slice(0, 72),
+          )
+          .slice(0, 5);
+        if (candidates.length) {
+          inFlight.current = true;
+          setBusy(true);
+          try {
+            for (const candidate of candidates) {
+              const stored = await productApi<{ turns: SavedTurn[] }>(
+                `conversations?id=${encodeURIComponent(candidate.id)}`,
+              );
+              const previous = stored.turns.flatMap((turn) => [
+                { role: "user", text: turn.text, createdAt: turn.createdAt },
+                { role: "assistant", text: turn.reply.text, reply: turn.reply },
+              ]);
+              if (existingReminderRequest(previous, text)) {
+                showTurns(candidate.id, stored.turns);
+                rememberChat(candidate.id);
+                setError(
+                  "This request already has a saved reminder. Its conversation is restored below. Ask explicitly for another to create a separate reminder.",
+                );
+                return;
+              }
+            }
+          } catch {
+            setError(
+              "Saved reminders could not be checked. Reopen the saved conversation before repeating this request.",
+            );
+            return;
+          } finally {
+            inFlight.current = false;
+            setBusy(false);
+          }
+        }
+      }
       speech.stop();
       inFlight.current = true;
       setBusy(true);
@@ -3089,6 +3130,8 @@ function Assistant({
       speech,
       spokenReplies,
       messages,
+      savedChats,
+      showTurns,
     ],
   );
   useEffect(() => {

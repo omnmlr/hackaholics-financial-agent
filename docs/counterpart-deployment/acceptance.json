@@ -1,0 +1,129 @@
+{
+  "base": "https://agus-counterpart-acceptance-production.up.railway.app",
+  "deployedCommit": "76a6349772326387cb2de9e90652f8c8a02adf58",
+  "screens": [
+    {
+      "width": 1440,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Activity",
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "serverAuthentication": true,
+  "onboardingPersists": true,
+  "noSeededBalances": true,
+  "capabilities": {
+    "pollar": {
+      "configured": false,
+      "publicKey": null,
+      "issuer": null,
+      "sdkVersion": "0.12.0",
+      "network": "testnet"
+    },
+    "zcash": {
+      "verificationConfigured": false,
+      "receivingAddress": null,
+      "network": "testnet"
+    },
+    "ai": {
+      "configured": true,
+      "provider": "gemini",
+      "model": "gemini-3.5-flash-lite",
+      "architecture": "native-gemini",
+      "unavailableReason": null
+    },
+    "bank": "coming-soon",
+    "session": "single-operator"
+  },
+  "gemini": {
+    "status": 200,
+    "reply": "No, you do not have any imported accounts right now (the imported account count is 0, and no accounts are listed in your financial snapshot).",
+    "steps": [
+      {
+        "tool": "read_agus_financial_snapshot",
+        "state": "succeeded"
+      }
+    ]
+  },
+  "onboardingReplay": true,
+  "paymentDraftStatus": 200,
+  "paymentReview": true,
+  "voice": {
+    "counterpartComposerControl": false,
+    "legacyRoute": "/conversation",
+    "recordButtonPresent": 1,
+    "browserRecognitionEnded": true,
+    "syntheticRecordingStateObserved": true,
+    "transcriptionTested": false
+  }
+}

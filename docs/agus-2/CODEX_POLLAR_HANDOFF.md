@@ -42,19 +42,63 @@ This integration empowers AGUS's conversational financial AI to prepare, review,
 
 ---
 
-## 3. Environment Variables
+## 3. Environment Variables & Key Compatibility
 
-Add to `.env.local`:
+Add to `.env.local` (or Railway service variables):
 
 ```ini
 # Pollar Web SDK Configuration
 POLLAR_API_KEY=pk_testnet_your_pollar_api_key                # Server-only (privileged API calls)
 NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY=pub_testnet_your_pub_key # Browser bundle (client components)
+# NOTE: Also supports NEXT_PUBLIC_POLLAR_API_KEY for Codex compatibility
+NEXT_PUBLIC_POLLAR_API_KEY=pub_testnet_your_pub_key
+POLLAR_TESTNET_USDC_ISSUER=GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5
 POLLAR_BASE_URL=https://sdk.api.pollar.xyz                   # Origin URL (SDK appends /v3)
 POLLAR_STELLAR_NETWORK=testnet                               # testnet (default) or mainnet
 ```
 
-> **Sandbox Mode:** If keys are unset, `PollarService` and `PollarPaymentAdapter` seamlessly operate in deterministic testnet sandbox mode with transparent blocker reporting (`category: "MISSING_CREDENTIALS"`).
+### 3.1 Critical Publishable-Key Compatibility Notice (`pub_testnet_` vs `pk_`)
+
+> **ROOT CAUSE & RESOLUTION:**
+> Pollar's official developer dashboard (`https://dashboard.pollar.xyz`) issues publishable client keys with the prefix:
+> - `pub_testnet_...` (for Stellar Testnet applications)
+> - `pub_live_...` (for Production applications)
+>
+> In `src/lib/web-product/rails.ts`, line 57 originally checked:
+> ```ts
+> configured: key.startsWith("pk_") && stellarAddress(issuer),
+> publicKey: key.startsWith("pk_") ? key : null,
+> ```
+> This caused genuine `pub_testnet_...` dashboard keys to evaluate to `configured: false` and `publicKey: null`, blocking wallet connection (`PollarClient`) and conversational payment submission on Railway!
+>
+> **Recommended Fix in `src/lib/web-product/rails.ts`:**
+> Import `isPollarPublishableKey` from `@/lib/pollar` or replace the check with:
+> ```ts
+> export function pollarConfiguration() {
+>   const key =
+>     process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY ??
+>     process.env.NEXT_PUBLIC_POLLAR_API_KEY ??
+>     "";
+>   const issuer =
+>     process.env.POLLAR_TESTNET_USDC_ISSUER ??
+>     "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5";
+>   const isKeyValid =
+>     key.startsWith("pub_testnet_") ||
+>     key.startsWith("pub_live_") ||
+>     key.startsWith("pub_") ||
+>     key.startsWith("pk_testnet_") ||
+>     key.startsWith("pk_");
+>   return {
+>     configured: isKeyValid && stellarAddress(issuer),
+>     publicKey: isKeyValid ? key : null,
+>     issuer: stellarAddress(issuer) ? issuer : null,
+>     sdkVersion: "0.12.0",
+>     network: "testnet" as const,
+>   };
+> }
+> ```
+>
+> This seamlessly supports both the official `pub_testnet_...` dashboard keys and legacy `pk_...` test transports, while accepting both `NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY` and `NEXT_PUBLIC_POLLAR_API_KEY`.
 
 ---
 
@@ -131,10 +175,11 @@ export function MessagePaymentBlock({ review, senderAddress }) {
 
 ## 5. Verification Evidence & On-Chain Proof
 
-- **Automated Tests**: 18/18 passed in `tests/pollar-web-adapter.test.ts`.
+- **Automated Tests**: 25/25 passed in `tests/pollar-web-adapter.test.ts`.
   - Issue 1: Issuer address `GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5` blocked with `INVALID_RECIPIENT_ISSUER`.
   - Issue 2: Arbitrary boolean bypass blocked with `BOOLEAN_AUTHORIZATION_DISALLOWED` and `PASSWORD_REAUTHENTICATION_REQUIRED`.
   - Issue 3: Genuine Pollar SDK vs Sandbox fallback clearly categorized on all execution results.
+  - Issue 4: Publishable key format compatibility (`pub_testnet_...`, `pub_live_...`, `pub_...`, `pk_...`) verified across multiple env configurations (`NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY` and `NEXT_PUBLIC_POLLAR_API_KEY`).
 - **Existing Tests**: 31/31 passed in `tests/solana-core.test.ts` (zero regressions).
 - **TypeScript**: `npm run typecheck` passes with exit code 0 across the entire repository.
 - **Live Public Stellar Testnet Controlled Recipient**:

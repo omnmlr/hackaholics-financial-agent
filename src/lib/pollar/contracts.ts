@@ -203,8 +203,56 @@ export interface PollarExecutionResult {
  * Validates whether an address is an asset issuer account.
  * Direct payments to asset issuers are blocked to avoid misrouted funds.
  */
-export function isIssuerAddress(address: string): boolean {
-  return address.trim() === STELLAR_TESTNET_USDC_ISSUER;
+export function isIssuerAddress(
+  address: string,
+  configuredIssuer?: string | null,
+): boolean {
+  if (!address || typeof address !== "string") return false;
+  const trimmed = address.trim();
+  return (
+    trimmed === STELLAR_TESTNET_USDC_ISSUER ||
+    (!!configuredIssuer && trimmed === configuredIssuer.trim())
+  );
+}
+
+/**
+ * Validates a Pollar publishable key.
+ *
+ * Pollar's official developer dashboard (https://dashboard.pollar.xyz) generates
+ * client-side publishable keys prefixed with:
+ *   - `pub_testnet_` (for Stellar/Solana testnet environments)
+ *   - `pub_live_` (for mainnet environments)
+ *   - `pub_` (general publishable prefix)
+ *
+ * For backwards compatibility with mock transports, unit test fixtures, and earlier
+ * Stripe-convention assumptions, `pk_testnet_`, `pk_live_`, and `pk_` are also accepted.
+ */
+export function isPollarPublishableKey(key: unknown): boolean {
+  if (!key || typeof key !== "string") return false;
+  const trimmed = key.trim();
+  return (
+    trimmed.startsWith("pub_testnet_") ||
+    trimmed.startsWith("pub_live_") ||
+    trimmed.startsWith("pub_") ||
+    trimmed.startsWith("pk_testnet_") ||
+    trimmed.startsWith("pk_live_") ||
+    trimmed.startsWith("pk_")
+  );
+}
+
+/**
+ * Validates any recognized Pollar API key (publishable or secret).
+ */
+export function isValidPollarKey(key: unknown): boolean {
+  if (!key || typeof key !== "string") return false;
+  const trimmed = key.trim();
+  return (
+    isPollarPublishableKey(trimmed) ||
+    trimmed.startsWith("sk_testnet_") ||
+    trimmed.startsWith("sk_live_") ||
+    trimmed.startsWith("sk_") ||
+    trimmed.startsWith("sec_")
+  );
 }
 
 /**

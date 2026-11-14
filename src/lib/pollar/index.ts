@@ -3,6 +3,7 @@
  */
 
 export * from "./contracts";
+export { pollarConfiguration } from "./network";
 export * from "./store";
 export * from "./service";
 export * from "./adapter";

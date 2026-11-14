@@ -59,8 +59,12 @@ export class PollarService {
 
   constructor(config?: Partial<PollarConfig>, store: PollarMemoryStore = defaultPollarStore) {
     this.config = {
-      apiKey: config?.apiKey ?? process.env.POLLAR_API_KEY,
-      publishableKey: config?.publishableKey ?? process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY,
+      apiKey: config?.apiKey ?? process.env.POLLAR_API_KEY ?? process.env.POLLAR_SECRET_KEY,
+      publishableKey:
+        config?.publishableKey ??
+        process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY ??
+        process.env.NEXT_PUBLIC_POLLAR_API_KEY ??
+        process.env.POLLAR_PUBLISHABLE_KEY,
       baseUrl: config?.baseUrl ?? process.env.POLLAR_BASE_URL ?? DEFAULT_POLLAR_BASE_URL,
       stellarNetwork: config?.stellarNetwork ?? (process.env.POLLAR_STELLAR_NETWORK as any) ?? "testnet",
       environment: config?.environment ?? (process.env.AGUS_ENVIRONMENT === "fixture" ? "fixture" : "testnet"),
@@ -90,7 +94,10 @@ export class PollarService {
   }
 
   checkPrerequisites(): PollarPrerequisiteResult {
-    if (!this.config.apiKey && !this.config.publishableKey) {
+    const hasApiKey = !!this.config.apiKey && this.config.apiKey.trim().length > 0;
+    const hasPubKey = !!this.config.publishableKey && this.config.publishableKey.trim().length > 0;
+
+    if (!hasApiKey && !hasPubKey) {
       return {
         viable: false,
         blocker: {
@@ -98,7 +105,7 @@ export class PollarService {
           category: "MISSING_CREDENTIALS",
           message: "Pollar API credentials not found in environment.",
           technicalDetails:
-            "Set POLLAR_API_KEY (server) and NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY (client) in .env.local from dashboard.pollar.xyz. Fallback testnet sandbox is active for verification.",
+            "Set POLLAR_API_KEY (server) and NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY (client, e.g. pub_testnet_...) in .env.local from dashboard.pollar.xyz. Fallback testnet sandbox is active for verification.",
         },
       };
     }

@@ -17,7 +17,10 @@ import {
   STELLAR_TESTNET_USDC_ISSUER,
   CONTROLLED_TEST_RECIPIENT_STELLAR,
   STELLAR_TESTNET_HORIZON,
+  isPollarPublishableKey,
+  isValidPollarKey,
 } from "../src/lib/pollar/contracts";
+import { pollarConfiguration } from "../src/lib/pollar/network";
 import { PollarMemoryStore } from "../src/lib/pollar/store";
 
 describe("Pollar SDK Web Integration — AGUS 2.0 (Final Security & On-Chain Verification)", () => {
@@ -311,6 +314,103 @@ describe("Pollar SDK Web Integration — AGUS 2.0 (Final Security & On-Chain Ver
       expect(meta.features.gaslessOrSponsored).toBe(true);
       expect(meta.features.conversationalApproval).toBe(true);
       expect(meta.supportedAssets.some((a) => a.code === "USDC" && a.chain === "STELLAR")).toBe(true);
+    });
+  });
+
+  describe("Issue 3: Publishable-Key Compatibility (pub_testnet_ vs pk_)", () => {
+    it("recognizes official Pollar dashboard pub_testnet_ keys", () => {
+      expect(isPollarPublishableKey("pub_testnet_019a3b8c7d6e5f4a3b2c1d0e")).toBe(true);
+      expect(isPollarPublishableKey("pub_live_019a3b8c7d6e5f4a3b2c1d0e")).toBe(true);
+      expect(isPollarPublishableKey("pub_generic_sample_key")).toBe(true);
+      expect(isValidPollarKey("pub_testnet_019a3b8c7d6e5f4a3b2c1d0e")).toBe(true);
+    });
+
+    it("maintains backwards compatibility with legacy pk_ and pk_testnet_ keys", () => {
+      expect(isPollarPublishableKey("pk_testnet_legacy_mock_key")).toBe(true);
+      expect(isPollarPublishableKey("pk_mock_transport_only")).toBe(true);
+      expect(isPollarPublishableKey("pk_test_controlled")).toBe(true);
+      expect(isValidPollarKey("pk_testnet_legacy_mock_key")).toBe(true);
+      expect(isValidPollarKey("sk_testnet_server_secret_key")).toBe(true);
+    });
+
+    it("strictly rejects malformed, empty, or non-Pollar keys", () => {
+      expect(isPollarPublishableKey("")).toBe(false);
+      expect(isPollarPublishableKey(null)).toBe(false);
+      expect(isPollarPublishableKey(undefined)).toBe(false);
+      expect(isPollarPublishableKey("bearer_token_xyz")).toBe(false);
+      expect(isPollarPublishableKey("stripe_publishable_key")).toBe(false);
+      expect(isPollarPublishableKey("1234567890")).toBe(false);
+    });
+
+    it("initializes PollarService when provided with a pub_testnet_ publishable key", () => {
+      const pubKey = "pub_testnet_8f7e6d5c4b3a2109";
+      const svc = new PollarService({
+        publishableKey: pubKey,
+      }, testStore);
+
+      const prereqs = svc.checkPrerequisites();
+      expect(prereqs.viable).toBe(true);
+      expect(svc.getConfig().publishableKey).toBe(pubKey);
+    });
+
+    it("resolves pollarConfiguration using pub_testnet_ key via NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY", () => {
+      const originalPub = process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY;
+      const originalApi = process.env.NEXT_PUBLIC_POLLAR_API_KEY;
+      const originalIssuer = process.env.POLLAR_TESTNET_USDC_ISSUER;
+
+      try {
+        delete process.env.NEXT_PUBLIC_POLLAR_API_KEY;
+        process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY = "pub_testnet_valid_dashboard_key_123";
+        delete process.env.POLLAR_TESTNET_USDC_ISSUER;
+
+        const config = pollarConfiguration();
+        expect(config.configured).toBe(true);
+        expect(config.publicKey).toBe("pub_testnet_valid_dashboard_key_123");
+        expect(config.issuer).toBe(STELLAR_TESTNET_USDC_ISSUER);
+        expect(config.network).toBe("testnet");
+      } finally {
+        if (originalPub) process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY = originalPub;
+        else delete process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY;
+        if (originalApi) process.env.NEXT_PUBLIC_POLLAR_API_KEY = originalApi;
+        else delete process.env.NEXT_PUBLIC_POLLAR_API_KEY;
+        if (originalIssuer) process.env.POLLAR_TESTNET_USDC_ISSUER = originalIssuer;
+        else delete process.env.POLLAR_TESTNET_USDC_ISSUER;
+      }
+    });
+
+    it("resolves pollarConfiguration using pub_testnet_ key via NEXT_PUBLIC_POLLAR_API_KEY (Codex env name)", () => {
+      const originalPub = process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY;
+      const originalApi = process.env.NEXT_PUBLIC_POLLAR_API_KEY;
+      const originalIssuer = process.env.POLLAR_TESTNET_USDC_ISSUER;
+
+      try {
+        delete process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY;
+        process.env.NEXT_PUBLIC_POLLAR_API_KEY = "pub_testnet_codex_env_key_456";
+        delete process.env.POLLAR_TESTNET_USDC_ISSUER;
+
+        const config = pollarConfiguration();
+        expect(config.configured).toBe(true);
+        expect(config.publicKey).toBe("pub_testnet_codex_env_key_456");
+        expect(config.issuer).toBe(STELLAR_TESTNET_USDC_ISSUER);
+      } finally {
+        if (originalPub) process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY = originalPub;
+        else delete process.env.NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY;
+        if (originalApi) process.env.NEXT_PUBLIC_POLLAR_API_KEY = originalApi;
+        else delete process.env.NEXT_PUBLIC_POLLAR_API_KEY;
+        if (originalIssuer) process.env.POLLAR_TESTNET_USDC_ISSUER = originalIssuer;
+        else delete process.env.POLLAR_TESTNET_USDC_ISSUER;
+      }
+    });
+
+    it("demonstrates the reproduction and fix of the pk_ only blocker", () => {
+      const dashboardKey = "pub_testnet_live_key_from_dashboard";
+
+      // The old faulty logic in Codex's rails.ts:
+      const oldCheck = (key: string) => key.startsWith("pk_");
+      expect(oldCheck(dashboardKey)).toBe(false); // Bug: failed and blocked real testnet users!
+
+      // The fixed logic in pollarConfiguration / isPollarPublishableKey:
+      expect(isPollarPublishableKey(dashboardKey)).toBe(true); // Fixed: successfully unblocks real testnet users!
     });
   });
 });

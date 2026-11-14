@@ -1,0 +1,14 @@
+{
+  "genuineProviderRequest": true,
+  "model": "gemini-3.5-flash-lite",
+  "httpStatus": 200,
+  "reply": "Na 9 USDC you owe for the Synthetic Counterpart invoice (payable to Acceptance records only, due November 15, 2026). As requested, I no prepare or send any payment.",
+  "steps": [
+    {
+      "tool": "read_agus_financial_snapshot",
+      "state": "succeeded"
+    }
+  ],
+  "noPaymentExecutionAuthorized": true,
+  "syntheticRecordsOnly": true
+}

@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "width": 1440,
+      "passed": true,
+      "noOverflow": true,
+      "jsErrors": [],
+      "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+    },
+    {
+      "width": 820,
+      "passed": true,
+      "noOverflow": true,
+      "jsErrors": [],
+      "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+    },
+    {
+      "width": 390,
+      "passed": true,
+      "noOverflow": true,
+      "jsErrors": [],
+      "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+    },
+    {
+      "width": 320,
+      "passed": true,
+      "noOverflow": true,
+      "jsErrors": [],
+      "verificationTransport": "MOCKED; no genuine chain settlement claimed"
+    }
+  ],
+  "note": "All sponsor settlement evidence in this browser test is mocked transport. Genuine network verification requires configured receiving wallets and real testnet transactions."
+}

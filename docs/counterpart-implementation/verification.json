@@ -1,0 +1,66 @@
+{
+  "implementationCommit": "5162067",
+  "productionBuild": true,
+  "lint": true,
+  "typescript": "Production build TypeScript check passed; standalone typecheck also passed",
+  "unit": {
+    "passed": 1550,
+    "skipped": 47
+  },
+  "browserWidths": [
+    1440,
+    820,
+    390,
+    320
+  ],
+  "browserJavaScriptErrors": 0,
+  "wcagAudits": {
+    "count": 11,
+    "violations": 0,
+    "approvalWidths": [
+      1440,
+      390,
+      320
+    ],
+    "approvalAudit": "Additional Pollar script assertions passed"
+  },
+  "pollar": {
+    "sdk": "0.12.0",
+    "transport": "mocked provider and Horizon",
+    "passed": true,
+    "moneyWalletConnectionAndBalanceRead": true,
+    "fullSourceAddressWrapWidths": [
+      1440,
+      390,
+      320
+    ],
+    "nonceReplayStatus": 403,
+    "signingCalls": 1
+  },
+  "genuineGemini": {
+    "model": "gemini-3.5-flash-lite",
+    "httpStatus": 200,
+    "tools": [
+      "read_agus_financial_snapshot"
+    ],
+    "contextFollowupStatus": 200,
+    "contextRestoredWidths": [
+      1440,
+      390,
+      320
+    ],
+    "noPaymentAuthorized": true
+  },
+  "httpSmoke": true,
+  "credentialExposure": {
+    "filesChecked": 114,
+    "matches": 0,
+    "valuePrinted": false
+  },
+  "railway": {
+    "changed": false,
+    "liveDeployment": "e7a9a01b-b71e-45d6-93fa-1a9248e0ce47",
+    "stagedChanges": 0
+  },
+  "realFundsMoved": false
+}

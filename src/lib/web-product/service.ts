@@ -1,3 +1,4 @@
+import { conversationConfiguration } from "./runtime-configuration";
 import { isIssuerAddress } from "../pollar/network";
 import { randomUUID, createHash } from "node:crypto";
 import { reauthenticate } from "../auth";
@@ -693,12 +694,7 @@ export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
         receivingAddress: process.env.ZCASH_TESTNET_RECEIVING_ADDRESS ?? null,
         network: "testnet",
       },
-      ai: {
-        configured:
-          !!process.env.AI_API_KEY &&
-          ["gemini", "openai"].includes(process.env.AI_PROVIDER ?? ""),
-        provider: process.env.AI_PROVIDER ?? "none",
-      },
+      ai: conversationConfiguration(),
       bank: "coming-soon",
       session: "single-operator",
     },

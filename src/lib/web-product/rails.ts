@@ -1,3 +1,4 @@
+import { isPollarPublishableKey } from "./runtime-configuration";
 import { buildZip321Uri, validateZcashAddress } from "../zcash/zip321";
 import { STELLAR_TESTNET_HORIZON, isIssuerAddress } from "../pollar/network";
 import { base32 } from "@scure/base";
@@ -51,11 +52,11 @@ export function zcashUri(
 }
 
 export function pollarConfiguration() {
-  const key = process.env.NEXT_PUBLIC_POLLAR_API_KEY ?? "";
+  const key = (process.env.NEXT_PUBLIC_POLLAR_API_KEY ?? "").trim();
   const issuer = process.env.POLLAR_TESTNET_USDC_ISSUER ?? "";
   return {
-    configured: key.startsWith("pk_") && stellarAddress(issuer),
-    publicKey: key.startsWith("pk_") ? key : null,
+    configured: isPollarPublishableKey(key) && stellarAddress(issuer),
+    publicKey: isPollarPublishableKey(key) ? key : null,
     issuer: stellarAddress(issuer) ? issuer : null,
     sdkVersion: "0.12.0",
     network: "testnet" as const,

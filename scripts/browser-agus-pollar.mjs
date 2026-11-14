@@ -56,7 +56,7 @@ const child = spawn(
       FINANCIAL_DEMO_ENABLED: "false",
       AI_PROVIDER: "none",
       AI_API_KEY: "",
-      NEXT_PUBLIC_POLLAR_API_KEY: "pk_mock_transport_only",
+      NEXT_PUBLIC_POLLAR_API_KEY: "pub_testnet_mock_transport_only",
       POLLAR_TESTNET_USDC_ISSUER: issuer,
       AGUS_TEST_TRANSPORT_FILE: fixtureFile,
     },

@@ -135,7 +135,13 @@ export type ProductSnapshot = {
       receivingAddress: string | null;
       network: "testnet";
     };
-    ai: { configured: boolean; provider: string };
+    ai: {
+      configured: boolean;
+      provider: string;
+      model?: string;
+      architecture?: string;
+      unavailableReason?: string | null;
+    };
     bank: "coming-soon";
     session: "single-operator";
   };

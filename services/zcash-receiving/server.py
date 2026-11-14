@@ -70,6 +70,8 @@ def initialize():
     global READY, NATIVE
     try:
         if not (WALLET/'config.json').exists():
+            if WALLET.exists():
+                WALLET.rename(ROOT / ('incomplete-'+str(int(time.time()))))
             # dev init never prints the mnemonic without --show-mnemonic.
             result=subprocess.run(['zaw','--network','testnet','--data-dir',str(WALLET),'dev','init'],
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)

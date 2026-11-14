@@ -74,7 +74,7 @@ def initialize():
             result=subprocess.run(['zaw','--network','testnet','--data-dir',str(WALLET),'dev','init'],
                 stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
             if result.returncode:
-                raise RuntimeError('native_init: '+result.stderr.decode(errors='replace')[:1800])
+                raise RuntimeError('native_init exit '+str(result.returncode)+': '+result.stderr.decode(errors='replace')[:1800])
         config=json.loads((WALLET/'config.json').read_text())
         if config['network']!='testnet' or config['lightwalletd']!='https://testnet.zec.rocks:443':
             raise ValueError('Unexpected network')

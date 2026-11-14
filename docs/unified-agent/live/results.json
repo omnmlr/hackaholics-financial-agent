@@ -1,0 +1,60 @@
+{
+  "syntheticMicrophone": true,
+  "realMediaRecorder": true,
+  "realProvider": true,
+  "errors": [],
+  "pidgin": {
+    "reply": "I don port the reminder for you! E dey wait for your approval for the interface: to remind you tomorrow (November 15 at 09:00 AM) say Ada dey owe you 5 USDC.",
+    "steps": [
+      {
+        "sequence": 1,
+        "tool": "prepare_responsibility",
+        "state": "succeeded",
+        "summary": "Responsibility prepared, awaiting your approval below. Only an in-app reminder is supported; no external action occurred."
+      }
+    ],
+    "actions": [
+      {
+        "kind": "responsibility",
+        "id": "63972655-2652-4296-848c-fea789ccf4ab"
+      }
+    ]
+  },
+  "proposal": {
+    "id": "63972655-2652-4296-848c-fea789ccf4ab",
+    "dueAt": "2026-11-15T09:00:00Z",
+    "scope": "in_app_reminder_only",
+    "state": "awaiting_approval",
+    "title": "Ada 5 USDC debt reminder",
+    "version": 0,
+    "createdAt": "2026-11-14T05:28:35.952Z",
+    "objective": "Remind user that Ada owes 5 USDC",
+    "requestId": "63972655-2652-4296-848c-fea789ccf4ab"
+  },
+  "inlineApproval": true,
+  "visibleInObligations": true,
+  "contextualPanelPreservesPage": true,
+  "voice": {
+    "status": 200,
+    "transcript": "Abeg show my active responsibilities. Do not create or send any payment.",
+    "reply": "Na these active responsibilities dey your list right now:\n\n1. **Ada 5 USDC debt reminder**\n   - **Objective:** Remind user that Ada owes 5 USDC\n   - **Due Date:** November 15, 2026, at 09:00 AM UTC\n   - **State:** Active (and one paused version pending approval)",
+    "steps": [],
+    "explicitSend": true
+  },
+  "reloadRestoresAction": true,
+  "repeatedRequestBlockedBeforeModel": true,
+  "currentAdaRecords": [
+    {
+      "id": "0c757498-e722-479a-8288-5a42f767e534",
+      "state": "paused",
+      "version": 2
+    },
+    {
+      "id": "63972655-2652-4296-848c-fea789ccf4ab",
+      "state": "active",
+      "version": 1
+    }
+  ],
+  "cancellationKeepLeavesAdaUntouched": true,
+  "newChatRestoresExistingReminderInsteadOfDuplicating": true
+}

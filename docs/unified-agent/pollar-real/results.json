@@ -1,0 +1,13 @@
+{
+  "genuineNetwork": true,
+  "signingAttempted": false,
+  "credentialsPrinted": false,
+  "configured": true,
+  "network": "testnet",
+  "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+  "authenticationFormVisible": false,
+  "error": [
+    "Pollar could not verify this testnet application. Check the publishable key and allow this HTTPS origin in the Pollar dashboard before connecting.",
+    ""
+  ]
+}

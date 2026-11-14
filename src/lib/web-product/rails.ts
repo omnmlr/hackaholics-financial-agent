@@ -42,7 +42,7 @@ export function zcashUri(
 ): string {
   if (!zcashTestnetAddress(recipient))
     throw new AppError(
-      "Use a valid Sapling testnet receiving address (ztestsapling…).",
+      "Use a valid shielded testnet Unified (utest1…) or Sapling (ztestsapling…) receiving address.",
     );
   if (atomic(amount, 8) <= 0n)
     throw new AppError("Enter a positive ZEC amount.");
@@ -205,6 +205,11 @@ export async function verifyZcash(
   request: PaymentRequest,
   transactionId: string,
 ): Promise<VerificationEvidence> {
+  if (request.recipient.startsWith("utest1"))
+    throw new AppError(
+      "Unified receiving requests are supported. Settlement verification requires a compatible authorized Unified/Orchard receiving wallet; this Sapling verifier cannot attest that receipt.",
+      503,
+    );
   const chain = await walletRpc("getblockchaininfo", []);
   if (chain.chain !== "test" || chain.initialblockdownload !== false)
     throw new AppError(

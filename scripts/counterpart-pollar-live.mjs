@@ -1,10 +1,12 @@
+/* global location */
 import { chromium } from "playwright";
 import { URL } from "node:url";
 import { X509Certificate, createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
-const base = "https://agus-counterpart-acceptance-production.up.railway.app",
-  dir = "docs/unified-agent/pollar-real";
+const base =
+    process.env.AGUS_ACCEPTANCE_ORIGIN ?? "https://agusweb.up.railway.app",
+  dir = process.env.AGUS_POLLAR_EVIDENCE_DIR ?? "docs/release-pass/pollar";
 const { password } = JSON.parse(
   await readFile(".data/counterpart-railway/access.json", "utf8"),
 );
@@ -50,6 +52,44 @@ try {
     reducedMotion: "reduce",
   });
   const p = await c.newPage();
+  report.requests = [];
+  report.responses = [];
+  report.failures = [];
+  p.on("request", async (request) => {
+    if (request.url().includes("pollar.xyz")) {
+      const h = await request.allHeaders();
+      report.requests.push({
+        method: request.method(),
+        url: request.url().split("?")[0],
+        origin: h.origin,
+        referer: h.referer,
+        keyFingerprint: h["x-pollar-api-key"]
+          ? createHash("sha256")
+              .update(h["x-pollar-api-key"])
+              .digest("hex")
+              .slice(0, 12)
+          : undefined,
+      });
+    }
+  });
+  p.on("requestfailed", (request) => {
+    if (request.url().includes("pollar.xyz"))
+      report.failures.push({
+        url: request.url().split("?")[0],
+        error: request.failure()?.errorText,
+      });
+  });
+  p.on("response", async (response) => {
+    if (response.url().includes("pollar.xyz")) {
+      const d = await response.json().catch(() => null);
+      report.responses.push({
+        url: response.url().split("?")[0],
+        status: response.status(),
+        code: d?.code,
+      });
+    }
+  });
+
   p.on("response", async (r) => {
     if (
       r.url().includes("sdk.api.pollar.xyz") &&
@@ -59,7 +99,12 @@ try {
       report.remoteConfigStatus = r.status();
       const app = data?.content?.application;
       report.remoteApplication = app
-        ? { name: app.name, network: app.network, chains: app.chains }
+        ? {
+            name: app.name,
+            id: app.id,
+            network: app.network,
+            chains: app.chains,
+          }
         : null;
     }
   });
@@ -71,6 +116,11 @@ try {
     (await fetch("/api/product")).json(),
   );
   report.configured = data.capabilities.pollar.configured;
+  report.keyFingerprint = createHash("sha256")
+    .update(data.capabilities.pollar.publicKey ?? "")
+    .digest("hex")
+    .slice(0, 12);
+  report.browserOrigin = await p.evaluate(() => location.origin);
   report.network = data.capabilities.pollar.network;
   report.issuer = data.capabilities.pollar.issuer;
   await p

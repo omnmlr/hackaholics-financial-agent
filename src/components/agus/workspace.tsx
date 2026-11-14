@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import { ZcashNetwork } from "./zcash-network";
 import { existingReminderRequest } from "./reminder-request";
 import { PersonalAction } from "../personal-action";
 import { FinancialResponse } from "../financial-response";
@@ -246,6 +247,7 @@ export function AgusWorkspace({
   }, [tab, walletFocus, phase]);
   const showWallet = (wallet: "pollar" | "zcash") => {
     setModal(null);
+    setChatLaunch(undefined);
     setTab("Accounts");
     setWalletFocus(wallet);
   };
@@ -350,6 +352,8 @@ export function AgusWorkspace({
     });
   }
   const navigate = (next: Tab) => {
+    setChatLaunch(undefined);
+    setContextOpen(false);
     setTab(next);
     setError("");
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -1084,7 +1088,10 @@ export function AgusWorkspace({
                     </span>
                     <span className={s.pill}>Testnet</span>
                   </div>
-                  <p className={s.muted}>Receive ZEC at a shielded address.</p>
+                  <p className={s.muted}>
+                    Receive ZEC · Unified / Orchard or Sapling Testnet.
+                  </p>
+                  <ZcashNetwork />
                   <div className={s.notice}>
                     {snapshot.capabilities.zcash.verificationConfigured
                       ? "Receiving verification configured · 3 confirmations required."
@@ -1210,6 +1217,10 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
+              onReceiveZcash={() => {
+                setPrivacyMode(true);
+                openInvoiceForm(false, "ZEC");
+              }}
             />
           )}
           {tab === "Settings" && (
@@ -1287,7 +1298,10 @@ export function AgusWorkspace({
                       ? "Configured · testnet"
                       : "Testnet key / issuer required",
                   ],
-                  ["Zcash · ZIP 321 requests", "Available · Sapling testnet"],
+                  [
+                    "Zcash · ZIP 321 requests",
+                    "Available · Unified / Sapling testnet",
+                  ],
                   [
                     "Zcash receiving evidence",
                     snapshot.capabilities.zcash.verificationConfigured
@@ -1478,6 +1492,11 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
+              onReceiveZcash={() => {
+                setContextOpen(false);
+                setPrivacyMode(true);
+                openInvoiceForm(false, "ZEC");
+              }}
             />
           </div>
         </Dialog>
@@ -2287,17 +2306,19 @@ function InvoiceDetails({
               )}
               <label>
                 {selectedRail === "zcash"
-                  ? "Your Sapling testnet receiving address"
+                  ? "Your shielded testnet receiving address"
                   : "Your Stellar testnet receiving address"}
                 <textarea
                   rows={3}
                   value={recipient}
                   onChange={(e) => setRecipient(e.target.value.trim())}
                   placeholder={
-                    selectedRail === "zcash" ? "ztestsapling1…" : "G…"
+                    selectedRail === "zcash"
+                      ? "utest1… or ztestsapling1…"
+                      : "G…"
                   }
                   required
-                  maxLength={300}
+                  maxLength={2048}
                   autoComplete="off"
                   spellCheck={false}
                 />
@@ -2436,10 +2457,16 @@ function RequestDetails({
       </div>
       <p className={s.muted}>
         {request.rail === "zcash"
-          ? "Zcash · shielded Sapling request"
+          ? "Zcash · shielded testnet request"
           : "Pollar · Stellar USDC"}{" "}
         · testnet only
       </p>
+      {request.rail === "zcash" && (
+        <p className={s.fine}>
+          Privacy depends on the paying wallet. This request is not a receipt;
+          public chain data cannot verify the received amount.
+        </p>
+      )}
       {request.state === "pending" && (
         <>
           <div className={s.qrWrap}>
@@ -2725,12 +2752,14 @@ function Assistant({
   refresh,
   privacyMode,
   setPrivacyMode,
+  onReceiveZcash,
 }: {
   launch?: ChatLaunch;
   snapshot: ProductSnapshot;
   refresh: () => Promise<void>;
   privacyMode: boolean;
   setPrivacyMode: (value: boolean) => void;
+  onReceiveZcash?: () => void;
 }) {
   const [question, setQuestion] = useState(launch?.draft ?? "");
   const launched = useRef<string | undefined>(undefined);
@@ -3486,6 +3515,16 @@ function Assistant({
             </span>
           )}
           <span>{privacyMode ? "Privacy Mode on" : ""}</span>
+          {onReceiveZcash && (
+            <button
+              type="button"
+              className={s.textButton}
+              disabled={busy || voiceBusy}
+              onClick={onReceiveZcash}
+            >
+              Receive ZEC <ShieldCheck size={12} />
+            </button>
+          )}
           <button
             className={s.textButton}
             disabled={busy}

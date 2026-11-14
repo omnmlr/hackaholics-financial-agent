@@ -1,4 +1,5 @@
-/** Integrated from AG-ZCASH b9efe96; checksum-validated Sapling testnet only. */
+/** Checksum-validated Sapling and ZIP 316 Unified testnet receivers. */
+import { decodeUnifiedAddress } from "./unified-address";
 import { bech32 } from "@scure/base";
 import {
   type AgusMemoPayload,
@@ -19,8 +20,18 @@ export function validateZcashAddress(
   pool: "orchard" | "sapling" | "transparent" | "unified";
   network: ZcashNetwork;
 } {
-  // Unified receiver decoding needs ZIP 316/F4Jumble validation. Prefix-only
-  // checks cannot establish a shielded receiver, so those remain unsupported.
+  if (
+    network === "testnet" &&
+    typeof address === "string" &&
+    address.startsWith("utest1")
+  ) {
+    try {
+      decodeUnifiedAddress(address);
+      return { valid: true, pool: "unified", network };
+    } catch {
+      return { valid: false, pool: "transparent", network };
+    }
+  }
   if (network === "testnet" && typeof address === "string") {
     try {
       const decoded = bech32.decode(address as `${string}1${string}`, 200);

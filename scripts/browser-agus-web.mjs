@@ -3,6 +3,7 @@
 // Sponsor verification uses explicitly mocked transport. No real coins move.
 import { chromium } from "playwright";
 import AxeBuilder from "@axe-core/playwright";
+import { readFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -605,7 +606,7 @@ try {
         .getByRole("button", { name: "Prepare payment request" })
         .click();
       await dialog
-        .getByLabel("Your Sapling testnet receiving address")
+        .getByLabel("Your shielded testnet receiving address")
         .fill(zaddr);
       await dialog
         .getByRole("checkbox", { name: "I control this receiving address" })
@@ -635,6 +636,78 @@ try {
         fullPage: true,
       });
       await dialog.getByRole("button", { name: "Close dialog" }).click();
+    }
+    if (width === 320) {
+      await nav("AGUS").click();
+      await page
+        .getByRole("button", { name: "New conversation", exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: "Receive ZEC", exact: true })
+        .click();
+      await dialog
+        .getByLabel("What’s it for?")
+        .fill("Fictional Unified receiving request");
+      await dialog
+        .getByLabel("Who’s it with?")
+        .fill("Isolated address-format acceptance");
+      await dialog.getByLabel("Amount", { exact: true }).fill("0.01");
+      await dialog
+        .getByRole("button", { name: "Save obligation", exact: true })
+        .click();
+      await dialog
+        .getByRole("button", { name: "Prepare payment request", exact: true })
+        .click();
+      const reference = JSON.parse(
+        await readFile("tests/fixtures/zcash/unified-reference.json", "utf8"),
+      );
+      const receiver = reference.vectors.find((v) =>
+        v.receivers.includes(3),
+      ).testnet;
+      await dialog
+        .getByLabel("Your shielded testnet receiving address")
+        .fill(receiver);
+      await dialog
+        .getByRole("checkbox", { name: "I control this receiving address" })
+        .check();
+      await dialog
+        .getByRole("button", {
+          name: "Create testnet payment request",
+          exact: true,
+        })
+        .click();
+      await dialog
+        .getByRole("img", {
+          name: "Testnet payment request QR code",
+          exact: true,
+        })
+        .waitFor();
+      await fit();
+      await page.screenshot({
+        path: join(evidence, "320-unified-request.png"),
+        fullPage: true,
+      });
+      await dialog.getByLabel("Transaction ID to check").fill("c".repeat(64));
+      await dialog
+        .getByRole("button", { name: "Check receiving evidence", exact: true })
+        .click();
+      await dialog
+        .getByRole("alert")
+        .filter({ hasText: "compatible authorized Unified/Orchard" })
+        .waitFor();
+      const current = await (
+        await context.request.get(`${base}/api/product`)
+      ).json();
+      const unified = current.invoices.find(
+        (i) => i.title === "Fictional Unified receiving request",
+      );
+      assert.equal(unified.state, "open");
+      const request = current.requests.find((r) => r.invoiceId === unified.id);
+      assert.equal(request.state, "pending");
+      assert.ok(request.uri.startsWith("zcash:utest1"));
+      await dialog
+        .getByRole("button", { name: "Close dialog", exact: true })
+        .click();
     }
     if (width < 700)
       await page.getByRole("button", { name: "Open settings" }).click();

@@ -300,6 +300,12 @@ export async function runPersonalConversation(
           zcash: {
             asset: "ZEC",
             shieldedRequests: true,
+            supportedReceivingAddresses: [
+              "Sapling testnet",
+              "ZIP316 Unified testnet with Orchard/Sapling receivers",
+            ],
+            unifiedReceiptVerification: false,
+            managedWalletAvailable: false,
             shieldedSending: false,
             receivingVerificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
           },

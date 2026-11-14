@@ -4,7 +4,8 @@ import { URL } from "node:url";
 import { randomUUID, X509Certificate, createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-const base = "https://agus-counterpart-acceptance-production.up.railway.app",
+const base =
+    process.env.AGUS_ACCEPTANCE_ORIGIN ?? "https://agusweb.up.railway.app",
   dir = "docs/counterpart-deployment";
 const { password } = JSON.parse(
   await readFile(".data/counterpart-railway/access.json", "utf8"),

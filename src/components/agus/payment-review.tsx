@@ -157,7 +157,7 @@ export function PaymentReview({
               name="address"
               defaultValue={plan.recipientAddress ?? ""}
               rows={3}
-              maxLength={300}
+              maxLength={2048}
               required
               placeholder="The recipient’s supported testnet address"
               spellCheck={false}

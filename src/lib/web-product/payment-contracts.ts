@@ -68,7 +68,7 @@ export const IntentInput = z.strictObject({
 });
 export const PaymentFields = z.strictObject({
   recipientLabel: z.string().trim().min(1).max(100),
-  recipientAddress: z.string().trim().max(300),
+  recipientAddress: z.string().trim().max(2048),
   amount: z.string().trim().max(30),
   asset: z.string().trim().min(1).max(12),
   privacy: z.boolean(),

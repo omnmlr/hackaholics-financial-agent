@@ -69,7 +69,7 @@ export const RequestInput = z.strictObject({
   id: z.uuid(),
   invoiceId: z.uuid(),
   rail: Rail,
-  recipient: z.string().trim().min(20).max(300),
+  recipient: z.string().trim().min(20).max(2048),
 });
 
 export const moneyScale = { NGN: 2, USDC: 7, ZEC: 8 } as const;

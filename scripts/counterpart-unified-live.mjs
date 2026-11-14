@@ -4,7 +4,8 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { URL } from "node:url";
 import { X509Certificate, createHash } from "node:crypto";
 import assert from "node:assert/strict";
-const base = "https://agus-counterpart-acceptance-production.up.railway.app",
+const base =
+    process.env.AGUS_ACCEPTANCE_ORIGIN ?? "https://agusweb.up.railway.app",
   dir = "docs/unified-agent/live";
 await mkdir(dir, { recursive: true });
 const { password } = JSON.parse(

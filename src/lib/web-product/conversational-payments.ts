@@ -142,7 +142,7 @@ function assess(plan: PaymentPlan) {
     blockers.push("Use a valid Stellar G-address for this recipient.");
   else if (plan.rail === "zcash" && !zcashTestnetAddress(plan.recipientAddress))
     blockers.push(
-      "Use a shielded Sapling testnet receiving address (ztestsapling…).",
+      "Use a shielded testnet Unified (utest1…) or Sapling (ztestsapling…) receiving address.",
     );
   if (
     plan.rail === "pollar-stellar" &&

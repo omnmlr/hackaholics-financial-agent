@@ -1105,7 +1105,10 @@ export function AgusWorkspace({
                   </div>
                   <button
                     className={s.secondary}
-                    onClick={() => openInvoiceForm(false, "ZEC")}
+                    onClick={() => {
+                      setPrivacyMode(true);
+                      openInvoiceForm(false, "ZEC");
+                    }}
                   >
                     Create a ZEC request <ArrowUpRight size={15} />
                   </button>
@@ -1223,7 +1226,10 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
-              onOpenZcashInvoice={(id) => setSelected(id)}
+              onOpenZcashInvoice={(id) => {
+                setContextOpen(false);
+                setSelected(id);
+              }}
               onReceiveZcash={() => {
                 setPrivacyMode(true);
                 openInvoiceForm(false, "ZEC");
@@ -1499,7 +1505,10 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
-              onOpenZcashInvoice={(id) => setSelected(id)}
+              onOpenZcashInvoice={(id) => {
+                setContextOpen(false);
+                setSelected(id);
+              }}
               onReceiveZcash={() => {
                 setContextOpen(false);
                 setPrivacyMode(true);

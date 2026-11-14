@@ -305,10 +305,17 @@ export async function runPersonalConversation(
               "Sapling testnet",
               "ZIP316 Unified testnet with Orchard/Sapling receivers",
             ],
-            unifiedReceiptVerification: !!process.env.ZCASH_RECEIVE_SERVICE_URL,
-            managedWalletAvailable: !!process.env.ZCASH_RECEIVE_SERVICE_URL,
+            unifiedReceiptVerification:
+              !!process.env.ZCASH_RECEIVE_SERVICE_URL &&
+              !!process.env.ZCASH_RECEIVE_TOKEN,
+            managedWalletAvailable:
+              !!process.env.ZCASH_RECEIVE_SERVICE_URL &&
+              !!process.env.ZCASH_RECEIVE_TOKEN,
             shieldedSending: false,
-            receivingVerificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
+            receivingVerificationConfigured:
+              !!process.env.ZCASH_WALLET_RPC_URL ||
+              (!!process.env.ZCASH_RECEIVE_SERVICE_URL &&
+                !!process.env.ZCASH_RECEIVE_TOKEN),
           },
           bankLinking: false,
           mainnet: false,

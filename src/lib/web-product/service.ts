@@ -710,7 +710,10 @@ export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
         managedReceivingConfigured:
           !!process.env.ZCASH_RECEIVE_SERVICE_URL &&
           !!process.env.ZCASH_RECEIVE_TOKEN,
-        verificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
+        verificationConfigured:
+          !!process.env.ZCASH_WALLET_RPC_URL ||
+          (!!process.env.ZCASH_RECEIVE_SERVICE_URL &&
+            !!process.env.ZCASH_RECEIVE_TOKEN),
         receivingAddress: process.env.ZCASH_TESTNET_RECEIVING_ADDRESS ?? null,
         network: "testnet",
       },

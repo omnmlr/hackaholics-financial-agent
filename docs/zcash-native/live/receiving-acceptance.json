@@ -1,0 +1,100 @@
+{
+  "classification": "REAL native wallet, real Gemini; no synthetic payment transport",
+  "url": "https://agusweb.up.railway.app",
+  "errors": [],
+  "responsibilitiesBefore": [
+    {
+      "id": "0c757498-e722-479a-8288-5a42f767e534",
+      "state": "paused",
+      "version": 2
+    },
+    {
+      "id": "63972655-2652-4296-848c-fea789ccf4ab",
+      "state": "active",
+      "version": 1
+    }
+  ],
+  "walletBefore": {
+    "network": "testnet",
+    "synced": true,
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "spendableZec": "0",
+    "pendingZec": "0",
+    "signingAvailable": false,
+    "implementation": "zaw-0.1.2",
+    "nu7Compatible": true
+  },
+  "gemini": {
+    "status": 200,
+    "reply": "I have created the private Testnet ZEC receiving invoice for 0.125 ZEC from the Public Testnet faucet with the title \"Hackathon receiving demonstration.\" You can view the QR code and payment details in the secure owner UI.",
+    "steps": [
+      {
+        "sequence": 1,
+        "tool": "create_private_zec_invoice",
+        "state": "succeeded",
+        "summary": "Private ZEC invoice saved. Unpaid until the native receiving wallet independently verifies the exact amount and 3 confirmations. Address and QR are available only in the owner UI."
+      }
+    ]
+  },
+  "invoiceId": "486997e6-1424-4fd7-acbc-6f194ea002ff",
+  "requestId": "97265b1e-2930-4075-add0-c68055575177",
+  "address": "utest1f8s92xst7p9fumzx689xhld22e3cn4hdwh7sney0fld2pqwhc5jpydfcx9kvexng6fk4f7rtc4yv4d07venvg7sh7t2ws82m3vsmz432",
+  "initialState": "pending",
+  "reminderBefore": "awaiting_approval",
+  "receivingWalletBefore": {
+    "network": "testnet",
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "invoiceKey": "9e35ff7c812f42ff6f94be40514c7ce24d1500b0cb4628565a8fcf5f44a17636",
+    "termsDigest": "729a304a0690e933ea7cbbf19d5166fc4b8a1370e9ffa38a57e9f80507367881",
+    "walletRequestId": "req_4f58a7c00bad4863ac87",
+    "address": "utest1f8s92xst7p9fumzx689xhld22e3cn4hdwh7sney0fld2pqwhc5jpydfcx9kvexng6fk4f7rtc4yv4d07venvg7sh7t2ws82m3vsmz432",
+    "amountAtoms": "12500000",
+    "chainTip": 4618859,
+    "synced": true,
+    "observedAt": 1794646502,
+    "outputs": [],
+    "source": "zaw-librustzcash-receiving-wallet",
+    "signingAvailable": false
+  },
+  "faucet": {
+    "status": 202,
+    "data": {
+      "id": "c97585a06d2a0d5ef87c3bb54626c76f",
+      "status": "queued",
+      "amount": "0.125",
+      "broadcastOk": 0,
+      "broadcastNodes": 3,
+      "createdAt": 1794646503
+    },
+    "address": "utest1f8s92xst7p9fumzx689xhld22e3cn4hdwh7sney0fld2pqwhc5jpydfcx9kvexng6fk4f7rtc4yv4d07venvg7sh7t2ws82m3vsmz432",
+    "requestedAt": "2026-11-14T08:55:03.394Z"
+  },
+  "faucetObservation": {
+    "status": 200,
+    "data": {
+      "id": "c97585a06d2a0d5ef87c3bb54626c76f",
+      "status": "failed",
+      "amount": "0.125",
+      "message": "the wallet cannot pay this address",
+      "broadcastOk": 0,
+      "broadcastNodes": 3,
+      "createdAt": 1794646503
+    }
+  },
+  "receivingWalletAfter": {
+    "network": "testnet",
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "invoiceKey": "9e35ff7c812f42ff6f94be40514c7ce24d1500b0cb4628565a8fcf5f44a17636",
+    "termsDigest": "729a304a0690e933ea7cbbf19d5166fc4b8a1370e9ffa38a57e9f80507367881",
+    "walletRequestId": "req_4f58a7c00bad4863ac87",
+    "address": "utest1f8s92xst7p9fumzx689xhld22e3cn4hdwh7sney0fld2pqwhc5jpydfcx9kvexng6fk4f7rtc4yv4d07venvg7sh7t2ws82m3vsmz432",
+    "amountAtoms": "12500000",
+    "chainTip": 4618861,
+    "synced": true,
+    "observedAt": 1794646565,
+    "outputs": [],
+    "source": "zaw-librustzcash-receiving-wallet",
+    "signingAvailable": false
+  },
+  "failure": "apiRequestContext.get: Target page, context or browser has been closed"
+}

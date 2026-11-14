@@ -2485,8 +2485,9 @@ function RequestDetails({
       </p>
       {request.rail === "zcash" && (
         <p className={s.fine}>
-          Privacy depends on the paying wallet. This request is not a receipt;
-          public chain data cannot verify the received amount.
+          {request.evidence
+            ? "Verified by the authorized receiving wallet. Public chain data alone cannot prove the hidden amount."
+            : "Privacy depends on the paying wallet. This request is not a receipt; public chain data cannot verify the received amount."}
         </p>
       )}
       {request.state === "pending" && (
@@ -2573,17 +2574,23 @@ function RequestDetails({
           <span>Payment request saved</span>
         </div>
         <div>
-          {request.submissionStartedAt || request.candidateTransactionId ? (
+          {request.evidence ||
+          request.submissionStartedAt ||
+          request.candidateTransactionId ? (
             <Check size={14} />
           ) : (
             <span className={s.timelineDot} />
           )}
           <span>
-            {request.submissionStartedAt
-              ? "SDK send started · outcome checked separately"
-              : request.candidateTransactionId
-                ? "Transaction submitted for verification"
-                : "Awaiting payment evidence"}
+            {request.evidence
+              ? request.rail === "zcash"
+                ? "Payment observed in receiving wallet"
+                : "Payment verified on Stellar Testnet"
+              : request.submissionStartedAt
+                ? "SDK send started · outcome checked separately"
+                : request.candidateTransactionId
+                  ? "Transaction submitted for verification"
+                  : "Awaiting payment evidence"}
           </span>
         </div>
         <div>

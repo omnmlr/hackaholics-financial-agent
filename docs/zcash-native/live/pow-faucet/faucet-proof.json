@@ -1,0 +1,22 @@
+{
+  "provider": "https://zcash-faucet.vercel.app",
+  "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+  "invoiceId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+  "submission": "provider_reported_sent",
+  "at": "2026-11-14T09:00:29.461Z",
+  "status": 202,
+  "data": {
+    "ok": true,
+    "txid": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+    "explorerUrl": "https://testnet.zcashexplorer.app/transactions/f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+    "amountZat": 10000000,
+    "amountTaz": 0.1
+  },
+  "proof": {
+    "hashes": 1656,
+    "ms": 29393,
+    "difficulty": 12
+  },
+  "lastObservedAt": "2026-11-14T09:03:12.176Z",
+  "claimId": "c6822195d26bed0e"
+}

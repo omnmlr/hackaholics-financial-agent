@@ -1,6 +1,24 @@
-# Agus — Hackaholics 7.0
+# AGUS Counterpart
 
-The current PR #41 candidate follows the final approved black AGUS screenshot. See [the approved release candidate](docs/approved-release/README.md) for the screenshot gallery, integrated validation, exact Railway startup contract, native Gemini configuration and database-preserving rollback instructions. Earlier visual directions below are historical. No merge or deployment has been performed.
+Your money, and what's next.
+
+**Live authenticated application:** https://agusweb.up.railway.app
+
+AGUS combines Gemini conversations, Pidgin understanding, persistent financial memory, owner-reviewed reminders and testnet payment workflows in the approved Counterpart interface.
+
+**Verified Zcash receiving:** Gemini created a private0.1ZEC invoice with a fresh native-wallet-controlled Orchard Unified receiver and ZIP321QR. A public faucet funded it. The authenticated NU7-compatible receiving wallet independently decrypted10,000,000zatoshis, and AGUS automatically settled the invoice and completed its reminder at3confirmations. [Actual receiving-wallet evidence and screenshots](docs/zcash-native/README.md).
+
+Transaction: `f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082`
+
+The native wallet is durable and isolated; viewing/spending credentials stay outside the browser and Gemini. Outgoing ZEC remains disabled. The original synthetic sender is not used. Pollar's official SDK returns200 for the current origin / Pollux / Testnet; owner authentication and exact approval remain necessary for a real Pollar transfer. Mainnet execution is disabled. Legacy Paystack remains in fixture mode.
+
+See the [native wallet boundary](services/zcash-receiving/README.md), [outgoing-signer assessment](docs/zcash-native/OUTGOING-ASSESSMENT.md) and [prior full release acceptance](docs/release-pass/README.md). Credentials are not published in this repository.
+
+## Historical engineering checkpoints
+
+The October candidates below are preserved engineering history; their deployment and integration limitations are superseded by the current evidence above.
+
+The current PR #41 candidate follows the final approved black AGUS screenshot. See [the approved release candidate](docs/approved-release/README.md) for the screenshot gallery, integrated validation, exact Railway startup contract, native Gemini configuration and database-preserving rollback instructions. Earlier visual directions below are historical. At that historical checkpoint, no merge or deployment had been performed.
 
 The consolidated October 20 finals candidate, isolated fixture preview, UI integration contracts, verification and Railway release/rollback gates are in [the release handoff](docs/finals-release/HANDOFF.md). Start the local scripted preview with `npm run preview:fixture` after building; genuine provider campaigns remain closed pending a new bounded allocation.
 

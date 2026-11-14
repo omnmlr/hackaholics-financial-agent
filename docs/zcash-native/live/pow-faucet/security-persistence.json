@@ -1,0 +1,44 @@
+{
+  "classification": "REAL deployed authenticated API and native wallet; no mocked transport",
+  "checkedAt": "2026-11-14T09:11:12.269Z",
+  "wallet": {
+    "network": "testnet",
+    "synced": true,
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "spendableZec": "0.1",
+    "pendingZec": "0",
+    "signingAvailable": false,
+    "implementation": "zaw-0.1.2",
+    "nu7Compatible": true
+  },
+  "invoiceId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+  "transactionId": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+  "firstSettlementConfirmations": 3,
+  "originalRecordsPreserved": true,
+  "adaRemindersUnchanged": [
+    {
+      "id": "0c757498-e722-479a-8288-5a42f767e534",
+      "state": "paused",
+      "version": 2
+    },
+    {
+      "id": "63972655-2652-4296-848c-fea789ccf4ab",
+      "state": "active",
+      "version": 1
+    }
+  ],
+  "repeatReceiptChecksDoNotDuplicateEvents": true,
+  "nativeWalletIdentityAndAddressPersistedAfterRestart": true,
+  "nativeTermsTamperingStatus": 409,
+  "nativeUnauthenticatedStatus": 401,
+  "signingAndOwnerRoutesUnavailable": 404,
+  "browserWalletApiUnauthenticatedStatus": 401,
+  "noPrivateCredentialsInInspectedResponses": true,
+  "settlementAudit": [
+    {
+      "task": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+      "kind": "settlement_verified",
+      "created_at": "2026-11-14 09:04:09.325+00"
+    }
+  ]
+}

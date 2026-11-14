@@ -242,6 +242,40 @@ describe("native receiving trust boundary", () => {
       baseline.outputs[0].transactionId,
     );
   });
+  it("does not reactivate a cancelled reminder when its invoice is genuinely settled", async () => {
+    const saved = await invoice();
+    await workspace(owner).transition(
+      saved.invoice.responsibilityId,
+      0,
+      "cancel",
+    );
+    paid();
+    expect((await checkManagedReceipt(owner, saved.request.id)).state).toBe(
+      "confirmed",
+    );
+    expect(
+      (await workspace(owner).snapshot()).tasks.find(
+        (t) => t.id === saved.invoice.responsibilityId,
+      )?.state,
+    ).toBe("cancelled");
+  });
+  it("rejects transaction reuse across invoice bindings without settling the second invoice", async () => {
+    const first = await invoice();
+    paid();
+    const txid = observation.outputs[0].transactionId;
+    await checkManagedReceipt(owner, first.request.id);
+    const second = await invoice();
+    paid();
+    observation.outputs[0].transactionId = txid;
+    await expect(
+      checkManagedReceipt(owner, second.request.id),
+    ).rejects.toMatchObject({ status: 409 });
+    expect(
+      (await productSnapshot(owner)).invoices.find(
+        (i) => i.id === second.invoice.id,
+      )?.state,
+    ).toBe("open");
+  });
   it("does not share credentials with a redirect or accept malformed wallet addresses", async () => {
     const terms = invoiceTerms(owner, randomUUID(), "0.05");
     const o = fixture(terms.invoiceKey, terms.termsDigest, terms.amountAtoms);

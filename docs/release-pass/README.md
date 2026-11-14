@@ -1,5 +1,7 @@
 # Final hackathon release pass — 14 November 2026
 
+Subsequent [targeted Zcash completion](../zcash-native/README.md) provisions a real native receiving wallet and proves automatic Testnet invoice settlement. This document preserves the earlier release acceptance.
+
 Acceptance service only: `agus-counterpart-acceptance`, https://agusweb.up.railway.app. Existing Counterpart composition retained; no old service or stored financial record replaced.
 
 ## Evidence classification

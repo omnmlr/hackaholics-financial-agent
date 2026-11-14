@@ -9,3 +9,31 @@ Current work adds a receiving-only native wallet, separate from Counterpart and 
 The service's first native starts were SIGKILLed by the Railway1GiB ceiling. A pinned source build now limits seed-at-rest scrypt memory to256MiB, using a384-bit random secret. This does not change wallet generation, receiving trial decryption, signing, scanning or consensus code. No signer is unlocked or exposed.
 
 The original synthetic TypeScript sender remains unused. Public chain data, faucet API success and wallet balance alone cannot settle an invoice. Only the invoice-bound receiving wallet's decrypted exact-value note and confirmations can do so. Live application/funding acceptance will be recorded separately; this preflight is not claimed as an end-to-end payment.
+
+## REAL end-to-end receiving completed
+
+Gemini understood a Pidgin request and called `create_private_zec_invoice`. Counterpart created **Orchard shielded receiving demo** for exactly **0.1 Testnet ZEC**, with a fresh wallet-controlled Unified receiver and ZIP321 QR. The invoice and reminder began unpaid / awaiting approval. It did not activate a reminder, approve spending or send money.
+
+A public proof-of-work faucet submitted transaction:
+
+`f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082`
+
+The actual receiving wallet independently decrypted a **10,000,000-zatoshi**, non-change output at that unique address, mined at **4,618,878**. Under current NU7 it is in **Ironwood pool4**, reached through the Orchard-only Unified receiver. At **3 confirmations** / chain tip4,618,880, the background watcher automatically persisted the confirmed request, settled invoice and completed reminder at **2026-11-14 09:04:09 UTC**. No manual verification POST was used to produce this transition. The source of hidden-value evidence is the receiving wallet, not faucet output or public metadata.
+
+- [Gemini and wallet/API acceptance](live/pow-faucet/receiving-acceptance.json)
+- [Original actual settlement observation](live/pow-faucet/initial-settlement-observation.json)
+- [GET-only transition observations](live/pow-faucet/wallet-poll-history.json)
+- [Actual faucet request and returned transaction](live/pow-faucet/faucet-proof.json)
+- [Real authentication, terms tampering, restart persistence and replay checks](live/pow-faucet/security-persistence.json)
+- [Desktop receipt](live/pow-faucet/1440-real-native-receipt.png), [mobile receipt](live/pow-faucet/390-real-native-receipt.png), [original invoice QR](live/pow-faucet/1440-private-request-qr.png)
+- [Pollar preserved: real Pollux/Testnet SDK200](pollar-preserved/results.json)
+
+The initial0.125ZEC trial used a different faucet. It returned202 then definitively rejected the Orchard receiver with “the wallet cannot pay this address” (its source maps RPC-5/-8 to that message), with0successful broadcasts. That invoice remains explicitly unpaid; it is not confused with this successful0.1ZEC receipt. Other faucet hosts failed to connect from the cloud. No founder's Windows wallet or historical feature-branch transaction was used as live proof.
+
+The two pre-existing Ada reminders retain their original states and versions. Repeated post-settlement receipt checks do not duplicate audit events. Wallet identity and allocations survive service restart. Signing/owner API routes remain unavailable. Real wallet-derived balances are displayed; a wallet's spendable policy may require more confirmations than invoice acceptance, so pending balance is not fabricated spendable money.
+
+The final browser monitor passed after correcting its preservation assertion to exclude the very reminder expected to become completed. Earlier browser navigation automation was adjusted for the existing obligation-count badge; no layout redesign was made. Financial state was checked independently through authenticated APIs and the native wallet.
+
+A small release fix makes confirmed receipts show “Payment observed in receiving wallet” rather than the old “Awaiting payment evidence” timeline. It also removes the unpaid-request helper from a verified receipt. The approved Counterpart composition is unchanged.
+
+[Outgoing signer investigation](OUTGOING-ASSESSMENT.md) is a source/security assessment only. No outgoing ZEC signing was authorized or exposed. Mainnet execution and the synthetic sender remain disabled.

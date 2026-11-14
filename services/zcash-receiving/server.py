@@ -45,8 +45,8 @@ def snapshot(binding):
           JOIN transactions t ON t.id_tx=ro.transaction_id
           LEFT JOIN blocks b ON b.height=t.mined_height
           WHERE a.address=? AND ro.is_change=0 AND ro.pool IN (3,4)''', (req['address'],)).fetchall()
-        tip = c.execute('SELECT MAX(height) FROM blocks').fetchone()[0]
-    if tip is None:
+        tip, tip_time = c.execute('SELECT height,time FROM blocks ORDER BY height DESC LIMIT 1').fetchone()
+    if tip is None or tip_time is None or abs(time.time()-tip_time)>300:
         raise ValueError('No scanned blocks')
     clean=[]
     for row in outputs:

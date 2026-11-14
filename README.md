@@ -1,5 +1,28 @@
 # Agus — Hackaholics 7.0
 
+## ORGANIZERS & JUDGES — DEMO LOGIN
+
+| What you need | Details |
+| --- | --- |
+| **Open the live app** | **https://agusweb.up.railway.app** |
+| **Password** | **Provided privately by the project owner** |
+| **Username / email** | **Not required for the AGUS login** |
+
+1. Open **https://agusweb.up.railway.app**.
+2. Ask the project owner for the shared demo password privately, then enter it in **Operator password**.
+3. Click **Sign in securely**.
+
+**No installation, sign-up or wallet connection is required to explore the app.** This is the shared hackathon demo login for organizers and judges. Payments are Testnet/demo only.
+
+**See the verified Zcash demo:** open **Obligations → Orchard shielded receiving demo**. It shows the real 0.1 Testnet ZEC receipt and completed reminder.
+
+**Current implementation:** [Counterpart branch](https://github.com/omnmlr/hackaholics-financial-agent/tree/implementation/agus-counterpart-20261114) · [Real receiving-wallet evidence](https://github.com/omnmlr/hackaholics-financial-agent/blob/implementation/agus-counterpart-20261114/docs/zcash-native/README.md)
+
+## Older local prototype documentation
+
+The live judging build uses the Counterpart branch linked above. The sections below describe the older local prototype.
+
+
 Agus is a monochrome, chat-first Next.js financial workflow prototype: prepare payments, resolve beneficiaries, review and approve an immutable snapshot, explicitly submit individual Paystack transfers, and follow persisted outcomes. The agent never approves or executes payments.
 
 **Default: fixtures. No real money moves. No live transfer was attempted or verified during implementation.** Real transfers can only come from an eligible, funded, authorized Paystack business account; this is not a way to debit arbitrary personal accounts.

@@ -71,8 +71,10 @@ def initialize():
     try:
         if not (WALLET/'config.json').exists():
             # dev init never prints the mnemonic without --show-mnemonic.
-            subprocess.run(['zaw','--network','testnet','--data-dir',str(WALLET),'dev','init'],
-                check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=120)
+            result=subprocess.run(['zaw','--network','testnet','--data-dir',str(WALLET),'dev','init'],
+                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=120)
+            if result.returncode:
+                raise RuntimeError('native_init: '+result.stderr.decode(errors='replace')[:1800])
         config=json.loads((WALLET/'config.json').read_text())
         if config['network']!='testnet' or config['lightwalletd']!='https://testnet.zec.rocks:443':
             raise ValueError('Unexpected network')
@@ -82,8 +84,9 @@ def initialize():
             c.execute('CREATE TABLE IF NOT EXISTS bindings (key TEXT PRIMARY KEY,digest TEXT NOT NULL,amount TEXT NOT NULL,request_id TEXT UNIQUE NOT NULL,created INTEGER NOT NULL)')
         READY=True
         print('Native receiving wallet initialized; locked signer; testnet only',flush=True)
-    except Exception:
-        print('Native receiving wallet initialization failed; no wallet state exposed',flush=True)
+    except Exception as error:
+        # Initialization stderr cannot contain a mnemonic (--show-mnemonic is never used).
+        print('Native receiving wallet initialization failed: '+str(error),flush=True)
 class Handler(BaseHTTPRequestHandler):
     def log_message(self,*args): pass
     def send(self,code,payload):

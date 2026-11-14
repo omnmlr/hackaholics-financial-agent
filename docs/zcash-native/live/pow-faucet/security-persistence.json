@@ -1,6 +1,6 @@
 {
   "classification": "REAL deployed authenticated API and native wallet; no mocked transport",
-  "checkedAt": "2026-11-14T09:11:12.269Z",
+  "checkedAt": "2026-11-14T09:18:28.227Z",
   "wallet": {
     "network": "testnet",
     "synced": true,

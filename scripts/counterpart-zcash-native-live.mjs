@@ -363,6 +363,33 @@ try {
         report.walletAfter = await (
           await context.request.get(base + "/api/product/zcash-wallet")
         ).json();
+        const historyResponse = await context.request.get(
+          base +
+            "/api/conversations?id=" +
+            encodeURIComponent(saved.conversationId),
+        );
+        assert.equal(historyResponse.status(), 200);
+        const history = await historyResponse.json();
+        assert.ok(
+          history.turns.some(
+            (turn) => turn.reply?.zcashInvoiceId === invoice.id,
+          ),
+        );
+        report.savedConversationRestored = true;
+        report.verifiedApplicationCommit = process.env.AGUS_VERIFIED_COMMIT;
+        const receiptDialog = page.getByRole("dialog");
+        assert.equal(
+          await receiptDialog
+            .getByText("Awaiting payment evidence", { exact: true })
+            .count(),
+          0,
+        );
+        assert.equal(
+          await receiptDialog
+            .getByText(/This request is not a receipt/)
+            .count(),
+          0,
+        );
         await page
           .getByRole("heading", {
             name: `${amount} ZEC received on testnet`,

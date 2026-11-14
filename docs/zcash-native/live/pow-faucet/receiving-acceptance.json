@@ -28,8 +28,8 @@
     "network": "testnet",
     "synced": true,
     "walletId": "e0c86165421f16cd2ceef9c3",
-    "spendableZec": "0",
-    "pendingZec": "0.1",
+    "spendableZec": "0.1",
+    "pendingZec": "0",
     "signingAvailable": false,
     "implementation": "zaw-0.1.2",
     "nu7Compatible": true
@@ -60,15 +60,15 @@
     "walletRequestId": "req_dfea420bb8b9423b8d93",
     "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
     "amountAtoms": "10000000",
-    "chainTip": 4618882,
+    "chainTip": 4618914,
     "synced": true,
-    "observedAt": 1794647173,
+    "observedAt": 1794647940,
     "outputs": [
       {
         "amountAtoms": "10000000",
         "transactionId": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
         "height": 4618878,
-        "confirmations": 5,
+        "confirmations": 37,
         "pool": 4,
         "outputIndex": 1,
         "blockTime": 1794646982
@@ -100,10 +100,7 @@
     "claimId": "c6822195d26bed0e"
   },
   "faucetObservation": {
-    "status": 200,
-    "data": {
-      "status": "external-funding; wallet evidence required"
-    }
+    "classification": "Native-wallet-only monitoring; provider proof recorded separately"
   },
   "receivingWalletAfter": {
     "network": "testnet",
@@ -113,15 +110,15 @@
     "walletRequestId": "req_dfea420bb8b9423b8d93",
     "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
     "amountAtoms": "10000000",
-    "chainTip": 4618882,
+    "chainTip": 4618914,
     "synced": true,
-    "observedAt": 1794647183,
+    "observedAt": 1794647951,
     "outputs": [
       {
         "amountAtoms": "10000000",
         "transactionId": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
         "height": 4618878,
-        "confirmations": 5,
+        "confirmations": 37,
         "pool": 4,
         "outputIndex": 1,
         "blockTime": 1794646982
@@ -242,10 +239,12 @@
     "network": "testnet",
     "synced": true,
     "walletId": "e0c86165421f16cd2ceef9c3",
-    "spendableZec": "0",
-    "pendingZec": "0.1",
+    "spendableZec": "0.1",
+    "pendingZec": "0",
     "signingAvailable": false,
     "implementation": "zaw-0.1.2",
     "nu7Compatible": true
-  }
+  },
+  "savedConversationRestored": true,
+  "verifiedApplicationCommit": "4a5a8f52bedbea2a930452fbaa18c6b0349770d6"
 }

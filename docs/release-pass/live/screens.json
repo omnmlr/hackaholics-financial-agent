@@ -1,0 +1,90 @@
+{
+  "url": "https://agusweb.up.railway.app",
+  "screens": [
+    {
+      "width": 1440,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "name": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "name": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Home",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Money",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "name": "AGUS",
+      "overflow": false
+    }
+  ],
+  "errors": [],
+  "onboardingReopenSkipPersist": true,
+  "addChoices": [
+    "",
+    "Connect crypto walletPollar · Stellar testnet",
+    "Import bank statementCSV · Historical records",
+    "Link Nigerian bankComing soon · No live bank connection",
+    "Zcash receiving optionsTestnet requests · No wallet import"
+  ],
+  "receiveDiscoverableFromConversation": true
+}

@@ -1,6 +1,8 @@
 # Unified Counterpart agent
 
-Preview: https://agus-counterpart-acceptance-production.up.railway.app
+Current acceptance: https://agusweb.up.railway.app
+
+This document preserves the earlier integration evidence. See [final release pass](../release-pass/README.md) for current Pollar origin success, Unified receiving support and deployed acceptance results.
 
 Implementation commit: `cfdc464a02f00fb40ba8bde5fa894fab6ddd2528` on `implementation/agus-counterpart-20261114`. Earlier working checkpoint: `8b04abb70983c1ea6b32cbb4b08b56649888096d`. Only the isolated Counterpart acceptance service is updated; the older Railway services and databases are unchanged. Authentication and preview credentials are unchanged.
 

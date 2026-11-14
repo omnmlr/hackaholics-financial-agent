@@ -6,7 +6,7 @@ import { X509Certificate, createHash } from "node:crypto";
 import assert from "node:assert/strict";
 const base =
     process.env.AGUS_ACCEPTANCE_ORIGIN ?? "https://agusweb.up.railway.app",
-  dir = "docs/unified-agent/live";
+  dir = process.env.AGUS_UNIFIED_EVIDENCE_DIR ?? "docs/unified-agent/live";
 await mkdir(dir, { recursive: true });
 const { password } = JSON.parse(
   await readFile(".data/counterpart-railway/access.json"),
@@ -240,6 +240,29 @@ try {
     result.voice.reply = spokenReply.text;
     result.voice.steps = spokenReply.execution?.steps;
     result.voice.explicitSend = true;
+  }
+  if (process.env.AGUS_RELEASE_PASS === "true") {
+    const capabilities = await ask(
+      "Abeg use read_digital_payment_capabilities to check Pollar testnet and private Zcash receiving. Tell me which one I fit use now and which one need wallet connection. Do not prepare, approve or send any payment.",
+    );
+    result.releaseCapabilities = {
+      reply: capabilities.text,
+      steps: capabilities.execution?.steps,
+    };
+    assert.ok(
+      capabilities.execution?.steps?.some(
+        (step) =>
+          step.tool === "read_digital_payment_capabilities" &&
+          step.state === "succeeded",
+      ),
+      "Genuine Gemini payment capability tool call",
+    );
+    await page.screenshot({ path: dir + "/1440-real-capabilities.png" });
+    result.speech = await page.evaluate(() => ({
+      browserApiPresent: !!window.speechSynthesis,
+      availableVoices: window.speechSynthesis?.getVoices().length ?? 0,
+      physicalAudioAcceptance: false,
+    }));
   }
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 900 });

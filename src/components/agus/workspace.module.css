@@ -5376,3 +5376,51 @@
     animation: none !important;
   }
 }
+
+/* Existing agent result components inherit Counterpart's monochrome system. */
+.assistantPage {
+  --surface: #141414;
+  --border: #383838;
+  --ink: #eee;
+}
+.assistantPage :global(.agus-result),
+.assistantPage :global(.agus-savings-plan),
+.assistantPage :global(.agus-payment-status-result) {
+  padding: 18px;
+  margin: 16px 0;
+  border: 1px solid #383838;
+  background: #141414;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.assistantPage :global(.agus-prose) {
+  line-height: 1.8;
+}
+.assistantPage :global(.agus-result-header) {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.voiceStatus {
+  padding: 10px 18px;
+  color: #ccc;
+  font-size: 13px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.contextAssistant {
+  width: min(680px, 100%);
+}
+.contextAssistant .assistantPage {
+  padding: 0;
+}
+.contextAssistant .assistantPanel {
+  min-height: 360px;
+  height: 60dvh;
+}
+.composerFooter label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

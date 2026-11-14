@@ -44,3 +44,27 @@ describe("Counterpart runtime boundaries", () => {
     expect(JSON.stringify(result)).not.toContain("server-only-secret");
   });
 });
+
+it("resolves the published Pollar environment alias and Circle testnet issuer without permitting secret keys", async () => {
+  const { vi } = await import("vitest");
+  const { pollarConfiguration } = await import("../src/lib/web-product/rails");
+  try {
+    vi.stubEnv("NEXT_PUBLIC_POLLAR_API_KEY", "  ");
+    vi.stubEnv(
+      "NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY",
+      " pub_testnet_dashboard_example ",
+    );
+    vi.stubEnv("POLLAR_TESTNET_USDC_ISSUER", "");
+    const result = pollarConfiguration();
+    expect(result.configured).toBe(true);
+    expect(result.publicKey).toBe("pub_testnet_dashboard_example");
+    expect(result.issuer).toBe(
+      "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+    );
+    vi.stubEnv("NEXT_PUBLIC_POLLAR_PUBLISHABLE_KEY", "sk_testnet_secret");
+    expect(pollarConfiguration().publicKey).toBe(null);
+    expect(pollarConfiguration().configured).toBe(false);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

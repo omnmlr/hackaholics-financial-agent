@@ -47,7 +47,15 @@ async function request(body?: object, signal?: AbortSignal) {
 }
 
 /** Artifacts are identifiers, never authority: records and versions come from the authenticated API. */
-export function PersonalAction({ action }: { action: WorkspaceAction }) {
+export function PersonalAction({
+  action,
+  inline = false,
+  onChanged,
+}: {
+  action: WorkspaceAction;
+  inline?: boolean;
+  onChanged?: () => Promise<void>;
+}) {
   if (action.kind === "solana")
     return (
       <section className={styles.card}>
@@ -84,7 +92,11 @@ export function PersonalAction({ action }: { action: WorkspaceAction }) {
         <WorkspaceLauncher label="Open devnet wallet" wallet />
       </section>
     );
-  return <RecordReview action={action} />;
+  return inline ? (
+    <SavedRecords action={action} onChanged={onChanged} />
+  ) : (
+    <RecordReview action={action} />
+  );
 }
 function RecordReview({
   action,
@@ -116,10 +128,12 @@ function RecordReview({
 }
 function SavedRecords({
   action,
+  onChanged,
 }: {
   action:
     | Extract<WorkspaceAction, { kind: "overview" }>
     | { kind: "memory" | "responsibility"; id: string };
+  onChanged?: () => Promise<void>;
 }) {
   const [saved, setSaved] = useState<Snapshot | null>(null);
   const [error, setError] = useState("");
@@ -149,6 +163,7 @@ function SavedRecords({
     try {
       await request(body);
       await refresh();
+      await onChanged?.();
       setStatus("Saved. Current state is shown below.");
     } catch (cause) {
       setError(
@@ -229,7 +244,9 @@ function SavedRecords({
           )}
           <p>
             <strong>{task.state.replaceAll("_", " ")}</strong> · due{" "}
-            {new Date(task.dueAt).toLocaleString()}
+            {new Date(task.dueAt).toLocaleString("en-NG", {
+              timeZone: "Africa/Lagos",
+            }) + " WAT"}
             {task.intervalSeconds
               ? ` · repeats every ${task.intervalSeconds} seconds`
               : ""}

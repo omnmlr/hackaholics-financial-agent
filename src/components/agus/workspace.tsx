@@ -1,6 +1,7 @@
 "use client";
 import {
   useCallback,
+  useId,
   useEffect,
   useRef,
   useState,
@@ -8,7 +9,14 @@ import {
   type FormEvent,
 } from "react";
 import Link from "next/link";
+import { PersonalAction } from "../personal-action";
+import { FinancialResponse } from "../financial-response";
+import { useVoiceInput } from "../use-voice-input";
+import { useResponseSpeech } from "../use-response-speech";
 import {
+  Mic,
+  Square,
+  Volume2,
   ArrowDownLeft,
   ArrowUpRight,
   ArrowRight,
@@ -103,6 +111,7 @@ function Dialog({
   close: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
     dialog?.showModal();
@@ -116,7 +125,7 @@ function Dialog({
         e.preventDefault();
         close();
       }}
-      aria-labelledby="agus-dialog-title"
+      aria-labelledby={titleId}
       onClick={(e) => {
         if (e.target === ref.current) close();
       }}
@@ -125,7 +134,7 @@ function Dialog({
         <header className={s.dialogHeader}>
           <div>
             {eyebrow && <p className={s.eyebrow}>{eyebrow}</p>}
-            <h2 id="agus-dialog-title">{title}</h2>
+            <h2 id={titleId}>{title}</h2>
           </div>
           <button
             className={s.iconButton}
@@ -201,6 +210,7 @@ export function AgusWorkspace({
   const [walletFocus, setWalletFocus] = useState<"pollar" | "zcash" | null>(
     null,
   );
+  const [contextOpen, setContextOpen] = useState(false);
   const [homeMessage, setHomeMessage] = useState("");
   const [chatLaunch, setChatLaunch] = useState<ChatLaunch>();
   const [replayOnboarding, setReplayOnboarding] = useState(false);
@@ -236,6 +246,7 @@ export function AgusWorkspace({
     setWalletFocus(wallet);
   };
   const startChat = (draft = "", text?: string) => {
+    setContextOpen(false);
     setChatLaunch({ id: crypto.randomUUID(), draft, text });
     setTab("Assistant");
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -1317,7 +1328,7 @@ export function AgusWorkspace({
       {tab !== "Assistant" && (
         <button
           className={s.companionDock}
-          onClick={() => startChat()}
+          onClick={() => setContextOpen(true)}
           aria-label="Open AGUS"
         >
           <Companion
@@ -1345,6 +1356,30 @@ export function AgusWorkspace({
           </button>
         ))}
       </nav>
+      {contextOpen && tab !== "Assistant" && (
+        <Dialog
+          title={`AGUS · ${navigation.find((item) => item.name === tab)?.label ?? tab}`}
+          close={() => setContextOpen(false)}
+        >
+          <div className={s.contextAssistant}>
+            <button
+              className={s.textButton}
+              onClick={() => {
+                setContextOpen(false);
+                startChat();
+              }}
+            >
+              Open full conversation <ArrowUpRight size={16} />
+            </button>
+            <Assistant
+              snapshot={snapshot}
+              refresh={refresh}
+              privacyMode={privacyMode}
+              setPrivacyMode={setPrivacyMode}
+            />
+          </div>
+        </Dialog>
+      )}
       {toast && (
         <div className={s.toast} role="status">
           <Check size={16} />
@@ -2607,6 +2642,7 @@ function Assistant({
       source?: string;
       id?: string;
       planId?: string;
+      reply?: AgentReply;
     }[]
   >([]);
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
@@ -2617,6 +2653,24 @@ function Assistant({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(!privacyMode);
   const [historyError, setHistoryError] = useState("");
+  const [spokenReplies, setSpokenReplies] = useState(false);
+  const speech = useResponseSpeech();
+  const voice = useVoiceInput({
+    text: question,
+    onText: setQuestion,
+    aiEnabled: snapshot.capabilities.ai.configured,
+    disabled: busy || historyLoading,
+    language: "en-NG",
+    focus: () => composer.current?.focus(),
+  });
+  const voiceBusy =
+    voice.listening || voice.requestingVoice || voice.transcribingVoice;
+  const discardVoice = voice.discardVoiceCapture;
+  const stopSpeech = speech.stop;
+  useEffect(() => {
+    discardVoice();
+    stopSpeech();
+  }, [privacyMode, discardVoice, stopSpeech]);
   const inFlight = useRef(false);
   const activeChatKey = `agus.activeConversation:${snapshot.owner}`;
   const rememberChat = useCallback(
@@ -2641,6 +2695,7 @@ function Assistant({
           source: "Saved conversation",
           id,
           planId: turn.reply.digitalPaymentPlanId,
+          reply: turn.reply,
         },
       ]),
     );
@@ -2704,7 +2759,8 @@ function Assistant({
     }
   }
   async function selectChat(id: string) {
-    if (busy || inFlight.current || historyLoading) return;
+    if (busy || inFlight.current || historyLoading || voice.isVoiceLocked())
+      return;
     setHistoryLoading(true);
     setHistoryError("");
     try {
@@ -2730,7 +2786,8 @@ function Assistant({
     }
   }
   function newChat() {
-    if (busy || historyLoading) return;
+    if (busy || historyLoading || voice.isVoiceLocked()) return;
+    speech.stop();
     conversation.current = null;
     rememberChat(null);
     setMessages([]);
@@ -2772,7 +2829,7 @@ function Assistant({
     });
   }, [messages, busy]);
   async function guidance() {
-    if (busy) return;
+    if (busy || voice.isVoiceLocked()) return;
     setBusy(true);
     setError("");
     try {
@@ -2797,7 +2854,15 @@ function Assistant({
   }
   const ask = useCallback(
     async (text: string) => {
-      if (!text.trim() || busy || inFlight.current || historyLoading) return;
+      if (
+        !text.trim() ||
+        busy ||
+        inFlight.current ||
+        historyLoading ||
+        voice.isVoiceLocked()
+      )
+        return;
+      speech.stop();
       inFlight.current = true;
       setBusy(true);
       setError("");
@@ -2851,9 +2916,12 @@ function Assistant({
             text: result.reply.text,
             source: snapshot.capabilities.ai.provider,
             planId: result.reply.digitalPaymentPlanId,
+            reply: result.reply,
             id: conversation.current!,
           },
         ]);
+        if (spokenReplies)
+          speech.speak(conversation.current!, result.reply.text);
         if (result.reply.digitalPaymentPlanId) {
           const plan = await productApi<PaymentPlan>(
             `product/payment-plans/${result.reply.digitalPaymentPlanId}`,
@@ -2890,6 +2958,9 @@ function Assistant({
       setPrivacyMode,
       snapshot.capabilities.ai,
       rememberChat,
+      voice,
+      speech,
+      spokenReplies,
     ],
   );
   useEffect(() => {
@@ -3031,7 +3102,19 @@ function Assistant({
                   {message.role === "assistant" ? "AGUS" : "You"}
                 </span>
                 {message.role === "assistant" ? (
-                  <AssistantProse text={message.text} />
+                  message.reply ? (
+                    <FinancialResponse
+                      reply={message.reply}
+                      choose={(text) => {
+                        if (!voice.isVoiceLocked()) {
+                          setQuestion(text);
+                          composer.current?.focus();
+                        }
+                      }}
+                    />
+                  ) : (
+                    <AssistantProse text={message.text} />
+                  )
                 ) : (
                   <p>{message.text}</p>
                 )}
@@ -3041,13 +3124,32 @@ function Assistant({
                     <small>{message.source}</small>
                   </details>
                 )}
-                {message.id && (
-                  <Link
-                    className={s.textButton}
-                    href={`/conversation?chat=${encodeURIComponent(message.id)}`}
-                  >
-                    View actions <ArrowUpRight size={13} />
-                  </Link>
+                {message.reply && (
+                  <>
+                    {(
+                      message.reply.workspaceActions ??
+                      (message.reply.workspace ? [message.reply.workspace] : [])
+                    ).map((action, i) => (
+                      <PersonalAction
+                        key={`${action.kind}-${"id" in action ? action.id : i}`}
+                        action={action}
+                        inline
+                        onChanged={refresh}
+                      />
+                    ))}
+                    <button
+                      className={s.textButton}
+                      onClick={() => speech.speak(`${index}`, message.text)}
+                      aria-label={
+                        speech.playing === `${index}`
+                          ? "Stop spoken reply"
+                          : "Read reply aloud"
+                      }
+                    >
+                      <Volume2 size={14} />{" "}
+                      {speech.playing === `${index}` ? "Stop" : "Listen"}
+                    </button>
+                  </>
                 )}
               </div>
             </div>
@@ -3105,6 +3207,26 @@ function Assistant({
           </div>
         )}
 
+        {voice.voiceStatus && (
+          <div role="status" className={s.voiceStatus}>
+            {voice.voiceStatus}
+            {voiceBusy && (
+              <button className={s.textButton} onClick={discardVoice}>
+                Cancel recording
+              </button>
+            )}
+          </div>
+        )}
+        {voice.liveTranscript && (
+          <p className={s.voiceStatus} aria-live="polite">
+            {voice.liveTranscript}
+          </p>
+        )}
+        {speech.error && (
+          <p role="status" className={s.fine}>
+            {speech.error}
+          </p>
+        )}
         <form
           className={s.composer}
           onSubmit={(e) => {
@@ -3113,11 +3235,20 @@ function Assistant({
           }}
         >
           <Companion
-            state={privacyMode ? "privacy" : busy ? "thinking" : "idle"}
+            state={
+              privacyMode
+                ? "privacy"
+                : voice.listening
+                  ? "analyzing"
+                  : busy
+                    ? "thinking"
+                    : "idle"
+            }
           />
           <textarea
             ref={composer}
             aria-label="Message AGUS"
+            readOnly={voiceBusy}
             placeholder="Message AGUS…"
             rows={1}
             value={question}
@@ -3136,15 +3267,50 @@ function Assistant({
             }}
           />
           <button
+            type="button"
+            className={s.iconButton}
+            aria-label={voice.listening ? "Stop recording" : "Start recording"}
+            disabled={
+              busy ||
+              historyLoading ||
+              voice.requestingVoice ||
+              voice.transcribingVoice
+            }
+            onClick={() => {
+              speech.stop();
+              void voice.toggleVoiceInput();
+            }}
+          >
+            {voice.listening ? <Square size={18} /> : <Mic size={18} />}
+          </button>
+          <button
             type="submit"
             className={s.sendButton}
             aria-label="Send message"
-            disabled={busy || historyLoading || !question.trim()}
+            disabled={busy || historyLoading || voiceBusy || !question.trim()}
           >
             <ArrowUp size={19} />
           </button>
         </form>
         <div className={s.composerFooter}>
+          <label>
+            <input
+              type="checkbox"
+              checked={spokenReplies}
+              onChange={(e) => {
+                setSpokenReplies(e.target.checked);
+                if (!e.target.checked) speech.stop();
+              }}
+            />{" "}
+            Speak replies
+          </label>
+          {voice.listening && (
+            <span aria-label="Microphone level">
+              {voice.audioLevel === null
+                ? "Listening…"
+                : `Listening · ${Math.round(voice.audioLevel * 100)}%`}
+            </span>
+          )}
           <span>{privacyMode ? "Privacy Mode on" : ""}</span>
           <button
             className={s.textButton}

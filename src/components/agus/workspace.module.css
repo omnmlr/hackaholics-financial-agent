@@ -3443,3 +3443,1936 @@
   cursor: pointer;
   padding: 10px 0;
 }
+
+/* Approved Counterpart implementation. No concept balances or charts are seeded. */
+@font-face {
+  font-family: Counterpart;
+  src: url("/fonts/counterpart/general-sans-400.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Counterpart;
+  src: url("/fonts/counterpart/general-sans-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: Counterpart;
+  src: url("/fonts/counterpart/general-sans-600.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: CounterpartMono;
+  src: url("/fonts/counterpart/plex-mono.ttf");
+  font-display: swap;
+}
+.root {
+  --line: #2a2a2a;
+  --quiet: #a0a0a0;
+  --raised: #181818;
+  --panel: #101010;
+  --accent: #ededeb;
+  background: #080808;
+  color: #f0f0ec;
+  font-family: Counterpart, Arial, sans-serif;
+  font-size: 14px;
+  letter-spacing: -0.1px;
+  color-scheme: dark;
+}
+.root h1 {
+  font-size: 36px;
+  letter-spacing: -1.4px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.root h2 {
+  font-size: 23px;
+  letter-spacing: -0.6px;
+  font-weight: 500;
+}
+.root small {
+  font-size: 12px;
+}
+.root input,
+.root textarea,
+.root select {
+  font-size: 14px;
+  background: #131313;
+  border-color: #414141;
+  border-radius: 4px;
+}
+.root button {
+  transition:
+    background 0.18s,
+    color 0.18s,
+    box-shadow 0.18s,
+    transform 0.18s;
+}
+.root button:enabled:active {
+  transform: translateY(1px);
+}
+.root button:focus-visible,
+.root a:focus-visible,
+.root input:focus-visible,
+.root select:focus-visible,
+.root textarea:focus-visible {
+  outline-color: #deded8;
+}
+.root .eyebrow {
+  font:
+    10px CounterpartMono,
+    monospace;
+  letter-spacing: 1px;
+  color: #929292;
+}
+.root .fine {
+  font-size: 12px;
+  color: #929292;
+  line-height: 1.8;
+}
+.root .muted {
+  font-size: 13px;
+  color: #a0a0a0;
+}
+.root .primary {
+  background: #eeeeea;
+  color: #111;
+  border-radius: 4px;
+  font-size: 13px;
+  min-height: 44px;
+  box-shadow: inset 0 1px #fff8;
+}
+.root .secondary {
+  border-radius: 4px;
+  border-color: #454545;
+  font-size: 13px;
+  min-height: 42px;
+}
+.root .primary:enabled:hover {
+  box-shadow: 0 0 22px #ffffff18;
+}
+.root .textButton {
+  font-size: 12px;
+  color: #c5c5c0;
+  gap: 8px;
+}
+.root .pill {
+  font-size: 11px;
+  border-color: #444;
+  background: transparent;
+  color: #bbb;
+}
+.brandImage {
+  width: 72px;
+  height: auto;
+  object-fit: contain;
+  mix-blend-mode: screen;
+}
+.sidebar {
+  width: 92px;
+  padding: 29px 8px 16px;
+  background: #0c0c0c;
+  border-color: #1d1d1d;
+  align-items: center;
+}
+.brandButton {
+  padding: 0;
+  margin: 4px 0 42px;
+  align-self: center;
+}
+.sidebar > nav {
+  width: 100%;
+}
+.navItem {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 11px 0;
+  gap: 8px;
+  min-height: 72px;
+  margin-bottom: 7px;
+  font-size: 11px;
+  border-radius: 5px;
+  position: relative;
+  white-space: normal;
+  text-align: center;
+}
+.navActive {
+  background: #1b1b1b;
+  color: #f5f5ef;
+}
+.navActive:before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  height: 28px;
+  top: 23px;
+  width: 2px;
+  background: #deded8;
+}
+.navCount {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  height: 16px;
+  min-width: 16px;
+  font-size: 9px;
+  background: #333;
+}
+.sidebar .newObligation {
+  display: none;
+}
+.sidebarBottom {
+  margin-top: auto;
+  width: 100%;
+  padding: 0;
+  border: 0;
+}
+.sidebarBottom > .navItem {
+  min-height: 42px;
+  font-size: 10px;
+  gap: 5px;
+}
+.sidebarBottom .profile {
+  justify-content: center;
+  border: 0;
+  padding-top: 15px;
+  flex-wrap: wrap;
+}
+.sidebarBottom .profile > div {
+  display: none;
+}
+.sidebarBottom .avatar {
+  height: 29px;
+  width: 29px;
+  font-size: 10px;
+}
+.sidebarBottom .profile .iconButton {
+  height: 28px;
+  width: 28px;
+}
+.mainShell {
+  margin-left: 92px;
+  min-width: 0;
+  background:
+    radial-gradient(ellipse at 70% 0, #ffffff02, transparent 55%), #080808;
+}
+.topbar {
+  height: 83px;
+  padding: 0 52px;
+  border-bottom: 1px solid #232323;
+  background: #080808;
+  gap: 20px;
+}
+.breadcrumb {
+  font-size: 12px;
+  color: #8e8e8e;
+}
+.breadcrumb strong {
+  font-weight: 500;
+  color: #deded8;
+}
+.officialTagline {
+  font-size: 12px;
+  color: #939393;
+  white-space: nowrap;
+  margin-left: auto;
+  margin-right: auto;
+}
+.topActions {
+  gap: 13px;
+}
+.privacyButton {
+  font-size: 11px;
+  min-height: 32px;
+  border-radius: 20px;
+  color: #a8a8a8;
+  border-color: #353535;
+  background: transparent;
+}
+.privacyActive {
+  background: #292929;
+  color: #eee;
+  box-shadow: 0 0 18px #ffffff08;
+}
+.main {
+  padding: 36px 52px 130px;
+  max-width: 1640px;
+  margin: 0 auto;
+  min-width: 0;
+  animation: counterpartPage 0.22s ease-out;
+}
+.pageHeading {
+  margin: 0 0 31px;
+  min-height: 63px;
+  align-items: center;
+}
+.pageHeading .eyebrow {
+  margin-bottom: 10px;
+}
+.subtitle {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #9a9a9a;
+}
+.summary {
+  background: linear-gradient(120deg, #1c1c1c, #111 65%, #0e0e0e);
+  border: 0;
+  border-radius: 7px;
+  padding: 29px 34px 0;
+  box-shadow:
+    inset 0 1px #ffffff13,
+    0 22px 50px #0004;
+  overflow: hidden;
+}
+.summaryHeader {
+  padding: 0 0 18px;
+  color: #b3b3ad;
+  font-size: 13px;
+  align-items: center;
+}
+.summaryHeader > span {
+  gap: 8px;
+}
+.balanceGrid {
+  gap: 22px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  padding: 6px 0 27px;
+}
+.balanceGrid strong {
+  font-size: 70px;
+  line-height: 1.15;
+  letter-spacing: -3px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+.summaryLabel {
+  color: #aaa;
+  font-size: 12px;
+}
+.balanceGrid p {
+  font-size: 12px;
+  color: #999;
+  margin-top: 12px;
+}
+.summaryFooter {
+  border-top: 1px solid #ffffff19;
+  padding: 19px 0;
+  margin: 0;
+  gap: 18px;
+  font-size: 12px;
+  color: #a8a8a1;
+}
+.summaryFooter button {
+  font-size: 12px;
+  color: #d4d4ce;
+}
+.balanceEmpty {
+  padding: 16px 0 34px;
+  gap: 18px;
+  min-height: 155px;
+}
+.balanceEmpty h2 {
+  font-size: 25px;
+  letter-spacing: -0.8px;
+}
+.balanceEmpty p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #999;
+}
+.balanceEmpty > .accountIcon {
+  width: 48px;
+  height: 48px;
+  background: #242424;
+  color: #bbb;
+}
+.balanceEmpty > .secondary {
+  margin-left: auto;
+}
+.overviewGrid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 34px 44px;
+  margin-top: 34px;
+  align-items: start;
+}
+.homeAsk {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+  padding: 24px;
+  border: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 1px #ffffff10;
+  background: linear-gradient(125deg, #191919, #101010);
+}
+.homeObligations {
+  grid-column: 1;
+  grid-row: 1;
+  margin: 0;
+}
+.homeObligations .sectionHead {
+  margin-bottom: 16px;
+}
+.homeAsk .askTitle {
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.askTitle h2 {
+  font-size: 15px !important;
+  letter-spacing: 0;
+}
+.homeComposer {
+  background: #222;
+  border: 0;
+  border-radius: 6px;
+  min-height: 60px;
+  box-shadow: inset 0 1px #ffffff0e;
+}
+.homeComposer input {
+  font-size: 13px;
+  padding: 12px;
+  min-width: 0;
+}
+.sendButton {
+  border-radius: 5px;
+  background: #e9e9e4;
+  color: #111;
+  min-width: 39px;
+  height: 39px;
+}
+.quickActions {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.quickActions button {
+  font-size: 11px;
+  min-height: 36px;
+  border: 1px solid #3b3b3b;
+  border-radius: 3px;
+  background: transparent;
+  flex: 1;
+  white-space: nowrap;
+  padding: 8px;
+}
+.quickActions button svg {
+  width: 14px;
+  height: 14px;
+}
+.pendingBar {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  border-radius: 4px;
+  font-size: 12px;
+  background: #141414;
+  border-color: #333;
+}
+.nextPayment {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid #343434;
+}
+.nextPayment h3 {
+  font-size: 19px;
+  font-weight: 500;
+}
+.nextPayment > strong {
+  font-size: 32px;
+  letter-spacing: -1px;
+  font-weight: 500;
+}
+.nextPayment .primary {
+  width: 100%;
+  justify-content: space-between;
+}
+.panel {
+  border-radius: 5px;
+  background: linear-gradient(125deg, #151515, #0f0f0f);
+  border: 0;
+  box-shadow: inset 0 1px #ffffff10;
+  padding: 25px;
+  margin-top: 24px;
+}
+.panel .sectionHead h2 {
+  font-size: 22px;
+}
+.statStrip {
+  border-radius: 6px;
+  background: linear-gradient(120deg, #191919, #0f0f0f);
+  box-shadow: inset 0 1px #ffffff10;
+  border: 0;
+  padding: 27px;
+}
+.statStrip strong {
+  font-size: 34px;
+  letter-spacing: -1px;
+}
+.invoiceRow,
+.activityRow,
+.accountRow {
+  border-color: #2c2c2c;
+  padding-top: 21px;
+  padding-bottom: 21px;
+}
+.invoiceRow strong,
+.accountRow strong {
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+.invoiceRow small,
+.accountRow small {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #999;
+}
+.accountRow {
+  gap: 16px;
+}
+.accountIcon,
+.activityIcon {
+  background: #242424;
+  color: #c7c7c0;
+  border-radius: 3px;
+}
+.filters button {
+  font-size: 13px;
+  min-height: 40px;
+}
+.twoColumns {
+  gap: 22px;
+  margin-top: 27px;
+}
+.walletPanel {
+  background: linear-gradient(125deg, #1d1d1d, #111);
+  border: 0;
+  border-radius: 6px;
+  box-shadow: inset 0 1px #ffffff13;
+  padding: 25px;
+  min-width: 0;
+}
+.walletPanel + .walletPanel {
+  background: linear-gradient(125deg, #242424, #161616);
+}
+.railTitle {
+  font-size: 16px;
+  color: #e2e2dc;
+}
+.walletPanel .notice {
+  font-size: 12px;
+  line-height: 1.8;
+}
+.walletPanel .muted {
+  font-size: 13px;
+}
+.walletPanel code {
+  font-size: 12px;
+}
+.balanceList strong {
+  font-size: 23px;
+  letter-spacing: -0.7px;
+}
+.balanceList > small {
+  font-size: 11px;
+}
+.bankComingSoon {
+  font-size: 12px;
+  min-height: 39px;
+}
+.activityRow > div > strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: #deded8;
+}
+.activityRow p {
+  font-size: 13px;
+  color: #a8a8a1;
+  line-height: 1.8;
+}
+.activityRow small {
+  font-size: 11px;
+}
+.notice {
+  font-size: 12px;
+  line-height: 1.8;
+  border-color: #393939;
+  background: #181818;
+  color: #b8b8b2;
+}
+.error,
+.errorBanner {
+  border-color: #777;
+  background: #242424;
+  color: #eee;
+  font-size: 13px;
+}
+.toast {
+  background: #232323;
+  border-color: #4b4b4b;
+  color: #eee;
+  font-size: 12px;
+  animation: counterpartPage 0.18s ease-out;
+}
+.fine a,
+.legacyLink {
+  color: #bcbcb5;
+}
+.networkDetails {
+  font-size: 12px;
+}
+.settingRow strong {
+  font-size: 14px;
+}
+.settingRow p {
+  font-size: 12px;
+}
+.companion {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0;
+  transform: none;
+  animation: none;
+  overflow: visible;
+}
+.companion:before,
+.companion:after {
+  display: none !important;
+}
+.companion > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.companionLarge {
+  width: 64px;
+  height: 64px;
+}
+.mascotBody {
+  transform-origin: 50% 65%;
+  animation: companionBreath 5s ease-in-out infinite;
+}
+.mascotOrbit {
+  transform-origin: 50% 65%;
+  transition: transform 0.35s;
+}
+.mascotClosedEyes {
+  display: none;
+}
+.root[data-privacy="true"] .mascotEyes,
+.companion[data-state="privacy"] .mascotEyes {
+  display: none;
+}
+.root[data-privacy="true"] .mascotClosedEyes,
+.companion[data-state="privacy"] .mascotClosedEyes {
+  display: block;
+}
+.companion[data-state="thinking"] .mascotBody {
+  animation: companionThink 1.8s ease-in-out infinite;
+}
+.companion[data-state="analyzing"] .mascotOrbit,
+.root[data-busy="true"] .mascotOrbit {
+  animation: companionAnalyze 1.6s ease-in-out infinite;
+}
+.companion[data-state="completed"] .mascotBody {
+  animation: companionComplete 0.45s ease-out;
+}
+.companionDock {
+  position: fixed;
+  bottom: 22px;
+  left: calc(50% + 46px);
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  min-height: 53px;
+  background: linear-gradient(125deg, #252525, #151515);
+  color: #d0d0c9;
+  box-shadow:
+    0 12px 34px #0008,
+    0 0 0 1px #ffffff16,
+    inset 0 1px #ffffff10;
+  border-radius: 40px;
+  padding: 5px 19px 5px 8px;
+  min-width: 190px;
+  font-size: 13px;
+}
+.companionDock .companion {
+  width: 49px;
+  height: 45px;
+}
+.companionDock > svg {
+  margin-left: 14px;
+}
+.companionDock:enabled:active {
+  transform: translateX(-50%) translateY(1px);
+}
+.assistantPage {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.assistantPanel {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  min-height: 620px;
+}
+.assistantWelcome {
+  min-height: 260px;
+  padding: 34px 15px;
+}
+.assistantWelcome > .companion {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+}
+.assistantWelcome h2 {
+  font-size: 29px !important;
+  letter-spacing: -0.8px;
+}
+.promptGrid {
+  gap: 15px;
+  margin-top: 27px;
+}
+.promptGrid button {
+  background: #151515;
+  border-color: #2e2e2e;
+  border-radius: 5px;
+  font-size: 13px;
+  min-height: 65px;
+}
+.chatScroll {
+  padding: 24px 6px 24px;
+  scrollbar-color: #444 transparent;
+  min-height: 350px;
+}
+.chatMessage {
+  gap: 13px;
+  margin-bottom: 25px;
+}
+.chatMessage p {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #e1e1da;
+}
+.chatName {
+  font-size: 11px;
+  color: #a8a8a2;
+}
+.userMessage > div {
+  background: #252525;
+  border-radius: 7px 7px 0 7px;
+  padding: 14px 18px;
+}
+.userMessage p {
+  font-size: 15px;
+}
+.messageDetails {
+  font-size: 11px;
+}
+.assistantProse h3 {
+  font-size: 20px;
+  line-height: 1.4;
+}
+.assistantProse li {
+  font-size: 15px;
+  line-height: 1.8;
+}
+.composer {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(120deg, #242424, #161616);
+  border: 0;
+  border-radius: 32px;
+  min-height: 65px;
+  padding: 7px 10px;
+  box-shadow:
+    0 12px 34px #0005,
+    inset 0 1px #ffffff12;
+}
+.composer > .companion {
+  width: 46px;
+  height: 45px;
+  margin: 0 2px 0 0;
+}
+.composer > textarea {
+  background: transparent;
+  border: 0;
+  min-height: 43px;
+  max-height: 160px;
+  padding: 11px 5px;
+  font-size: 14px;
+  resize: none;
+  line-height: 1.5;
+}
+.composer .sendButton {
+  border-radius: 50%;
+  height: 40px;
+  min-width: 40px;
+}
+.composerFooter {
+  font-size: 11px;
+  padding-top: 13px;
+}
+.thinking {
+  font-size: 13px;
+  color: #bbb;
+}
+.thinking .spin {
+  display: none;
+}
+.savedPlans {
+  margin: 20px 0;
+}
+.paymentCard {
+  background: linear-gradient(125deg, #1c1c1c, #121212);
+  border: 0;
+  box-shadow: inset 0 1px #ffffff12;
+  padding: 22px;
+  border-radius: 5px;
+  min-height: 85px;
+}
+.paymentCard strong {
+  font-size: 19px;
+  letter-spacing: -0.5px;
+}
+.paymentCard small {
+  font-size: 12px;
+  margin-top: 6px;
+}
+.historyActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.historyList {
+  display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+}
+.historyList > button {
+  justify-content: flex-start;
+  text-align: left;
+  gap: 16px;
+  padding: 20px 0;
+  border-top: 1px solid #333;
+  width: 100%;
+}
+.historyList > button > span {
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+.historyList > button > small {
+  font-size: 11px;
+  color: #999;
+}
+.historyList > button[aria-current="true"] {
+  color: #fff;
+}
+.historyList > button[aria-current="true"] > span {
+  font-weight: 500;
+}
+.dialog {
+  max-width: 900px;
+  width: calc(100% - 48px);
+  max-height: 90dvh;
+  background: linear-gradient(130deg, #1b1b1b, #101010);
+  border: 1px solid #373737;
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 35px 100px #000b;
+  animation: counterpartSheet 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dialog::backdrop {
+  background: #000a;
+  backdrop-filter: blur(10px);
+}
+.dialogInner {
+  padding: 28px 32px 32px;
+}
+.dialogHeader {
+  margin-bottom: 26px;
+}
+.dialogHeader h2 {
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+}
+.dialogHeader .eyebrow {
+  font-size: 10px;
+}
+.detailAmount {
+  padding: 8px 0 25px;
+  gap: 13px;
+}
+.detailAmount > strong {
+  font-size: 53px;
+  letter-spacing: -2px;
+  line-height: 1.2;
+}
+.detailAmount > span {
+  font-size: 14px;
+}
+.definition {
+  margin: 0;
+}
+.definition > div {
+  font-size: 13px;
+  padding: 16px 0;
+  gap: 25px;
+}
+.definition dd {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.definition code {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.blockers {
+  border-color: #494949;
+  background: #1d1d1d;
+  padding: 19px;
+}
+.blockers h3 {
+  font-size: 15px;
+}
+.blockers ul {
+  font-size: 13px;
+  line-height: 1.9;
+  gap: 8px;
+}
+.privacyDisclosure {
+  font-size: 13px;
+}
+.privacyDisclosure strong {
+  font-size: 13px;
+}
+.privacyDisclosure p {
+  font-size: 12px;
+  line-height: 1.85;
+}
+.detail .form {
+  background: #141414;
+  padding: 23px;
+  border-radius: 5px;
+}
+.form label {
+  font-size: 13px;
+}
+.form p.fine {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+.paymentSigner .walletPanel {
+  background: linear-gradient(125deg, #242424, #141414);
+}
+.detail .receipt {
+  background: #191919;
+  border-color: #555;
+}
+.detail .notice {
+  font-size: 13px;
+}
+.timeline > div {
+  font-size: 12px;
+}
+.passwordInput .iconButton {
+  min-width: 44px;
+}
+.login {
+  background:
+    radial-gradient(ellipse at 65% 0, #ffffff05, transparent 60%), #080808;
+}
+.loginCard {
+  background: linear-gradient(130deg, #191919, #101010);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 1px #ffffff12,
+    0 30px 70px #0005;
+}
+.login .brandImage {
+  width: 108px;
+}
+.login h1 {
+  font-size: 36px;
+}
+.login .fine {
+  font-size: 12px;
+}
+@keyframes counterpartPage {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes counterpartSheet {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes companionBreath {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes companionThink {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-2px);
+  }
+}
+@keyframes companionAnalyze {
+  0%,
+  100% {
+    transform: rotate(-9deg) scale(0.94);
+  }
+  50% {
+    transform: rotate(9deg) scale(1.03);
+  }
+}
+@keyframes companionComplete {
+  50% {
+    transform: translateY(-7px);
+  }
+}
+@media (min-width: 1650px) {
+  .main {
+    padding-left: 70px;
+    padding-right: 70px;
+  }
+  .balanceGrid strong {
+    font-size: 84px;
+  }
+  .overviewGrid {
+    gap: 48px 65px;
+  }
+  .summary {
+    padding: 35px 40px 0;
+  }
+}
+@media (min-width: 701px) and (max-width: 1100px) {
+  .mainShell {
+    margin-left: 92px;
+  }
+  .topbar {
+    padding: 0 30px;
+  }
+  .main {
+    padding: 30px 30px 130px;
+  }
+  .officialTagline {
+    display: none;
+  }
+  .overviewGrid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .homeAsk {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .homeObligations {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .pendingBar {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .balanceGrid strong {
+    font-size: 58px;
+  }
+  .twoColumns {
+    grid-template-columns: 1fr 1fr;
+    gap: 17px;
+  }
+  .walletPanel {
+    padding: 21px;
+  }
+  .sidebar {
+    width: 92px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .brandImage {
+    width: 70px;
+  }
+  .navItem > span {
+    display: block;
+    font-size: 10px;
+  }
+  .sidebarBottom .profile {
+    display: flex;
+  }
+  .sidebarBottom .profile > div {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .root {
+    font-size: 14px;
+    background: #080808;
+  }
+  .root h1 {
+    font-size: 29px;
+    letter-spacing: -1px;
+  }
+  .root h2 {
+    font-size: 21px;
+  }
+  .root .fine {
+    font-size: 12px;
+  }
+  .sidebar {
+    display: none;
+  }
+  .mainShell {
+    margin: 0;
+    min-height: 100dvh;
+  }
+  .topbar {
+    height: 76px;
+    padding: 0 21px;
+    gap: 13px;
+    position: relative;
+    z-index: 15;
+  }
+  .mobileBrand .brandImage {
+    width: 85px;
+    height: auto;
+  }
+  .officialTagline,
+  .breadcrumb {
+    display: none;
+  }
+  .topActions {
+    gap: 9px;
+    margin-left: auto;
+  }
+  .privacyButton {
+    font-size: 10px;
+    min-height: 30px;
+    padding: 6px 8px;
+    gap: 5px;
+  }
+  .topActions > .iconButton {
+    width: 30px;
+    height: 32px;
+  }
+  .mobileSettings {
+    display: inline-flex;
+  }
+  .main {
+    padding: 26px 21px 120px;
+  }
+  .pageHeading {
+    margin-bottom: 23px;
+    min-height: 57px;
+    gap: 16px;
+  }
+  .pageHeading .eyebrow {
+    font-size: 10px;
+    margin-bottom: 9px;
+  }
+  .pageHeading > .companion {
+    display: none;
+  }
+  .summary {
+    padding: 23px 22px 0;
+    border-radius: 5px;
+  }
+  .summaryHeader {
+    font-size: 12px;
+    padding-bottom: 15px;
+  }
+  .summaryHeader .iconButton {
+    width: 29px;
+    height: 29px;
+  }
+  .balanceGrid {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding-bottom: 23px;
+  }
+  .balanceGrid strong {
+    font-size: 48px;
+    letter-spacing: -2px;
+    line-height: 1.15;
+    word-break: break-word;
+  }
+  .balanceGrid p {
+    font-size: 11px;
+    margin-top: 10px;
+  }
+  .summaryLabel {
+    font-size: 11px;
+  }
+  .summaryFooter {
+    padding: 16px 0;
+    gap: 12px;
+    font-size: 10px;
+    flex-wrap: wrap;
+  }
+  .summaryFooter button {
+    font-size: 11px;
+  }
+  .balanceEmpty {
+    padding: 8px 0 25px;
+    gap: 13px;
+    flex-wrap: wrap;
+    min-height: 170px;
+  }
+  .balanceEmpty > .accountIcon {
+    width: 37px;
+    height: 37px;
+  }
+  .balanceEmpty h2 {
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+  .balanceEmpty p {
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .balanceEmpty > .secondary {
+    margin: 4px 0 0 50px;
+    min-height: 40px;
+  }
+  .overviewGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 27px;
+    margin-top: 26px;
+  }
+  .homeAsk {
+    order: 0;
+    width: 100%;
+    padding: 20px;
+  }
+  .homeObligations {
+    order: 1;
+    width: 100%;
+  }
+  .pendingBar {
+    order: 2;
+    width: 100%;
+    font-size: 12px;
+  }
+  .homeAsk .askTitle {
+    margin-bottom: 14px;
+  }
+  .homeAsk .askTitle h2 {
+    font-size: 14px !important;
+  }
+  .homeComposer {
+    min-height: 56px;
+  }
+  .homeComposer input {
+    font-size: 12px;
+    min-width: 0;
+  }
+  .homeComposer .sendButton {
+    height: 36px;
+    min-width: 36px;
+  }
+  .quickActions {
+    gap: 7px;
+    margin-top: 13px;
+  }
+  .quickActions button {
+    font-size: 10px;
+    gap: 5px;
+    padding: 8px;
+    min-height: 37px;
+  }
+  .quickActions button svg {
+    height: 13px;
+    width: 13px;
+  }
+  .nextPayment > strong {
+    font-size: 29px;
+  }
+  .nextPayment h3 {
+    font-size: 18px;
+  }
+  .nextPayment .pill {
+    font-size: 10px;
+  }
+  .panel {
+    padding: 20px;
+    border-radius: 5px;
+    margin-top: 22px;
+  }
+  .panel .sectionHead h2 {
+    font-size: 20px;
+  }
+  .invoiceRow,
+  .accountRow,
+  .activityRow {
+    padding: 18px 0;
+    gap: 11px;
+  }
+  .invoiceRow strong,
+  .accountRow strong {
+    font-size: 18px;
+  }
+  .invoiceRow small,
+  .accountRow small {
+    font-size: 11px;
+  }
+  .invoiceRow p {
+    font-size: 13px;
+  }
+  .statStrip {
+    padding: 21px 19px;
+    gap: 20px;
+  }
+  .statStrip strong {
+    font-size: 27px;
+    letter-spacing: -0.8px;
+  }
+  .statStrip span {
+    font-size: 11px;
+  }
+  .root .filters button {
+    font-size: 12px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .root .twoColumns {
+    display: flex;
+    flex-direction: column;
+    gap: 21px;
+    margin-top: 25px;
+  }
+  .walletPanel {
+    padding: 22px 20px;
+    min-width: 0;
+  }
+  .railTitle {
+    font-size: 17px;
+  }
+  .walletPanel .fine {
+    font-size: 11px;
+  }
+  .walletPanel .balanceList strong {
+    font-size: 25px;
+  }
+  .activityRow p {
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .activityRow > div > strong {
+    font-size: 13px;
+  }
+  .activityRow small {
+    font-size: 11px;
+  }
+  .companionDock {
+    display: none;
+  }
+  .mobileNav {
+    height: 81px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #0b0b0bf5;
+    backdrop-filter: blur(16px);
+    border-top: 1px solid #292929;
+    padding: 8px 7px max(10px, env(safe-area-inset-bottom));
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 30;
+  }
+  .mobileNav button {
+    font-size: 10px;
+    min-width: 57px;
+    color: #929292;
+    gap: 7px;
+    padding: 8px 0;
+    position: relative;
+  }
+  .mobileNav button > span {
+    font-size: 10px;
+  }
+  .mobileNav .mobileActive {
+    color: #f1f1eb;
+  }
+  .mobileNav .mobileAgent {
+    min-width: 64px;
+    width: 64px;
+    padding-top: 23px;
+  }
+  .mobileAgent > .companion {
+    position: absolute;
+    width: 49px;
+    height: 45px;
+    top: -12px;
+    background: #242424 !important;
+    border-radius: 50%;
+    padding: 3px;
+    box-shadow: 0 0 0 1px #ffffff14 !important;
+  }
+  .mobileAgent > .companion:before {
+    display: none;
+  }
+  .mobileAgent > span:last-child {
+    padding-top: 9px;
+  }
+  .assistantPage {
+    max-width: 100%;
+  }
+  .assistantPage .pageHeading {
+    align-items: center;
+  }
+  .historyActions {
+    gap: 11px;
+  }
+  .historyActions > .textButton {
+    font-size: 0;
+    gap: 0;
+    min-height: 34px;
+    min-width: 30px;
+  }
+  .historyActions > .textButton svg {
+    width: 19px;
+    height: 19px;
+  }
+  .assistantPanel {
+    min-height: calc(100dvh - 285px);
+    max-height: none;
+    overflow: visible;
+    background: transparent;
+  }
+  .chatScroll {
+    padding: 15px 0 26px;
+    min-height: 330px;
+    overflow-x: hidden;
+    max-height: none;
+  }
+  .assistantWelcome {
+    min-height: 260px;
+    padding: 30px 0;
+  }
+  .assistantWelcome h2 {
+    font-size: 25px !important;
+  }
+  .assistantWelcome > .companion {
+    width: 44px;
+    height: 44px;
+  }
+  .promptGrid {
+    gap: 12px;
+    margin-top: 24px;
+  }
+  .promptGrid button {
+    font-size: 12px;
+    padding: 14px;
+    min-height: 61px;
+  }
+  .chatMessage {
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .chatMessage > .companion {
+    width: 28px;
+    height: 28px;
+    margin-top: 4px;
+  }
+  .chatMessage p,
+  .assistantProse li {
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .chatMessage .chatName {
+    font-size: 10px;
+  }
+  .userMessage > div {
+    padding: 12px 15px;
+  }
+  .userMessage p {
+    font-size: 14px;
+  }
+  .messageDetails {
+    font-size: 11px;
+  }
+  .savedPlans .eyebrow {
+    font-size: 10px;
+  }
+  .paymentCard {
+    padding: 18px 15px;
+    min-height: 83px;
+  }
+  .paymentCard strong {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .paymentCard small {
+    font-size: 11px;
+  }
+  .composer {
+    position: sticky;
+    bottom: 95px;
+    z-index: 20;
+    min-height: 57px;
+    border-radius: 31px;
+    padding: 6px 8px;
+    gap: 4px;
+    box-shadow:
+      0 6px 20px #000a,
+      inset 0 1px #ffffff15;
+  }
+  .composer > .companion {
+    width: 35px;
+    height: 37px;
+    margin: 0;
+  }
+  .composer > textarea {
+    font-size: 13px;
+    min-height: 42px;
+    max-height: 140px;
+    padding: 10px 3px;
+  }
+  .composer .sendButton {
+    height: 36px;
+    min-width: 36px;
+  }
+  .composerFooter {
+    padding: 12px 3px 0;
+    min-height: 34px;
+    font-size: 10px;
+  }
+  .composerFooter .textButton {
+    font-size: 11px;
+  }
+  .thinking {
+    font-size: 12px;
+  }
+  .historyList > button {
+    gap: 12px;
+    padding: 19px 0;
+    font-size: 13px;
+  }
+  .historyList > button > small {
+    font-size: 10px;
+  }
+  .dialog {
+    width: calc(100% - 24px);
+    max-width: none;
+    max-height: 89dvh;
+    border-radius: 8px;
+    margin: auto 12px 12px;
+    padding: 0;
+  }
+  .dialogInner {
+    padding: 23px 20px 25px;
+  }
+  .dialogHeader {
+    margin-bottom: 21px;
+    gap: 15px;
+  }
+  .dialogHeader h2 {
+    font-size: 25px;
+    letter-spacing: -0.7px;
+  }
+  .dialogHeader .eyebrow {
+    font-size: 9px;
+  }
+  .detailAmount {
+    padding-bottom: 23px;
+  }
+  .detailAmount > strong {
+    font-size: 40px;
+    letter-spacing: -1.6px;
+    overflow-wrap: anywhere;
+  }
+  .detailAmount > span {
+    font-size: 12px;
+  }
+  .definition > div {
+    font-size: 12px;
+    padding: 15px 0;
+    gap: 17px;
+  }
+  .definition dd {
+    font-size: 12px;
+  }
+  .definition code {
+    font-size: 11px;
+  }
+  .blockers {
+    padding: 16px;
+    margin: 20px 0;
+  }
+  .blockers h3 {
+    font-size: 14px;
+  }
+  .blockers ul {
+    font-size: 12px;
+    line-height: 1.8;
+    padding-left: 17px;
+    gap: 9px;
+  }
+  .privacyDisclosure strong {
+    font-size: 12px;
+  }
+  .privacyDisclosure p {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  .detail .form {
+    padding: 18px 16px;
+  }
+  .root .form label {
+    font-size: 13px;
+  }
+  .root .form .fine {
+    font-size: 11px;
+  }
+  .root input,
+  .root textarea,
+  .root select {
+    font-size: 14px;
+    min-height: 45px;
+  }
+  .root input[type="checkbox"] {
+    min-height: 16px;
+  }
+  .timeline > div {
+    font-size: 11px;
+  }
+  .notice {
+    font-size: 12px;
+  }
+  .login .brandImage {
+    width: 103px;
+  }
+  .login h1 {
+    font-size: 31px;
+  }
+  .loginCard {
+    padding: 26px 23px;
+  }
+  .root .empty h3 {
+    font-size: 19px;
+  }
+  .root .empty p {
+    font-size: 13px;
+  }
+  .root .emptyIcon {
+    width: 40px;
+    height: 40px;
+  }
+  .toast {
+    bottom: 98px;
+    width: calc(100% - 34px);
+    max-width: 420px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 360px) {
+  .main {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+  .topbar {
+    padding-left: 17px;
+    padding-right: 17px;
+    gap: 9px;
+  }
+  .root h1 {
+    font-size: 27px;
+  }
+  .mobileBrand .brandImage {
+    width: 74px;
+  }
+  .topActions {
+    gap: 5px;
+  }
+  .privacyButton {
+    font-size: 9px;
+    padding: 5px 6px;
+  }
+  .topActions > .iconButton {
+    width: 26px;
+    height: 30px;
+  }
+  .summary {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .balanceGrid strong {
+    font-size: 41px;
+    letter-spacing: -1.7px;
+  }
+  .balanceEmpty h2 {
+    font-size: 20px;
+  }
+  .balanceEmpty p {
+    font-size: 12px;
+  }
+  .balanceEmpty > .secondary {
+    margin-left: 0;
+  }
+  .homeAsk {
+    padding: 18px;
+  }
+  .quickActions {
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .quickActions button {
+    font-size: 10px;
+    flex-basis: 45%;
+    padding: 8px;
+    min-height: 36px;
+  }
+  .mobileNav {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+  .mobileNav button {
+    font-size: 9px;
+    min-width: 51px;
+  }
+  .mobileNav button > span {
+    font-size: 9px;
+  }
+  .mobileNav .mobileAgent {
+    min-width: 55px;
+    width: 55px;
+  }
+  .invoiceRow strong,
+  .accountRow strong {
+    font-size: 16px;
+  }
+  .panel {
+    padding: 18px 16px;
+  }
+  .walletPanel {
+    padding: 20px 17px;
+  }
+  .statStrip strong {
+    font-size: 24px;
+  }
+  .composer > .companion {
+    width: 32px;
+  }
+  .historyActions {
+    gap: 5px;
+  }
+  .assistantProse p,
+  .assistantProse li {
+    font-size: 14px;
+  }
+  .paymentCard strong {
+    font-size: 15px;
+  }
+  .dialogInner {
+    padding: 21px 17px;
+  }
+  .detailAmount > strong {
+    font-size: 34px;
+  }
+  .root .formGrid {
+    gap: 13px;
+  }
+  .root .form label {
+    font-size: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *:before,
+  .root *:after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.homeAsk .askTitle {
+  justify-content: flex-start;
+}
+.homeAsk .askTitle > .companion {
+  display: inline-flex;
+  margin: 0;
+  width: 29px;
+  height: 29px;
+}
+.walletDestination {
+  min-width: 0;
+  width: 100%;
+  scroll-margin-top: 95px;
+  border-radius: 5px;
+}
+.walletDestination:focus {
+  outline: 1px solid #666;
+  outline-offset: 5px;
+}
+.walletFunding {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 17px;
+  border-top: 1px solid #363636;
+  padding: 16px 0;
+  margin-top: 16px;
+  font-size: 12px;
+  color: #999;
+}
+.walletFunding strong {
+  color: #d2d2cc;
+  font-size: 12px;
+  font-weight: 500;
+}
+.accountChoices {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.accountChoices > button {
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 17px;
+  border-top: 1px solid #363636;
+  padding: 23px 0;
+  text-align: left;
+  border-radius: 0;
+}
+.accountChoices > button > span {
+  flex: 1;
+  min-width: 0;
+}
+.accountChoices strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+.accountChoices small {
+  display: block;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.7;
+  margin-top: 5px;
+}
+.accountChoices > button:disabled {
+  opacity: 0.6;
+}
+.root .chatMessage {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+.root .userMessage {
+  justify-content: flex-end;
+  max-width: 85%;
+  margin-left: auto;
+}
+.root .userMessage > div {
+  background: #252525;
+}
+.paymentExamples {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-top: 19px;
+  margin-top: 22px;
+}
+.paymentExamples button {
+  min-height: 35px;
+  font-size: 12px;
+}
+.detail .receipt {
+  animation: counterpartPage 0.25s ease-out;
+}
+.root .error {
+  animation: counterpartPage 0.18s ease-out;
+}
+@media (max-width: 700px) {
+  .root .twoColumns > * {
+    width: 100%;
+  }
+  .accountChoices > button {
+    gap: 13px;
+    padding: 21px 0;
+  }
+  .accountChoices strong {
+    font-size: 14px;
+  }
+  .accountChoices small {
+    font-size: 11px;
+  }
+  .accountChoices > button > svg {
+    width: 20px;
+    height: 20px;
+  }
+  .root .userMessage {
+    max-width: 92%;
+  }
+  .paymentExamples {
+    gap: 15px;
+  }
+  .paymentExamples button {
+    font-size: 11px;
+  }
+  .walletFunding {
+    font-size: 11px;
+  }
+  .walletFunding strong {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail .receipt,
+  .root .error {
+    animation: none !important;
+  }
+}

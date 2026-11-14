@@ -403,7 +403,7 @@ export function PollarWallet({
         </span>
         <span className={s.pill}>Stellar testnet</span>
       </div>
-      <p className={s.muted}>Connect by email or with your wallet.</p>
+      <p className={s.muted}>USDC payments · Connect by email or wallet.</p>
       {confirmations.map((confirmation) => (
         <div className={s.notice} key={confirmation.id}>
           <div>
@@ -467,6 +467,28 @@ export function PollarWallet({
             <RefreshCw size={14} className={busy ? s.spin : ""} /> Read wallet
             balances
           </button>
+          <div className={s.walletFunding}>
+            <span>Stellar account</span>
+            <strong>
+              {wallet?.existsOnStellar === false
+                ? "Activation needed"
+                : wallet?.existsOnStellar === true
+                  ? "Active on testnet"
+                  : "Funding status unavailable"}
+            </strong>
+          </div>
+          {wallet?.existsOnStellar === false && (
+            <p className={s.fine}>
+              Activate and fund this testnet account in your wallet, then
+              refresh balances. Test assets have no cash value.
+            </p>
+          )}
+          {!balances && (
+            <p className={s.fine}>
+              Balances have not been returned by Pollar. No zero balance is
+              assumed.
+            </p>
+          )}
           {balances && (
             <div className={s.balanceList}>
               <small>Live SDK response · test assets have no cash value</small>

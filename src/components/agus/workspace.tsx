@@ -24,6 +24,7 @@ import {
   Download,
   Eye,
   EyeOff,
+  History,
   FileText,
   Home,
   Layers3,
@@ -47,6 +48,8 @@ import type {
 import type { Responsibility } from "@/lib/agent-workspace/store";
 import type { AgentReply } from "@/lib/financial-agent/agent";
 import { productApi } from "./api";
+import { AgusBrand as Brand, AgusCompanion as Companion } from "./identity";
+import type { SavedChat, SavedTurn } from "@/lib/chat-history/store";
 import { PollarWallet } from "./pollar-wallet";
 import { PaymentReview } from "./payment-review";
 import {
@@ -66,9 +69,9 @@ type Tab =
   | "Settings";
 const navigation = [
   { name: "Overview", label: "Home", icon: Home },
-  { name: "Assistant", label: "Ask AGUS", icon: MessageCircle },
+  { name: "Accounts", label: "Money", icon: Wallet },
+  { name: "Assistant", label: "AGUS", icon: MessageCircle },
   { name: "Obligations", label: "Obligations", icon: Layers3 },
-  { name: "Accounts", label: "Accounts", icon: Wallet },
   { name: "Activity", label: "Activity", icon: Clock3 },
 ] as const;
 const date = (value: string, full = false) =>
@@ -88,25 +91,6 @@ const initial = (name: string) =>
     .join("")
     .toUpperCase();
 
-function Companion({ large = false }: { large?: boolean }) {
-  return (
-    <span
-      className={`${s.companion} ${large ? s.companionLarge : ""}`}
-      role="img"
-      aria-label="AGUS companion"
-    >
-      <span />
-      <span />
-    </span>
-  );
-}
-function Brand() {
-  return (
-    <span className={s.brand} aria-label="AGUS">
-      agus<span>.</span>
-    </span>
-  );
-}
 function Dialog({
   title,
   eyebrow,
@@ -193,22 +177,64 @@ export function AgusWorkspace({
   const [toast, setToast] = useState("");
   const [busy, setBusy] = useState(false);
   const [masked, setMasked] = useState(false);
-  const [privacyMode, setPrivacyMode] = useState(false);
+  const [privacyMode, setPrivacyModeState] = useState(false);
+  const setPrivacyMode = useCallback((value: boolean) => {
+    setPrivacyModeState(value);
+    try {
+      sessionStorage.setItem("agus.privacyMode", String(value));
+    } catch {
+      /* Mode still applies without browser storage. */
+    }
+  }, []);
   const [collapsed, setCollapsed] = useState(false);
-  const [modal, setModal] = useState<"invoice" | "import" | "help" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "invoice" | "import" | "help" | "account" | null
+  >(null);
   const [selected, setSelected] = useState<string>();
   const [selectedPayment, setSelectedPayment] = useState<PaymentPlan>();
   const [filter, setFilter] = useState("all");
   const [tasks, setTasks] = useState<Responsibility[]>([]);
+  const [paymentPlans, setPaymentPlans] = useState<PaymentPlan[]>([]);
   const [sample, setSample] = useState(false);
+  const [invoiceCurrency, setInvoiceCurrency] =
+    useState<InvoiceInput["currency"]>("USDC");
+  const [walletFocus, setWalletFocus] = useState<"pollar" | "zcash" | null>(
+    null,
+  );
   const [homeMessage, setHomeMessage] = useState("");
   const [chatLaunch, setChatLaunch] = useState<ChatLaunch>();
   const [replayOnboarding, setReplayOnboarding] = useState(false);
   const [networkStatus, setNetworkStatus] = useState("");
   const [onboardingBusy, setOnboardingBusy] = useState(false);
   const [onboardingError, setOnboardingError] = useState("");
+  useEffect(() => {
+    try {
+      setPrivacyModeState(
+        sessionStorage.getItem("agus.privacyMode") === "true",
+      );
+    } catch {
+      /* storage is optional */
+    }
+  }, []);
+  useEffect(() => {
+    if (tab !== "Accounts" || !walletFocus || phase !== "in") return;
+    const panel = document.getElementById(`agus-${walletFocus}-wallet`);
+    if (panel) {
+      panel.scrollIntoView({
+        block: "center",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+      panel.focus({ preventScroll: true });
+      setWalletFocus(null);
+    }
+  }, [tab, walletFocus, phase]);
+  const showWallet = (wallet: "pollar" | "zcash") => {
+    setModal(null);
+    setTab("Accounts");
+    setWalletFocus(wallet);
+  };
   const startChat = (draft = "", text?: string) => {
     setChatLaunch({ id: crypto.randomUUID(), draft, text });
     setTab("Assistant");
@@ -246,11 +272,16 @@ export function AgusWorkspace({
         "agent-workspace",
       );
       setTasks(workspace.tasks);
+      const savedPlans = await productApi<{ plans: PaymentPlan[] }>(
+        "product/payment-plans",
+      );
+      setPaymentPlans(savedPlans.plans);
     } catch (e) {
       if ((e as Error & { status?: number }).status === 401) {
         setPhase("out");
         setSnapshot(undefined);
         setTasks([]);
+        setPaymentPlans([]);
       } else {
         setError(e instanceof Error ? e.message : "Workspace unavailable");
         setPhase((p) => (p === "in" ? "in" : "error"));
@@ -355,18 +386,28 @@ export function AgusWorkspace({
         : item.direction === filter && item.state === "open"),
   );
   const amount = (text: string | null) => (masked ? "••••••" : (text ?? "—"));
-  const openInvoiceForm = (example = false) => {
+  const openInvoiceForm = (
+    example = false,
+    currency: InvoiceInput["currency"] = "USDC",
+  ) => {
     setSample(example);
+    setInvoiceCurrency(currency);
     setModal("invoice");
   };
 
   return (
-    <div className={s.root} data-privacy={privacyMode ? "true" : "false"}>
+    <div
+      className={s.root}
+      data-counterpart="true"
+      data-tab={tab}
+      data-busy={busy}
+      data-privacy={privacyMode ? "true" : "false"}
+    >
       <aside className={s.sidebar} aria-label="Main navigation">
         <button className={s.brandButton} onClick={() => navigate("Overview")}>
           <Brand />
         </button>
-        <span className={s.workspaceLabel}>YOUR SPACE</span>
+
         <nav>
           {navigation.map(({ name, label, icon: Icon }) => (
             <button
@@ -376,7 +417,7 @@ export function AgusWorkspace({
               aria-current={tab === name ? "page" : undefined}
             >
               <Icon size={18} strokeWidth={1.6} />
-              {label}
+              <span>{label}</span>
               {name === "Obligations" && outstanding.length > 0 && (
                 <span className={s.navCount}>{outstanding.length}</span>
               )}
@@ -430,6 +471,7 @@ export function AgusWorkspace({
               {navigation.find((item) => item.name === tab)?.label ?? tab}
             </strong>
           </div>
+          <p className={s.officialTagline}>Your money, and what's next.</p>
           <div className={s.topActions}>
             <button
               className={`${s.privacyButton} ${privacyMode ? s.privacyActive : ""}`}
@@ -469,7 +511,7 @@ export function AgusWorkspace({
             </button>
           </div>
         </header>
-        <main className={s.main}>
+        <main className={s.main} key={tab}>
           {error && (
             <div className={s.errorBanner} role="alert">
               <span>{error}</span>
@@ -487,14 +529,19 @@ export function AgusWorkspace({
               <div className={s.pageHeading}>
                 <div>
                   <p className={s.eyebrow}>{date(snapshot.asOf, true)}</p>
-                  <h1>Your money</h1>
+                  <h1>Overview</h1>
                 </div>
-                <Companion />
+                <button
+                  className={s.textButton}
+                  onClick={() => navigate("Accounts")}
+                >
+                  All accounts <ArrowUpRight size={16} />
+                </button>
               </div>
               <section className={s.summary} aria-label="Financial summary">
                 <div className={s.summaryHeader}>
                   <span>
-                    <Wallet size={15} /> Overview
+                    <Wallet size={15} /> Statement balances
                   </span>
                   <div>
                     <button
@@ -560,12 +607,12 @@ export function AgusWorkspace({
                           <Wallet size={23} strokeWidth={1.4} />
                         </span>
                         <div>
-                          <h2>A place for your accounts</h2>
+                          <h2>No statements yet</h2>
                           <p>Add a statement to see your money here.</p>
                         </div>
                         <button
                           className={s.secondary}
-                          onClick={() => setModal("import")}
+                          onClick={() => setModal("account")}
                         >
                           <Plus size={15} /> Add account
                         </button>
@@ -585,111 +632,149 @@ export function AgusWorkspace({
                   </>
                 )}
               </section>
-              <section className={s.homeAsk} aria-label="Ask AGUS">
-                <div className={s.askTitle}>
-                  <MessageCircle size={19} strokeWidth={1.4} />
-                  <h2>Ask AGUS</h2>
-                  <span>What’s on your mind?</span>
-                </div>
-                <form
-                  className={s.homeComposer}
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (homeMessage.trim()) {
-                      startChat("", homeMessage.trim());
-                      setHomeMessage("");
-                    }
-                  }}
-                >
-                  <input
-                    aria-label="Ask AGUS"
-                    placeholder="Ask a question or describe a payment…"
-                    value={homeMessage}
-                    onChange={(e) => setHomeMessage(e.target.value)}
-                    maxLength={4000}
-                  />
-                  <button
-                    className={s.sendButton}
-                    aria-label="Start conversation"
-                    disabled={!homeMessage.trim()}
-                  >
-                    <ArrowUp size={20} />
-                  </button>
-                </form>
-                <div className={s.quickActions}>
-                  <button onClick={() => startChat("Send ")}>
-                    <ArrowUpRight size={17} />
-                    <span>Send money</span>
-                  </button>
-                  <button onClick={() => openInvoiceForm()}>
-                    <ArrowDownLeft size={17} />
-                    <span>Request payment</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPrivacyMode(true);
-                      startChat("Send privately ");
+              <div className={s.overviewGrid}>
+                <section className={s.homeAsk} aria-label="Ask AGUS">
+                  <div className={s.askTitle}>
+                    <Companion />
+                    <h2>AGUS</h2>
+                  </div>
+                  {paymentPlans.find(
+                    (plan) =>
+                      !["confirmed", "cancelled", "failed"].includes(
+                        plan.state,
+                      ),
+                  ) &&
+                    (() => {
+                      const plan = paymentPlans.find(
+                        (p) =>
+                          !["confirmed", "cancelled", "failed"].includes(
+                            p.state,
+                          ),
+                      )!;
+                      return (
+                        <div className={s.nextPayment}>
+                          <span className={s.pill}>
+                            {plan.state.replaceAll("_", " ")}
+                          </span>
+                          <h3>{plan.recipientLabel || "Payment draft"}</h3>
+                          <strong>
+                            {masked
+                              ? "••••••"
+                              : `${plan.amount ?? "—"} ${plan.asset ?? ""}`}
+                          </strong>
+                          <button
+                            className={s.primary}
+                            onClick={() => setSelectedPayment(plan)}
+                          >
+                            Review payment <ArrowRight size={16} />
+                          </button>
+                        </div>
+                      );
+                    })()}
+                  <form
+                    className={s.homeComposer}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (homeMessage.trim()) {
+                        startChat("", homeMessage.trim());
+                        setHomeMessage("");
+                      }
                     }}
                   >
-                    <ShieldCheck size={17} />
-                    <span>Private payment</span>
-                  </button>
-                </div>
-              </section>
-              {pending.length > 0 && (
-                <section className={s.pendingBar} aria-label="Pending payments">
-                  <Clock3 size={18} />
-                  <span>
-                    {pending.length}{" "}
-                    {pending.length === 1
-                      ? "payment request"
-                      : "payment requests"}{" "}
-                    awaiting payment
-                  </span>
-                  <button
-                    className={s.textButton}
-                    onClick={() => setSelected(pending[0].invoiceId)}
-                  >
-                    View <ArrowRight size={14} />
-                  </button>
+                    <input
+                      aria-label="Ask AGUS"
+                      placeholder="Ask a question or describe a payment…"
+                      value={homeMessage}
+                      onChange={(e) => setHomeMessage(e.target.value)}
+                      maxLength={4000}
+                    />
+                    <button
+                      className={s.sendButton}
+                      aria-label="Start conversation"
+                      disabled={!homeMessage.trim()}
+                    >
+                      <ArrowUp size={20} />
+                    </button>
+                  </form>
+                  <div className={s.quickActions}>
+                    <button onClick={() => startChat("Send ")}>
+                      <ArrowUpRight size={17} />
+                      <span>Send money</span>
+                    </button>
+                    <button onClick={() => openInvoiceForm()}>
+                      <ArrowDownLeft size={17} />
+                      <span>Request payment</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setPrivacyMode(true);
+                        startChat("Send privately ");
+                      }}
+                    >
+                      <ShieldCheck size={17} />
+                      <span>Private payment</span>
+                    </button>
+                  </div>
                 </section>
-              )}
-              <section className={s.homeObligations}>
-                <div className={s.sectionHead}>
-                  <h2>Obligations</h2>
-                  <button
-                    className={s.textButton}
-                    onClick={() => navigate("Obligations")}
+                {pending.length > 0 && (
+                  <section
+                    className={s.pendingBar}
+                    aria-label="Pending payments"
                   >
-                    View all <ArrowUpRight size={14} />
-                  </button>
-                </div>
-                {outstanding.length ? (
-                  outstanding
-                    .slice(0, 3)
-                    .map((item) => (
-                      <InvoiceRow
-                        key={item.id}
-                        invoice={item}
-                        masked={masked}
-                        onClick={() => setSelected(item.id)}
-                      />
-                    ))
-                ) : (
-                  <button
-                    className={s.addObligationRow}
-                    onClick={() => openInvoiceForm()}
-                  >
-                    <span className={s.activityIcon}>
-                      <Plus size={19} />
-                    </span>
+                    <Clock3 size={18} />
                     <span>
-                      Add an obligation<small>Keep track of what’s owed.</small>
+                      {pending.length}{" "}
+                      {pending.length === 1
+                        ? "payment request"
+                        : "payment requests"}{" "}
+                      awaiting payment
                     </span>
-                    <ChevronRight size={16} />
-                  </button>
+                    <button
+                      className={s.textButton}
+                      onClick={() => setSelected(pending[0].invoiceId)}
+                    >
+                      View <ArrowRight size={14} />
+                    </button>
+                  </section>
                 )}
-              </section>
+                <section className={s.homeObligations}>
+                  <div className={s.sectionHead}>
+                    <h2>Upcoming</h2>
+                    <button
+                      className={s.textButton}
+                      onClick={() => navigate("Obligations")}
+                    >
+                      View all <ArrowUpRight size={14} />
+                    </button>
+                  </div>
+                  {outstanding.length ? (
+                    outstanding
+                      .slice(0, 3)
+                      .map((item) => (
+                        <InvoiceRow
+                          key={item.id}
+                          invoice={item}
+                          masked={masked}
+                          onClick={() => setSelected(item.id)}
+                        />
+                      ))
+                  ) : (
+                    <button
+                      className={s.addObligationRow}
+                      onClick={() => openInvoiceForm()}
+                    >
+                      <span className={s.activityIcon}>
+                        <Plus size={19} />
+                      </span>
+                      <span>
+                        Add an obligation
+                        <small>Keep track of what’s owed.</small>
+                      </span>
+                      <ChevronRight size={16} />
+                    </button>
+                  )}
+                </section>
+              </div>
             </>
           )}
           {tab === "Obligations" && (
@@ -753,7 +838,7 @@ export function AgusWorkspace({
                     onClick={() => setFilter(key)}
                     aria-pressed={filter === key}
                   >
-                    {label}
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
@@ -868,13 +953,13 @@ export function AgusWorkspace({
           {tab === "Accounts" && (
             <>
               <PageHeading
-                title="Accounts"
+                title="Accounts & wallets"
                 action={
                   <button
                     className={s.primary}
-                    onClick={() => setModal("import")}
+                    onClick={() => setModal("account")}
                   >
-                    <Plus size={16} /> Import statement
+                    <Plus size={16} /> Add account
                   </button>
                 }
               />
@@ -941,33 +1026,45 @@ export function AgusWorkspace({
                 )}
               </section>
               <div className={s.twoColumns}>
-                <PollarWallet config={snapshot.capabilities.pollar} />
-                <section className={s.walletPanel}>
+                <div
+                  id="agus-pollar-wallet"
+                  role="region"
+                  aria-label="Pollar wallet"
+                  className={s.walletDestination}
+                  tabIndex={-1}
+                >
+                  <PollarWallet config={snapshot.capabilities.pollar} />
+                </div>
+                <section
+                  className={s.walletPanel}
+                  id="agus-zcash-wallet"
+                  aria-label="Zcash receiving"
+                  tabIndex={-1}
+                >
                   <div className={s.sectionHead}>
                     <span className={s.railTitle}>
-                      <ShieldCheck size={19} /> Zcash privacy
+                      <ShieldCheck size={19} /> Zcash
                     </span>
                     <span className={s.pill}>Testnet</span>
                   </div>
                   <p className={s.muted}>Receive ZEC at a shielded address.</p>
                   <div className={s.notice}>
                     {snapshot.capabilities.zcash.verificationConfigured
-                      ? "Receiving wallet connected. Payments need 3 confirmations."
-                      : "Requests available. Receiving wallet needed to verify payment."}
+                      ? "Receiving verification configured · 3 confirmations required."
+                      : "Receiving requests available. Wallet verification is not configured."}
                   </div>
                   <button
                     className={s.secondary}
-                    onClick={() => {
-                      navigate("Obligations");
-                      notify(
-                        "Create a ZEC receivable to prepare your Zcash request.",
-                      );
-                    }}
+                    onClick={() => openInvoiceForm(false, "ZEC")}
                   >
-                    Create a ZEC invoice <ArrowUpRight size={15} />
+                    Create a ZEC request <ArrowUpRight size={15} />
+                  </button>
+                  <button className={s.secondary} disabled>
+                    <LockKeyhole size={14} /> Send ZEC · unavailable
                   </button>
                   <p className={s.fine}>
-                    Never share wallet recovery phrases or viewing keys.
+                    No sender adapter is connected. Receiving requests do not
+                    authorize sending.
                   </p>
                 </section>
               </div>
@@ -1163,7 +1260,7 @@ export function AgusWorkspace({
                     "Personal agent",
                     snapshot.capabilities.ai.configured
                       ? `${snapshot.capabilities.ai.provider} configured · calls can fail`
-                      : "Model not configured",
+                      : `Unavailable · ${snapshot.capabilities.ai.unavailableReason ?? "Check server configuration"}`,
                   ],
                   ["Mainnet payments", "Disabled in this workspace"],
                 ].map(([label, status]) => (
@@ -1217,15 +1314,33 @@ export function AgusWorkspace({
           )}
         </main>
       </div>
+      {tab !== "Assistant" && (
+        <button
+          className={s.companionDock}
+          onClick={() => startChat()}
+          aria-label="Open AGUS"
+        >
+          <Companion
+            state={privacyMode ? "privacy" : busy ? "analyzing" : "idle"}
+          />
+          <span>Ask AGUS</span>
+          <ArrowRight size={16} />
+        </button>
+      )}
       <nav className={s.mobileNav} aria-label="Mobile navigation">
         {navigation.map(({ name, label, icon: Icon }) => (
           <button
             key={name}
             onClick={() => navigate(name)}
-            className={tab === name ? s.mobileActive : ""}
+            className={`${tab === name ? s.mobileActive : ""} ${name === "Assistant" ? s.mobileAgent : ""}`}
+            aria-label={label}
             aria-current={tab === name ? "page" : undefined}
           >
-            <Icon size={20} strokeWidth={1.6} />
+            {name === "Assistant" ? (
+              <Companion state={privacyMode ? "privacy" : "idle"} />
+            ) : (
+              <Icon size={20} strokeWidth={1.6} />
+            )}
             <span>{name === "Assistant" ? "AGUS" : label}</span>
           </button>
         ))}
@@ -1289,6 +1404,43 @@ export function AgusWorkspace({
           </div>
         </Dialog>
       )}
+      {modal === "account" && (
+        <Dialog title="Add account" close={() => setModal(null)}>
+          <div className={s.accountChoices}>
+            <button onClick={() => showWallet("pollar")}>
+              <Wallet size={22} />
+              <span>
+                <strong>Connect crypto wallet</strong>
+                <small>Pollar · Stellar testnet</small>
+              </span>
+              <ArrowUpRight size={18} />
+            </button>
+            <button onClick={() => setModal("import")}>
+              <FileText size={22} />
+              <span>
+                <strong>Import bank statement</strong>
+                <small>CSV · Historical records</small>
+              </span>
+              <ArrowRight size={18} />
+            </button>
+            <button disabled>
+              <LockKeyhole size={22} />
+              <span>
+                <strong>Link Nigerian bank</strong>
+                <small>Coming soon · No live bank connection</small>
+              </span>
+            </button>
+            <button onClick={() => showWallet("zcash")}>
+              <ShieldCheck size={22} />
+              <span>
+                <strong>Zcash receiving options</strong>
+                <small>Testnet requests · No wallet import</small>
+              </span>
+              <ArrowUpRight size={18} />
+            </button>
+          </div>
+        </Dialog>
+      )}
       {modal === "invoice" && (
         <Dialog
           title={sample ? "Try a sample invoice" : "New obligation"}
@@ -1297,6 +1449,7 @@ export function AgusWorkspace({
         >
           <InvoiceForm
             sample={sample}
+            initialCurrency={invoiceCurrency}
             onSave={async (input) => {
               const saved = await productApi<Invoice>(
                 "product/invoices",
@@ -1551,12 +1704,14 @@ function SignIn({ onSuccess }: { onSuccess: () => Promise<void> }) {
 
 function InvoiceForm({
   sample,
+  initialCurrency = "USDC",
   onSave,
 }: {
   sample: boolean;
+  initialCurrency?: InvoiceInput["currency"];
   onSave: (input: InvoiceInput) => Promise<void>;
 }) {
-  const [currency, setCurrency] = useState("USDC");
+  const [currency, setCurrency] = useState<string>(initialCurrency);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const requestId = useRef<string | null>(null);
@@ -2446,16 +2601,149 @@ function Assistant({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [messages, setMessages] = useState<
-    { role: string; text: string; source?: string; id?: string }[]
+    {
+      role: string;
+      text: string;
+      source?: string;
+      id?: string;
+      planId?: string;
+    }[]
   >([]);
   const [plans, setPlans] = useState<PaymentPlan[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<PaymentPlan>();
   const conversation = useRef<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
+  const [savedChats, setSavedChats] = useState<SavedChat[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(!privacyMode);
+  const [historyError, setHistoryError] = useState("");
+  const inFlight = useRef(false);
+  const activeChatKey = `agus.activeConversation:${snapshot.owner}`;
+  const rememberChat = useCallback(
+    (id: string | null) => {
+      try {
+        if (id) sessionStorage.setItem(activeChatKey, id);
+        else sessionStorage.removeItem(activeChatKey);
+      } catch {
+        /* SQL history remains available when browser storage is disabled. */
+      }
+    },
+    [activeChatKey],
+  );
+  const showTurns = useCallback((id: string, turns: SavedTurn[]) => {
+    conversation.current = id;
+    setMessages(
+      turns.flatMap((turn) => [
+        { role: "user", text: turn.text },
+        {
+          role: "assistant",
+          text: turn.reply.text,
+          source: "Saved conversation",
+          id,
+          planId: turn.reply.digitalPaymentPlanId,
+        },
+      ]),
+    );
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    if (privacyMode) {
+      conversation.current = null;
+      setMessages([]);
+      setHistoryOpen(false);
+      setHistoryLoading(false);
+      setHistoryError("");
+      return;
+    }
+    setHistoryLoading(true);
+    setHistoryError("");
+    void (async () => {
+      try {
+        const list = await productApi<{ chats: SavedChat[] }>("conversations");
+        if (!alive) return;
+        setSavedChats(list.chats);
+        let active: string | null = null;
+        try {
+          active = sessionStorage.getItem(activeChatKey);
+        } catch {
+          /* list still works */
+        }
+        if (active && list.chats.some((chat) => chat.id === active)) {
+          const stored = await productApi<{
+            turns: SavedTurn[];
+            inProgress: boolean;
+          }>(`conversations?id=${encodeURIComponent(active)}`);
+          if (!alive) return;
+          showTurns(active, stored.turns);
+          if (stored.inProgress)
+            setHistoryError(
+              "A saved response is still in progress. Reopen this conversation shortly.",
+            );
+        }
+      } catch {
+        if (alive)
+          setHistoryError(
+            "Conversations could not be loaded. Retry from the history menu.",
+          );
+      } finally {
+        if (alive) setHistoryLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [privacyMode, activeChatKey, showTurns]);
+  async function openHistory() {
+    setHistoryOpen(true);
+    setHistoryError("");
+    try {
+      const result = await productApi<{ chats: SavedChat[] }>("conversations");
+      setSavedChats(result.chats);
+    } catch {
+      setHistoryError("Conversations could not be loaded. Try again.");
+    }
+  }
+  async function selectChat(id: string) {
+    if (busy || inFlight.current || historyLoading) return;
+    setHistoryLoading(true);
+    setHistoryError("");
+    try {
+      const stored = await productApi<{
+        turns: SavedTurn[];
+        inProgress: boolean;
+      }>(`conversations?id=${encodeURIComponent(id)}`);
+      showTurns(id, stored.turns);
+      rememberChat(id);
+      setHistoryOpen(false);
+      setQuestion("");
+      setError("");
+      if (stored.inProgress)
+        setHistoryError(
+          "A saved response is still in progress. Reopen this conversation shortly.",
+        );
+    } catch {
+      setHistoryError(
+        "This conversation could not be opened. Your current conversation is unchanged.",
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+  function newChat() {
+    if (busy || historyLoading) return;
+    conversation.current = null;
+    rememberChat(null);
+    setMessages([]);
+    setQuestion("");
+    setError("");
+    setHistoryOpen(false);
+    composer.current?.focus();
+  }
   const mode = useRef(privacyMode);
   useEffect(() => {
     if (mode.current !== privacyMode) {
-      if (!privacyMode) conversation.current = null;
+      conversation.current = null;
+      setMessages([]);
       mode.current = privacyMode;
     }
   }, [privacyMode]);
@@ -2476,7 +2764,12 @@ function Assistant({
     };
   }, [snapshot.asOf]);
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    end.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+      block: "nearest",
+    });
   }, [messages, busy]);
   async function guidance() {
     if (busy) return;
@@ -2504,10 +2797,12 @@ function Assistant({
   }
   const ask = useCallback(
     async (text: string) => {
-      if (!text.trim() || busy) return;
+      if (!text.trim() || busy || inFlight.current || historyLoading) return;
+      inFlight.current = true;
       setBusy(true);
       setError("");
       conversation.current ??= crypto.randomUUID();
+      if (!privacyMode) rememberChat(conversation.current);
       setMessages((m) => [...m, { role: "user", text }]);
       setQuestion("");
       try {
@@ -2533,13 +2828,14 @@ function Assistant({
                   : plan.state === "blocked"
                     ? "This payment isn’t available yet. See the review for details."
                     : "Review your payment details to continue.",
+              planId: plan.id,
             },
           ]);
           return;
         }
         if (!snapshot.capabilities.ai.configured)
           throw new Error(
-            "Chat is unavailable. You can still prepare a payment or view your financial summary.",
+            "Gemini chat is not configured. Check the server connection in Settings; payment preparation and statement summaries remain available.",
           );
         const result = await productApi<{ reply: AgentReply }>("conversation", {
           conversationId: conversation.current,
@@ -2553,7 +2849,8 @@ function Assistant({
           {
             role: "assistant",
             text: result.reply.text,
-            source: `${snapshot.capabilities.ai.provider} · ${result.reply.execution?.steps.filter((step) => step.state === "succeeded").length ?? 0} completed tool steps`,
+            source: snapshot.capabilities.ai.provider,
+            planId: result.reply.digitalPaymentPlanId,
             id: conversation.current!,
           },
         ]);
@@ -2564,38 +2861,122 @@ function Assistant({
           setSelectedPlan(plan);
           if (plan.privacy) setPrivacyMode(true);
         }
+        if (!privacyMode)
+          void productApi<{ chats: SavedChat[] }>("conversations")
+            .then((result) => setSavedChats(result.chats))
+            .catch(() =>
+              setHistoryError(
+                "Your reply is saved. Conversation navigation could not refresh.",
+              ),
+            );
         await refresh();
       } catch (e) {
         setError(
           e instanceof Error
             ? e.message
-            : "The model could not respond. Your saved records are unchanged.",
+            : "AGUS could not respond. Your message is preserved.",
         );
         setQuestion(text);
       } finally {
+        inFlight.current = false;
         setBusy(false);
       }
     },
-    [busy, privacyMode, refresh, setPrivacyMode, snapshot.capabilities.ai],
+    [
+      busy,
+      historyLoading,
+      privacyMode,
+      refresh,
+      setPrivacyMode,
+      snapshot.capabilities.ai,
+      rememberChat,
+    ],
   );
   useEffect(() => {
-    if (!launch || launched.current === launch.id || busy) return;
+    if (!launch || launched.current === launch.id || busy || historyLoading)
+      return;
     launched.current = launch.id;
     if (launch.text) void ask(launch.text);
     else {
       setQuestion(launch.draft ?? "");
       composer.current?.focus();
     }
-  }, [launch, busy, ask]);
+  }, [launch, busy, historyLoading, ask]);
   return (
     <div className={s.assistantPage}>
-      <PageHeading title="Ask AGUS" />
+      <PageHeading
+        title="AGUS"
+        action={
+          <div className={s.historyActions}>
+            <button
+              className={s.textButton}
+              onClick={newChat}
+              disabled={busy || historyLoading}
+            >
+              <Plus size={16} /> New conversation
+            </button>
+            <button
+              className={s.iconButton}
+              onClick={() => void openHistory()}
+              disabled={privacyMode || busy || historyLoading}
+              aria-label="Saved conversations"
+            >
+              <History size={20} />
+            </button>
+          </div>
+        }
+      />
+      {historyError && (
+        <p className={s.error} role="status">
+          {historyError}
+        </p>
+      )}
+      {historyLoading && (
+        <p className={s.fine} role="status">
+          Loading conversations…
+        </p>
+      )}
+      {historyOpen && (
+        <Dialog title="Conversations" close={() => setHistoryOpen(false)}>
+          <button
+            className={s.secondary}
+            onClick={newChat}
+            disabled={busy || historyLoading}
+          >
+            <Plus size={16} /> New conversation
+          </button>
+          {historyError && (
+            <p className={s.error} role="alert">
+              {historyError}
+            </p>
+          )}
+          {!savedChats.length && !historyError && (
+            <p className={s.muted}>No saved conversations yet.</p>
+          )}
+          <div className={s.historyList}>
+            {savedChats.map((chat) => (
+              <button
+                key={chat.id}
+                onClick={() => void selectChat(chat.id)}
+                disabled={historyLoading || busy}
+                aria-current={
+                  conversation.current === chat.id ? "true" : undefined
+                }
+              >
+                <span>{chat.title || "Conversation"}</span>
+                <small>{date(chat.updatedAt)}</small>
+                <ArrowUpRight size={15} />
+              </button>
+            ))}
+          </div>
+        </Dialog>
+      )}
       <section className={s.assistantPanel}>
         <div className={s.chatScroll}>
-          {!messages.length && (
+          {!messages.length && !historyLoading && (
             <div className={s.assistantWelcome}>
-              <Companion large />
-              <h2>What’s on your mind?</h2>
+              <Companion />
+              <h2>New conversation</h2>
 
               <div className={s.promptGrid}>
                 <button onClick={() => void guidance()}>
@@ -2618,7 +2999,7 @@ function Assistant({
               </div>
             </div>
           )}
-          {!messages.length && (
+          {!messages.length && !historyLoading && (
             <div className={s.paymentExamples}>
               <button
                 onClick={() => {
@@ -2671,42 +3052,49 @@ function Assistant({
               </div>
             </div>
           ))}
-          {!!plans.length && (
+          {!!plans.filter((plan) =>
+            messages.some((message) => message.planId === plan.id),
+          ).length && (
             <div className={s.savedPlans}>
               <p className={s.eyebrow}>PAYMENTS</p>
-              {plans.slice(0, 8).map((plan) => (
-                <button
-                  className={s.paymentCard}
-                  key={plan.id}
-                  onClick={() => setSelectedPlan(plan)}
-                >
-                  <span className={s.activityIcon}>
-                    {plan.privacy ? (
-                      <ShieldCheck size={18} />
-                    ) : (
-                      <ArrowUpRight size={18} />
-                    )}
-                  </span>
-                  <span>
-                    <strong>
-                      {plan.amount ?? "Amount needed"} {plan.asset ?? ""} ·{" "}
-                      {plan.recipientLabel || "Recipient needed"}
-                    </strong>
-                    <small>
-                      {plan.privacy ? "Private" : "Standard"} ·{" "}
-                      {plan.state.replaceAll("_", " ")} · testnet
-                    </small>
-                  </span>
-                  <ChevronRight size={16} />
-                </button>
-              ))}
+              {plans
+                .filter((plan) =>
+                  messages.some((message) => message.planId === plan.id),
+                )
+                .slice(0, 8)
+                .map((plan) => (
+                  <button
+                    className={s.paymentCard}
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan)}
+                  >
+                    <span className={s.activityIcon}>
+                      {plan.privacy ? (
+                        <ShieldCheck size={18} />
+                      ) : (
+                        <ArrowUpRight size={18} />
+                      )}
+                    </span>
+                    <span>
+                      <strong>
+                        {plan.amount ?? "Amount needed"} {plan.asset ?? ""} ·{" "}
+                        {plan.recipientLabel || "Recipient needed"}
+                      </strong>
+                      <small>
+                        {plan.privacy ? "Private" : "Standard"} ·{" "}
+                        {plan.state.replaceAll("_", " ")} · testnet
+                      </small>
+                    </span>
+                    <ChevronRight size={16} />
+                  </button>
+                ))}
             </div>
           )}
           {busy && (
             <div className={s.thinking} role="status">
-              <Companion />
+              <Companion state="thinking" />
               <Loader2 className={s.spin} size={15} />
-              <span>Reading the context…</span>
+              <span>Thinking…</span>
             </div>
           )}
           <div ref={end} />
@@ -2724,6 +3112,9 @@ function Assistant({
             void ask(question);
           }}
         >
+          <Companion
+            state={privacyMode ? "privacy" : busy ? "thinking" : "idle"}
+          />
           <textarea
             ref={composer}
             aria-label="Message AGUS"
@@ -2733,7 +3124,12 @@ function Assistant({
             onChange={(e) => setQuestion(e.target.value)}
             maxLength={4000}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing &&
+                window.matchMedia("(pointer: fine)").matches
+              ) {
                 e.preventDefault();
                 void ask(question);
               }
@@ -2743,7 +3139,7 @@ function Assistant({
             type="submit"
             className={s.sendButton}
             aria-label="Send message"
-            disabled={busy || !question.trim()}
+            disabled={busy || historyLoading || !question.trim()}
           >
             <ArrowUp size={19} />
           </button>

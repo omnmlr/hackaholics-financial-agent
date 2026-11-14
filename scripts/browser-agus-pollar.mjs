@@ -1,7 +1,8 @@
-/* global URL */
+/* global URL, document, window */
 // Actual official SDK + browser/API/SQL. All provider/network HTTP is MOCKED.
 // No genuine credentials, signing keys, blockchain submissions or balances.
 import { chromium } from "playwright";
+import AxeBuilder from "@axe-core/playwright";
 import { spawn } from "node:child_process";
 import { randomBytes, randomUUID, scryptSync } from "node:crypto";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
@@ -18,7 +19,9 @@ import {
 } from "@stellar/stellar-base";
 import assert from "node:assert/strict";
 const dir = await mkdtemp(join(tmpdir(), "agus-pollar-browser-"));
-const evidence = join(process.cwd(), "docs/agus2-web/acceptance");
+const evidence =
+  process.env.AGUS_WEB_EVIDENCE_DIR ??
+  join(process.cwd(), "docs/agus2-web/acceptance");
 await mkdir(evidence, { recursive: true });
 const fixtureFile = join(dir, "network.json");
 await writeFile(fixtureFile, "{}");
@@ -82,7 +85,9 @@ try {
         ready = true;
         break;
       }
-    } catch { /* production server is starting */ }
+    } catch {
+      /* production server is starting */
+    }
     await new Promise((r) => setTimeout(r, 200));
   }
   assert.ok(ready, output);
@@ -263,9 +268,7 @@ try {
   assert.equal(invoice.status(), 201);
   const savedInvoice = await invoice.json();
   await page.reload();
-  await page
-    .getByRole("heading", { name: "Your money", exact: true })
-    .waitFor();
+  await page.getByRole("heading", { name: "Overview", exact: true }).waitFor();
   await page
     .getByRole("textbox", { name: "Ask AGUS", exact: true })
     .fill("Send Example recipient 10 USDC");
@@ -302,6 +305,40 @@ try {
   await dialog
     .getByRole("button", { name: "Approve exact test payment" })
     .waitFor();
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1050 : 900 });
+    const sourceLabel = dialog.locator("p").filter({ hasText: source });
+    assert.ok(
+      await sourceLabel.evaluate(
+        (element) => element.scrollWidth <= element.clientWidth,
+      ),
+      `Full source address wraps at ${width}px`,
+    );
+    const audit = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+      .analyze();
+    assert.deepEqual(
+      audit.violations.map((item) => ({
+        id: item.id,
+        impact: item.impact,
+        targets: item.nodes.map((node) => node.target),
+      })),
+      [],
+      `Approval accessibility at ${width}px`,
+    );
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > window.innerWidth,
+      ),
+      false,
+      `Payment review fits ${width}px`,
+    );
+    await page.screenshot({
+      path: join(evidence, `${width}-mocked-pollar-review.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1050 });
   await dialog.getByRole("checkbox", { name: /I approve 10/ }).check();
   await dialog
     .getByLabel("Re-enter operator password", { exact: true })
@@ -317,6 +354,20 @@ try {
   await dialog
     .getByRole("button", { name: "Approve exact test payment" })
     .click();
+  await dialog
+    .getByRole("button", { name: "Sign & send approved test payment" })
+    .waitFor();
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: width === 1440 ? 1050 : 900 });
+    await dialog
+      .getByRole("button", { name: "Sign & send approved test payment" })
+      .scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: join(evidence, `${width}-mocked-pollar-authorized.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 1050 });
   await dialog
     .getByRole("button", { name: "Sign & send approved test payment" })
     .click();
@@ -369,6 +420,36 @@ try {
     path: join(evidence, "1440-mocked-pollar-approved-confirmed.png"),
     fullPage: true,
   });
+  await dialog
+    .getByRole("button", { name: "Close dialog", exact: true })
+    .click();
+  await page
+    .getByRole("complementary", { name: "Main navigation" })
+    .getByRole("button", { name: "Money", exact: true })
+    .click();
+  const moneyWallet = page.locator("#agus-pollar-wallet");
+  await moneyWallet
+    .getByRole("button", { name: "Connect with Pollar", exact: true })
+    .click();
+  await moneyWallet
+    .getByLabel("Your email", { exact: true })
+    .fill("fictional@example.test");
+  await moneyWallet
+    .getByRole("button", { name: "Continue with email", exact: true })
+    .click();
+  await moneyWallet.getByLabel("Email verification code").fill("123456");
+  await moneyWallet
+    .getByRole("button", { name: "Verify Pollar code", exact: true })
+    .click();
+  await moneyWallet.getByText("Active on testnet", { exact: true }).waitFor();
+  await moneyWallet
+    .getByRole("button", { name: "Read wallet balances", exact: true })
+    .click();
+  await moneyWallet.getByText("50.0000000", { exact: true }).waitFor();
+  await page.screenshot({
+    path: join(evidence, "1440-mocked-pollar-money.png"),
+    fullPage: true,
+  });
   const result = {
     classification:
       "MOCKED provider and Horizon HTTP; real official SDK/browser/API/SQL; no real funds or settlement",
@@ -379,6 +460,7 @@ try {
     nonceReplayStatus: replay.status(),
     providerSuccessWithoutHorizonRemainedPending: true,
     linkedObligationSettledOnlyAfterMockedNetworkEvidence: true,
+    moneyWalletConnectionAndBalanceRead: true,
     paths,
     jsErrors: errors,
   };

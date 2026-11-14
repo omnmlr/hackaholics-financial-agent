@@ -11,7 +11,9 @@ import { join } from "node:path";
 import { base32, bech32 } from "@scure/base";
 import assert from "node:assert/strict";
 const directory = await mkdtemp(join(tmpdir(), "agus-web-browser-"));
-const evidence = join(process.cwd(), "docs/agus2-web/acceptance");
+const evidence =
+  process.env.AGUS_WEB_EVIDENCE_DIR ??
+  join(process.cwd(), "docs/agus2-web/acceptance");
 await mkdir(evidence, { recursive: true });
 const fixtureFile = join(directory, "transport.json");
 await writeFile(fixtureFile, "{}");
@@ -152,7 +154,7 @@ try {
     await page.getByLabel("Operator password", { exact: true }).fill(password);
     await page.getByRole("button", { name: "Sign in securely" }).click();
     await page
-      .getByRole("heading", { name: "Your money", exact: true })
+      .getByRole("heading", { name: "Overview", exact: true })
       .waitFor();
     if (width === 1440) {
       const onboarding = page.getByRole("dialog", { name: "Welcome to AGUS" });
@@ -166,7 +168,7 @@ try {
       await onboarding.waitFor({ state: "hidden" });
       await page.reload();
       await page
-        .getByRole("heading", { name: "Your money", exact: true })
+        .getByRole("heading", { name: "Overview", exact: true })
         .waitFor();
       assert.equal(
         await onboarding.count(),
@@ -183,6 +185,63 @@ try {
       );
       await nav("Home").click();
     }
+    // First-use actions must state exactly what they add.
+    await nav("Money").click();
+    await page
+      .getByRole("button", { name: "Add account", exact: true })
+      .click();
+    let picker = page.getByRole("dialog", { name: "Add account", exact: true });
+    assert.ok(
+      await picker
+        .getByRole("button", { name: /Link Nigerian bank/ })
+        .isDisabled(),
+    );
+    await picker.getByRole("button", { name: /Connect crypto wallet/ }).click();
+    await page
+      .getByRole("heading", { name: "Accounts & wallets", exact: true })
+      .waitFor();
+    assert.ok(await page.locator("#agus-pollar-wallet").isVisible());
+    await page
+      .getByRole("button", { name: "Add account", exact: true })
+      .click();
+    picker = page.getByRole("dialog", { name: "Add account", exact: true });
+    await picker.getByRole("button", { name: /Import bank statement/ }).click();
+    assert.ok(
+      await page
+        .getByRole("dialog", { name: "Import statement", exact: true })
+        .getByLabel("CSV statement")
+        .isVisible(),
+    );
+    await page.getByRole("button", { name: "Close dialog" }).click();
+    await page
+      .getByRole("button", { name: "Add account", exact: true })
+      .click();
+    await page
+      .getByRole("dialog", { name: "Add account", exact: true })
+      .getByRole("button", { name: /Zcash receiving options/ })
+      .click();
+    assert.ok(
+      await page
+        .getByRole("button", { name: /Send ZEC · unavailable/ })
+        .isDisabled(),
+    );
+    await page.getByRole("button", { name: /Create a ZEC request/ }).click();
+    assert.equal(
+      await page
+        .getByRole("dialog")
+        .getByLabel("Asset", { exact: true })
+        .inputValue(),
+      "ZEC",
+    );
+    assert.equal(
+      await page
+        .getByRole("dialog")
+        .getByLabel("Direction", { exact: true })
+        .inputValue(),
+      "receivable",
+    );
+    await page.getByRole("button", { name: "Close dialog" }).click();
+    await nav("Home").click();
     await fit();
     await audit("overview");
     await page
@@ -288,10 +347,14 @@ try {
       });
     }
     await dialog.getByRole("button", { name: "Close dialog" }).click();
-    await nav("Accounts").click();
+    await nav("Money").click();
     if (width === 1440) {
       await page
-        .getByRole("button", { name: "Import statement", exact: true })
+        .getByRole("button", { name: "Add account", exact: true })
+        .click();
+      await page
+        .getByRole("dialog", { name: "Add account", exact: true })
+        .getByRole("button", { name: /Import bank statement/ })
         .click();
       await dialog
         .getByLabel("Account label")
@@ -314,7 +377,7 @@ try {
       fullPage: true,
     });
     await audit("accounts");
-    await nav(width < 700 ? "AGUS" : "Ask AGUS").click();
+    await nav("AGUS").click();
     await page.getByRole("button", { name: "My financial summary" }).click();
     await page
       .getByText(/combined balance anchored to your imported Naira statements/)
@@ -381,11 +444,23 @@ try {
           .getAttribute("aria-pressed"),
         "true",
       );
-      const eyesClosed = await page
-        .locator('[aria-label="AGUS companion"] > span')
-        .first()
-        .evaluate((eye) => getComputedStyle(eye).height);
-      assert.equal(eyesClosed, "2px");
+      const privacyCompanion = page
+        .getByRole("img", { name: "AGUS privacy", exact: true })
+        .first();
+      assert.equal(
+        await privacyCompanion
+          .locator("g > g")
+          .nth(0)
+          .evaluate((eyes) => getComputedStyle(eyes).display),
+        "none",
+      );
+      assert.equal(
+        await privacyCompanion
+          .locator("g > g")
+          .nth(1)
+          .evaluate((eyes) => getComputedStyle(eyes).display),
+        "block",
+      );
       await dialog
         .getByRole("textbox", { name: "Exact recipient address", exact: true })
         .fill(zaddr);

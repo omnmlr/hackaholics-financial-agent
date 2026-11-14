@@ -7,11 +7,11 @@ Your money, and what's next.
 | What you need | Details |
 | --- | --- |
 | **Open the live app** | **https://agusweb.up.railway.app** |
-| **Password** | **`abcdefghijklmn`** |
+| **Password** | **Provided privately by the project owner** |
 | **Username / email** | **Not required for the AGUS login** |
 
 1. Open **https://agusweb.up.railway.app**.
-2. Enter **`abcdefghijklmn`** in **Operator password**.
+2. Ask the project owner for the shared demo password privately, then enter it in **Operator password**.
 3. Click **Sign in securely**.
 
 **No installation, sign-up or wallet connection is required to explore the app.** This is the shared hackathon demo login for organizers and judges. Payments are Testnet/demo only.
@@ -29,7 +29,7 @@ Transaction: `f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082`
 
 The native wallet is durable and isolated; viewing/spending credentials stay outside the browser and Gemini. Outgoing ZEC remains disabled. The original synthetic sender is not used. Pollar's official SDK returns200 for the current origin / Pollux / Testnet; owner authentication and exact approval remain necessary for a real Pollar transfer. Mainnet execution is disabled. Legacy Paystack remains in fixture mode.
 
-See the [native wallet boundary](services/zcash-receiving/README.md), [outgoing-signer assessment](docs/zcash-native/OUTGOING-ASSESSMENT.md) and [prior full release acceptance](docs/release-pass/README.md). The shared demo login is published above for judging. Infrastructure secrets and wallet keys are not published in this repository.
+See the [native wallet boundary](services/zcash-receiving/README.md), [outgoing-signer assessment](docs/zcash-native/OUTGOING-ASSESSMENT.md) and [prior full release acceptance](docs/release-pass/README.md). Organizer login instructions are published above. The working password is shared privately; infrastructure secrets and wallet keys are not published in this repository.
 
 ## Historical engineering checkpoints
 

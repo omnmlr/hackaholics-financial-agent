@@ -33,6 +33,13 @@ export type VerificationEvidence = {
   confirmations?: number;
   ledger?: number;
   memo: string;
+  walletReceipt?: import("../zcash/receiving-wallet").NativeBinding & {
+    matching: "unique-wallet-address";
+    pool: 3 | 4;
+    outputIndex: number;
+    chainTip: number;
+    minedHeight: number;
+  };
 };
 export type PaymentRequest = {
   id: string;
@@ -49,6 +56,7 @@ export type PaymentRequest = {
   createdAt: string;
   expiresAt: string;
   state: "pending" | "confirmed" | "expired" | "cancelled";
+  nativeWallet?: import("../zcash/receiving-wallet").NativeBinding;
   candidateTransactionId?: string;
   lastCheckedAt?: string;
   lastCheck?: string;
@@ -131,6 +139,7 @@ export type ProductSnapshot = {
       network: "testnet";
     };
     zcash: {
+      managedReceivingConfigured?: boolean;
       verificationConfigured: boolean;
       receivingAddress: string | null;
       network: "testnet";

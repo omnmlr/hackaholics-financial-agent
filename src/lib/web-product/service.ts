@@ -314,6 +314,23 @@ export async function recordSettlement(
     const request = currentRequest(rows.rows[0].payload);
     const invoice = await invoiceRow(sql, owner, request.invoiceId, true);
     if (request.state === "confirmed") return request;
+    if (
+      request.nativeWallet &&
+      (!evidence.walletReceipt ||
+        evidence.walletReceipt.invoiceKey !== request.nativeWallet.invoiceKey ||
+        evidence.walletReceipt.termsDigest !==
+          request.nativeWallet.termsDigest ||
+        evidence.walletReceipt.walletId !== request.nativeWallet.walletId ||
+        evidence.walletReceipt.walletRequestId !==
+          request.nativeWallet.walletRequestId ||
+        evidence.walletReceipt.matching !== "unique-wallet-address" ||
+        (evidence.confirmations ?? 0) < 3 ||
+        evidence.asset !== "ZEC")
+    )
+      throw new AppError(
+        "Managed wallet evidence does not match the invoice binding",
+        409,
+      );
     if (request.state !== "pending" || invoice.state !== "open")
       throw new AppError(
         "This request is no longer open. Review late payments separately.",
@@ -690,6 +707,9 @@ export async function productSnapshot(owner: string): Promise<ProductSnapshot> {
     capabilities: {
       pollar: pollarConfiguration(),
       zcash: {
+        managedReceivingConfigured:
+          !!process.env.ZCASH_RECEIVE_SERVICE_URL &&
+          !!process.env.ZCASH_RECEIVE_TOKEN,
         verificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
         receivingAddress: process.env.ZCASH_TESTNET_RECEIVING_ADDRESS ?? null,
         network: "testnet",

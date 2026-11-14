@@ -1091,11 +1091,17 @@ export function AgusWorkspace({
                   <p className={s.muted}>
                     Receive ZEC · Unified / Orchard or Sapling Testnet.
                   </p>
-                  <ZcashNetwork />
+                  <ZcashNetwork
+                    managed={
+                      snapshot.capabilities.zcash.managedReceivingConfigured
+                    }
+                  />
                   <div className={s.notice}>
-                    {snapshot.capabilities.zcash.verificationConfigured
-                      ? "Receiving verification configured · 3 confirmations required."
-                      : "Receiving requests available. Wallet verification is not configured."}
+                    {snapshot.capabilities.zcash.managedReceivingConfigured
+                      ? "Native receiving wallet · automatic receipt checks · 3 confirmations."
+                      : snapshot.capabilities.zcash.verificationConfigured
+                        ? "Receiving verification configured · 3 confirmations required."
+                        : "Receiving requests available. Wallet verification is not configured."}
                   </div>
                   <button
                     className={s.secondary}
@@ -1217,6 +1223,7 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
+              onOpenZcashInvoice={(id) => setSelected(id)}
               onReceiveZcash={() => {
                 setPrivacyMode(true);
                 openInvoiceForm(false, "ZEC");
@@ -1492,6 +1499,7 @@ export function AgusWorkspace({
               refresh={refresh}
               privacyMode={privacyMode}
               setPrivacyMode={setPrivacyMode}
+              onOpenZcashInvoice={(id) => setSelected(id)}
               onReceiveZcash={() => {
                 setContextOpen(false);
                 setPrivacyMode(true);
@@ -1607,10 +1615,15 @@ export function AgusWorkspace({
             sample={sample}
             initialCurrency={invoiceCurrency}
             onSave={async (input) => {
-              const saved = await productApi<Invoice>(
-                "product/invoices",
+              const managed =
+                input.currency === "ZEC" &&
+                input.direction === "receivable" &&
+                snapshot.capabilities.zcash.managedReceivingConfigured;
+              const result = await productApi<Invoice | { invoice: Invoice }>(
+                managed ? "product/zcash-invoices" : "product/invoices",
                 input,
               );
+              const saved = "invoice" in result ? result.invoice : result;
               await refresh();
               setModal(null);
               setSelected(saved.id);
@@ -2513,12 +2526,20 @@ function RequestDetails({
             </button>
           </dd>
         </div>
-        <div>
-          <dt>Exact memo</dt>
-          <dd>
-            <code>{request.memo}</code>
-          </dd>
-        </div>
+        {!request.nativeWallet && (
+          <div>
+            <dt>Exact memo</dt>
+            <dd>
+              <code>{request.memo}</code>
+            </dd>
+          </div>
+        )}
+        {request.nativeWallet && (
+          <div>
+            <dt>Wallet ownership</dt>
+            <dd>Fresh Orchard Unified receiver · bound to this invoice</dd>
+          </div>
+        )}
         <div>
           <dt>Expires</dt>
           <dd>
@@ -2605,40 +2626,74 @@ function RequestDetails({
                 )}
               </>
             )}
-            <form
-              className={s.form}
-              onSubmit={(e) => {
-                e.preventDefault();
-                void verify(txid);
-              }}
-            >
-              <label>
-                Transaction ID to check
-                <input
-                  value={txid}
-                  onChange={(e) => setTxid(e.target.value.trim())}
-                  required
-                  pattern="[a-fA-F0-9]{64}"
-                  maxLength={64}
-                  placeholder="Paste the transaction ID"
-                  spellCheck={false}
-                  autoComplete="off"
-                />
-              </label>
-              <p className={s.fine}>
-                {request.rail === "zcash"
-                  ? "A public ID alone cannot confirm a shielded payment. AGUS checks the authorized receiving wallet for the amount, address, memo and at least 3 confirmations."
-                  : "AGUS independently checks Stellar testnet for a successful payment with the exact recipient, amount, issuer and memo."}
-              </p>
-              <button className={s.primary} disabled={busy}>
-                {busy ? (
-                  <Loader2 size={16} className={s.spin} />
-                ) : (
-                  <ShieldCheck size={16} />
-                )}{" "}
-                Check receiving evidence
-              </button>
-            </form>
+            {request.nativeWallet ? (
+              <div className={s.notice}>
+                <p>
+                  AGUS checks its native receiving wallet automatically. Exact
+                  amount and 3 confirmations required.
+                </p>
+                <button
+                  className={s.secondary}
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    setError("");
+                    try {
+                      await productApi(
+                        `product/requests/${request.id}/observe`,
+                        { acknowledged: true },
+                      );
+                      await refresh();
+                    } catch (e) {
+                      setError(
+                        e instanceof Error
+                          ? e.message
+                          : "Wallet observation unavailable",
+                      );
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Check receiving wallet <RefreshCw size={14} />
+                </button>
+              </div>
+            ) : (
+              <form
+                className={s.form}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void verify(txid);
+                }}
+              >
+                <label>
+                  Transaction ID to check
+                  <input
+                    value={txid}
+                    onChange={(e) => setTxid(e.target.value.trim())}
+                    required
+                    pattern="[a-fA-F0-9]{64}"
+                    maxLength={64}
+                    placeholder="Paste the transaction ID"
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                </label>
+                <p className={s.fine}>
+                  {request.rail === "zcash"
+                    ? "A public ID alone cannot confirm a shielded payment. AGUS checks the authorized receiving wallet for the amount, address, memo and at least 3 confirmations."
+                    : "AGUS independently checks Stellar testnet for a successful payment with the exact recipient, amount, issuer and memo."}
+                </p>
+                <button className={s.primary} disabled={busy}>
+                  {busy ? (
+                    <Loader2 size={16} className={s.spin} />
+                  ) : (
+                    <ShieldCheck size={16} />
+                  )}{" "}
+                  Check receiving evidence
+                </button>
+              </form>
+            )}
             {request.lastCheckedAt && (
               <p className={s.fine}>
                 Last check: {request.lastCheck} · {date(request.lastCheckedAt)}
@@ -2753,6 +2808,7 @@ function Assistant({
   privacyMode,
   setPrivacyMode,
   onReceiveZcash,
+  onOpenZcashInvoice,
 }: {
   launch?: ChatLaunch;
   snapshot: ProductSnapshot;
@@ -2760,6 +2816,7 @@ function Assistant({
   privacyMode: boolean;
   setPrivacyMode: (value: boolean) => void;
   onReceiveZcash?: () => void;
+  onOpenZcashInvoice?: (id: string) => void;
 }) {
   const [question, setQuestion] = useState(launch?.draft ?? "");
   const launched = useRef<string | undefined>(undefined);
@@ -3326,6 +3383,17 @@ function Assistant({
                     <summary>Sources</summary>
                     <small>{message.source}</small>
                   </details>
+                )}
+                {message.reply?.zcashInvoiceId && (
+                  <button
+                    className={s.secondary}
+                    onClick={() => {
+                      setPrivacyMode(true);
+                      onOpenZcashInvoice?.(message.reply!.zcashInvoiceId!);
+                    }}
+                  >
+                    View private invoice <ShieldCheck size={16} />
+                  </button>
                 )}
                 {message.reply && (
                   <>

@@ -263,6 +263,7 @@ export async function runPersonalConversation(
       state,
     }));
   let preparedPaymentPlanId: string | undefined;
+  let preparedZcashInvoiceId: string | undefined;
   const PrepareDigital = z.strictObject({
     recipientLabel: z.string().trim().min(1).max(100).optional(),
     amount: z
@@ -304,13 +305,59 @@ export async function runPersonalConversation(
               "Sapling testnet",
               "ZIP316 Unified testnet with Orchard/Sapling receivers",
             ],
-            unifiedReceiptVerification: false,
-            managedWalletAvailable: false,
+            unifiedReceiptVerification: !!process.env.ZCASH_RECEIVE_SERVICE_URL,
+            managedWalletAvailable: !!process.env.ZCASH_RECEIVE_SERVICE_URL,
             shieldedSending: false,
             receivingVerificationConfigured: !!process.env.ZCASH_WALLET_RPC_URL,
           },
           bankLinking: false,
           mainnet: false,
+        },
+      };
+    },
+  });
+  const ReceiveZec = z.strictObject({
+    title: z.string().trim().min(1).max(80),
+    counterparty: z.string().trim().min(1).max(80),
+    amount: z.string().regex(/^(?:0|[1-9]\d{0,8})(?:\.\d{1,8})?$/),
+  });
+  tools.push({
+    declaration: declaration(
+      "create_private_zec_invoice",
+      "Create a private Testnet ZEC RECEIVING invoice for money owed to the user, with a fresh native-wallet-controlled Orchard Unified receiver and QR in the authenticated UI. This only requests payment and creates a reminder awaiting owner approval; it does not spend, sign, notify anyone or mark paid. Never ask for keys or invent an address. Requires title, counterparty and exact positive ZEC amount. Use for 'invoice', 'request payment', or 'make invoice' in English/Pidgin, not outgoing payments.",
+      ReceiveZec,
+    ),
+    schema: ReceiveZec,
+    effect: "proposal",
+    idempotent: true,
+    async execute(args, ctx) {
+      const { createManagedInvoice } =
+        await import("../zcash/managed-invoices");
+      const h = createHash("sha256").update(ctx.key).digest("hex");
+      const id = `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-a${h.slice(17, 20)}-${h.slice(20, 32)}`;
+      const dueAt = new Date(
+        new Date().toISOString().slice(0, 10) + "T12:00:00Z",
+      );
+      dueAt.setUTCDate(dueAt.getUTCDate() + 7);
+      const saved = await createManagedInvoice(owner, {
+        id,
+        ...ReceiveZec.parse(args),
+        direction: "receivable",
+        currency: "ZEC",
+        dueAt: dueAt.toISOString(),
+        note: "",
+      });
+      preparedZcashInvoiceId = saved.invoice.id;
+      return {
+        summary:
+          "Private ZEC invoice saved. Unpaid until the native receiving wallet independently verifies the exact amount and 3 confirmations. Address and QR are available only in the owner UI.",
+        data: {
+          invoiceId: saved.invoice.id,
+          amount: saved.invoice.amount,
+          currency: "ZEC",
+          state: saved.invoice.state,
+          receivingState: saved.request.state,
+          reminderNeedsApproval: true,
         },
       };
     },
@@ -620,6 +667,7 @@ export async function runPersonalConversation(
             "prepare_digital_payment",
             "read_digital_payment_capabilities",
             "read_digital_payment_status",
+            "create_private_zec_invoice",
           ].includes(tool.declaration.name ?? ""),
         )
       : tools,
@@ -627,6 +675,9 @@ export async function runPersonalConversation(
   }).run({ id: run.id, resume: !!input.resumeRunId });
   return {
     ...reply,
+    ...(preparedZcashInvoiceId
+      ? { zcashInvoiceId: preparedZcashInvoiceId }
+      : {}),
     ...(preparedPaymentPlanId && reply.execution?.reason
       ? {
           text: "Your payment review is saved. Chat couldn’t finish the reply; please try again later.",

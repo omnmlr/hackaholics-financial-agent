@@ -63,6 +63,11 @@ async function handle(req: Request) {
     if (url.search) throw new AppError("Query parameters are not accepted");
     const path = url.pathname.replace(/^\/api\/product\/?/, "").split("/");
     if (req.method === "GET") {
+      if (path[0] === "zcash-wallet" && !path[1]) {
+        const { receivingWalletStatus } =
+          await import("@/lib/zcash/receiving-wallet");
+        return workspaceResponse(await receivingWalletStatus());
+      }
       if (!path[0]) return workspaceResponse(await productSnapshot(owner));
       if (path[0] === "zcash-network" && !path[1]) {
         const { LightwalletdClient } =
@@ -113,6 +118,24 @@ async function handle(req: Request) {
       }
     }
     if (req.method === "POST") {
+      if (path[0] === "zcash-invoices" && !path[1]) {
+        const { createManagedInvoice } =
+          await import("@/lib/zcash/managed-invoices");
+        return workspaceResponse(
+          await createManagedInvoice(owner, await body(req)),
+          201,
+        );
+      }
+      if (path[0] === "requests" && path[1] && path[2] === "observe") {
+        z.strictObject({ acknowledged: z.literal(true) }).parse(
+          await body(req),
+        );
+        const { checkManagedReceipt } =
+          await import("@/lib/zcash/managed-invoices");
+        return workspaceResponse(
+          await checkManagedReceipt(owner, z.uuid().parse(path[1])),
+        );
+      }
       if (path[0] === "preferences" && !path[1]) {
         z.strictObject({ onboardingCompleted: z.literal(true) }).parse(
           await body(req),

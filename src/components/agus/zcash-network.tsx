@@ -9,7 +9,7 @@ type Observation = {
   branchId: string;
   observedAt: string;
 };
-export function ZcashNetwork() {
+export function ZcashNetwork({ managed = false }: { managed?: boolean }) {
   const [observation, setObservation] = useState<Observation>();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -33,6 +33,7 @@ export function ZcashNetwork() {
   }, [load]);
   return (
     <div className={s.networkDetails}>
+      {managed && <ManagedWalletStatus />}
       <p className={s.fine} role="status">
         {error ||
           (observation?.live
@@ -58,6 +59,55 @@ export function ZcashNetwork() {
       >
         <RefreshCw size={14} className={busy ? s.spin : ""} /> Check network
       </button>
+    </div>
+  );
+}
+
+function ManagedWalletStatus() {
+  const [status, setStatus] = useState<{
+    spendableZec: string;
+    pendingZec: string;
+  }>();
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const result = await productApi<{
+          spendableZec: string;
+          pendingZec: string;
+        }>("product/zcash-wallet");
+        if (active) {
+          setStatus(result);
+          setError("");
+        }
+      } catch {
+        if (active) setError("Receiving wallet syncing or unavailable");
+      }
+    };
+    void load();
+    const timer = setInterval(() => void load(), 30000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
+  }, []);
+  return (
+    <div role="status">
+      {error ? (
+        <p className={s.fine}>{error}</p>
+      ) : status ? (
+        <>
+          <p className={s.muted}>
+            {status.spendableZec} ZEC · wallet spendable
+          </p>
+          <p className={s.fine}>
+            {status.pendingZec} ZEC pending · native Testnet receiving wallet
+          </p>
+        </>
+      ) : (
+        <p className={s.fine}>Checking receiving wallet…</p>
+      )}
     </div>
   );
 }

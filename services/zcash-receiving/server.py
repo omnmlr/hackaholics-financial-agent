@@ -1,7 +1,7 @@
 """Receiving-only boundary over pinned zaw 0.1.2. Never forwards signing/owner APIs.
 Native wallet runs locked on loopback. Its viewing database is private to this service.
 """
-import os, json, sqlite3, subprocess, threading, time, urllib.request, hmac, hashlib, re
+import os, json, sqlite3, subprocess, threading, time, urllib.request, hmac, hashlib, re, socket
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 ROOT = Path(os.environ.get('ZCASH_DATA_DIR', '/data'))
@@ -29,6 +29,10 @@ def status():
         raise ValueError('Unsafe wallet mode')
     if not s['synced']:
         raise ValueError('Wallet still scanning')
+    with db(WALLET/'wallet.sqlite') as c:
+        tip=c.execute('SELECT time FROM blocks ORDER BY height DESC LIMIT 1').fetchone()
+    if tip is None or abs(time.time()-tip[0])>300:
+        raise ValueError('Wallet chain observation stale')
     return s
 def snapshot(binding):
     status()
@@ -136,6 +140,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(404,{'error':'Endpoint unavailable'})
         except Exception:
             return self.send(503,{'error':'Trusted receiving observation unavailable; no settlement assumed'})
+class DualStackServer(ThreadingHTTPServer):
+    address_family=socket.AF_INET6
+    def server_bind(self):
+        self.socket.setsockopt(socket.IPPROTO_IPV6,socket.IPV6_V6ONLY,0)
+        super().server_bind()
 if __name__=='__main__':
     threading.Thread(target=initialize,daemon=True).start()
-    ThreadingHTTPServer(('0.0.0.0',int(os.environ.get('PORT','8080'))),Handler).serve_forever()
+    DualStackServer(('::',int(os.environ.get('PORT','8080'))),Handler).serve_forever()

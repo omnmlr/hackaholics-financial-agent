@@ -12,9 +12,15 @@
 | Wallet balances | Live read-only RPC queries for Solana balances and known-token price lookups | Proven for tested paths; coverage incomplete |
 | Android packaging | ARM64 release APK assembled and v2 signature verified | Build proven; actual install/signing unverified |
 | Programmable delegation | Swig cap, expiry, revocation checks executed in local runtime with program bytes fetched from Devnet | Locally proven; not funded public-Devnet execution |
-| Phantom / Solflare / Phantom | Phantom mobile authorization succeeded after Testnet Mode; no signed transfers or Solflare evidence yet | **PARTIAL**; payments and round trip still blocked |
+| Phantom / Solflare / Phantom | Both Phantom and Solflare accepted individual Devnet link requests on one Android phone, and AGUS displays both signing routes; no finalized transfers | **PARTIAL**; restart persistence and payments unproven |
 | Wallet identity | External DAL linked:true, but Phantom showed **red unverified-identity warning on physical phone** | **BLOCKER**: investigate vendor attestation |
 | APK delivery to tester | Founder installed GitHub prerelease on real Android phone and opened AGUS | **Installed and launches** |
+
+## 2026-11-22 — Second independent wallet connected on real Android
+- Founder tapped **Link Solflare** in AGUS with both Phantom and Solflare installed. Screenshot shows the actual Solflare mobile wallet's AGUS connection sheet, account `Main Wallet` and its `Connect` button; no red identity warning is visible on that Solflare sheet.
+- Subsequent AGUS screenshot reports **Solflare Devnet authorization saved** and retains **both** `PAY FROM PHANTOM` and `PAY FROM SOLFLARE` routes simultaneously, with two distinct Devnet addresses. Read-only combined balance shown: **1 Devnet SOL** (Phantom 1 SOL, Solflare 0 SOL). This is physical-device evidence for simultaneous wallet records, **not** a real signed transaction.
+- **Not yet proven:** authorization survives force-stop/restart, any publicly finalized Devnet signature, payer account reauthorization behavior, or disappearance of Phantom's red app identity warning. This warning remains a security/UX issue to investigate.
+- Next: force-stop and reopen AGUS; confirm both wallet accounts and routes persist; then test an AGUS-originated approved Devnet transfer and record signature plus all signing prompts. Because Solflare currently has 0 SOL, first fund it using the Devnet faucet or a sufficient initial Phantom-to-Solflare transfer before attempting a Solflare-originated payment. Keep a fee buffer.
 
 ## 2026-11-22 — First real Phantom connection observed on Android (partial pass)
 - Founder installed and opened the published AGUS Android engineering prototype on a physical Android phone. Evidence: four screenshots shared in conversation.

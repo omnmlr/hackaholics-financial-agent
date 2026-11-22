@@ -53,6 +53,11 @@ SecureStore and the MWA 3.0.2 web3.js bridge were already installed by the lockf
   [Circle mint registry](https://developers.circle.com/stablecoins/usdc-contract-addresses) ·
   [Tether protocols](https://tether.to/en/supported-protocols/) ·
   [CoinGecko Simple Price](https://docs.coingecko.com/reference/simple-price)
+- The Android ARM64 release APK assembled, passed release lint, and passed
+  Android APK Signature Scheme v2 verification. Inspection of the packaged
+  MWA coroutine found the routing scheme and its `Intent.setPackage`
+  call. The APK includes the Hermes bundle and can be installed without
+  Metro. Details and the checksum are below.
 - The isolated Swig experiment executed the program bytes retrieved from
   public Devnet in LiteSVM. A 20-slot session paid 0.05 SOL within a 0.10 SOL
   cumulative cap. A further 0.06 SOL, an SPL spend without a token grant,
@@ -202,7 +207,7 @@ locally with LiteSVM 1.6.2 and the Swig Classic SDK 3.0.0. An optional path
 to a previously saved matching ELF can be passed after `--`.
 
 ```text
-within cap 2b3YCNDqt7CnGjUrdXAPGgipPZjqKNU4qefBv3qGtTbD2j1FsGGGp2WDSJM623zbvydavWpg8qNkbPLJxEkMdqHZ
+within cap 4KGSBmBbdcxexnD5cJbUMYJDcyr5sKBpKqnYvHV92jHiFuAPgivfPPLYdzVAZS7jukEx4SwNnh6yXfaM2PSnm2tB
 over remaining cap                         0xbc3
 SPL spend without a token grant            0xbbe
 expired session                            0xbc6
@@ -218,15 +223,45 @@ The signature above is from the local runtime and has no public explorer entry.
 npm ci
 npm run mobile:typecheck
 npm run typecheck
+npm run lint
 npx vitest run tests/mobile-wallet-control.test.ts tests/solana-*.test.ts
 export EXPO_PUBLIC_API_URL=https://agusweb.up.railway.app
 npm run mobile:export:android
 ```
 
+```text
+Targeted wallet and Solana suite    10 files passed, 92 tests passed
+Full repository suite              99 files passed, 4 skipped
+                                    1,647 tests passed, 47 skipped
+Mobile and root TypeScript checks   passed
+Repository ESLint                  passed
+Expo native Android prebuild        passed
+Expo Android Hermes export          passed, 1,099 modules, 5.5 MB bundle
+Gradle assembleRelease              BUILD SUCCESSFUL in 10m 13s
+Android release lint                 passed
+APK signature                       verified, v2, one Android Debug signer
+```
+
+The full suite initially hit process-spawn and socket restrictions in the
+default sandbox. The rerun with network and subprocess access produced the
+full-suite result above. The Gradle build used a complete Temurin JDK and the
+system trust store for the environment's download proxy.
+
+Artifact `AGUS-Wallet-Control-arm64.apk`, built from the prototype source at
+`5dc5af7`. The package is `app.agus.prototype` version `0.1.0`, ARM64,
+minimum Android API 24, target API 36, 25,014,589 bytes.
+
+```text
+APK SHA-256
+b5eed99eb0bf50f45edab34d9b56b5942cf71295e94ca02d1f1ec63087d03338
+Debug signing certificate SHA-256
+fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
+```
+
 For a standalone, locally signed APK, use JDK 21 and the Android SDK/NDK
 requested by the generated project. In this environment those included
 platform Android 37.0, build-tools 36.0.0 and 37.0.0, NDK 27.1.12297006
-and CMake 3.30.5. Set `ANDROID_HOME` and `JAVA_HOME` to those installations.
+and CMake 3.22.1 and 3.30.5. Set `ANDROID_HOME` and `JAVA_HOME` to those installations.
 Build from a clean checkout with an approved HTTPS origin for wallet identity.
 
 ```sh

@@ -16,6 +16,13 @@
 | Wallet identity | External DAL linked:true, but Phantom showed **red unverified-identity warning on physical phone** | **BLOCKER**: investigate vendor attestation |
 | APK delivery to tester | Founder installed GitHub prerelease on real Android phone and opened AGUS | **Installed and launches** |
 
+## 2026-11-22 — Post-crash Android + Explorer check (no observed transfer)
+- Founder reopened AGUS after Phantom's force-close and refreshed/checkpointed account status. Both wallet authorization records remain, with displayed Devnet balances **Phantom 1 SOL, Solflare 0 SOL**.
+- Founder opened Solana Explorer with **Devnet** selected for Solflare's recipient `47vuSgvjhkYoqz6A3VgDpGLth1LjQM7G9VqZr2wcwmbC`. Explorer showed **`Account does not exist`** and **`No transactions found`** at the time of the screenshot.
+- Strong evidence the two attempted **0.01 Devnet SOL** transfers did not land; **no public transaction signature has been produced or checked**, so do not claim cryptographic proof of every failed attempt. No retry requested.
+- AGUS shows no visible submitted/pending receipt in supplied screenshot. The wallet authorization/session cache persists despite crash of a separate wallet app.
+- Next: treat Phantom signing path as **BLOCKED**. Diagnose crash via Android/Phantom logs, attestation and MWA API compatibility. Separately fund the disposable Solflare account from Devnet faucet (not Phantom) and attempt a low-value Solflare-authorized transaction to discriminate vendor-specific versus common MWA/transaction issues. Retain all existing wallet data and capture explicit outcome/status/signature.
+
 ## 2026-11-22 — First public-Devnet payment attempts: Phantom crashes on signing handoff (BLOCKED)
 - Founder completed AGUS's review flow for **0.01 Devnet SOL**, sender Phantom `7fHbpxus9vSKPXt7v7Mh8XVREetySSkvoVUeA3JAQ9hD`, recipient Solflare `47vuSgvjhkYoqz6A3VgDpGLth1LjQM7G9VqZr2wcwmbC`. AGUS displayed estimated network fee `0.000005 SOL` and `0 SOL` account rent.
 - Founder tapped **Authorize and send with wallet** at least twice. Phantom launched, requested biometric unlocking, then stalled on logo for around 20 seconds and exited. Android issued **`Phantom force closed due to an internal...`** notification.

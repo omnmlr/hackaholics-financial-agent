@@ -12,9 +12,17 @@
 | Wallet balances | Live read-only RPC queries for Solana balances and known-token price lookups | Proven for tested paths; coverage incomplete |
 | Android packaging | ARM64 release APK assembled and v2 signature verified | Build proven; actual install/signing unverified |
 | Programmable delegation | Swig cap, expiry, revocation checks executed in local runtime with program bytes fetched from Devnet | Locally proven; not funded public-Devnet execution |
-| Phantom / Solflare / Phantom | Both Phantom and Solflare accepted individual Devnet link requests on one Android phone, and AGUS displays both signing routes; no finalized transfers | **PARTIAL**; restart persistence and payments unproven |
+| Phantom / Solflare / Phantom | Both wallets linked and persisted; Phantom force-closed on payment handoff after two attempts. No public finalization confirmed. | **BLOCKED**; investigate crash and unknown payment status |
 | Wallet identity | External DAL linked:true, but Phantom showed **red unverified-identity warning on physical phone** | **BLOCKER**: investigate vendor attestation |
 | APK delivery to tester | Founder installed GitHub prerelease on real Android phone and opened AGUS | **Installed and launches** |
+
+## 2026-11-22 — First public-Devnet payment attempts: Phantom crashes on signing handoff (BLOCKED)
+- Founder completed AGUS's review flow for **0.01 Devnet SOL**, sender Phantom `7fHbpxus9vSKPXt7v7Mh8XVREetySSkvoVUeA3JAQ9hD`, recipient Solflare `47vuSgvjhkYoqz6A3VgDpGLth1LjQM7G9VqZr2wcwmbC`. AGUS displayed estimated network fee `0.000005 SOL` and `0 SOL` account rent.
+- Founder tapped **Authorize and send with wallet** at least twice. Phantom launched, requested biometric unlocking, then stalled on logo for around 20 seconds and exited. Android issued **`Phantom force closed due to an internal...`** notification.
+- Founder did **not** observe a normal signing approval or a finalized transfer. **Transaction state is UNKNOWN**, not confirmed failure: verify public Devnet transaction/activity and AGUS pending reference before retrying to avoid accidental duplicate payment.
+- Android notification also showed **`PR run failed`** from the GitHub repository. This is a separate CI report; no causal link to the Phantom crash is established.
+- Prior Phantom's **unverified app identity** warning remains a known device finding; Solflare authorization had previously succeeded. Potential causes of the new crash are not diagnosed: vendor app/runtime, signing payload, native MWA bridge, origin attestation and OS interactions must be investigated with logs.
+- **Next steps:** Stop retries; inspect AGUS status and Phantom/Solflare Devnet activity for possible submission; capture full Android crash notification/app version. Share reproduction details with Codex to inspect logs, native MWA handoff and PR status. Test Solflare-initiated payment only after its test wallet is funded and with safe replay protection.
 
 ## 2026-11-22 — Second independent wallet connected on real Android
 - Founder tapped **Link Solflare** in AGUS with both Phantom and Solflare installed. Screenshot shows the actual Solflare mobile wallet's AGUS connection sheet, account `Main Wallet` and its `Connect` button; no red identity warning is visible on that Solflare sheet.

@@ -1,0 +1,34 @@
+name: AGUS Wallet Control Android phone-test delivery
+on:
+  push:
+    branches: [artifacts/agus-wallet-control-phone-test-20261122]
+permissions:
+  contents: read
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify the signed APK's expected SHA-256
+        run: |
+          sha256sum --check SHA256SUMS.txt
+          printf '%s\n' 'c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03  AGUS-Wallet-Control-Devnet-arm64.apk' | sha256sum --check -
+      - name: Upload phone-test artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: AGUS-Wallet-Control-Devnet-arm64
+          path: |
+            AGUS-Wallet-Control-Devnet-arm64.apk
+            SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Attach assets to the draft prerelease
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload agus-wallet-control-phone-test-20261122 AGUS-Wallet-Control-Devnet-arm64.apk SHA256SUMS.txt --repo "$GITHUB_REPOSITORY"

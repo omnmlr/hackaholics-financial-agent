@@ -13,8 +13,15 @@
 | Android packaging | ARM64 release APK assembled and v2 signature verified | Build proven; actual install/signing unverified |
 | Programmable delegation | Swig cap, expiry, revocation checks executed in local runtime with program bytes fetched from Devnet | Locally proven; not funded public-Devnet execution |
 | Phantom / Solflare / Phantom | Three sequential real-wallet signing operations on one physical Android phone; finalized public Devnet receipts | **BLOCKING / NOT YET PROVEN** |
-| Wallet identity | Android app-origin / Digital Asset Links attestation endpoint reportedly returned HTTP 502 in Codex test | Needs repair and retest |
-| APK delivery to tester | APK noted in PR report, but downloadable GitHub artifact/release URL not established in conversation | Pending |
+| Wallet identity | Codex reports Google Digital Asset Links linked:true for rebuilt APK identity | **Origin linkage tested**; vendor acceptance pending |
+| APK delivery to tester | GitHub prerelease with signed APK and matching SHA-256 published 2026-11-22 | **Available**; physical install pending |
+
+## 2026-11-22 — Installable APK released and origin linkage verified (device test pending)
+- Codex reports a rebuilt APK with **98 passing targeted tests**, published as [AGUS Wallet Control Android Devnet phone test](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-wallet-control-phone-test-20261122).
+- Published artifact: `AGUS-Wallet-Control-Devnet-arm64.apk`, SHA-256 `c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03`. GitHub release metadata independently confirms the same artifact digest; Codex reports downloaded-byte verification.
+- Codex reports Google Digital Asset Links **linked: true** for the new app identity; this establishes origin configuration, **not that Phantom or Solflare accepts it on a physical phone**.
+- APK uses a dedicated test-only staging origin; existing AGUS deployment unchanged according to the release process.
+- Next: install on physical phone, link both wallet applications, run the public Devnet signing sequence, record wallet versions, user prompts, errors and three finalized public signatures. No device acceptance claimed as of this entry.
 
 ## 2026-11-22 — Wallet-control feasibility completed
 - Codex pushed [draft PR #46](https://github.com/omnmlr/hackaholics-financial-agent/pull/46) on `spike/agus-wallet-control-solana`.

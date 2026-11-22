@@ -12,7 +12,7 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { transact } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import { atomsToDecimal } from "../../src/lib/solana/money";
-import { mwaSigner } from "./src/mwa-control";
+import { mwaSigner, walletControlIdentity } from "./src/mwa-control";
 import { marketPrices, SolanaControl } from "./src/solana-control";
 import { apiOrigin } from "./src/session";
 import {
@@ -38,11 +38,10 @@ const control = new WalletControl(
       }),
   },
   chain,
-  mwaSigner(transact, {
-    name: "AGUS Wallet Control",
-    uri: apiOrigin,
-    icon: "favicon.ico",
-  }),
+  mwaSigner(
+    transact,
+    walletControlIdentity(process.env.EXPO_PUBLIC_MWA_ORIGIN, apiOrigin),
+  ),
 );
 const providers = Object.keys(walletProviders) as WalletProvider[];
 const rowKey = ({ network, address }: WalletAccount) => `${network}:${address}`;

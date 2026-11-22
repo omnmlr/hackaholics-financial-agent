@@ -108,9 +108,10 @@ SecureStore and the MWA 3.0.2 web3.js bridge were already installed by the lockf
   HTTPS association endpoint, revoke or rotate tokens, switch the active
   account, or require app-domain attestation. The current demo origin's
   `/.well-known/assetlinks.json` returned HTTP 502 in this environment.
-  The debug signing identity needs a valid association on an approved
-  HTTPS domain for wallets that enforce Android origin attestation.
-  Exact wallet-specific outcomes remain in the physical acceptance matrix.
+  The follow-up phone-test APK uses a dedicated staging origin and a unique test
+  signing certificate. Google Digital Asset Links reports that they are linked.
+  Wallet-specific enforcement still needs the physical acceptance run.
+  [Phone-test build and attestation](AGUS_WALLET_COMPATIBILITY.md#download-and-install-the-phone-test-build)
 - Standard native MWA currently covers Android. iOS needs a separately
   implemented vendor or cross-platform transport. Seeker Connect targets
   the certified device wallet and cannot select Phantom, Solflare or Backpack

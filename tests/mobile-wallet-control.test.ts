@@ -9,7 +9,10 @@ import {
 import { base58 } from "@scure/base";
 import type { transact } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import { describe, expect, it, vi } from "vitest";
-import { mwaSigner } from "../apps/mobile/src/mwa-control";
+import {
+  mwaSigner,
+  walletControlIdentity,
+} from "../apps/mobile/src/mwa-control";
 import { SolanaControl } from "../apps/mobile/src/solana-control";
 import {
   WalletControl,
@@ -174,6 +177,53 @@ function fixture() {
     found,
   };
 }
+
+describe("native Android MWA identity", () => {
+  const backend = "https://backend.example";
+  const publicOrigin = "https://wallet-test.example";
+
+  it("uses a separate HTTPS identity and same-origin icon on a phone-test build", async () => {
+    const transport = vi.fn(async (_callback, _config) => {
+      throw { code: -100 };
+    });
+    const identity = walletControlIdentity(publicOrigin + "/", backend);
+    expect(identity).toEqual({
+      name: "AGUS Wallet Control",
+      uri: publicOrigin,
+      icon: "favicon.png",
+    });
+    const request = vi.fn().mockRejectedValue({ code: -1 });
+    const nativeWallet = vi.fn(async (callback) =>
+      callback({ authorize: request }),
+    );
+    const signer = mwaSigner(
+      nativeWallet as unknown as typeof transact,
+      identity,
+    );
+    await expect(signer.connect("phantom")).rejects.toThrow(
+      /origin-verification/,
+    );
+    expect(request).toHaveBeenCalledWith({ chain: "solana:devnet", identity });
+    await expect(
+      mwaSigner(transport as unknown as typeof transact, identity).connect(
+        "phantom",
+      ),
+    ).rejects.toThrow(/browser-origin attestation/);
+    expect(walletControlIdentity(undefined, backend).uri).toBe(backend);
+  });
+
+  it.each([
+    "http://wallet-test.example",
+    publicOrigin + "/path",
+    publicOrigin + "?q=1",
+    publicOrigin + "#fragment",
+    "https://user:pass@wallet-test.example",
+  ])("rejects an unusable Digital Asset Links origin %s", (value) => {
+    expect(() => walletControlIdentity(value, backend)).toThrow(
+      /bare HTTPS origin/,
+    );
+  });
+});
 
 describe("independent Android wallet authorizations and payments", () => {
   it("deduplicates a watched address, retains two providers for one address and restores independent tokens", async () => {

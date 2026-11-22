@@ -28,6 +28,32 @@ source until the physical-device procedure passes.
 - Solflare's published SDK targets extension, web and mobile connectivity from a dapp. Its source is useful for evaluating session UX and transport selection. Confirm the published license and native compatibility before incorporating code. The spike uses the documented MWA APIs and contains no copied vendor transport code. [Solflare SDK](https://docs.solflare.com/solflare/technical/integrate-solflare/solflare-wallet-sdk) · [Source](https://github.com/solflare-wallet/solflare-sdk)
 - Public Solana RPC suffices for SOL plus parsed classic SPL and Token-2022 balances. Helius DAS `getAssetsByOwner` can add pagination, fungible tokens, metadata and native balance for production indexing. Quote coverage and freshness still require explicit checks. Keep a provider key server-side. CoinGecko supplies timestamped market prices for SOL, USDC and USDT in the spike. [Solana RPC](https://solana.com/docs/rpc/http/gettokenaccountsbyowner) · [Helius DAS](https://www.helius.dev/docs/api-reference/das/getassetsbyowner) · [CoinGecko Simple Price](https://docs.coingecko.com/reference/simple-price)
 
+## Download and install the phone-test build
+
+Download the [ARM64 Devnet test APK](https://github.com/omnmlr/hackaholics-financial-agent/releases/download/agus-wallet-control-phone-test-20261122/AGUS-Wallet-Control-Devnet-arm64.apk).
+The [SHA-256 file](https://github.com/omnmlr/hackaholics-financial-agent/releases/download/agus-wallet-control-phone-test-20261122/SHA256SUMS.txt)
+lists `c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03`.
+On Android, open the APK from Downloads and allow the browser or Files app to
+install it if prompted. If the earlier Expo-debug AGUS build is installed under
+`app.agus.prototype`, Android will refuse an in-place update because the signing
+certificate changed. Removing the earlier app also removes its local test data.
+
+This build sends a dedicated staging HTTPS origin in the **Solana wallet control**
+panel's native MWA authorization requests. The origin's public statement lists
+`app.agus.prototype` and exactly the APK's test certificate. It serves anonymous
+HTTPS 200 with a JSON content type and zero redirects. Google's Digital Asset
+Links API returned `linked: true`. A rebuild signed by another certificate needs
+a matching statement. The app's existing backend configuration is separate from
+this MWA identity. [Public Digital Asset Links statement](https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app/.well-known/assetlinks.json)
+
+**Remaining wallet-specific limitation.** The certificate and public statement are
+verified independently. Phantom and Solflare still need to accept the origin and
+Devnet on a physical phone. Native MWA may report `-1` for a declined authorization
+or failed origin verification. The spec describes `-100` as an Android browser
+challenge. If a wallet returns it to this native build, record the wallet version and
+exact prompt. This build uses native Digital Asset Links verification.
+[MWA Android identity verification](https://solana-mobile.github.io/mobile-wallet-adapter/spec/spec.html#android)
+
 ## Physical-device acceptance
 
 Use the APK built from this branch or build from a clean checkout. Confirm both wallets are current official builds and record AGUS commit, APK SHA-256, Android version, model, app version and relevant Devnet settings. Use a physical Android ARM64 device and two distinct disposable wallet accounts. Do not import either recovery phrase into AGUS. Use test SOL only. CoinGecko valuation acceptance uses a public mainnet address in watch-only mode.

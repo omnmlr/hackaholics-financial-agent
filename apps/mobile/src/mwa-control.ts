@@ -10,6 +10,27 @@ import {
 
 type WalletAPI = Parameters<Parameters<typeof transact>[0]>[0];
 
+export function walletControlIdentity(
+  publishedOrigin: string | undefined,
+  apiOrigin: string,
+) {
+  if (publishedOrigin === undefined) {
+    return { name: "AGUS Wallet Control", uri: apiOrigin, icon: "favicon.ico" };
+  }
+  const url = new URL(publishedOrigin);
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("EXPO_PUBLIC_MWA_ORIGIN must be a bare HTTPS origin.");
+  }
+  return { name: "AGUS Wallet Control", uri: url.origin, icon: "favicon.png" };
+}
+
 function addressBytes(address: string) {
   const bytes = Buffer.from(address, "base64");
   if (bytes.length !== 32 || bytes.toString("base64") !== address)
@@ -23,10 +44,14 @@ function walletError(error: unknown, resuming: boolean): never {
   if (code === -1 && resuming)
     throw new ControlError(
       "relink",
-      "The wallet did not renew this authorization. Link the account again.",
+      "The wallet did not renew this authorization. Link the account again. If linking also fails, record the wallet and its origin-verification message.",
+    );
+  if (code === -1)
+    throw new ControlError(
+      "failed",
+      "The wallet did not authorize AGUS. Check for a declined request or an origin-verification message in the wallet.",
     );
   if (
-    code === -1 ||
     code === -3 ||
     code === "ERROR_ASSOCIATION_CANCELLED" ||
     (typeof code === "string" && code.includes("Local association cancelled"))
@@ -44,7 +69,7 @@ function walletError(error: unknown, resuming: boolean): never {
   if (code === -100)
     throw new ControlError(
       "failed",
-      "The wallet requires Android origin attestation for this build.",
+      "The wallet requested browser-origin attestation during a native Android connection.",
     );
   throw new ControlError(
     "failed",

@@ -12,9 +12,18 @@
 | Wallet balances | Live read-only RPC queries for Solana balances and known-token price lookups | Proven for tested paths; coverage incomplete |
 | Android packaging | ARM64 release APK assembled and v2 signature verified | Build proven; actual install/signing unverified |
 | Programmable delegation | Swig cap, expiry, revocation checks executed in local runtime with program bytes fetched from Devnet | Locally proven; not funded public-Devnet execution |
-| Phantom / Solflare / Phantom | Three sequential real-wallet signing operations on one physical Android phone; finalized public Devnet receipts | **BLOCKING / NOT YET PROVEN** |
-| Wallet identity | Codex reports Google Digital Asset Links linked:true for rebuilt APK identity | **Origin linkage tested**; vendor acceptance pending |
-| APK delivery to tester | GitHub prerelease with signed APK and matching SHA-256 published 2026-11-22 | **Available**; physical install pending |
+| Phantom / Solflare / Phantom | Phantom mobile authorization succeeded after Testnet Mode; no signed transfers or Solflare evidence yet | **PARTIAL**; payments and round trip still blocked |
+| Wallet identity | External DAL linked:true, but Phantom showed **red unverified-identity warning on physical phone** | **BLOCKER**: investigate vendor attestation |
+| APK delivery to tester | Founder installed GitHub prerelease on real Android phone and opened AGUS | **Installed and launches** |
+
+## 2026-11-22 — First real Phantom connection observed on Android (partial pass)
+- Founder installed and opened the published AGUS Android engineering prototype on a physical Android phone. Evidence: four screenshots shared in conversation.
+- AGUS `Link Phantom` launched the genuine Phantom Android wallet. Initial attempt was rejected with **Incorrect mode** because Phantom Testnet Mode was disabled.
+- After enabling Phantom Testnet Mode, Phantom displayed an AGUS connection sheet and a **red origin warning**: `This app's identity could not be verified. It may be impersonating another app.`
+- AGUS subsequently displayed `Phantom Devnet authorization saved`, a Devnet account address and a reported `1 SOL` balance. This is evidence of genuine mobile wallet authorization and displayed read-only balance, **not** evidence of any transaction signature or finalized public Devnet payment.
+- Contradiction requiring technical diagnosis: prior external Google Digital Asset Links check returned `linked: true`, yet Phantom's own verification UI flagged the app identity. Do **not** downgrade or bypass the vendor warning in a production flow.
+- **Not yet proven:** Solflare on this phone, retention after restart, Phantom payment signing, wallet-to-wallet switching, three finalized public Devnet transfers.
+- Next: investigate Phantom app version and attestation semantics/package fingerprint/origin mismatch; test Solflare connection in Testnet Mode and collect precise failure messages; run devnet signing only through disposable test wallets once appropriately verified.
 
 ## 2026-11-22 — Installable APK released and origin linkage verified (device test pending)
 - Codex reports a rebuilt APK with **98 passing targeted tests**, published as [AGUS Wallet Control Android Devnet phone test](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-wallet-control-phone-test-20261122).
@@ -37,9 +46,9 @@
 - **Do not use main wallets, real funds, or seed phrase imports.** Public Devnet funds only.
 
 ## Next steps (in strict order)
-1. Make a known-source APK downloadable and record checksum, build identity, origin-asset association and installer instructions.
-2. Install with Phantom and Solflare; connect both on a real Android phone, force-stop/restart AGUS, test address/balance retention.
-3. Execute and independently verify three public Devnet transfers and rejection/error cases. Record wallet app versions and every UX interruption. If blocked, record exact root cause and remedy.
+1. Investigate Phantom's **unverified app identity** warning despite external DAL linked:true, recording exact app version, identity and signing certificate.
+2. Enable testnet on Solflare and attempt its connection; confirm both links survive an AGUS restart.
+3. After resolving/assessing origin warnings, execute and independently verify three public Devnet transfers and rejection/error cases. Record wallet app versions and every UX interruption. If blocked, record exact root cause and remedy.
 4. Decide GO / CONDITIONAL GO / NO-GO **for this specific capability**, then finish the PRD with real integration constraints.
 5. Agree founder/Chisom interface contracts and begin parallel engineering with frequent integration checkpoints; clean repository safely afterward.
 

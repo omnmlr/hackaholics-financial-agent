@@ -1,0 +1,15 @@
+{
+  "name": "agus-swig-permission-spike",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node permissions.mjs"
+  },
+  "dependencies": {
+    "@solana/kit": "2.3.0",
+    "@solana/spl-token": "0.4.15",
+    "@solana/web3.js": "1.99.0",
+    "@swig-wallet/classic": "3.0.0",
+    "litesvm": "1.6.2"
+  }
+}

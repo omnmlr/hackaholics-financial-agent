@@ -26,6 +26,7 @@ import {
 import { connectAndroidWallet, signExactDraft } from "./src/wallet";
 import { parseNotificationLink } from "./src/policy";
 import { registerNotifications } from "./src/notifications";
+import WalletControlPanel from "./WalletControlPanel";
 export default function DeveloperHarness() {
   const busyRef = useRef(false),
     ownerRef = useRef("");
@@ -158,6 +159,7 @@ export default function DeveloperHarness() {
         Banking is simulated. Wallet operations use Devnet. Physical-device and
         genuine wallet acceptance remain pending.
       </Text>
+      <WalletControlPanel />
       <Text accessibilityLiveRegion="polite">
         {online ? "Online" : "Offline — financial actions unavailable"} ·{" "}
         {ready ? "Session verified" : "Session locked"}

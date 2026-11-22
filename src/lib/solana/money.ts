@@ -1,4 +1,4 @@
-import { SolanaError } from "./contracts";
+import { SolanaError } from "./primitives";
 export const MAX_U64 = (1n << 64n) - 1n;
 export function decimalToAtoms(amount: string, decimals: number): bigint {
   if (

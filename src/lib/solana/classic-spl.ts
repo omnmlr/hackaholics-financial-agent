@@ -11,7 +11,7 @@ import {
   TransactionInstruction,
   type AccountInfo,
 } from "@solana/web3.js";
-import { SolanaError } from "./contracts";
+import { SolanaError } from "./primitives";
 import { MAX_U64 } from "./money";
 
 export const TOKEN_PROGRAM_ID = new PublicKey(

@@ -38,6 +38,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      "./plugins/with-wallet-package.cjs",
       "expo-secure-store",
       "expo-web-browser",
       [

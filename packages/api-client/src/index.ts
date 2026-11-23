@@ -1,6 +1,6 @@
 import createClient from "openapi-fetch";
 import type { paths } from "./generated";
-export type { paths } from "./generated";
+export type { components, paths } from "./generated";
 /** One request per explicit call. Financial idempotency keys come from durable
  * caller intent; this client never retries a write or invents a fresh key. */
 export function createApiClient(

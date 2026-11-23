@@ -7,6 +7,7 @@ import { db } from "../lib/db";
 import * as schema from "./auth-schema";
 import { database } from "./sql";
 import { invariant } from "./errors";
+import { identityEmail } from "./identity-email";
 
 export async function createIdentity() {
   invariant(
@@ -19,6 +20,14 @@ export async function createIdentity() {
     process.env.BETTER_AUTH_URL ??
     process.env.APP_ORIGIN ??
     "http://localhost:3000";
+  const email = identityEmail(origin);
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  invariant(
+    Boolean(clientId) === Boolean(clientSecret),
+    "GOOGLE_OAUTH_CONFIGURATION_REQUIRED",
+    503,
+  );
   return betterAuth({
     appName: "AGUS",
     baseURL: origin,
@@ -28,6 +37,34 @@ export async function createIdentity() {
       enabled: true,
       minPasswordLength: 12,
       revokeSessionsOnPasswordReset: true,
+      requireEmailVerification: email.configured,
+      resetPasswordTokenExpiresIn: 30 * 60,
+      ...(email.configured && {
+        sendResetPassword: ({ user, url }) =>
+          email.send(user.email, url, "reset"),
+      }),
+    },
+    ...(email.configured && {
+      emailVerification: {
+        sendOnSignUp: true,
+        expiresIn: 30 * 60,
+        sendVerificationEmail: ({ user, url }) =>
+          email.send(user.email, url, "verify"),
+      },
+    }),
+    ...(clientId &&
+      clientSecret && {
+        socialProviders: {
+          google: {
+            clientId,
+            clientSecret,
+            scope: ["openid", "email", "profile"],
+          },
+        },
+      }),
+    account: {
+      encryptOAuthTokens: true,
+      accountLinking: { disableImplicitLinking: true },
     },
     user: {
       additionalFields: {
@@ -49,15 +86,17 @@ export async function createIdentity() {
       user: {
         create: {
           before: async (user) => {
-            const r = await sql.query(
-              "SELECT email FROM agus_invitations WHERE email=$1 AND consumed_at IS NULL AND expires_at>now()",
-              [user.email.toLowerCase()],
-            );
-            if (!r.rows.length)
-              throw new APIError("FORBIDDEN", {
-                code: "INVITATION_REQUIRED",
-                message: "Invitation required",
-              });
+            if (!email.publicRegistration) {
+              const r = await sql.query(
+                "SELECT email FROM agus_invitations WHERE email=$1 AND consumed_at IS NULL AND expires_at>now()",
+                [user.email.toLowerCase()],
+              );
+              if (!r.rows.length)
+                throw new APIError("FORBIDDEN", {
+                  code: "INVITATION_REQUIRED",
+                  message: "Invitation required",
+                });
+            }
             return {
               data: {
                 ...user,

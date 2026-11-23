@@ -348,6 +348,7 @@ export function createSolanaService(
       owner: string,
       untrusted: PrepareTransfer,
       requestId?: string,
+      persist = true,
     ): Promise<SolanaDraft> {
       parsed(Owner, owner);
       const input = parsed(Prepare, untrusted);
@@ -598,11 +599,12 @@ export function createSolanaService(
         failureCode: null,
       };
       draft.digest = draftDigest(draft);
-      await store.create(draft, {
-        action: "prepared",
-        at: draft.preparedAt,
-        details: { network: "devnet", messageDigest: draft.messageDigest },
-      });
+      if (persist)
+        await store.create(draft, {
+          action: "prepared",
+          at: draft.preparedAt,
+          details: { network: "devnet", messageDigest: draft.messageDigest },
+        });
       return draft;
     },
     get: load,

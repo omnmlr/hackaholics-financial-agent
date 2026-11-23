@@ -15,6 +15,7 @@ export type ToolModel = {
     declarations: FunctionDeclaration[];
     responseJsonSchema?: Record<string, unknown>;
     signal: AbortSignal;
+    maxOutputTokens?: number;
   }): Promise<{
     content: Content;
     text: string;
@@ -41,6 +42,7 @@ export function createGeminiToolModel(
       declarations,
       responseJsonSchema,
       signal,
+      maxOutputTokens = 2048,
     }) {
       if (!key || env.AI_PROVIDER !== "gemini")
         throw new AgentError("MODEL_NOT_CONFIGURED");
@@ -88,7 +90,7 @@ export function createGeminiToolModel(
               ? { tools: [{ functionDeclarations: declarations }] }
               : {}),
             abortSignal: signal,
-            maxOutputTokens: 2048,
+            maxOutputTokens,
             temperature: 0.2,
             ...(responseJsonSchema
               ? { responseMimeType: "application/json", responseJsonSchema }

@@ -10,7 +10,13 @@ import { transaction } from "../src/server/sql";
 import { runResponsibilities } from "../src/server/responsibilities";
 import { expireUnfundedOrders } from "../src/server/p2p";
 import { reconcile as reconcileUsd } from "../src/server/usd/fixture";
+import { runCryptoReconciliation } from "../src/server/crypto/execution";
+import { runCryptoMonitoring } from "../src/server/crypto/alerts";
+import { operationalEvent } from "../src/server/observability";
+
 const worker = randomUUID();
+let nextCryptoCheck = 0;
+let cryptoCheck: Promise<unknown> | undefined;
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
   process.on(signal, () => {
@@ -19,6 +25,22 @@ for (const signal of ["SIGINT", "SIGTERM"])
 do {
   await runResponsibilities();
   await expireUnfundedOrders();
+  if (!cryptoCheck && Date.now() >= nextCryptoCheck) {
+    nextCryptoCheck = Date.now() + 30_000;
+    cryptoCheck = Promise.allSettled([
+      runCryptoMonitoring(),
+      runCryptoReconciliation(),
+    ])
+      .then((results) => {
+        if (results.some((result) => result.status === "rejected"))
+          operationalEvent("crypto.worker_failed", {
+            code: "CRYPTO_CHECK_FAILED",
+          });
+      })
+      .finally(() => {
+        cryptoCheck = undefined;
+      });
+  }
   const job = await claim(worker);
   if (!job) {
     if (process.argv.includes("--once")) break;
@@ -57,5 +79,6 @@ do {
     await retry(job, "HANDLER_FAILED");
   }
 } while (!stopping && !process.argv.includes("--once"));
+await cryptoCheck;
 const { closeDatabase } = await import("../src/server/sql");
 await closeDatabase();

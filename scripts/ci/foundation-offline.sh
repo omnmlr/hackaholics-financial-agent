@@ -17,9 +17,15 @@ case "$mode" in
     npm run lint
     npm test
     ;;
-  browser)
+  android-export)
     EXPO_PUBLIC_API_URL=https://prototype.fixture.invalid npm run mobile:export:android
+    ;;
+  web-build)
     npm run build
+    ;;
+  web-smoke)
+    CHROMIUM_PATH="$(node --input-type=module -e 'import {chromium} from "playwright"; process.stdout.write(chromium.executablePath())')"
+    export CHROMIUM_PATH
     npm run test:http
     npm run test:platform:http
     npm run test:agent-workspace

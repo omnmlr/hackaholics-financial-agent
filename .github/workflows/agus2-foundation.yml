@@ -88,12 +88,21 @@ jobs:
           node-version: "24"
       - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
-      - name: Select installed Chromium
-        run: node --input-type=module -e 'import {chromium} from "playwright"; import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\n`)'
-      - name: Verify production HTTP and browser flows offline
+      - name: Export Android JavaScript offline
+        timeout-minutes: 5
         env:
           POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
-        run: bash scripts/ci/foundation-offline.sh browser
+        run: bash scripts/ci/foundation-offline.sh android-export
+      - name: Build the production web app offline
+        timeout-minutes: 6
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh web-build
+      - name: Verify production HTTP and browser flows offline
+        timeout-minutes: 6
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh web-smoke
   escrow:
     runs-on: ubuntu-latest
     timeout-minutes: 30

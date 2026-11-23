@@ -16,6 +16,13 @@
 | Wallet identity | External DAL linked:true, but Phantom showed **red unverified-identity warning on physical phone** | **BLOCKER**: investigate vendor attestation |
 | APK delivery to tester | Founder installed GitHub prerelease on real Android phone and opened AGUS | **Installed and launches** |
 
+## 2026-11-23 — Solflare signing blocked by device Low Power Mode
+- Founder funded the disposable Solflare Devnet account; AGUS displayed 10 SOL in Solflare and 1 SOL in Phantom, combined 11 Devnet SOL.
+- On initiating AGUS's Solflare → Phantom payment handoff, Solflare displayed: **"Your device is in low power mode. Deactivate it to enable connection and signing."** No signing approval, broadcast or confirmed public Devnet receipt shown.
+- This is an explicit device power-saver restriction; **do not classify it as an AGUS transaction execution failure** without retrying once with Low Power Mode disabled and checking on-chain status. Phantom signing remains separately blocked by vendor force-close.
+- UX finding: launching the whole wallet app and waiting for unlock is too slow for the desired AGUS experience. Assess wallet-owned lightweight activity/sheet behavior, warm wallet handoff/return and vendor deeplink transports; browser launch does not eliminate external signing. Evaluate optional embedded wallet/smart-account delegation only for newly created/explicitly funded accounts, not silent access to preexisting Phantom/Solflare keys.
+- Next: disable device low-power mode, verify no pending submission, attempt one Solflare Devnet signing transaction, capture wallet approval/return behavior and public finalized signature or exact error. Keep origin-attestation warning as separate unresolved Phantom issue.
+
 ## 2026-11-22 — Post-crash Android + Explorer check (no observed transfer)
 - Founder reopened AGUS after Phantom's force-close and refreshed/checkpointed account status. Both wallet authorization records remain, with displayed Devnet balances **Phantom 1 SOL, Solflare 0 SOL**.
 - Founder opened Solana Explorer with **Devnet** selected for Solflare's recipient `47vuSgvjhkYoqz6A3VgDpGLth1LjQM7G9VqZr2wcwmbC`. Explorer showed **`Account does not exist`** and **`No transactions found`** at the time of the screenshot.

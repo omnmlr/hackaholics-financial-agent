@@ -6132,6 +6132,44 @@
           }
         }
       }
+    },
+    "/api/v1/crypto/share/{reference}": {
+      "get": {
+        "operationId": "cryptoShare",
+        "security": [],
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CryptoAddress"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authenticated crypto resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoShare"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -9171,6 +9209,59 @@
         },
         "required": [
           "cluster"
+        ],
+        "additionalProperties": false
+      },
+      "CryptoShare": {
+        "type": "object",
+        "properties": {
+          "network": {
+            "type": "string",
+            "const": "devnet"
+          },
+          "testAssets": {
+            "type": "boolean",
+            "const": true
+          },
+          "requiresExplicitNetworkSelection": {
+            "type": "boolean",
+            "const": true
+          },
+          "recipient": {
+            "$ref": "#/components/schemas/CryptoAddress"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/CryptoAddress"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/CryptoAmount"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "cancelled",
+              "expired",
+              "needs_review",
+              "settled"
+            ]
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/CryptoUtc"
+          },
+          "solanaPayUri": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "network",
+          "testAssets",
+          "requiresExplicitNetworkSelection",
+          "recipient",
+          "reference",
+          "amount",
+          "state",
+          "expiresAt"
         ],
         "additionalProperties": false
       },

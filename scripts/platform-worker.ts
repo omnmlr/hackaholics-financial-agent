@@ -10,6 +10,7 @@ import { transaction } from "../src/server/sql";
 import { runResponsibilities } from "../src/server/responsibilities";
 import { expireUnfundedOrders } from "../src/server/p2p";
 import { reconcile as reconcileUsd } from "../src/server/usd/fixture";
+import { runCryptoRequests } from "../src/server/crypto/requests";
 import { runCryptoReconciliation } from "../src/server/crypto/execution";
 import { runCryptoMonitoring } from "../src/server/crypto/alerts";
 import { operationalEvent } from "../src/server/observability";
@@ -30,6 +31,7 @@ do {
     cryptoCheck = Promise.allSettled([
       runCryptoMonitoring(),
       runCryptoReconciliation(),
+      runCryptoRequests(),
     ])
       .then((results) => {
         if (results.some((result) => result.status === "rejected"))

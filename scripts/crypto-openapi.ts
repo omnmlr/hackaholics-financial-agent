@@ -66,6 +66,7 @@ export function addCryptoPaths(
       query?: z.ZodObject;
       idempotency?: boolean;
       nullable?: boolean;
+      public?: boolean;
     } = {},
   ) {
     const parameters: Parameter[] = Array.from(
@@ -74,9 +75,11 @@ export function addCryptoPaths(
         name,
         in: "path",
         required: true,
-        schema: path.startsWith("/activity/")
-          ? { type: "string" }
-          : ref("CryptoId"),
+        schema: path.startsWith("/share/")
+          ? ref("CryptoAddress")
+          : path.startsWith("/activity/")
+            ? { type: "string" }
+            : ref("CryptoId"),
       }),
     );
     for (const [name, value] of Object.entries(options.query?.shape ?? {})) {
@@ -97,7 +100,7 @@ export function addCryptoPaths(
       });
     (paths[`/api/v1/crypto${path}`] ??= {})[method] = {
       operationId,
-      security: [{ Session: [] }],
+      security: options.public ? [] : [{ Session: [] }],
       parameters,
       ...(options.input && {
         requestBody: { required: true, content: json(ref(options.input)) },
@@ -261,4 +264,7 @@ export function addCryptoPaths(
     "CryptoRequest",
     { input: "CryptoRevision", ...mutation },
   );
+  operation("get", "/share/{reference}", "cryptoShare", "CryptoShare", {
+    public: true,
+  });
 }

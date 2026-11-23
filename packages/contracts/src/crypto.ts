@@ -571,3 +571,15 @@ export const CryptoRequest = CryptoRequestInput.extend({
   receiptId: CryptoId.nullable(),
 });
 export const CryptoRevision = z.strictObject({ revision: Slot });
+
+export const CryptoShare = z.strictObject({
+  network: z.literal("devnet"),
+  testAssets: z.literal(true),
+  requiresExplicitNetworkSelection: z.literal(true),
+  recipient: CryptoAddress,
+  reference: CryptoAddress,
+  amount: CryptoAmount,
+  state: CryptoRequest.shape.state,
+  expiresAt: CryptoUtc,
+  solanaPayUri: z.string().optional(),
+});

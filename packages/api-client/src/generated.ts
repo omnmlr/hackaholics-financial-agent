@@ -1764,6 +1764,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crypto/share/{reference}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoShare"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2399,6 +2415,21 @@ export interface components {
         CryptoScope: {
             cluster: components["schemas"]["CryptoCluster"];
             walletIds?: components["schemas"]["CryptoId"][];
+        };
+        CryptoShare: {
+            /** @constant */
+            network: "devnet";
+            /** @constant */
+            testAssets: true;
+            /** @constant */
+            requiresExplicitNetworkSelection: true;
+            recipient: components["schemas"]["CryptoAddress"];
+            reference: components["schemas"]["CryptoAddress"];
+            amount: components["schemas"]["CryptoAmount"];
+            /** @enum {string} */
+            state: "open" | "cancelled" | "expired" | "needs_review" | "settled";
+            expiresAt: components["schemas"]["CryptoUtc"];
+            solanaPayUri?: string;
         };
         CryptoSignature: string;
         CryptoSource: {
@@ -6500,6 +6531,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CryptoRequest"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoShare: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reference: components["schemas"]["CryptoAddress"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoShare"];
                 };
             };
             /** @description Stable API error */

@@ -304,15 +304,48 @@ export async function portfolio(
     "a" + digest.slice(17, 20),
     digest.slice(20, 32),
   ].join("-");
+  const byAccount = new Map<
+    string,
+    { holding: Holding; slot: number; ambiguous: boolean }
+  >();
+  const disputed = new Set<string>();
+  for (const snapshot of snapshots) {
+    for (const holding of snapshot.holdings) {
+      const key = holding.tokenAccount ?? `sol:${holding.walletId}`;
+      const prior = byAccount.get(key);
+      if (prior && prior.holding.walletId !== holding.walletId) {
+        disputed.add(prior.holding.walletId);
+        disputed.add(holding.walletId);
+      }
+      if (!prior || snapshot.slot > prior.slot) {
+        byAccount.set(key, { holding, slot: snapshot.slot, ambiguous: false });
+      } else if (
+        snapshot.slot === prior.slot &&
+        prior.holding.walletId !== holding.walletId
+      ) {
+        prior.ambiguous = true;
+      }
+    }
+  }
+  const holdings = [...byAccount.values()]
+    .filter((item) => !item.ambiguous)
+    .map((item) => item.holding);
+  const observations = batches
+    .flatMap((b) => b.coverage)
+    .map((item) =>
+      item.kind === "balances" &&
+      item.state === "ready" &&
+      disputed.has(item.walletId)
+        ? { ...item, state: "partial" as const, reason: "rpc_lag" as const }
+        : item,
+    );
   return C.CryptoPortfolio.parse({
     id,
     walletIds: wallets.map((w) => w.id),
     source: readSource(scope.cluster, slot, observedAt),
-    holdings: batches.flatMap(({ values }) =>
-      values.flatMap(({ holdings }) => holdings),
-    ),
+    holdings,
     positions: [],
-    coverage: batches.flatMap((b) => b.coverage),
+    coverage: observations,
     pricedSubtotalUsd: null,
   });
 }

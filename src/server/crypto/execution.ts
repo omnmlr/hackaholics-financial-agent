@@ -1,14 +1,22 @@
 import { createHash, randomUUID } from "node:crypto";
-import { Keypair, PublicKey, type Connection } from "@solana/web3.js";
+import {
+  Keypair,
+  PublicKey,
+  Transaction,
+  type Connection,
+  type Message,
+} from "@solana/web3.js";
 import { z } from "zod";
 import * as C from "../../../packages/contracts/src/crypto";
 import { TOKEN_PROGRAM_ID } from "../../lib/solana/classic-spl";
 import { atomsToDecimal, MAX_U64, safeLamports } from "../../lib/solana/money";
 import { service } from "../../lib/solana";
+import { DEVNET_GENESIS } from "../../lib/solana/contracts";
 import { consumeStepUp, instructionHash } from "../approvals";
 import type { Principal } from "../auth";
 import { invariant } from "../errors";
 import { idempotencyKey } from "../idempotency";
+import { inspectRequestPayment } from "../request-chain";
 import { operationalEvent } from "../observability";
 import { database, transaction, type Sql } from "../sql";
 import {
@@ -25,6 +33,7 @@ import {
   type Scope,
 } from "./registry";
 import { cryptoRpc } from "./rpc";
+import { findCryptoRequestReceipt } from "./requests";
 
 type Review = z.infer<typeof C.CryptoReview>;
 type Attempt = z.infer<typeof C.CryptoAttempt>;
@@ -470,8 +479,9 @@ export async function receipt(owner: string, id: string) {
       [owner, id],
     )
   ).rows[0];
-  invariant(row, "NOT_FOUND", 404);
-  return C.CryptoReceipt.parse(row.receipt);
+  const value = row?.receipt ?? (await findCryptoRequestReceipt(owner, id));
+  invariant(value, "NOT_FOUND", 404);
+  return C.CryptoReceipt.parse(value);
 }
 
 async function expiryEvidence(chain: Connection, review: Review) {
@@ -593,14 +603,26 @@ export async function reconcileCrypto(
           message.header.numRequiredSignatures !== 1
         )
           continue;
-        const parsed = await chain.getParsedTransaction(sig, {
-          commitment: "finalized",
-          maxSupportedTransactionVersion: 0,
-        });
+        const [parsed, statuses] = await Promise.all([
+          chain.getParsedTransaction(sig, {
+            commitment: "finalized",
+            maxSupportedTransactionVersion: 0,
+          }),
+          chain.getSignatureStatuses([sig], { searchTransactionHistory: true }),
+        ]);
+        const status = statuses.value[0];
         if (
-          !parsed ||
+          !parsed?.meta ||
           parsed.slot !== tx.slot ||
-          instructionHash(parsed.meta?.err) !== instructionHash(tx.meta.err)
+          parsed.meta.fee !== tx.meta.fee ||
+          status?.confirmationStatus !== "finalized" ||
+          status.slot !== tx.slot ||
+          instructionHash(status.err) !== instructionHash(tx.meta.err) ||
+          instructionHash(parsed.meta.err) !== instructionHash(tx.meta.err) ||
+          !Transaction.populate(
+            message as Message,
+            tx.transaction.signatures,
+          ).verifySignatures(true)
         )
           continue;
         const event = normalizeTransaction(review.cluster, sig, parsed);
@@ -610,6 +632,26 @@ export async function reconcileCrypto(
           reason = "ON_CHAIN_FAILURE";
           match = event;
           break;
+        }
+        const amount = review.amount;
+        if (!amount || !review.reference || !review.recipient) continue;
+        try {
+          inspectRequestPayment(
+            {
+              reference: review.reference,
+              recipient: review.recipient,
+              amountAtoms: amount.atoms,
+              scale: amount.decimals,
+              asset: amount.asset.kind === "sol" ? "SOL" : "SPL",
+              mint: amount.asset.kind === "token" ? amount.asset.mint : null,
+            },
+            sig,
+            { genesisHash: DEVNET_GENESIS, status, transaction: tx },
+          );
+        } catch {
+          state = "unknown";
+          reason = "SETTLEMENT_EFFECTS_UNVERIFIED";
+          continue;
         }
         const expected = review.amount!;
         const leg = event.legs.find(

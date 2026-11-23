@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { PublicKey } from "@solana/web3.js";
 import { z } from "zod";
-import { database, transaction } from "./sql";
+import { database, transaction, type Sql } from "./sql";
 import { invariant, DomainError } from "./errors";
 import { operation } from "./idempotency";
 import { service } from "../lib/solana";
@@ -78,6 +78,7 @@ export async function createRequest(
   owner: string,
   key: string,
   input: z.infer<typeof RequestInput>,
+  existingTransaction?: Sql,
 ) {
   input = RequestInput.parse(input);
   const recipient = publicKey(input.recipient);
@@ -88,7 +89,7 @@ export async function createRequest(
     "REQUEST_EXPIRY_INVALID",
     400,
   );
-  return transaction(async (sql) => {
+  async function create(sql: Sql) {
     const op = await operation(sql, owner, "payment.request", key, input);
     if (op.created)
       await sql.query(
@@ -113,7 +114,10 @@ export async function createRequest(
         )
       ).rows[0],
     );
-  });
+  }
+  return existingTransaction
+    ? create(existingTransaction)
+    : transaction(create);
 }
 export async function getRequest(owner: string, id: string) {
   const row = (
@@ -172,11 +176,10 @@ export async function cancelRequest(
   owner: string,
   id: string,
   revision: number,
+  sql?: Sql,
 ) {
   const row = (
-    await (
-      await database()
-    ).query(
+    await (sql ?? (await database())).query(
       "UPDATE agus_payment_requests SET status='cancelled',cancelled_at=now(),revision=revision+1 WHERE owner=$1 AND id=$2 AND revision=$3 AND status='open' RETURNING *",
       [owner, id, revision],
     )

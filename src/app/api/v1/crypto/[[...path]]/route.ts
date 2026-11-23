@@ -24,6 +24,15 @@ import {
   reportWalletOutcome,
   walletEligibility,
 } from "@/server/crypto/execution";
+import {
+  cancelCryptoRequest,
+  createCryptoRequest,
+  cryptoInvoicesReady,
+  cryptoRequestQr,
+  cryptoRequestsReady,
+  getCryptoRequest,
+  shareCryptoRequest,
+} from "@/server/crypto/requests";
 import { portfolio } from "@/server/crypto/portfolio";
 import * as registry from "@/server/crypto/registry";
 
@@ -61,6 +70,8 @@ async function handle(request: Request) {
       .split("/")
       .map(decodeURIComponent);
     const method = request.method;
+    if (method === "GET" && path.length === 2 && path[0] === "share")
+      return shareCryptoRequest(await input(C.CryptoAddress, path[1]));
     const p = await principal(request).catch((error) => {
       if (error instanceof DomainError && error.status === 401)
         throw new DomainError("SESSION_REQUIRED", 401);
@@ -83,8 +94,8 @@ async function handle(request: Request) {
             portfolio: true,
             assistant: cryptoAssistantReady(),
             monitoring: cryptoMonitoringReady(),
-            requests: false,
-            invoices: false,
+            requests: cluster === "devnet" && cryptoRequestsReady(),
+            invoices: cluster === "devnet" && cryptoInvoicesReady(),
             swap: false,
             pocketCreate: false,
             pocketFund: false,
@@ -230,6 +241,23 @@ async function handle(request: Request) {
     }
     if (method === "GET" && path.length === 2 && path[0] === "receipts")
       return receipt(p.id, await input(C.CryptoId, path[1]));
+    if (path[0] === "requests") {
+      if (method === "POST" && path.length === 1)
+        return createCryptoRequest(
+          p,
+          await input(C.CryptoRequestInput, body(request)),
+          idempotencyKey(request),
+        );
+      const id = await input(C.CryptoId, path[1]);
+      if (method === "GET" && path.length === 2)
+        return getCryptoRequest(p.id, id);
+      if (method === "GET" && path.length === 3 && path[2] === "qr")
+        return cryptoRequestQr(p.id, id);
+      if (method === "POST" && path.length === 3 && path[2] === "cancel") {
+        const { revision } = await input(C.CryptoRevision, body(request));
+        return cancelCryptoRequest(p, id, revision, idempotencyKey(request));
+      }
+    }
     if (
       [
         "assistant",

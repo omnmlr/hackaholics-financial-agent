@@ -43,6 +43,11 @@ export async function endpoint(fn: () => Promise<unknown>) {
       correlationId,
       durationMs: Date.now() - started,
     });
+    if (result instanceof Response) {
+      const headers = new Headers(result.headers);
+      headers.set("x-correlation-id", correlationId);
+      return new Response(result.body, { status: result.status, headers });
+    }
     return reply(result, 200, correlationId);
   } catch (error) {
     const known = error instanceof DomainError || error instanceof SolanaError;

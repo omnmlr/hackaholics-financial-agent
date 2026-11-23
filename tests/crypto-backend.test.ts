@@ -182,6 +182,31 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
       ).toBe(404);
     });
 
+    it("registers concurrent watch wallets for the same owner", async () => {
+      const addresses = Array.from({ length: 6 }, () =>
+        Keypair.generate().publicKey.toBase58(),
+      );
+      const responses = await Promise.all(
+        addresses.map((address) =>
+          POST(
+            request(1, "wallets/watch", {
+              cluster: devnet,
+              address,
+              label: "Concurrent watch",
+              ownDeclared: false,
+            }),
+          ),
+        ),
+      );
+      expect(responses.map(({ status }) => status)).toEqual(
+        addresses.map(() => 200),
+      );
+      const wallets = await Promise.all(
+        responses.map((response) => response.json()),
+      );
+      expect(new Set(wallets.map(({ id }) => id)).size).toBe(addresses.length);
+    });
+
     async function associateTestWallet(owner: number, key: Keypair) {
       const p = fixture.users[owner];
       const issued = await challenge(

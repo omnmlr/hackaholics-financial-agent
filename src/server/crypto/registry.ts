@@ -178,7 +178,10 @@ async function reserveWalletSlot(
   cluster: Cluster,
   address: string,
 ) {
-  await sql.query("SELECT id FROM agus_users WHERE id=$1 FOR UPDATE", [owner]);
+  // Serialize slot reservations while allowing existing foreign-key locks.
+  await sql.query("SELECT id FROM agus_users WHERE id=$1 FOR NO KEY UPDATE", [
+    owner,
+  ]);
   const { allowed } = (
     await sql.query<{ allowed: boolean }>(
       `SELECT count(*) < 12 OR COALESCE(bool_or(address=$3),false) AS allowed

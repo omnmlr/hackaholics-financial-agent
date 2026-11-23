@@ -49,7 +49,7 @@ export function cryptoAssistantReady() {
 
 async function reserve(owner: string, ask: Ask, key: string) {
   return transaction(async (sql) => {
-    await sql.query("SELECT id FROM agus_users WHERE id=$1 FOR UPDATE", [
+    await sql.query("SELECT id FROM agus_users WHERE id=$1 FOR NO KEY UPDATE", [
       owner,
     ]);
     const scope = {

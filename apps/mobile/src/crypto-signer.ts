@@ -1,11 +1,22 @@
 import { Platform } from "react-native";
 import { Buffer } from "buffer";
 import { base58 } from "@scure/base";
-import { PublicKey, Transaction } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemInstruction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import { digest, CryptoDigestAlgorithm } from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { transact } from "@solana-mobile/mobile-wallet-adapter-protocol-web3js";
 import type { components } from "@agus/api-client";
+import {
+  WalletRouteError,
+  walletFailure,
+  type WalletDiagnostic,
+  type WalletStage,
+} from "./crypto-wallet-policy";
 
 const packages = {
   phantom: "app.phantom",
@@ -32,7 +43,11 @@ function keyAddress(value: string) {
   return new PublicKey(bytes).toBase58();
 }
 
-export function createCryptoSigner(userId: string, publishedOrigin: string) {
+export function createCryptoSigner(
+  userId: string,
+  publishedOrigin: string,
+  diagnostic?: (event: WalletDiagnostic) => void,
+) {
   const url = new URL(publishedOrigin);
   if (
     url.protocol !== "https:" ||
@@ -65,7 +80,7 @@ export function createCryptoSigner(userId: string, publishedOrigin: string) {
   ) {
     const key = grantKey(provider, cluster, address);
     const token = await SecureStore.getItemAsync(key);
-    if (!token) throw new Error("WALLET_RECONNECT_REQUIRED");
+    if (!token) throw new WalletRouteError("WALLET_RECONNECT_REQUIRED");
     const wanted = new PublicKey(address).toBuffer().toString("base64");
     const chain = chainId(cluster);
     const authorization = await wallet.authorize({
@@ -82,31 +97,64 @@ export function createCryptoSigner(userId: string, publishedOrigin: string) {
           (!account.chains?.length || account.chains.includes(chain)),
       )
     )
-      throw new Error("WALLET_ACCOUNT_CHANGED");
+      throw new WalletRouteError("WALLET_ACCOUNT_CHANGED");
     await SecureStore.setItemAsync(key, authorization.auth_token, storage);
     return wanted;
   }
 
+  function emit(provider: Provider, stage: WalletStage, reason: string) {
+    diagnostic?.({ provider, stage, reason });
+  }
+
+  async function withWallet<T>(
+    provider: Provider,
+    callback: (
+      wallet: WalletApi,
+      setStage: (stage: WalletStage) => void,
+    ) => Promise<T>,
+  ) {
+    let stage: WalletStage = "association";
+    function setStage(next: WalletStage) {
+      stage = next;
+      emit(provider, stage, "STARTED");
+    }
+    setStage("association");
+    try {
+      return await transact(async (wallet) => {
+        setStage("authorization");
+        return callback(wallet, setStage);
+      }, packageConfig(provider));
+    } catch (error) {
+      const failure = walletFailure(error, stage);
+      emit(provider, stage, failure.reason);
+      throw new WalletRouteError(failure.reason);
+    }
+  }
+
   return {
     async authorize(provider: Provider, cluster: Chain) {
-      return transact(async (wallet) => {
+      return withWallet(provider, async (wallet, setStage) => {
         const chain = chainId(cluster);
         const auth = await wallet.authorize({ chain, identity });
-        if (!auth.auth_token) throw new Error("WALLET_RECONNECT_REQUIRED");
+        if (!auth.auth_token)
+          throw new WalletRouteError("WALLET_RECONNECT_REQUIRED");
         const addresses = auth.accounts
           .filter(
             (account) =>
               !account.chains?.length || account.chains.includes(chain),
           )
           .map((account) => keyAddress(account.address));
+        if (!addresses.length)
+          throw new WalletRouteError("WALLET_ACCOUNT_CHANGED");
         for (const address of addresses)
           await SecureStore.setItemAsync(
             grantKey(provider, cluster, address),
             auth.auth_token,
             storage,
           );
+        setStage("capabilities");
         return { addresses, capabilities: await wallet.getCapabilities() };
-      }, packageConfig(provider));
+      });
     },
     async signProof(
       provider: Provider,
@@ -117,13 +165,14 @@ export function createCryptoSigner(userId: string, publishedOrigin: string) {
       if (Date.parse(challenge.expiresAt) <= Date.now())
         throw new Error("CHALLENGE_EXPIRED");
       const message = Buffer.from(challenge.messageBase64, "base64");
-      return transact(async (wallet) => {
+      return withWallet(provider, async (wallet, setStage) => {
         const address = await select(wallet, provider, cluster, expectedSigner);
+        setStage("ownership-proof");
         const [signed] = await wallet.signMessages({
           addresses: [address],
           payloads: [message],
         });
-        if (!signed) throw new Error("WALLET_PROOF_MISSING");
+        if (!signed) throw new WalletRouteError("WALLET_PROOF_MISSING");
         const bytes = Buffer.from(signed);
         const signature =
           bytes.length === 64
@@ -132,9 +181,9 @@ export function createCryptoSigner(userId: string, publishedOrigin: string) {
                 Buffer.from(bytes.subarray(0, message.length)).equals(message)
               ? bytes.subarray(message.length)
               : null;
-        if (!signature) throw new Error("WALLET_PROOF_MISMATCH");
+        if (!signature) throw new WalletRouteError("WALLET_PROOF_MISMATCH");
         return base58.encode(signature);
-      }, packageConfig(provider));
+      });
     },
     async handoff(
       claim: Claim,
@@ -156,65 +205,101 @@ export function createCryptoSigner(userId: string, publishedOrigin: string) {
         attempt.expectedSigner !== route.address ||
         review.expectedSigner !== route.address ||
         review.transactionVersion !== "legacy" ||
-        Date.parse(review.expiresAt) <= Date.now()
+        review.operation !== "transfer" ||
+        review.feePayer !== route.address ||
+        review.amount?.asset.cluster !== "devnet" ||
+        !review.amount ||
+        !review.recipient ||
+        !(Date.parse(review.expiresAt) > Date.now())
       )
         return { kind: "unavailable", reason: "EXACT_FRESH_REVIEW_REQUIRED" };
       const provider = providerFor(route);
-      const tx = Transaction.from(
-        Buffer.from(review.unsignedTransactionBase64, "base64"),
-      );
-      const digestHex = Buffer.from(
-        await digest(CryptoDigestAlgorithm.SHA256, tx.serializeMessage()),
-      ).toString("hex");
-      if (
-        digestHex !== review.messageDigest ||
-        tx.feePayer?.toBase58() !== route.address ||
-        tx.compileMessage().header.numRequiredSignatures !== 1
-      )
-        return { kind: "unavailable", reason: "REVIEW_MESSAGE_MISMATCH" };
-      const marker = `agus.crypto.launch.${userId}.${attempt.id}`;
-      if (await SecureStore.getItemAsync(marker)) return { kind: "unknown" };
-      await SecureStore.setItemAsync(marker, review.messageDigest, storage);
-      let signingRequested = false;
+      let stage: WalletStage = "association";
       try {
+        const tx = Transaction.from(
+          Buffer.from(review.unsignedTransactionBase64, "base64"),
+        );
+        const digestHex = Buffer.from(
+          await digest(
+            CryptoDigestAlgorithm.SHA256,
+            Uint8Array.from(tx.serializeMessage()),
+          ),
+        ).toString("hex");
+        if (
+          digestHex !== review.messageDigest ||
+          tx.feePayer?.toBase58() !== route.address ||
+          tx.recentBlockhash !== review.blockhash ||
+          tx.compileMessage().header.numRequiredSignatures !== 1
+        )
+          return { kind: "unavailable", reason: "REVIEW_MESSAGE_MISMATCH" };
+        if (review.amount.asset.kind === "sol") {
+          const ix = tx.instructions[0];
+          const decoded =
+            ix && ix.programId.equals(SystemProgram.programId)
+              ? SystemInstruction.decodeTransfer(ix)
+              : null;
+          if (
+            !decoded ||
+            tx.instructions.length !== 1 ||
+            decoded.fromPubkey.toBase58() !== route.address ||
+            decoded.toPubkey.toBase58() !== review.recipient ||
+            decoded.lamports.toString() !== review.amount.atoms
+          )
+            return { kind: "unavailable", reason: "REVIEW_MESSAGE_MISMATCH" };
+        } else {
+          const transfer = tx.instructions.at(-1);
+          const data = transfer && Buffer.from(transfer.data);
+          const asset = review.amount.asset;
+          if (
+            !transfer ||
+            !data ||
+            data.length !== 10 ||
+            data[0] !== 12 ||
+            data[9] !== review.amount.decimals ||
+            data.readBigUInt64LE(1).toString() !== review.amount.atoms ||
+            transfer.programId.toBase58() !== asset.program ||
+            transfer.keys[0]?.pubkey.toBase58() !== review.sourceTokenAccount ||
+            transfer.keys[1]?.pubkey.toBase58() !== asset.mint ||
+            transfer.keys[2]?.pubkey.toBase58() !==
+              review.destinationTokenAccount ||
+            transfer.keys[3]?.pubkey.toBase58() !== route.address
+          )
+            return { kind: "unavailable", reason: "REVIEW_MESSAGE_MISMATCH" };
+        }
+        const marker = `agus.crypto.launch.${userId}.${attempt.id}`;
+        if (await SecureStore.getItemAsync(marker)) return { kind: "unknown" };
+        await SecureStore.setItemAsync(marker, review.messageDigest, storage);
+        emit(provider, stage, "STARTED");
         return await transact(async (wallet) => {
+          stage = "authorization";
+          emit(provider, stage, "STARTED");
           await select(wallet, provider, "devnet", route.address);
+          stage = "capabilities";
+          emit(provider, stage, "STARTED");
           const caps = await wallet.getCapabilities();
           if (
-            !caps.supported_transaction_versions.includes("legacy") ||
-            (!caps.supports_sign_and_send_transactions &&
-              !caps.features.includes("solana:signAndSendTransaction"))
+            !caps.supported_transaction_versions?.includes("legacy") ||
+            !caps.supports_sign_and_send_transactions
           )
-            return {
-              kind: "unavailable",
-              reason: "UNSUPPORTED_SIGNER_CAPABILITY",
-            };
-          signingRequested = true;
+            throw new WalletRouteError("UNSUPPORTED_SIGNER_CAPABILITY");
+          if (!(Date.parse(review.expiresAt) > Date.now()))
+            throw new WalletRouteError("EXACT_FRESH_REVIEW_REQUIRED");
+          stage = "submission";
+          emit(provider, stage, "STARTED");
           const [signature] = await wallet.signAndSendTransactions({
             transactions: [tx],
             minContextSlot: review.minContextSlot,
             commitment: "confirmed",
-            skipPreflight: false,
-            maxRetries: 0,
           });
           if (!signature || base58.decode(signature).length !== 64)
-            return { kind: "unknown" };
+            throw new WalletRouteError("WALLET_SIGNATURE_UNAVAILABLE");
+          emit(provider, stage, "SIGNATURE_RETURNED");
           return { kind: "signature", signature };
         }, packageConfig(provider));
       } catch (error) {
-        const code = (error as { code?: string | number })?.code;
-        if (code === -3) return { kind: "declined" };
-        if (signingRequested) return { kind: "unknown" };
-        if (code === "ERROR_WALLET_NOT_FOUND")
-          return { kind: "unavailable", reason: "WALLET_NOT_INSTALLED" };
-        if (
-          error instanceof Error &&
-          /low power|battery saver/i.test(error.message)
-        )
-          return { kind: "unavailable", reason: "WALLET_POWER_RESTRICTION" };
-        if (code === -100)
-          return { kind: "unavailable", reason: "WALLET_ATTESTATION_REQUIRED" };
-        return { kind: "unavailable", reason: "WALLET_RECONNECT_REQUIRED" };
+        const failure = walletFailure(error, stage);
+        emit(provider, stage, failure.reason);
+        return failure.outcome;
       }
     },
     async unlink(route: Route) {

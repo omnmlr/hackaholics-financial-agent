@@ -2486,6 +2486,7 @@ export interface components {
         } | {
             /** @constant */
             kind: "unknown";
+            reason?: string;
         } | {
             /** @constant */
             kind: "signature";

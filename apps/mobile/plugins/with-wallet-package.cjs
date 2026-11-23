@@ -34,6 +34,46 @@ module.exports = function withWalletPackage(config) {
         return { ...config, modRequest };
       const replacements = [
         [
+          "private const val ASSOCIATION_TIMEOUT_MS = 10000",
+          "private const val ASSOCIATION_TIMEOUT_MS = 45000",
+        ],
+        [
+          "    // Used to ensure that you can't start more than one session at a time.",
+          "    private class WalletActivityUnavailable : IllegalStateException()\n\n    // Used to ensure that you can't start more than one session at a time.",
+        ],
+        [
+          'Log.d(TAG, "startSession with config $config")',
+          'Log.d(TAG, "Wallet association started")',
+        ],
+        [
+          `                reactApplicationContext.currentActivity?.apply {
+                    startActivityForResult(intent, REQUEST_LOCAL_ASSOCIATION)
+                } ?: throw NullPointerException(
+                    "Could not find a current activity from which to launch a local association"
+                )`,
+          `                withContext(Dispatchers.Main.immediate) {
+                    val activity = reactApplicationContext.currentActivity
+                        ?: throw WalletActivityUnavailable()
+                    activity.startActivityForResult(intent, REQUEST_LOCAL_ASSOCIATION)
+                }`,
+        ],
+        [
+          "            } catch (e: ActivityNotFoundException) {",
+          `            } catch (e: WalletActivityUnavailable) {
+                finishHeadlessTask(sessionTaskId)
+                cleanup()
+                promise.reject("ERROR_WALLET_ACTIVITY_UNAVAILABLE", e)
+            } catch (e: ActivityNotFoundException) {`,
+        ],
+        [
+          '"Session not established: Local association cancelled by user",',
+          '"ERROR_ASSOCIATION_CANCELLED",',
+        ],
+        [
+          'promise.reject("Timed out waiting for local association to be ready", e)',
+          'promise.reject("ERROR_ASSOCIATION_TIMEOUT", e)',
+        ],
+        [
           'val uriPrefix = config?.getString("baseUri")?.let { Uri.parse(it) }',
           `// AGUS: package-scoped MWA. An unpatched client rejects this non-HTTPS URI.
                 val route = config?.getString("baseUri")?.let { Uri.parse(it) }

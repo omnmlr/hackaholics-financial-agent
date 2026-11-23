@@ -57,6 +57,13 @@ const walletUnavailable = new Set([
   "EXACT_FRESH_REVIEW_REQUIRED",
   "REVIEW_MESSAGE_MISMATCH",
   "WALLET_ACCOUNT_CHANGED",
+  "WALLET_ACTIVITY_UNAVAILABLE",
+  "WALLET_ASSOCIATION_TIMEOUT",
+  "WALLET_ASSOCIATION_CANCELLED",
+  "WALLET_PAYLOAD_REJECTED",
+  "WALLET_SUBMISSION_UNCERTAIN",
+  "WALLET_TRANSPORT_LOST",
+  "WALLET_SIGNATURE_UNAVAILABLE",
 ]);
 const terminal: Attempt["state"][] = [
   "declined",
@@ -400,11 +407,33 @@ export function reportWalletOutcome(
       const row = await rowFor(sql, p.id, id, true);
       if (terminal.includes(row.state)) return view(row);
       invariant(row.state !== "ready", "APPROVAL_REQUIRED", 403);
-      if (
-        row.signature ||
-        (row.state === "unknown" && outcome.kind !== "signature")
-      )
+      const reportedReason =
+        "reason" in outcome &&
+        outcome.reason &&
+        walletUnavailable.has(outcome.reason)
+          ? outcome.reason
+          : null;
+      if (row.signature) return view(row);
+      if (row.state === "unknown" && outcome.kind !== "signature") {
+        if (
+          reportedReason &&
+          [
+            "CALLBACK_UNKNOWN",
+            "AWAITING_FINALIZED_EVIDENCE",
+            "PROVIDER_UNAVAILABLE",
+          ].includes(row.reason ?? "")
+        ) {
+          await sql.query(
+            "UPDATE agus_crypto_attempts SET reason=$3,updated_at=now() WHERE owner=$1 AND id=$2",
+            [p.id, id, reportedReason],
+          );
+          await audit(sql, p.id, id, "crypto.wallet_diagnostic", {
+            reason: reportedReason,
+          });
+          return view(await rowFor(sql, p.id, id));
+        }
         return view(row);
+      }
       // Vendor alerts can be ambiguous after opening the wallet. Only an explicit
       // decline can close the attempt without chain evidence.
       const next =
@@ -419,7 +448,9 @@ export function reportWalletOutcome(
             ? outcome.reason
             : "WALLET_UNAVAILABLE"
           : outcome.kind === "unknown"
-            ? "CALLBACK_UNKNOWN"
+            ? outcome.reason && walletUnavailable.has(outcome.reason)
+              ? outcome.reason
+              : "CALLBACK_UNKNOWN"
             : null;
       const sig = outcome.kind === "signature" ? outcome.signature : null;
       await sql.query(

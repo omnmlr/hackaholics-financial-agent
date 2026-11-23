@@ -341,6 +341,17 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         getParsedTransaction: async () =>
           parsedTransfer(wallet.address, review.recipient, finalSig),
       } as unknown as Connection;
+      const diagnostic = await POST(
+        request(0, `attempts/${attempt.id}/wallet-outcome`, {
+          kind: "unknown",
+          reason: "WALLET_SUBMISSION_UNCERTAIN",
+        }),
+      );
+      expect(await diagnostic.json()).toMatchObject({
+        state: "unknown",
+        reason: "WALLET_SUBMISSION_UNCERTAIN",
+        receiptId: null,
+      });
       const wrongEffects = await reconcileCrypto(
         p.id,
         attempt.id,
@@ -601,6 +612,64 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
             )
           ).status,
         ).toBe(200);
+      },
+    );
+    it.skipIf(process.env.AGUS_CRYPTO_LIVE_READS !== "true")(
+      "totals two watched Devnet accounts and indexes their shared finalized transfer once",
+      async () => {
+        const addresses = [
+          "FBaYNnwfxbVFFuetTZGs4GDy8ccEqR3ggXDs78swm7qy",
+          "AAQKVK6jegecXLDr2ssP1jcNFF5meVQdhbVPMFpz9YzZ",
+        ];
+        const wallets = await Promise.all(
+          addresses.map(async (address) => {
+            const result = await POST(
+              request(0, "wallets/watch", {
+                cluster: devnet,
+                address,
+                label: "Public Devnet acceptance wallet",
+                ownDeclared: false,
+              }),
+            );
+            expect(result.status).toBe(200);
+            return result.json();
+          }),
+        );
+        const walletIds = wallets.map((wallet) => wallet.id);
+        const filters = new URLSearchParams([
+          ["cluster", devnet],
+          ...walletIds.map((id) => ["walletIds", id]),
+        ]);
+        const portfolioResponse = await GET(request(0, `portfolio?${filters}`));
+        expect(portfolioResponse.status).toBe(200);
+        const snapshot = await portfolioResponse.json();
+        const chain = await cryptoRpc(devnet);
+        const expected = await Promise.all(
+          addresses.map((address) =>
+            chain.getBalance(new PublicKey(address), "finalized"),
+          ),
+        );
+        const holdings = snapshot.holdings.filter(
+          (item: { amount: { asset: { kind: string } } }) =>
+            item.amount.asset.kind === "sol",
+        );
+        expect(holdings).toHaveLength(2);
+        expect(
+          holdings.reduce(
+            (sum: bigint, item: { amount: { atoms: string } }) =>
+              sum + BigInt(item.amount.atoms),
+            0n,
+          ),
+        ).toBe(expected.reduce((sum, value) => sum + BigInt(value), 0n));
+        const activity = await GET(request(0, `activity?${filters}`));
+        expect(activity.status).toBe(200);
+        const sharedSig =
+          "2ztFGAyjsrKmPLG84fY1jXYbZuEsaRBnVFVT9DmF4QJuBAd1GbHXaqWszd469fJSL98mBgQ78MsuJxFZo8bLidds";
+        const items = (await activity.json()).items.filter(
+          (item: { signature: string }) => item.signature === sharedSig,
+        );
+        expect(items).toHaveLength(1);
+        expect(items[0].status).toBe("success");
       },
     );
     it.skipIf(!process.env.AGUS_CRYPTO_DEVNET_SIGNER_FILE)(

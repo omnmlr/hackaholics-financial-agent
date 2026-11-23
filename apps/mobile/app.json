@@ -31,6 +31,21 @@
               "host": "open"
             }
           ]
+        },
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "https",
+              "host": "agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app",
+              "pathPrefix": "/open"
+            }
+          ]
         }
       ]
     },

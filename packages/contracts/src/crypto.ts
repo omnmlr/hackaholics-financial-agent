@@ -490,7 +490,10 @@ export const CryptoWalletOutcome = z.discriminatedUnion("kind", [
     kind: z.literal("unavailable"),
     reason: z.string().min(1).max(100),
   }),
-  z.strictObject({ kind: z.literal("unknown") }),
+  z.strictObject({
+    kind: z.literal("unknown"),
+    reason: z.string().min(1).max(100).optional(),
+  }),
   z.strictObject({ kind: z.literal("signature"), signature: CryptoSignature }),
   z.strictObject({
     kind: z.literal("signed"),

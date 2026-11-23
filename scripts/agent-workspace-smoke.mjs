@@ -237,7 +237,9 @@ try {
     action: "propose_memory",
     input: { text: "Chat memory acceptance", category: "preference" },
   });
-  await page.goto(base);
+  // Fixture mode serves AgusWorkspace at /. This test exercises the legacy
+  // conversation drawer and its agent workspace on their dedicated route.
+  await page.goto(base + "/conversation");
   // Wait for session/history initialization, which can close the initial drawer.
   await page
     .getByRole("button", { name: /^Choose records account:/ })

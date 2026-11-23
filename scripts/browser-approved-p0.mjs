@@ -199,14 +199,30 @@ try {
       await sidebar.waitFor();
       return sidebar;
     };
-    const send = async (text) => {
+    const send = async (text, accountIds) => {
+      await page.locator('.agus-composer[aria-busy="false"]').waitFor();
       const n = await page.locator(".agus-assistant-message").count();
       await input.fill(text);
-      if (viewport.width >= 768) await input.press("Enter");
-      else
-        await page
-          .getByRole("button", { name: "Send message", exact: true })
-          .click();
+      const [response] = await Promise.all([
+        page.waitForResponse(
+          (reply) =>
+            reply.url() === `${base}/api/conversation` &&
+            reply.request().method() === "POST" &&
+            reply.request().postDataJSON()?.text === text,
+        ),
+        viewport.width >= 768
+          ? input.press("Enter")
+          : page
+              .getByRole("button", { name: "Send message", exact: true })
+              .click(),
+      ]);
+      if (accountIds)
+        assert.deepEqual(response.request().postDataJSON().accountIds, accountIds);
+      assert.equal(
+        response.status(),
+        200,
+        "Conversation fixture returned an HTTP error",
+      );
       await page.waitForFunction(
         (n) => document.querySelectorAll(".agus-assistant-message").length > n,
         n,
@@ -308,11 +324,17 @@ try {
     assert.equal(await input.inputValue(), "Draft in first chat");
     await page.goBack();
     await page.waitForURL(secondUrl);
-    await page.locator(".agus-assistant-message").waitFor();
+    await page
+      .locator(".agus-assistant-message")
+      .filter({ hasText: /Inflation means/ })
+      .waitFor();
     assert.equal(await input.inputValue(), "Draft in second chat");
     await page.goForward();
     await page.waitForURL(firstUrl);
-    await page.locator(".agus-assistant-message").waitFor();
+    await page
+      .locator(".agus-assistant-message")
+      .filter({ hasText: /Hey!/ })
+      .waitFor();
     assert.equal(await input.inputValue(), "Draft in first chat");
     checks.push(
       "transient per-chat drafts; prompt protection; Back/Forward; touch Return/desktop newline",
@@ -325,7 +347,13 @@ try {
     await page
       .getByRole("button", { name: "Close account", exact: true })
       .click();
-    const total = await send("Show my spending for October 2026");
+    await page.locator("dialog.agus-account-dialog").waitFor({ state: "hidden" });
+    await page
+      .getByRole("button", { name: /^Choose records account: .*0042$/ })
+      .waitFor();
+    const total = await send("Show my spending for October 2026", [
+      "amina-current",
+    ]);
     assert.match(await total.innerText(), /₦19,751.51/);
     assert.match(await total.innerText(), /₦250,000.00/);
     assert.match(await total.innerText(), /₦230,248.49/);
@@ -340,7 +368,9 @@ try {
     await total.locator(".agus-sources>summary").click();
     assert.match(await total.innerText(), /Sources and calculation/);
     await shot("spending-expanded");
-    const matches = await send("Find payments to Ada in October 2026");
+    const matches = await send("Find payments to Ada in October 2026", [
+      "amina-current",
+    ]);
     assert.match(await matches.innerText(), /Ada Obi/);
     assert.match(await matches.innerText(), /Ada Okafor/);
     await shot("matches");

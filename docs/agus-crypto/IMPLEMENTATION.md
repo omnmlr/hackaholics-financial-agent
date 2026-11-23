@@ -33,8 +33,8 @@ For local development and tests, pass `createCryptoFixtureTransport(scenario)` f
 | Registry and reads | Better Auth sessions scope ownership proof and wallet resources. Finalized owner and observed classic SPL token account feeds share stable transaction and instruction IDs. Exact balances survive partial RPC failure through per-feed caches. | Complete historical token account discovery, verified price sources, and full benchmark samples. Activity states coverage gaps explicitly. |
 | Financial chat | Gemini routes bounded questions to deterministic portfolio, activity, flows and transfer eligibility. Server-side usage limits and one job per user turn. Basic balance reads can finish from deterministic tools if Gemini times out. | More live question coverage and evidence navigation on Android. |
 | Identity | Better Auth Google OAuth and verified email registration, sign-in and recovery are wired. Email verification and password reset passed end to end with disposable mail transport. | Deploy Google OAuth client credentials and register the callback URL. Configure Resend with a verified sender and test real delivery and callback from Android. |
-| Execution | Devnet SOL and allowlisted classic SPL review bytes, fee and ATA rent checks, exact digest approval, one-time handoff, attempt polling and finalized receipt verification. Pending and unknown attempts are reconciled by the worker. | Real Devnet SOL and SPL execution, independent provider setup, signed handset return/recovery, and both wallet routes. |
-| Monitoring | Durable opt-in external inflow rule, worker, scoped inbox, mark read and replay-safe deduplication tested in Postgres. | A newly finalized public inflow observed by the worker without a chat or activity request. |
+| Execution | Devnet SOL and allowlisted classic SPL review bytes, fee and ATA rent checks, exact digest approval, one-time handoff, attempt polling and finalized receipt verification. Pending and unknown attempts are reconciled by the worker. | Live SPL execution, signed handset return and recovery, and both wallet routes. |
+| Monitoring | Durable opt-in external inflow rule, worker, scoped inbox, mark read and replay-safe deduplication tested in Postgres. | Verify delivery in the signed Android demo. |
 | Pocket and supporting tools | Outgoing receipts and gated Devnet payment requests, PNG share QR, basic invoices and request receipt verification are implemented. | Verify a newly paid request and its receipt on Devnet before enabling request flags. Swaps and Pocket remain unavailable pending separate acceptance. |
 
 ### Frontend and deployment settings
@@ -52,7 +52,7 @@ For local development and tests, pass `createCryptoFixtureTransport(scenario)` f
 - Verified public Devnet portfolio and finalized activity through the authenticated Crypto API and compared the balance with a separate direct RPC call. The public Devnet test address held 10 SOL at observation. The following signature was already on chain when the test began. [Devnet activity](https://explorer.solana.com/tx/HToPkwpMHJF9cyQmNAWV2RzzCu2MN5qq8CYQrAaD8AVqS5wEZqCT6ZQqj8DKjk3cnu37koXZ9Xheav2TxHieAtY?cluster=devnet)
 - Circle test USDC `4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU` was finalized at Devnet slot 525446289. Circle USDC `EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v` was finalized at Mainnet slot 472960100. Both mint accounts reported six decimals and classic SPL Token ownership. Mainnet genesis is `5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d`. [Circle mint registry](https://developers.circle.com/stablecoins/usdc-contract-addresses)
 - The existing Gemini credential returned HTTP 200 and reported `gemini-3.5-flash-lite` in a live GenerateContent response. The application smoke test exercised a grounded SOL balance and verified that reaching the per-user quota leaves the portfolio endpoint usable.
-- The public RPC faucet returned HTTP 410 with instructions to use the web faucet. A funded disposable Devnet signer is needed for a new public transfer or fresh alert run. Local handoff and settlement test receipts use fixture evidence. No Mainnet funds or permissions were used.
+- The public RPC faucet returned HTTP 410 with instructions to use the web faucet. The founder funded the existing disposable signer through the web faucet. The funded SOL transfer and alert evidence appear below.
 
 ### Mainnet demonstration gate
 
@@ -70,7 +70,7 @@ The 80/100 acceptance target remains conditional on the complete handset journey
 
 ### Disposable transfer acceptance
 
-Set `AGUS_CRYPTO_DEVNET_SIGNER_FILE` only for the explicit live test, and point it to a fresh funded Devnet-only keypair outside the repository. The test prepares and approves one 0.001 Devnet SOL transfer to a new recipient and sends exactly once. It exercises lost-callback recovery, a finalized receipt and the recipient's opt-in inbox rule. Run `npx vitest run tests/crypto-backend.test.ts -t 'explicitly enabled disposable Devnet transfer'` with the disposable Postgres environment. This phase produces software-signer evidence. Signed Android and wallet-vendor acceptance still require the physical handset.
+The opt-in software-signer test requires a disposable Postgres environment, `AGUS_CRYPTO_DEVNET_SIGNER_FILE` pointing to an owner-only Devnet keypair outside the repository, `AGUS_CRYPTO_DEVNET_EXPECTED_SENDER`, `AGUS_DEVNET_VERIFY_RPC` on a separate hostname, and an unused absolute `AGUS_CRYPTO_DEVNET_EVIDENCE_FILE` path. Run `npx vitest run tests/crypto-backend.test.ts -t 'explicitly enabled disposable Devnet transfer'` only for a separately authorized transfer. The test journals the expected signature and reference before one submission. If the result is uncertain, reconcile those identifiers with read-only calls using the retained journal and database.
 
 For request and invoice acceptance, enable `AGUS_CRYPTO_REQUESTS` and optionally `AGUS_CRYPTO_INVOICES` on private Devnet. QR content is a network-labeled share URL. The public resource omits invoice metadata. The worker verifies finalized exact Solana Pay evidence before publishing a receipt and routes ambiguous candidates to review.
 
@@ -79,10 +79,30 @@ For request and invoice acceptance, enable `AGUS_CRYPTO_REQUESTS` and optionally
 | Check | Result |
 | --- | --- |
 | Repository suite with disposable Postgres and live providers off | 1,698 passed, three opt-in cases skipped |
-| Crypto contract and backend suites with public read verification on | 14 passed. The funded transfer case was skipped because the disposable wallet held zero lamports. |
+| Crypto contract and backend suites with public read verification on | 14 passed during the initial read-only run. The funded transfer ran separately and passed below. |
 | PostgreSQL platform suite | 39 passed |
 | Production HTTP smoke | Passed session enforcement, owner isolation and the existing platform restart checks |
 | Contract regeneration, root and mobile TypeScript, ESLint | Passed |
 | Android JavaScript export | Passed. The SDK and physical handset are required for signed APK acceptance. |
 
-The live Crypto test decoded finalized public activity and simulated the exact unsigned Devnet transfer message against RPC. The Gemini SDK separately returned the expected structured portfolio route using the existing server credential. The finalized settlement test verifies the sender signature, message digest, finalized status and actual balance deltas, and withholds the receipt for mismatched evidence. Settlement and alert replay tests used controlled blockchain responses in disposable Postgres.
+The live Crypto test decoded finalized public activity and simulated the exact unsigned Devnet transfer message against RPC. The Gemini SDK separately returned the expected structured portfolio route using the existing server credential. The finalized settlement test verifies the sender signature, message digest, finalized status and actual balance deltas, and withholds the receipt for mismatched evidence. The initial settlement and alert replay tests used controlled blockchain responses in disposable Postgres.
+
+
+### Finalized Devnet transfer and alert · November 23
+
+The opt-in software-signer test submitted one **0.001 SOL** transfer. Devnet finalized it at slot **525464932** at 14:45:38 UTC. Solana's public Devnet RPC and `devnet.rpcpool.com` agreed on the signature, finalized status, reviewed message digest, balance deltas and 5,000-lamport fee. Each endpoint returned exactly one transaction for the payment reference and the recipient. [Solana Explorer](https://explorer.solana.com/tx/2ztFGAyjsrKmPLG84fY1jXYbZuEsaRBnVFVT9DmF4QJuBAd1GbHXaqWszd469fJSL98mBgQ78MsuJxFZo8bLidds?cluster=devnet)
+
+| Evidence | Verified value |
+| --- | --- |
+| Sender | `FBaYNnwfxbVFFuetTZGs4GDy8ccEqR3ggXDs78swm7qy` |
+| Recipient | `AAQKVK6jegecXLDr2ssP1jcNFF5meVQdhbVPMFpz9YzZ` |
+| Sender balance | 5 SOL → 4.998995 SOL |
+| Recipient balance | 0 SOL → 0.001 SOL |
+| Reviewed message SHA-256 | `5666b3c3387c1bdc44036c28d59ce51fb098dad7b4d5fc7ca85cb07bccd87530` |
+| Attempt and receipt | `090b6457-dc52-4e9b-b8af-cf123809dbc7` and `f295cfc3-5ffc-4026-8d95-7d06da8e236c` |
+| Alert and rule | `c46a6ce3-3f12-40c9-95b9-ae7fd64307ef` and `9bee048d-720e-43bc-8a6d-7efad1444002` |
+| Alert timestamps | Created at 14:45:43.418 UTC and marked read at 14:45:43.461 UTC |
+
+The attempt entered `unknown` before submission to reproduce a lost wallet callback. Reconciliation found the transfer through its saved Devnet reference and finalized the same attempt. Replayed approvals and three concurrent handoff requests produced one approval and one launch grant. A late callback and later reconciliation returned the same receipt. A new worker process replayed monitoring against the same disposable Postgres database and returned exactly one alert with its read timestamp intact. The test used the existing software signer. Phantom and Solflare signing still require a signed physical-device run.
+
+The failing foundation smoke test had opened `/`, which serves the newer workspace in fixture mode. It now opens `/conversation`, where the legacy records-account control and conversation drawer are rendered. The workspace, follow-up and runner browser smokes passed locally with the fixed navigation. Chisom can wire the generated attempt and inbox APIs on Devnet, restore the same attempt on app resume, and use the verified receipt and alert to check the UI states.

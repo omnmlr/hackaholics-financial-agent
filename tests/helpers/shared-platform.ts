@@ -100,12 +100,14 @@ export async function sharedPlatform(count = 7) {
       );
       return id;
     },
-    async close() {
+    async close(preserveDatabase = false) {
       await closeDatabase();
       await ((await db()).$client as unknown as Pool).end();
       await admin.end();
-      await root.query(`DROP DATABASE "${name}"`);
-      await root.query(`DROP ROLE "${role}"`);
+      if (!preserveDatabase) {
+        await root.query(`DROP DATABASE "${name}"`);
+        await root.query(`DROP ROLE "${role}"`);
+      }
       await root.end();
       vi.unstubAllEnvs();
     },

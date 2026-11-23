@@ -1,11 +1,15 @@
+import { execFile } from "node:child_process";
 import { createHash, randomUUID, sign } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { lstat, open, readFile } from "node:fs/promises";
+import { isAbsolute } from "node:path";
+import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { base58 } from "@scure/base";
 import {
   Keypair,
   PublicKey,
+  SystemInstruction,
   SystemProgram,
   Transaction,
   type Connection,
@@ -87,12 +91,13 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
   () => {
     let fixture: Awaited<ReturnType<typeof sharedPlatform>>;
     const origin = "http://localhost:3000";
+    let preserveAcceptanceDatabase = false;
     beforeAll(async () => {
       fixture = await sharedPlatform(2);
       vi.stubEnv("AGUS_CRYPTO_MONITORING", "true");
     });
     afterAll(async () => {
-      await fixture?.close();
+      await fixture?.close(preserveAcceptanceDatabase);
     });
 
     function request(
@@ -602,14 +607,42 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
       "broadcasts one explicitly enabled disposable Devnet transfer and observes a finalized receipt and alert",
       async () => {
         const keyFile = process.env.AGUS_CRYPTO_DEVNET_SIGNER_FILE!;
-        const sender = Keypair.fromSecretKey(
-          Uint8Array.from(JSON.parse(await readFile(keyFile, "utf8"))),
-        );
+        const evidencePath = process.env.AGUS_CRYPTO_DEVNET_EVIDENCE_FILE;
+        const expectedSender = process.env.AGUS_CRYPTO_DEVNET_EXPECTED_SENDER;
+        const verifierUrl = process.env.AGUS_DEVNET_VERIFY_RPC;
+        if (
+          !evidencePath ||
+          !isAbsolute(evidencePath) ||
+          !expectedSender ||
+          !verifierUrl
+        )
+          throw new Error(
+            "Set an absolute one-use evidence path, the expected sender and a separate Devnet verifier",
+          );
+        const attributes = await lstat(keyFile);
+        if (!attributes.isFile() || attributes.mode & 0o077)
+          throw new Error(
+            "Keep the disposable signer in an owner-only regular file",
+          );
+        let sender;
+        try {
+          sender = Keypair.fromSecretKey(
+            Uint8Array.from(JSON.parse(await readFile(keyFile, "utf8"))),
+          );
+        } catch {
+          throw new Error("Could not load the disposable signer");
+        }
+        expect(sender.publicKey.toBase58()).toBe(expectedSender);
         const recipient = Keypair.generate();
         const rpc = await cryptoRpc(devnet);
-        expect(
-          await rpc.getBalance(sender.publicKey, "finalized"),
-        ).toBeGreaterThan(1_010_000);
+        const verifier = await cryptoRpc(devnet, true);
+        const [sourceBefore, destinationBefore] = await Promise.all([
+          verifier.getBalance(sender.publicKey, "finalized"),
+          verifier.getBalance(recipient.publicKey, "finalized"),
+        ]);
+        expect(sourceBefore).toBeGreaterThan(1_010_000);
+        expect(destinationBefore).toBe(0);
+        vi.stubEnv("AGUS_ENVIRONMENT", "devnet");
         vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
         vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", "phantom");
         const from = await associateTestWallet(0, sender);
@@ -622,6 +655,7 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
           }),
         );
         expect(enabled.status).toBe(200);
+        const rule = await enabled.json();
         const prepared = await POST(
           request(0, "reviews", {
             kind: "transfer",
@@ -633,18 +667,33 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         );
         expect(prepared.status).toBe(200);
         const review = await prepared.json();
+        const approvalBody = {
+          revision: review.revision,
+          reviewDigest: review.reviewDigest,
+        };
         const approval = await POST(
-          request(0, `reviews/${review.id}/begin`, {
-            revision: review.revision,
-            reviewDigest: review.reviewDigest,
-          }),
+          request(0, `reviews/${review.id}/begin`, approvalBody),
         );
         expect(approval.status).toBe(200);
         const attempt = await approval.json();
-        const handoff = await POST(
-          request(0, `attempts/${attempt.id}/handoff`, {}),
+        const repeated = await POST(
+          request(0, `reviews/${review.id}/begin`, approvalBody),
         );
-        expect((await handoff.json()).launchGranted).toBe(true);
+        expect((await repeated.json()).id).toBe(attempt.id);
+        const handoffPath = `attempts/${attempt.id}/handoff`;
+        const handoffKey = randomUUID();
+        const handoffs = await Promise.all([
+          POST(request(0, handoffPath, {}, handoffKey)),
+          POST(request(0, handoffPath, {}, handoffKey)),
+          POST(request(0, handoffPath, {})),
+        ]);
+        expect(handoffs.map((response) => response.status)).toEqual([
+          200, 200, 200,
+        ]);
+        const claims = await Promise.all(
+          handoffs.map((response) => response.json()),
+        );
+        expect(claims.filter((claim) => claim.launchGranted)).toHaveLength(1);
 
         const tx = Transaction.from(
           Buffer.from(review.unsignedTransactionBase64, "base64"),
@@ -653,6 +702,11 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         expect(
           createHash("sha256").update(tx.serializeMessage()).digest("hex"),
         ).toBe(review.messageDigest);
+        expect(tx.instructions).toHaveLength(1);
+        const decoded = SystemInstruction.decodeTransfer(tx.instructions[0]);
+        expect(decoded.fromPubkey.equals(sender.publicKey)).toBe(true);
+        expect(decoded.toPubkey.equals(recipient.publicKey)).toBe(true);
+        expect(decoded.lamports).toBe(1_000_000n);
         tx.sign(sender);
         const expectedSignature = base58.encode(tx.signature!);
         const unknown = await POST(
@@ -661,39 +715,167 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
           }),
         );
         expect((await unknown.json()).state).toBe("unknown");
-        // One explicitly gated test-only broadcast. No retry after an ambiguous response.
-        const returned = await rpc.sendRawTransaction(tx.serialize(), {
-          skipPreflight: false,
-          maxRetries: 0,
-        });
-        expect(returned).toBe(expectedSignature);
-        let settled = await getAttempt(fixture.users[0].id, attempt.id);
-        for (
-          let round = 0;
-          round < 25 && settled.state !== "finalized";
-          round++
-        ) {
-          await delay(2000);
-          settled = await reconcileCrypto(fixture.users[0].id, attempt.id);
-        }
-        await runCryptoReconciliation();
-        expect(settled.state).toBe("finalized");
-        expect(settled.signature).toBe(expectedSignature);
-        const finalized = await GET(
-          request(0, `receipts/${settled.receiptId}`),
-        );
-        const receipt = await finalized.json();
-        expect(receipt.source.mode).toBe("public-rpc");
-        expect(receipt.messageDigest).toBe(review.messageDigest);
-        await runCryptoMonitoring();
-        const inbox = await GET(request(1, "alerts?cluster=devnet"));
-        const alerts = (await inbox.json()).items;
         expect(
-          alerts.filter(
-            (item: { eventId: string }) => item.eventId === receipt.eventId,
-          ),
-        ).toHaveLength(1);
-        console.log("Verified disposable Devnet signature", expectedSignature);
+          (await getAttempt(fixture.users[0].id, attempt.id)).receiptId,
+        ).toBeNull();
+
+        // Reserve the single test submission and journal public identifiers
+        // before crossing the broadcast boundary.
+        const evidence = await open(evidencePath, "wx", 0o600);
+        preserveAcceptanceDatabase = true;
+        try {
+          const database = await fixture.admin.query(
+            "SELECT current_database() AS name, $1::text AS runtime_role",
+            [new URL(process.env.DATABASE_URL!).username],
+          );
+          const claim = {
+            phase: "claimed",
+            signature: expectedSignature,
+            reviewId: review.id,
+            attemptId: attempt.id,
+            ruleId: rule.id,
+            messageDigest: review.messageDigest,
+            reference: review.reference,
+            sender: from.address,
+            recipient: to.address,
+            sourceBefore,
+            destinationBefore,
+            amountLamports: 1_000_000,
+            database: database.rows[0],
+          };
+          await evidence.writeFile(JSON.stringify(claim) + "\n");
+          await evidence.sync();
+          // One outbound submission. A transport failure leaves the exact
+          // signature and reference available for read-only reconciliation.
+          const returned = await rpc
+            .sendRawTransaction(tx.serialize(), {
+              skipPreflight: false,
+              maxRetries: 0,
+            })
+            .catch(() => null);
+          if (returned !== null) expect(returned).toBe(expectedSignature);
+          const [payer, receiver] = fixture.users;
+          let settled = await getAttempt(payer.id, attempt.id);
+          for (
+            let round = 0;
+            round < 25 && settled.state !== "finalized";
+            round++
+          ) {
+            await delay(2000);
+            settled = await reconcileCrypto(payer.id, attempt.id);
+          }
+          await runCryptoReconciliation();
+          expect(settled.state).toBe("finalized");
+          expect(settled.signature).toBe(expectedSignature);
+          const finalized = await GET(
+            request(0, `receipts/${settled.receiptId}`),
+          );
+          expect(finalized.status).toBe(200);
+          const receipt = await finalized.json();
+          expect(receipt.source.mode).toBe("public-rpc");
+          expect(receipt.messageDigest).toBe(review.messageDigest);
+          expect(await reconcileCrypto(payer.id, attempt.id)).toMatchObject({
+            state: "finalized",
+            receiptId: receipt.id,
+          });
+          expect(
+            (await (await POST(request(0, handoffPath, {}, handoffKey))).json())
+              .launchGranted,
+          ).toBe(false);
+          const lateCallback = await POST(
+            request(0, `attempts/${attempt.id}/wallet-outcome`, {
+              kind: "signature",
+              signature: expectedSignature,
+            }),
+          );
+          expect(await lateCallback.json()).toMatchObject({
+            state: "finalized",
+            receiptId: receipt.id,
+          });
+
+          const chain = await verifier.getParsedTransaction(expectedSignature, {
+            commitment: "finalized",
+            maxSupportedTransactionVersion: 0,
+          });
+          expect(chain?.meta?.err).toBeNull();
+          expect(chain?.slot).toBe(receipt.slot);
+          const fee = chain!.meta!.fee;
+          const [sourceAfter, destinationAfter] = await Promise.all([
+            verifier.getBalance(sender.publicKey, "finalized"),
+            verifier.getBalance(recipient.publicKey, "finalized"),
+          ]);
+          expect(sourceAfter).toBe(sourceBefore - 1_000_000 - fee);
+          expect(destinationAfter).toBe(destinationBefore + 1_000_000);
+          expect(receipt.feeLamports).toBe(String(fee));
+
+          await runCryptoMonitoring();
+          const inboxPath = "alerts?cluster=devnet";
+          const matchingAlerts = async () => {
+            const inbox = await GET(request(1, inboxPath));
+            expect(inbox.status).toBe(200);
+            return (await inbox.json()).items.filter(
+              (item: { eventId: string }) => item.eventId === receipt.eventId,
+            );
+          };
+          const alerts = await matchingAlerts();
+          expect(alerts).toHaveLength(1);
+          const marked = await POST(
+            request(1, `alerts/${alerts[0].id}/read`, {}),
+          );
+          expect(marked.status).toBe(200);
+          const read = await marked.json();
+          expect(read.readAt).toBeTruthy();
+
+          // Make this rule due again and run the actual worker in a new process.
+          await fixture.admin.query(
+            "UPDATE agus_crypto_alert_rules SET checked_at=NULL WHERE owner=$1 AND id=$2",
+            [receiver.id, rule.id],
+          );
+          await promisify(execFile)(
+            process.execPath,
+            ["--import=tsx", "scripts/platform-worker.ts", "--once"],
+            {
+              timeout: 22_000,
+              env: {
+                ...process.env,
+                AGUS_RESPONSIBILITY_RUNNER_ENABLED: "false",
+              },
+            },
+          );
+          expect(await matchingAlerts()).toEqual([read]);
+          const counts = await fixture.admin.query(
+            `SELECT count(*) FILTER (WHERE action='crypto.approved')::int AS approvals,
+                    count(*) FILTER (WHERE action='crypto.handoff')::int AS handoffs
+             FROM agus_audit WHERE owner=$1 AND resource_id=$2`,
+            [payer.id, attempt.id],
+          );
+          expect(counts.rows[0]).toEqual({ approvals: 1, handoffs: 1 });
+          await evidence.writeFile(
+            JSON.stringify({
+              phase: "verified",
+              signature: expectedSignature,
+              slot: receipt.slot,
+              sourceAfter,
+              destinationAfter,
+              feeLamports: fee,
+              receiptId: receipt.id,
+              eventId: receipt.eventId,
+              alertId: read.id,
+              ruleId: read.ruleId,
+              alertCreatedAt: read.createdAt,
+              alertReadAt: read.readAt,
+              counts: counts.rows[0],
+            }) + "\n",
+          );
+          await evidence.sync();
+          preserveAcceptanceDatabase = false;
+          console.log(
+            "Verified disposable Devnet signature",
+            expectedSignature,
+          );
+        } finally {
+          await evidence.close();
+        }
       },
       120_000,
     );

@@ -1284,6 +1284,486 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/crypto/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoWallets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets/watch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoWatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets/challenge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoChallenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets/association": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoAssociate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["cryptoRelabel"];
+        trace?: never;
+    };
+    "/api/v1/crypto/wallets/{id}/routes/{routeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["cryptoUnlink"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoPortfolio"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/activity/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoActivityEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/assistant/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoAsk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/eligibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoEligibility"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/swaps/quote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoQuote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoPrepare"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/reviews/{id}/begin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoBegin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/attempts/{id}/handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoHandoff"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/attempts/{id}/wallet-outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoWalletOutcome"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/attempts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoAttempts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/attempts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoAttempt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/attempts/{id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoReconcile"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/receipts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoReceipt"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/alert-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoAlertRules"];
+        put?: never;
+        post: operations["cryptoCreateAlertRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/alert-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["cryptoUpdateAlertRule"];
+        trace?: never;
+    };
+    "/api/v1/crypto/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/alerts/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoReadAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/pocket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoPocket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoCreateRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/requests/{id}/qr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["cryptoRequestQr"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/requests/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["cryptoCancelRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1429,6 +1909,588 @@ export interface components {
         };
         RequestExternalSignature: {
             signature: string;
+        };
+        CryptoActivityEvent: {
+            id: string;
+            signature: components["schemas"]["CryptoSignature"];
+            slot: number;
+            blockTime: components["schemas"]["CryptoUtc"] | null;
+            source: components["schemas"]["CryptoSource"];
+            /** @enum {string} */
+            finality: "confirmed" | "finalized";
+            /** @enum {string} */
+            status: "success" | "failed";
+            /** @enum {string} */
+            classification: "internal" | "incoming" | "outgoing" | "swap" | "unknown";
+            reason: string;
+            legs: components["schemas"]["CryptoActivityLeg"][];
+            explorerUrl: string | null;
+        };
+        CryptoActivityLeg: {
+            id: string;
+            /** @enum {string} */
+            kind: "transfer" | "swap" | "fee" | "rent" | "unknown";
+            from: components["schemas"]["CryptoAddress"] | null;
+            to: components["schemas"]["CryptoAddress"] | null;
+            fromWalletId: components["schemas"]["CryptoId"] | null;
+            toWalletId: components["schemas"]["CryptoId"] | null;
+            amount: components["schemas"]["CryptoAmount"] | null;
+            walletDeltas: {
+                walletId: components["schemas"]["CryptoId"];
+                atoms: string;
+            }[];
+            instructionPath: string;
+        };
+        CryptoActivityPage: {
+            items: components["schemas"]["CryptoActivityEvent"][];
+            nextCursor: string | null;
+            source: components["schemas"]["CryptoSource"];
+            coverage: components["schemas"]["CryptoCoverage"][];
+        };
+        CryptoActivityQuery: {
+            cluster: components["schemas"]["CryptoCluster"];
+            walletIds?: components["schemas"]["CryptoId"][];
+            cursor?: string;
+            from?: components["schemas"]["CryptoUtc"];
+            to?: components["schemas"]["CryptoUtc"];
+        };
+        CryptoAddress: string;
+        CryptoAlert: {
+            id: components["schemas"]["CryptoId"];
+            ruleId: components["schemas"]["CryptoId"];
+            eventId: string;
+            walletId: components["schemas"]["CryptoId"];
+            source: components["schemas"]["CryptoSource"];
+            dedupeKey: string;
+            createdAt: components["schemas"]["CryptoUtc"];
+            readAt: components["schemas"]["CryptoUtc"] | null;
+        };
+        CryptoAlertPage: {
+            items: components["schemas"]["CryptoAlert"][];
+            nextCursor: string | null;
+            source: components["schemas"]["CryptoSource"];
+        };
+        CryptoAlertRule: {
+            walletId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "external_inflow";
+            min?: components["schemas"]["CryptoAmount"];
+            id: components["schemas"]["CryptoId"];
+            enabled: boolean;
+            checkedAt: components["schemas"]["CryptoUtc"] | null;
+        };
+        CryptoAlertRuleInput: {
+            walletId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "external_inflow";
+            min?: components["schemas"]["CryptoAmount"];
+        };
+        CryptoAlertRulePage: {
+            items: components["schemas"]["CryptoAlertRule"][];
+            nextCursor: string | null;
+            source: components["schemas"]["CryptoSource"];
+        };
+        CryptoAlertRuleUpdate: {
+            enabled: boolean;
+        };
+        CryptoAmount: {
+            asset: components["schemas"]["CryptoAsset"];
+            atoms: components["schemas"]["CryptoAtoms"];
+            decimals: number;
+        };
+        CryptoAnswer: {
+            turnId: components["schemas"]["CryptoId"];
+            conversationId: components["schemas"]["CryptoId"];
+            source: components["schemas"]["CryptoSource"];
+            /** @enum {string} */
+            kind: "answer" | "clarify" | "draft_suggestion" | "degraded";
+            text: string;
+            scope: components["schemas"]["CryptoScope"];
+            window: components["schemas"]["CryptoWindow"] | null;
+            facts: components["schemas"]["CryptoAmount"][];
+            evidence: components["schemas"]["CryptoEvidence"][];
+            coverage: components["schemas"]["CryptoCoverage"][];
+            suggestion: components["schemas"]["CryptoSuggestion"] | null;
+        };
+        CryptoAsk: {
+            conversationId?: components["schemas"]["CryptoId"];
+            clientTurnId: components["schemas"]["CryptoId"];
+            text: string;
+            scope: components["schemas"]["CryptoScope"];
+            reportingTimeZone: string;
+        };
+        CryptoAsset: {
+            cluster: components["schemas"]["CryptoCluster"];
+            /** @constant */
+            kind: "sol";
+        } | {
+            cluster: components["schemas"]["CryptoCluster"];
+            /** @constant */
+            kind: "token";
+            program: components["schemas"]["CryptoAddress"];
+            mint: components["schemas"]["CryptoAddress"];
+        };
+        CryptoAssociation: {
+            challengeId: components["schemas"]["CryptoId"];
+            signature: components["schemas"]["CryptoSignature"];
+            label?: string;
+        };
+        CryptoAtoms: string;
+        CryptoAttempt: {
+            id: components["schemas"]["CryptoId"];
+            reviewId: components["schemas"]["CryptoId"];
+            revision: number;
+            reviewDigest: string;
+            /** @enum {string} */
+            state: "ready" | "handoff" | "declined" | "pending" | "unknown" | "failed" | "expired" | "finalized";
+            cluster: components["schemas"]["CryptoCluster"];
+            routeId: components["schemas"]["CryptoId"];
+            expectedSigner: components["schemas"]["CryptoAddress"];
+            reference: components["schemas"]["CryptoAddress"] | null;
+            signature: components["schemas"]["CryptoSignature"] | null;
+            createdAt: components["schemas"]["CryptoUtc"];
+            updatedAt: components["schemas"]["CryptoUtc"];
+            reason: string | null;
+            receiptId: components["schemas"]["CryptoId"] | null;
+        };
+        CryptoAttemptPage: {
+            items: components["schemas"]["CryptoAttempt"][];
+            nextCursor: string | null;
+            source: components["schemas"]["CryptoSource"];
+        };
+        CryptoAttemptQuery: {
+            cluster: components["schemas"]["CryptoCluster"];
+            walletIds?: components["schemas"]["CryptoId"][];
+            cursor?: string;
+            unresolvedOnly?: boolean;
+        };
+        CryptoBegin: {
+            revision: number;
+            reviewDigest: string;
+            challengeId?: components["schemas"]["CryptoId"];
+        };
+        CryptoCapabilities: {
+            source: components["schemas"]["CryptoSource"];
+            features: components["schemas"]["CryptoFeatures"];
+            approvedRoutes: {
+                provider: components["schemas"]["CryptoProvider"];
+                operations: components["schemas"]["CryptoOperation"][];
+            }[];
+        };
+        CryptoChallenge: {
+            id: components["schemas"]["CryptoId"];
+            /** Format: base64 */
+            messageBase64: string;
+            expiresAt: components["schemas"]["CryptoUtc"];
+        };
+        CryptoChallengeInput: {
+            cluster: components["schemas"]["CryptoCluster"];
+            address: components["schemas"]["CryptoAddress"];
+            provider: components["schemas"]["CryptoProvider"];
+        };
+        /** @enum {string} */
+        CryptoCluster: "devnet" | "mainnet-beta";
+        CryptoCoverage: {
+            walletId: components["schemas"]["CryptoId"];
+            /** @enum {string} */
+            kind: "balances" | "activity" | "positions" | "prices";
+            /** @enum {string} */
+            state: "ready" | "partial" | "stale" | "unavailable";
+            reason: ("bounded_window" | "rpc_lag" | "pruned" | "missing_token_accounts" | "unsupported" | "unpriced" | "provider_failure") | null;
+            observedAt: components["schemas"]["CryptoUtc"] | null;
+            coveredWindow: components["schemas"]["CryptoWindow"] | null;
+            throughSlot: number | null;
+        };
+        CryptoEligibility: {
+            items: {
+                walletId: components["schemas"]["CryptoId"];
+                routeId: components["schemas"]["CryptoId"] | null;
+                amountAvailable: components["schemas"]["CryptoAmount"];
+                feeLamports: components["schemas"]["CryptoAtoms"] | null;
+                rentLamports: components["schemas"]["CryptoAtoms"] | null;
+                eligible: boolean;
+                reason: string | null;
+            }[];
+            coverage: components["schemas"]["CryptoCoverage"][];
+        };
+        CryptoEligibilityInput: {
+            scope: components["schemas"]["CryptoScope"];
+            /** @enum {string} */
+            operation: "transfer" | "swap";
+            amount: components["schemas"]["CryptoAmount"];
+            recipient?: components["schemas"]["CryptoAddress"];
+        };
+        CryptoEvidence: {
+            /** @constant */
+            kind: "portfolio";
+            id: components["schemas"]["CryptoId"];
+            scope: components["schemas"]["CryptoScope"];
+            observedAt: components["schemas"]["CryptoUtc"];
+        } | {
+            /** @enum {string} */
+            kind: "activity" | "receipt";
+            id: string;
+            walletIds: components["schemas"]["CryptoId"][];
+            cluster: components["schemas"]["CryptoCluster"];
+        } | {
+            /** @constant */
+            kind: "coverage";
+            coverage: components["schemas"]["CryptoCoverage"][];
+        };
+        CryptoFeatures: {
+            portfolio: boolean;
+            assistant: boolean;
+            monitoring: boolean;
+            requests: boolean;
+            invoices: boolean;
+            swap: boolean;
+            pocketCreate: boolean;
+            pocketFund: boolean;
+            pocketSpend: boolean;
+            pocketManage: boolean;
+        };
+        CryptoHandoff: {
+            attempt: components["schemas"]["CryptoAttempt"];
+            launchGranted: boolean;
+        };
+        CryptoHolding: {
+            walletId: components["schemas"]["CryptoId"];
+            tokenAccount: components["schemas"]["CryptoAddress"] | null;
+            amount: components["schemas"]["CryptoAmount"];
+            symbol: string | null;
+            valuation: {
+                usdPerUnit: string;
+                valueUsd: string;
+                provider: string;
+                observedAt: components["schemas"]["CryptoUtc"];
+            } | null;
+            spendable: boolean;
+        };
+        /** Format: uuid */
+        CryptoId: string;
+        CryptoIntent: components["schemas"]["CryptoTransferIntent"] | {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "swap";
+            quoteId: components["schemas"]["CryptoId"];
+        } | {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "pocket_create";
+        } | {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @enum {string} */
+            kind: "pocket_fund" | "pocket_spend" | "pocket_withdraw";
+            pocketId: components["schemas"]["CryptoId"];
+            amount: components["schemas"]["CryptoAmount"];
+            recipient: components["schemas"]["CryptoAddress"];
+        } | {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "pocket_grant";
+            pocketId: components["schemas"]["CryptoId"];
+            role: {
+                authority: components["schemas"]["CryptoAddress"];
+                asset: components["schemas"]["CryptoAsset"];
+                budgetAtoms: components["schemas"]["CryptoAtoms"];
+                destination: components["schemas"]["CryptoAddress"];
+                programs: components["schemas"]["CryptoAddress"][];
+                expirySlot: number;
+                /** @enum {string} */
+                policy: "lifetime" | "slot_window";
+                windowSlots: number | null;
+            };
+        } | {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "pocket_revoke";
+            pocketId: components["schemas"]["CryptoId"];
+            roleId: components["schemas"]["CryptoId"];
+        };
+        /** @enum {string} */
+        CryptoOperation: "transfer" | "swap" | "pocket_create" | "pocket_fund" | "pocket_spend" | "pocket_grant" | "pocket_revoke" | "pocket_withdraw";
+        CryptoPageQuery: {
+            cluster: components["schemas"]["CryptoCluster"];
+            walletIds?: components["schemas"]["CryptoId"][];
+            cursor?: string;
+        };
+        CryptoPocket: {
+            id: components["schemas"]["CryptoId"];
+            cluster: components["schemas"]["CryptoCluster"];
+            walletId: components["schemas"]["CryptoId"];
+            rootWalletId: components["schemas"]["CryptoId"];
+            config: components["schemas"]["CryptoAddress"];
+            vault: components["schemas"]["CryptoAddress"];
+            program: components["schemas"]["CryptoAddress"];
+            programDigest: string;
+            recoveryVerified: boolean;
+            /** @enum {string} */
+            status: "active" | "paused" | "blocked";
+            spendable: components["schemas"]["CryptoAmount"][];
+            pending: components["schemas"]["CryptoAmount"][];
+            reserveLamports: components["schemas"]["CryptoAtoms"];
+            roles: {
+                authority: components["schemas"]["CryptoAddress"];
+                asset: components["schemas"]["CryptoAsset"];
+                budgetAtoms: components["schemas"]["CryptoAtoms"];
+                destination: components["schemas"]["CryptoAddress"];
+                programs: components["schemas"]["CryptoAddress"][];
+                expirySlot: number;
+                /** @enum {string} */
+                policy: "lifetime" | "slot_window";
+                windowSlots: number | null;
+                id: components["schemas"]["CryptoId"];
+                remainingAtoms: components["schemas"]["CryptoAtoms"];
+                /** @enum {string} */
+                state: "pending" | "active" | "paused" | "revocation_pending" | "revoked" | "expired";
+            }[];
+        } | null;
+        CryptoPortfolio: {
+            id: components["schemas"]["CryptoId"];
+            walletIds: components["schemas"]["CryptoId"][];
+            source: components["schemas"]["CryptoSource"];
+            holdings: components["schemas"]["CryptoHolding"][];
+            positions: {
+                id: components["schemas"]["CryptoId"];
+                walletId: components["schemas"]["CryptoId"];
+                protocol: string;
+                /** @enum {string} */
+                state: "supported" | "unsupported";
+                amounts: components["schemas"]["CryptoAmount"][];
+                replacesHoldingAccountIds: components["schemas"]["CryptoAddress"][];
+                valueUsd: string | null;
+            }[];
+            coverage: components["schemas"]["CryptoCoverage"][];
+            pricedSubtotalUsd: string | null;
+        };
+        /** @enum {string} */
+        CryptoProvider: "phantom" | "solflare" | "backpack" | "swig-device";
+        CryptoQuote: {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            id: components["schemas"]["CryptoId"];
+            /** @constant */
+            venue: "jupiter";
+            adapterVersion: string;
+            input: components["schemas"]["CryptoAmount"];
+            expectedOut: components["schemas"]["CryptoAmount"];
+            minOut: components["schemas"]["CryptoAmount"];
+            slippageBps: number;
+            priceImpactBps: number | null;
+            fees: components["schemas"]["CryptoAmount"][];
+            expiresAt: components["schemas"]["CryptoUtc"];
+        };
+        CryptoQuoteInput: {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            input: components["schemas"]["CryptoAmount"];
+            output: components["schemas"]["CryptoAsset"];
+            slippageBps: number;
+        };
+        CryptoReceipt: {
+            id: components["schemas"]["CryptoId"];
+            attemptId: components["schemas"]["CryptoId"] | null;
+            requestId: components["schemas"]["CryptoId"] | null;
+            source: components["schemas"]["CryptoSource"];
+            signature: components["schemas"]["CryptoSignature"];
+            messageDigest: string;
+            walletIds: components["schemas"]["CryptoId"][];
+            slot: number;
+            time: components["schemas"]["CryptoUtc"] | null;
+            verifiedAt: components["schemas"]["CryptoUtc"];
+            /** @constant */
+            finality: "finalized";
+            /** @constant */
+            execution: "success";
+            feeLamports: components["schemas"]["CryptoAtoms"];
+            legs: components["schemas"]["CryptoActivityLeg"][];
+            eventId: string;
+            explorerUrl: string | null;
+        };
+        CryptoRelabel: {
+            label: string;
+        };
+        CryptoRequest: {
+            walletId: components["schemas"]["CryptoId"];
+            amount: components["schemas"]["CryptoAmount"];
+            expiresAt?: components["schemas"]["CryptoUtc"];
+            invoice?: {
+                title: string;
+                notes?: string;
+                dueAt?: components["schemas"]["CryptoUtc"];
+            };
+            id: components["schemas"]["CryptoId"];
+            recipient: components["schemas"]["CryptoAddress"];
+            reference: components["schemas"]["CryptoAddress"];
+            solanaPayUri: string;
+            /** Format: uri */
+            shareUrl: string;
+            qrPath: string;
+            /** @enum {string} */
+            qrMode: "share_url" | "solana_pay";
+            revision: number;
+            /** @enum {string} */
+            state: "open" | "cancelled" | "expired" | "needs_review" | "settled";
+            receiptId: components["schemas"]["CryptoId"] | null;
+        };
+        CryptoRequestInput: {
+            walletId: components["schemas"]["CryptoId"];
+            amount: components["schemas"]["CryptoAmount"];
+            expiresAt?: components["schemas"]["CryptoUtc"];
+            invoice?: {
+                title: string;
+                notes?: string;
+                dueAt?: components["schemas"]["CryptoUtc"];
+            };
+        };
+        CryptoReview: {
+            id: components["schemas"]["CryptoId"];
+            revision: number;
+            operation: components["schemas"]["CryptoOperation"];
+            cluster: components["schemas"]["CryptoCluster"];
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            expectedSigner: components["schemas"]["CryptoAddress"];
+            feePayer: components["schemas"]["CryptoAddress"];
+            recipient: components["schemas"]["CryptoAddress"] | null;
+            sourceTokenAccount: components["schemas"]["CryptoAddress"] | null;
+            destinationTokenAccount: components["schemas"]["CryptoAddress"] | null;
+            amount: components["schemas"]["CryptoAmount"] | null;
+            estimatedFeeLamports: components["schemas"]["CryptoAtoms"];
+            estimatedRentLamports: components["schemas"]["CryptoAtoms"];
+            quote: components["schemas"]["CryptoQuote"] | null;
+            expiresAt: components["schemas"]["CryptoUtc"];
+            blockhash: components["schemas"]["CryptoAddress"];
+            lastValidBlockHeight: number;
+            reference: components["schemas"]["CryptoAddress"] | null;
+            minContextSlot: number;
+            messageDigest: string;
+            reviewDigest: string;
+            /** @enum {string} */
+            transactionVersion: "legacy" | "v0";
+            /** Format: base64 */
+            unsignedTransactionBase64: string;
+            simulation: {
+                /** @constant */
+                passed: true;
+                slot: number;
+                observedAt: components["schemas"]["CryptoUtc"];
+            };
+            source: components["schemas"]["CryptoSource"];
+        };
+        CryptoRevision: {
+            revision: number;
+        };
+        CryptoRoute: {
+            id: components["schemas"]["CryptoId"];
+            provider: components["schemas"]["CryptoProvider"];
+            address: components["schemas"]["CryptoAddress"];
+            cluster: components["schemas"]["CryptoCluster"];
+            operations: components["schemas"]["CryptoOperation"][];
+            /** @enum {string} */
+            status: "available" | "reconnect" | "unavailable" | "disabled";
+            reason: string | null;
+        };
+        CryptoScope: {
+            cluster: components["schemas"]["CryptoCluster"];
+            walletIds?: components["schemas"]["CryptoId"][];
+        };
+        CryptoSignature: string;
+        CryptoSource: {
+            /** @enum {string} */
+            mode: "fixture" | "local" | "public-rpc";
+            cluster: components["schemas"]["CryptoCluster"];
+            provider: string;
+            observedAt: components["schemas"]["CryptoUtc"];
+            slot: number | null;
+        };
+        CryptoSuggestion: {
+            /** @constant */
+            kind: "transfer";
+            amount: components["schemas"]["CryptoAmount"];
+            recipient: components["schemas"]["CryptoAddress"];
+            suggestedWalletIds: components["schemas"]["CryptoId"][];
+        } | {
+            /** @constant */
+            kind: "swap";
+            input: components["schemas"]["CryptoAmount"];
+            output: components["schemas"]["CryptoAsset"];
+            suggestedWalletIds: components["schemas"]["CryptoId"][];
+        };
+        CryptoTransferIntent: {
+            sourceWalletId: components["schemas"]["CryptoId"];
+            routeId: components["schemas"]["CryptoId"];
+            /** @constant */
+            kind: "transfer";
+            amount: components["schemas"]["CryptoAmount"];
+            recipient: components["schemas"]["CryptoAddress"];
+            requestId?: components["schemas"]["CryptoId"];
+        };
+        /** Format: date-time */
+        CryptoUtc: string;
+        CryptoWallet: {
+            id: components["schemas"]["CryptoId"];
+            cluster: components["schemas"]["CryptoCluster"];
+            address: components["schemas"]["CryptoAddress"];
+            label: string;
+            /** @enum {string} */
+            group: "linked_owned" | "own_watch" | "third_party_watch" | "pocket";
+            /** @enum {string} */
+            ownership: "verified" | "declared" | "none";
+            lastSyncAt: components["schemas"]["CryptoUtc"] | null;
+            routes: components["schemas"]["CryptoRoute"][];
+        };
+        CryptoWalletOutcome: {
+            /** @constant */
+            kind: "declined";
+        } | {
+            /** @constant */
+            kind: "unavailable";
+            reason: string;
+        } | {
+            /** @constant */
+            kind: "unknown";
+        } | {
+            /** @constant */
+            kind: "signature";
+            signature: components["schemas"]["CryptoSignature"];
+        } | {
+            /** @constant */
+            kind: "signed";
+            /** Format: base64 */
+            signedTransactionBase64: string;
+        };
+        CryptoWalletPage: {
+            items: components["schemas"]["CryptoWallet"][];
+            nextCursor: string | null;
+            source: components["schemas"]["CryptoSource"];
+        };
+        CryptoWatch: {
+            cluster: components["schemas"]["CryptoCluster"];
+            address: components["schemas"]["CryptoAddress"];
+            label: string;
+            ownDeclared: boolean;
+        };
+        CryptoWindow: {
+            from: components["schemas"]["CryptoUtc"];
+            to: components["schemas"]["CryptoUtc"];
+            timeZone: string;
+        };
+        CryptoError: {
+            error: {
+                code: string;
+                retryable: boolean;
+                correlationId: string;
+                retryAfterSeconds?: number;
+                fields?: {
+                    [key: string]: string;
+                };
+            };
         };
     };
     responses: never;
@@ -4400,6 +5462,1053 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cryptoCapabilities: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoCapabilities"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoWallets: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoWalletPage"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoWatch: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoWatch"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoWallet"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoChallenge: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoChallengeInput"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoChallenge"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAssociate: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoAssociation"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoWallet"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoRelabel: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoRelabel"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoWallet"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoUnlink: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+                routeId: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoWallet"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoPortfolio: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoPortfolio"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoActivity: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+                cursor?: string;
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoActivityPage"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoActivityEvent: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoActivityEvent"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAsk: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoAsk"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAnswer"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoEligibility: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoEligibilityInput"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoEligibility"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoQuote: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoQuoteInput"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoQuote"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoPrepare: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoIntent"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoReview"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoBegin: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoBegin"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAttempt"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoHandoff: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoHandoff"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoWalletOutcome: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoWalletOutcome"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAttempt"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAttempts: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+                cursor?: string;
+                unresolvedOnly?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAttemptPage"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAttempt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAttempt"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoReconcile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAttempt"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoReceipt"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAlertRules: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAlertRulePage"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoCreateAlertRule: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoAlertRuleInput"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAlertRule"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoUpdateAlertRule: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoAlertRuleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAlertRule"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoAlerts: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+                walletIds?: string[];
+                cursor?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAlertPage"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoReadAlert: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoAlert"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoPocket: {
+        parameters: {
+            query: {
+                cluster: "devnet" | "mainnet-beta";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoPocket"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoCreateRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoRequestInput"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoRequest"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoRequest"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoRequestQr: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoCancelRequest: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CryptoRevision"];
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoRequest"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
                 };
             };
         };

@@ -42,7 +42,7 @@
     "test:personal-agent": "node scripts/personal-agent-smoke.mjs",
     "platform:worker": "node --import=tsx scripts/platform-worker.ts",
     "identity:invite": "node --import=tsx scripts/invite-user.ts",
-    "contracts:generate": "node scripts/generate-openapi.mjs && openapi-typescript packages/contracts/openapi.json -o packages/api-client/src/generated.ts",
+    "contracts:generate": "node --import=tsx scripts/generate-openapi.mjs && openapi-typescript packages/contracts/openapi.json -o packages/api-client/src/generated.ts",
     "test:platform": "node scripts/run-platform-tests.mjs",
     "test:platform:http": "node scripts/platform-http-smoke.mjs",
     "mobile:typecheck": "npm run typecheck --workspace @agus/mobile",

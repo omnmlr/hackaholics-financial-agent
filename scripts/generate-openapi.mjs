@@ -1,3 +1,4 @@
+import { addCryptoPaths } from "./crypto-openapi.ts";
 import { writeFile, mkdir } from "node:fs/promises";
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const object = (properties, required = Object.keys(properties)) => ({
@@ -610,6 +611,7 @@ operation(
   "Resource",
   true,
 );
+addCryptoPaths(paths, schemas);
 const document = {
   openapi: "3.1.0",
   info: {

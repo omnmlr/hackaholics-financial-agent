@@ -1,0 +1,20 @@
+{
+  "name": "agus-existing-wallet-delegation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.18"
+  },
+  "scripts": {
+    "test": "node --test delegation.test.mjs"
+  },
+  "dependencies": {
+    "@solana-program/system": "0.13.0",
+    "@solana-program/token": "0.15.0",
+    "@solana-program/token-2022": "0.14.1",
+    "@solana/kit": "7.1.1",
+    "@solana/subscriptions": "0.5.0",
+    "litesvm": "1.6.2"
+  }
+}

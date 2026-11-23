@@ -13,9 +13,10 @@ For unattended work, investigate **Solana Foundation Subscriptions** for bounded
 | [Capability and limitation matrix](capability-matrix.md) | In-place authority, approval, assets, Android, security, cost and scale |
 | [Recommended technical architecture](recommended-architecture.md) | Integration boundaries, intent review, exact transaction verification and optional automation |
 | [Proposed local test plan](local-test-plan.md) | Prioritized experiments, evidence requirements and outstanding device gate |
+| [Existing-wallet delegation proof of concept](existing-wallet-delegation-poc.md) | Executed local tests, exact account and signer evidence, and supported payment operations |
 
 **Evidence terms.** **Documented** means a protocol specification, official product documentation or a vendor claim. **Implemented** means an inspectable code path or a published artifact, with any test evidence identified separately. **Observed** describes a reported test or device outcome and names its environment. **Candidate** describes a technical possibility or AGUS proposal that still needs verification. Public product claims and release artifacts carry no implied transaction or device coverage.
 
-This review used source and documentation reads. No wallet was connected, no transaction was executed, and no private key or user funds were accessed. Local experiments and device acceptance are proposed work.
+The original research in PR #48 used source and documentation reads. The delegation proof of concept adds executed tests in a local ledger with synthetic funds. Physical device acceptance remains a separate gate.
 
 [AGUS implementation base](https://github.com/omnmlr/hackaholics-financial-agent/tree/a26880a97faac0cde495e0f7f667ce86f3f8978a) · [Wallet spike #46](https://github.com/omnmlr/hackaholics-financial-agent/pull/46) · [Project journal #47](https://github.com/omnmlr/hackaholics-financial-agent/pull/47)

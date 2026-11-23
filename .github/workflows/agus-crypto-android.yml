@@ -12,7 +12,71 @@ on:
 permissions:
   contents: read
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      signing_ready: ${{ steps.configuration.outputs.signing_ready }}
+      api_ready: ${{ steps.api.outputs.ready }}
+    steps:
+      - name: Check release input availability without reading secret values
+        id: configuration
+        env:
+          AGUS_ANDROID_KEYSTORE_BASE64: ${{ secrets.AGUS_ANDROID_KEYSTORE_BASE64 != '' }}
+          AGUS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.AGUS_ANDROID_KEYSTORE_PASSWORD != '' }}
+          AGUS_ANDROID_KEY_ALIAS: ${{ secrets.AGUS_ANDROID_KEY_ALIAS != '' }}
+          AGUS_ANDROID_KEY_PASSWORD: ${{ secrets.AGUS_ANDROID_KEY_PASSWORD != '' }}
+          AGUS_CRYPTO_DEVICE_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          signing_ready=true
+          for name in AGUS_ANDROID_KEYSTORE_BASE64 AGUS_ANDROID_KEYSTORE_PASSWORD AGUS_ANDROID_KEY_ALIAS AGUS_ANDROID_KEY_PASSWORD AGUS_CRYPTO_DEVICE_API_URL; do
+            if [[ "${!name}" == true ]]; then
+              status=available
+            else
+              status=unavailable
+              if [[ "$name" != AGUS_CRYPTO_DEVICE_API_URL ]]; then signing_ready=false; fi
+              echo "::notice::$name is unavailable to this run."
+            fi
+            printf '%s %s\n' "$name" "$status" >> "$GITHUB_STEP_SUMMARY"
+          done
+          echo "signing_ready=$signing_ready" >> "$GITHUB_OUTPUT"
+          echo "api_configured=$AGUS_CRYPTO_DEVICE_API_URL" >> "$GITHUB_OUTPUT"
+      - name: Verify the configured Devnet API
+        id: api
+        if: steps.configuration.outputs.api_configured == 'true'
+        env:
+          DEVICE_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL }}
+          IDENTITY_ORIGIN: https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! node --input-type=module -e '
+            try {
+              const raw = process.env.DEVICE_API_URL;
+              const url = new URL(raw);
+              if (url.protocol === "https:" && (raw === url.origin || raw === url.origin + "/") &&
+                  url.origin !== process.env.IDENTITY_ORIGIN &&
+                  !["compile.invalid", "agusweb.up.railway.app"].includes(url.hostname)) process.exit(0);
+            } catch {}
+            process.exit(1);
+          '; then
+            echo "::error::AGUS_CRYPTO_DEVICE_API_URL must be the private Devnet HTTPS API origin."
+            exit 1
+          fi
+          origin="${DEVICE_API_URL%/}"
+          if ! curl --fail --silent --show-error --max-time 20 "$origin/api/v1/ready" | jq -e '.status == "ready"' >/dev/null; then
+            echo "::error::The configured Devnet API did not pass /api/v1/ready."
+            exit 1
+          fi
+          if ! curl --fail --silent --show-error --max-time 20 "$origin/api/v1/openapi" | jq -e '.paths["/api/v1/crypto/attempts/{id}/handoff"].post' >/dev/null; then
+            echo "::error::The configured Devnet API did not serve the Crypto handoff contract."
+            exit 1
+          fi
+          echo 'ready=true' >> "$GITHUB_OUTPUT"
   build:
+    needs: preflight
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -22,7 +86,7 @@ jobs:
       CI: "1"
       EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST: "true"
       EXPO_PUBLIC_MWA_ORIGIN: https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app
-      EXPO_PUBLIC_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL || 'https://compile.invalid' }}
+      EXPO_PUBLIC_API_URL: ${{ needs.preflight.outputs.api_ready == 'true' && vars.AGUS_CRYPTO_DEVICE_API_URL || 'https://compile.invalid' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -44,6 +108,7 @@ jobs:
         run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2
       - name: Sign and verify the approved Devnet artifact
         id: sign
+        if: needs.preflight.outputs.signing_ready == 'true' && needs.preflight.outputs.api_ready == 'true'
         env:
           AGUS_ANDROID_KEYSTORE_BASE64: ${{ secrets.AGUS_ANDROID_KEYSTORE_BASE64 }}
           AGUS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.AGUS_ANDROID_KEYSTORE_PASSWORD }}
@@ -52,17 +117,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "ready=false" >> "$GITHUB_OUTPUT"
-          if [[ -z "$AGUS_ANDROID_KEYSTORE_BASE64" || -z "$AGUS_ANDROID_KEYSTORE_PASSWORD" || -z "$AGUS_ANDROID_KEY_ALIAS" || -z "$AGUS_ANDROID_KEY_PASSWORD" || "$EXPO_PUBLIC_API_URL" == https://compile.invalid ]]; then
-            echo "::notice::Native compilation passed. Signed delivery requires the original four Android signing secrets and AGUS_CRYPTO_DEVICE_API_URL."
-            exit 0
-          fi
-          node --input-type=module -e '
-            const url=new URL(process.env.EXPO_PUBLIC_API_URL);
-            if(url.protocol!=="https:"||url.origin!==url.href.replace(/\/$/,"")||url.hostname==="agusweb.up.railway.app") throw Error("Use the private HTTPS Devnet API origin");
-          '
-          curl --fail --silent --show-error --max-time 20 "${EXPO_PUBLIC_API_URL%/}/api/v1/ready" | jq -e '.status == "ready"' >/dev/null
-          curl --fail --silent --show-error --max-time 20 "${EXPO_PUBLIC_API_URL%/}/api/v1/openapi" | jq -e '.paths["/api/v1/crypto/attempts/{id}/handoff"].post' >/dev/null
           fingerprint=85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF
           curl --fail --silent --show-error --max-time 20 "$EXPO_PUBLIC_MWA_ORIGIN/.well-known/assetlinks.json" |
             jq -e --arg fingerprint "$fingerprint" 'any(.[]; .target.package_name=="app.agus.prototype" and (.relation|index("delegate_permission/common.handle_all_urls")) and any(.target.sha256_cert_fingerprints[]; (gsub(":";"")|ascii_upcase)==$fingerprint))' >/dev/null
@@ -71,11 +125,27 @@ jobs:
           output=phone-test/AGUS-Crypto-Devnet-arm64.apk
           mkdir -p phone-test
           umask 077
-          keystore="$RUNNER_TEMP/agus-signing.keystore"
+          keystore="$(mktemp "$RUNNER_TEMP/agus-signing.XXXXXX")"
           trap 'rm -f "$keystore"' EXIT
-          printf '%s' "$AGUS_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
-          "$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$AGUS_ANDROID_KEY_ALIAS" \
-            --ks-pass env:AGUS_ANDROID_KEYSTORE_PASSWORD --key-pass env:AGUS_ANDROID_KEY_PASSWORD --out "$output" "$input"
+          if ! printf '%s' "$AGUS_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"; then
+            echo "::error::AGUS_ANDROID_KEYSTORE_BASE64 did not decode."
+            exit 1
+          fi
+          if ! stored_fingerprint="$(keytool -exportcert -keystore "$keystore" -alias "$AGUS_ANDROID_KEY_ALIAS" \
+            -storepass:env AGUS_ANDROID_KEYSTORE_PASSWORD 2>/dev/null | sha256sum | awk '{print toupper($1)}')"; then
+            echo "::error::The Android keystore, store password or key alias could not be read."
+            exit 1
+          fi
+          if [[ "$stored_fingerprint" != "$fingerprint" ]]; then
+            echo "::error::The keystore alias certificate does not match the published Android identity."
+            exit 1
+          fi
+          if ! "$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$AGUS_ANDROID_KEY_ALIAS" \
+            --ks-pass env:AGUS_ANDROID_KEYSTORE_PASSWORD --key-pass env:AGUS_ANDROID_KEY_PASSWORD \
+            --v2-signing-enabled true --out "$output" "$input" 2>/dev/null; then
+            echo "::error::APK signing failed after certificate validation. Check the key password, private key entry and compiled APK."
+            exit 1
+          fi
           identity="$("$build_tools/apksigner" verify --verbose --print-certs "$output")"
           printf '%s\n' "$identity" | grep -F 'Verified using v2 scheme (APK Signature Scheme v2): true'
           actual="$(printf '%s\n' "$identity" | awk '/^Signer #1 certificate SHA-256 digest:/ {print toupper($NF)}')"

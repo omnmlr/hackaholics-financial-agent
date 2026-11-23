@@ -4,7 +4,18 @@ The Android test build opens a diagnostic screen backed by the Crypto API. It us
 
 ## Prepare the signed build
 
-Configure the original APK test keystore in GitHub Actions secrets `AGUS_ANDROID_KEYSTORE_BASE64`, `AGUS_ANDROID_KEYSTORE_PASSWORD`, `AGUS_ANDROID_KEY_ALIAS` and `AGUS_ANDROID_KEY_PASSWORD`. Configure the repository variable `AGUS_CRYPTO_DEVICE_API_URL` with the private HTTPS origin for the Crypto deployment. The API and persistent worker use a disposable Postgres database and Devnet RPC. Set `AGUS_SOLANA_DEVNET_ENABLED=true`, `AGUS_CRYPTO_DEVNET_ROUTES=phantom,solflare`, and `AGUS_CRYPTO_MONITORING=true`. For handset acceptance set `AGUS_DEVNET_VERIFY_RPC` to a separately operated provider, such as `https://devnet.rpcpool.com` when using Solana's public Devnet RPC as primary. Invite an email test account through the existing Better Auth invitation flow. Staging access stays limited to acceptance users. Re-run the Android Devnet APK workflow on the PR branch after configuration.
+Open the repository’s **Settings → Secrets and variables → Actions**. Under **Secrets**, choose **New repository secret** for each unavailable signing input. Keep the original keystore and its credentials in the approved secret store. Enter their values directly in GitHub. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
+
+| Repository secret | Value from the original build environment |
+| --- | --- |
+| `AGUS_ANDROID_KEYSTORE_BASE64` | Base64 encoding of the original November 22 test keystore file |
+| `AGUS_ANDROID_KEYSTORE_PASSWORD` | Password that opens that keystore |
+| `AGUS_ANDROID_KEY_ALIAS` | Alias of the private key with the published certificate |
+| `AGUS_ANDROID_KEY_PASSWORD` | Password used to access that private key entry |
+
+Under **Variables**, choose **New repository variable** and set `AGUS_CRYPTO_DEVICE_API_URL` to the HTTPS origin of the private Devnet Crypto API. The service must pass `/api/v1/ready` and serve the Crypto handoff contract at `/api/v1/openapi`. The earlier APK’s API host and the Digital Asset Links site both returned HTTP 404 on those endpoints. [Repository Actions variables](https://github.com/omnmlr/hackaholics-financial-agent/settings/variables/actions)
+
+The API and persistent worker use a disposable Postgres database and Devnet RPC. Set `AGUS_SOLANA_DEVNET_ENABLED=true`, `AGUS_CRYPTO_DEVNET_ROUTES=phantom,solflare` and `AGUS_CRYPTO_MONITORING=true`. For handset acceptance set `AGUS_DEVNET_VERIFY_RPC` to a separately operated provider, such as `https://devnet.rpcpool.com` when using Solana's public Devnet RPC as primary. Invite an email test account through Better Auth. Staging access stays limited to acceptance users. Re-run the Android Devnet APK workflow on the PR branch after configuration. The run summary reports only whether each named input is available to that run.
 
 The public test certificate SHA-256 is `85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF`. The signing job verifies this certificate and refuses to deliver an APK with a different identity.
 
@@ -34,7 +45,7 @@ Share the failure-time excerpt and wallet version, excluding session state, wall
 
 ## Current evidence
 
-- PR #46 supplied a previously signed diagnostic APK on a different commit. Its downloaded checksum matched `c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03`. [Prior diagnostic APK release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-wallet-control-phone-test-20261122)
+- PR #46 supplied a previously signed local diagnostic APK on a different commit. The delivery workflow checked and uploaded the signed file from its artifact branch. Its downloaded checksum matched `c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03`. The accessible local debug stores have a different certificate. [November 22 delivery job](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/45001336325) · [Prior diagnostic APK release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-wallet-control-phone-test-20261122)
 - The first physical Solflare result explicitly identified Battery Saver. The prior Phantom result included an identity warning and force-close. Their wallet-side causes and the current binary’s handset behavior still require the device run above. [Prior handset evidence](https://github.com/omnmlr/hackaholics-financial-agent/pull/47)
 - The server has independently finalized, receipted and monitored a Devnet SOL transfer sent with a disposable software signer. [Verified Devnet transaction](https://explorer.solana.com/tx/2ztFGAyjsrKmPLG84fY1jXYbZuEsaRBnVFVT9DmF4QJuBAd1GbHXaqWszd469fJSL98mBgQ78MsuJxFZo8bLidds?cluster=devnet)
 - MWA 3.0.2 awaits native teardown after the wallet callback. A teardown exception can hide an already returned result. AGUS now retains a validated signature or ownership proof across that exception. A regression test exercises the signature path with one wallet submission.

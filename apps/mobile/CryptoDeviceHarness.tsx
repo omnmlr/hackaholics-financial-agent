@@ -78,6 +78,7 @@ export default function CryptoDeviceHarness() {
   const [receipt, setReceipt] = useState<Schemas["CryptoReceipt"]>();
   const [diagnostics, setDiagnostics] = useState<WalletDiagnostic[]>([]);
   const [linked, setLinked] = useState<{
+    owner: string;
     provider: WalletProvider;
     addresses: string[];
   }>();
@@ -199,7 +200,9 @@ export default function CryptoDeviceHarness() {
     const me = response(await api.GET("/api/v1/me")) as {
       user: { id: string };
     };
-    if (owner && owner !== me.user.id) setLinked(undefined);
+    setLinked((current) =>
+      current?.owner === me.user.id ? current : undefined,
+    );
     setOwner(me.user.id);
     await finishAssociation(me.user.id);
     await loadWallets();
@@ -273,7 +276,7 @@ export default function CryptoDeviceHarness() {
 
   async function authorize(provider: WalletProvider) {
     const result = await signer(owner).authorize(provider, cluster);
-    setLinked({ provider, addresses: result.addresses });
+    setLinked({ owner, provider, addresses: result.addresses });
     setNotice("Choose the exact disposable account to prove ownership.");
   }
 
@@ -457,16 +460,17 @@ export default function CryptoDeviceHarness() {
             disabled={disable}
             onPress={() => void run(() => authorize("solflare"))}
           />
-          {linked?.addresses.map((address) => (
-            <Button
-              key={address}
-              title={`Prove ownership of ${address}`}
-              disabled={disable}
-              onPress={() =>
-                void run(() => associate(linked.provider, address))
-              }
-            />
-          ))}
+          {linked?.owner === owner &&
+            linked.addresses.map((address) => (
+              <Button
+                key={address}
+                title={`Prove ownership of ${address}`}
+                disabled={disable}
+                onPress={() =>
+                  void run(() => associate(linked.provider, address))
+                }
+              />
+            ))}
           <Button
             title="Refresh Devnet portfolio"
             disabled={disable}
@@ -558,6 +562,11 @@ export default function CryptoDeviceHarness() {
             <Text
               selectable
             >{`Attempt ${attempt.id} · ${attempt.state}\n${attempt.signature ?? ""}`}</Text>
+          )}
+          {receipt && (
+            <Text
+              selectable
+            >{`Receipt ${receipt.id} · Finalized at slot ${receipt.slot} · ${receipt.feeLamports} lamports fee`}</Text>
           )}
           {receipt?.explorerUrl && (
             <Button

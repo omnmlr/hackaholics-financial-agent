@@ -162,6 +162,30 @@ describe("Android Crypto MWA boundary", () => {
     expect(native.send).toHaveBeenCalledTimes(1);
   });
 
+  it("retains the returned signature when native session cleanup fails", async () => {
+    const original = native.transact.getMockImplementation()!;
+    native.transact.mockImplementation(async (callback) => {
+      await original(callback);
+      throw new Error("native close failed");
+    });
+    const diagnostic = vi.fn();
+    const signer = createCryptoSigner(
+      "owner",
+      "https://identity.example",
+      diagnostic,
+    );
+    await expect(signer.handoff(claim, route, review)).resolves.toEqual({
+      kind: "signature",
+      signature: testSignature,
+    });
+    expect(diagnostic).toHaveBeenCalledWith({
+      provider: "phantom",
+      stage: "submission",
+      reason: "WALLET_SESSION_CLEANUP",
+    });
+    expect(native.send).toHaveBeenCalledTimes(1);
+  });
+
   it("refuses an amount changed independently of the reviewed transaction", async () => {
     const signer = createCryptoSigner("owner", "https://identity.example");
     const altered = {

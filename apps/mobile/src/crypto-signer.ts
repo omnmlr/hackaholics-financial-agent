@@ -114,6 +114,7 @@ export function createCryptoSigner(
     ) => Promise<T>,
   ) {
     let stage: WalletStage = "association";
+    let completed: { value: T } | undefined;
     function setStage(next: WalletStage) {
       stage = next;
       emit(provider, stage, "STARTED");
@@ -122,9 +123,15 @@ export function createCryptoSigner(
     try {
       return await transact(async (wallet) => {
         setStage("authorization");
-        return callback(wallet, setStage);
+        const value = await callback(wallet, setStage);
+        completed = { value };
+        return value;
       }, packageConfig(provider));
     } catch (error) {
+      if (completed) {
+        emit(provider, stage, "WALLET_SESSION_CLEANUP");
+        return completed.value;
+      }
       const failure = walletFailure(error, stage);
       emit(provider, stage, failure.reason);
       throw new WalletRouteError(failure.reason);
@@ -215,6 +222,7 @@ export function createCryptoSigner(
         return { kind: "unavailable", reason: "EXACT_FRESH_REVIEW_REQUIRED" };
       const provider = providerFor(route);
       let stage: WalletStage = "association";
+      let returnedSignature: string | undefined;
       try {
         const tx = Transaction.from(
           Buffer.from(review.unsignedTransactionBase64, "base64"),
@@ -293,10 +301,15 @@ export function createCryptoSigner(
           });
           if (!signature || base58.decode(signature).length !== 64)
             throw new WalletRouteError("WALLET_SIGNATURE_UNAVAILABLE");
+          returnedSignature = signature;
           emit(provider, stage, "SIGNATURE_RETURNED");
           return { kind: "signature", signature };
         }, packageConfig(provider));
       } catch (error) {
+        if (returnedSignature) {
+          emit(provider, stage, "WALLET_SESSION_CLEANUP");
+          return { kind: "signature", signature: returnedSignature };
+        }
         const failure = walletFailure(error, stage);
         emit(provider, stage, failure.reason);
         return failure.outcome;

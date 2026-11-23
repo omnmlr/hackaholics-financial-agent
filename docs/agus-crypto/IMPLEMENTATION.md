@@ -73,3 +73,16 @@ The 80/100 acceptance target remains conditional on the complete handset journey
 Set `AGUS_CRYPTO_DEVNET_SIGNER_FILE` only for the explicit live test, and point it to a fresh funded Devnet-only keypair outside the repository. The test prepares and approves one 0.001 Devnet SOL transfer to a new recipient and sends exactly once. It exercises lost-callback recovery, a finalized receipt and the recipient's opt-in inbox rule. Run `npx vitest run tests/crypto-backend.test.ts -t 'explicitly enabled disposable Devnet transfer'` with the disposable Postgres environment. This phase produces software-signer evidence. Signed Android and wallet-vendor acceptance still require the physical handset.
 
 For request and invoice acceptance, enable `AGUS_CRYPTO_REQUESTS` and optionally `AGUS_CRYPTO_INVOICES` on private Devnet. QR content is a network-labeled share URL. The public resource omits invoice metadata. The worker verifies finalized exact Solana Pay evidence before publishing a receipt and routes ambiguous candidates to review.
+
+### Recorded test results
+
+| Check | Result |
+| --- | --- |
+| Repository suite with disposable Postgres and live providers off | 1,698 passed, three opt-in cases skipped |
+| Crypto contract and backend suites with public read verification on | 14 passed. The funded transfer case was skipped because the disposable wallet held zero lamports. |
+| PostgreSQL platform suite | 39 passed |
+| Production HTTP smoke | Passed session enforcement, owner isolation and the existing platform restart checks |
+| Contract regeneration, root and mobile TypeScript, ESLint | Passed |
+| Android JavaScript export | Passed. The SDK and physical handset are required for signed APK acceptance. |
+
+The live Crypto test decoded finalized public activity and simulated the exact unsigned Devnet transfer message against RPC. The Gemini SDK separately returned the expected structured portfolio route using the existing server credential. The finalized settlement test verifies the sender signature, message digest, finalized status and actual balance deltas, and withholds the receipt for mismatched evidence. Settlement and alert replay tests used controlled blockchain responses in disposable Postgres.

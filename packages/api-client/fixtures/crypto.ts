@@ -87,6 +87,8 @@ export const cryptoFixtureScenarios = [
   "internal_transfer",
   "outside_inflow_replay",
   "partial_and_stale",
+  "decline_and_wrong_wallet",
+  "lost_callback_then_finalized",
 ] as const;
 export type CryptoFixtureScenario = (typeof cryptoFixtureScenarios)[number];
 
@@ -197,6 +199,103 @@ export function createCryptoFixtureTransport(
   const ruleId = "1ca0c3f9-f67a-470f-8a3b-afb5812c339a";
   const alertId = "4b9f334d-58c8-46ad-9bc6-4290bf04ef71";
   let readAt: string | null = null;
+  const execution =
+    scenario === "decline_and_wrong_wallet" ||
+    scenario === "lost_callback_then_finalized";
+  const reviewId = "91e1e573-f200-4134-a098-2ab51da952b1";
+  const attemptId = "91e1e573-f200-4134-a098-2ab51da952b2";
+  const receiptId = "91e1e573-f200-4134-a098-2ab51da952b3";
+  const reviewDigest = "a".repeat(64);
+  const messageDigest =
+    "04420fbf85abe92ddddcf6b3c5d13a0d92a5a7a5b4f1e38bd9cfc551dcc5d11f";
+  const amount = {
+    asset: { cluster, kind: "sol" as const },
+    atoms: "1000000",
+    decimals: 9,
+  };
+  const routeId = wallets[0].routes[0].id;
+  const review: Schemas["CryptoReview"] = {
+    id: reviewId,
+    revision: 0,
+    operation: "transfer",
+    cluster,
+    sourceWalletId: walletA,
+    routeId,
+    expectedSigner: addresses[0],
+    feePayer: addresses[0],
+    recipient: addresses[1],
+    sourceTokenAccount: null,
+    destinationTokenAccount: null,
+    amount,
+    estimatedFeeLamports: "5000",
+    estimatedRentLamports: "0",
+    quote: null,
+    expiresAt: "2026-11-24T12:01:30.000Z",
+    blockhash: addresses[3],
+    lastValidBlockHeight: 120,
+    reference: addresses[2],
+    minContextSlot: 100,
+    messageDigest,
+    reviewDigest,
+    transactionVersion: "legacy",
+    unsignedTransactionBase64:
+      "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAIEuW+RIyfH5nrWLn8jlvCmbWBDTcfOM79Q3k4l1ymVGuKo5Hbwq0Sh6VzA1O/KlsJcXzrqjIdWS3IADuDKyFq2SQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2Jn7GDX/WcrwgwK5d45jAe03kB8CJGLbzfEMeidoSdiFko401SV78c8c7M4cx9V5XEPzAGR8thJIkBBZB1KjfQECAwABAwwCAAAAQEIPAAAAAAA=",
+    simulation: {
+      passed: true,
+      slot: source.slot,
+      observedAt: source.observedAt,
+    },
+    source,
+  };
+  const attempt: Schemas["CryptoAttempt"] = {
+    id: attemptId,
+    reviewId,
+    revision: 0,
+    reviewDigest,
+    state: "ready",
+    cluster,
+    routeId,
+    expectedSigner: addresses[0],
+    reference: addresses[2],
+    signature: null,
+    createdAt: source.observedAt,
+    updatedAt: source.observedAt,
+    reason: null,
+    receiptId: null,
+  };
+  const fixtureEvent = event(false);
+  const settledLegs = fixtureEvent.legs.map((leg) =>
+    leg.kind === "transfer"
+      ? {
+          ...leg,
+          amount,
+          walletDeltas: [
+            { walletId: walletA, atoms: "-1000000" },
+            { walletId: walletB, atoms: "1000000" },
+          ],
+        }
+      : leg,
+  );
+  const outgoing: Schemas["CryptoReceipt"] = {
+    id: receiptId,
+    attemptId,
+    requestId: null,
+    source,
+    signature,
+    messageDigest,
+    walletIds: [walletA, walletB],
+    slot: source.slot,
+    time: source.observedAt,
+    verifiedAt: source.observedAt,
+    finality: "finalized",
+    execution: "success",
+    feeLamports: "5000",
+    legs: settledLegs,
+    eventId: fixtureEvent.id,
+    explorerUrl: null,
+  };
+  let prepared = false;
+  let begun = false;
   return async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
@@ -205,7 +304,11 @@ export function createCryptoFixtureTransport(
     );
     const scope = url.searchParams.getAll("walletIds");
     const scopedIds = scope.length ? scope : [walletA, walletB];
-    const scopedEvents = events.filter((item) =>
+    const visibleEvents =
+      execution && attempt.state === "finalized"
+        ? [{ ...fixtureEvent, legs: settledLegs }]
+        : events;
+    const scopedEvents = visibleEvents.filter((item) =>
       item.legs.some((leg) =>
         leg.walletDeltas.some((delta) => scopedIds.includes(delta.walletId)),
       ),
@@ -224,12 +327,78 @@ export function createCryptoFixtureTransport(
     const scopedCoverage = coverage.filter((item) =>
       scopedIds.includes(item.walletId),
     );
+    if (execution && request.method === "POST") {
+      if (path === "/reviews") {
+        prepared = true;
+        return Response.json(review);
+      }
+      if (prepared && path === `/reviews/${reviewId}/begin`) {
+        const approval = (await request.json()) as {
+          revision: number;
+          reviewDigest: string;
+        };
+        if (
+          approval.revision !== review.revision ||
+          approval.reviewDigest !== reviewDigest
+        )
+          return error("REVISION_CHANGED", 409);
+        begun = true;
+        return Response.json(attempt);
+      }
+      if (begun && path === `/attempts/${attemptId}/handoff`) {
+        const launchGranted = attempt.state === "ready";
+        if (launchGranted) attempt.state = "handoff";
+        return Response.json({
+          attempt,
+          launchGranted,
+        } satisfies Schemas["CryptoHandoff"]);
+      }
+      if (begun && path === `/attempts/${attemptId}/wallet-outcome`) {
+        const outcome =
+          (await request.json()) as Schemas["CryptoWalletOutcome"];
+        if (attempt.state === "handoff") {
+          attempt.state = outcome.kind === "declined" ? "declined" : "unknown";
+          attempt.reason =
+            outcome.kind === "unavailable"
+              ? outcome.reason
+              : outcome.kind === "unknown"
+                ? "CALLBACK_UNKNOWN"
+                : null;
+        }
+        return Response.json(attempt);
+      }
+      if (begun && path === `/attempts/${attemptId}/reconcile`) {
+        if (
+          scenario === "lost_callback_then_finalized" &&
+          ["handoff", "unknown"].includes(attempt.state)
+        ) {
+          attempt.state = "finalized";
+          attempt.signature = signature;
+          attempt.receiptId = receiptId;
+          attempt.reason = null;
+        }
+        return Response.json(attempt);
+      }
+    }
     if (request.method === "GET") {
       if (
         url.searchParams.get("cluster") &&
         url.searchParams.get("cluster") !== cluster
       )
         return error("NOT_FOUND", 404);
+      if (execution && path === "/attempts") {
+        return Response.json({
+          items: begun ? [attempt] : [],
+          nextCursor: null,
+          source,
+        } satisfies Schemas["CryptoAttemptPage"]);
+      }
+      if (execution && path === `/attempts/${attemptId}`)
+        return begun ? Response.json(attempt) : error("NOT_FOUND", 404);
+      if (execution && path === `/receipts/${receiptId}`)
+        return attempt.state === "finalized"
+          ? Response.json(outgoing)
+          : error("NOT_FOUND", 404);
       if (path === "/capabilities")
         return Response.json({
           source,

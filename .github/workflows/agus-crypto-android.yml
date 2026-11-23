@@ -1,0 +1,128 @@
+name: AGUS Crypto Android Devnet APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/agus-crypto-backend]
+    paths:
+      - ".github/workflows/agus-crypto-android.yml"
+      - "apps/mobile/**"
+      - "packages/contracts/**"
+      - "packages/api-client/**"
+      - "package-lock.json"
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      signed: ${{ steps.sign.outputs.ready }}
+    env:
+      EXPO_NO_TELEMETRY: "1"
+      CI: "1"
+      EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST: "true"
+      EXPO_PUBLIC_MWA_ORIGIN: https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app
+      EXPO_PUBLIC_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL || 'https://compile.invalid' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - run: npm ci --ignore-scripts
+      - run: npm run mobile:typecheck
+      - name: Generate the Android project
+        working-directory: apps/mobile
+        run: npx --no-install expo prebuild --platform android --no-install
+      - name: Compile the ARM64 APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2
+      - name: Sign and verify the approved Devnet artifact
+        id: sign
+        env:
+          AGUS_ANDROID_KEYSTORE_BASE64: ${{ secrets.AGUS_ANDROID_KEYSTORE_BASE64 }}
+          AGUS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.AGUS_ANDROID_KEYSTORE_PASSWORD }}
+          AGUS_ANDROID_KEY_ALIAS: ${{ secrets.AGUS_ANDROID_KEY_ALIAS }}
+          AGUS_ANDROID_KEY_PASSWORD: ${{ secrets.AGUS_ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "ready=false" >> "$GITHUB_OUTPUT"
+          if [[ -z "$AGUS_ANDROID_KEYSTORE_BASE64" || -z "$AGUS_ANDROID_KEYSTORE_PASSWORD" || -z "$AGUS_ANDROID_KEY_ALIAS" || -z "$AGUS_ANDROID_KEY_PASSWORD" || "$EXPO_PUBLIC_API_URL" == https://compile.invalid ]]; then
+            echo "::notice::Native compilation passed. Signed delivery requires the original four Android signing secrets and AGUS_CRYPTO_DEVICE_API_URL."
+            exit 0
+          fi
+          node --input-type=module -e '
+            const url=new URL(process.env.EXPO_PUBLIC_API_URL);
+            if(url.protocol!=="https:"||url.origin!==url.href.replace(/\/$/,"")||url.hostname==="agusweb.up.railway.app") throw Error("Use the private HTTPS Devnet API origin");
+          '
+          curl --fail --silent --show-error --max-time 20 "${EXPO_PUBLIC_API_URL%/}/api/v1/ready" | jq -e '.status == "ready"' >/dev/null
+          curl --fail --silent --show-error --max-time 20 "${EXPO_PUBLIC_API_URL%/}/api/v1/openapi" | jq -e '.paths["/api/v1/crypto/attempts/{id}/handoff"].post' >/dev/null
+          fingerprint=85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF
+          curl --fail --silent --show-error --max-time 20 "$EXPO_PUBLIC_MWA_ORIGIN/.well-known/assetlinks.json" |
+            jq -e --arg fingerprint "$fingerprint" 'any(.[]; .target.package_name=="app.agus.prototype" and (.relation|index("delegate_permission/common.handle_all_urls")) and any(.target.sha256_cert_fingerprints[]; (gsub(":";"")|ascii_upcase)==$fingerprint))' >/dev/null
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          input=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          output=phone-test/AGUS-Crypto-Devnet-arm64.apk
+          mkdir -p phone-test
+          umask 077
+          keystore="$RUNNER_TEMP/agus-signing.keystore"
+          trap 'rm -f "$keystore"' EXIT
+          printf '%s' "$AGUS_ANDROID_KEYSTORE_BASE64" | base64 --decode > "$keystore"
+          "$build_tools/apksigner" sign --ks "$keystore" --ks-key-alias "$AGUS_ANDROID_KEY_ALIAS" \
+            --ks-pass env:AGUS_ANDROID_KEYSTORE_PASSWORD --key-pass env:AGUS_ANDROID_KEY_PASSWORD --out "$output" "$input"
+          identity="$("$build_tools/apksigner" verify --verbose --print-certs "$output")"
+          printf '%s\n' "$identity" | grep -F 'Verified using v2 scheme (APK Signature Scheme v2): true'
+          actual="$(printf '%s\n' "$identity" | awk '/^Signer #1 certificate SHA-256 digest:/ {print toupper($NF)}')"
+          [[ "$actual" == "$fingerprint" ]]
+          [[ "$(printf '%s\n' "$identity" | grep -c '^Signer #[0-9]* certificate SHA-256 digest:')" == 1 ]]
+          badging="$("$build_tools/aapt" dump badging "$output")"
+          printf '%s\n' "$badging" | grep -E "^package: name='app\.agus\.prototype' "
+          printf '%s\n' "$badging" | grep -E "^native-code: 'arm64-v8a' *$"
+          cd phone-test
+          sha256sum AGUS-Crypto-Devnet-arm64.apk > SHA256SUMS.txt
+          printf 'Commit: %s\nCertificate SHA-256: %s\n' "$GITHUB_SHA" "$actual" > BUILD-IDENTITY.txt
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.sign.outputs.ready == 'true'
+        with:
+          name: agus-crypto-devnet-arm64
+          path: phone-test/*
+          if-no-files-found: error
+          compression-level: 0
+  deliver:
+    needs: build
+    if: needs.build.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: agus-crypto-devnet-arm64
+          path: phone-test
+      - name: Publish verified APK and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd phone-test
+          sha256sum --check SHA256SUMS.txt
+          tag="agus-crypto-devnet-${GITHUB_SHA:0:12}"
+          notes="Signed ARM64 Devnet test build. See https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/docs/agus-crypto/ANDROID_DEVICE_TEST.md"
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" AGUS-Crypto-Devnet-arm64.apk SHA256SUMS.txt BUILD-IDENTITY.txt \
+              --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "AGUS Crypto Devnet handset test" --notes "$notes"
+          fi
+          receipt="$(mktemp -d)"
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern AGUS-Crypto-Devnet-arm64.apk --pattern SHA256SUMS.txt --dir "$receipt"
+          cmp SHA256SUMS.txt "$receipt/SHA256SUMS.txt"
+          cd "$receipt"
+          sha256sum --check SHA256SUMS.txt
+          printf 'APK: https://github.com/%s/releases/download/%s/AGUS-Crypto-Devnet-arm64.apk\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"

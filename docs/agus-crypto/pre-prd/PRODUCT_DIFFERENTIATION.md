@@ -1,0 +1,41 @@
+# Product differentiation
+
+**AGUS gives people one place to understand, monitor and manage crypto across the wallets they already own.** Start with Solana users who actively use two or more wallets. A user might keep trading funds in one wallet, spend stablecoins from another, and watch a cold wallet. Today they switch between wallet apps, explorers and portfolio tools to explain a change or decide where to spend. AGUS should turn that whole task into one accountable workflow.
+
+The core experience is complete when someone who has never created an invoice or activated Pocket can see an accurate combined view, understand an actual transaction, choose an eligible wallet for a payment, verify the settlement and get a useful alert later.
+
+| Product layer | What gives it value |
+| --- | --- |
+| **Core · Multi-wallet management** | Aggregate balances, assets, supported positions and history. Preserve wallet ownership and per-account attribution. Deduplicate routes and token accounts, and explain internal transfers. |
+| **Core · Conversational financial intelligence** | Answer “How much USDC did I receive last month?”, “What changed this week?”, “Where did this transaction go?” and “Which wallet can pay this?” Use decoded transactions and deterministic calculations. Cite the transaction, wallet and coverage that support the answer. |
+| **Core · Unified execution** | Go from an answer or instruction to a specific funding wallet, exact transfer or supported swap review, appropriate wallet approval, and durable verified status. Support an honest decline or pending state. |
+| **Core · Proactive assistance** | Watch user-chosen activity and budget rules over time. Surface meaningful events, summarize changes and open the underlying evidence. A recommendation can become a draft for approval. |
+| **Major optional feature · Pocket** | Put a small balance into an opt-in Swig account for active spending, verified in-app signing, and explicitly scoped automation. Users can inspect grants, revoke them, withdraw or recover. |
+| **Supporting tools** | Requests, invoices, QR codes, receipts, reconciliation and exports organize records for users who need them. Link them to the portfolio and activity ledger so they are useful without defining the home screen. |
+
+## Competition and proof of differentiation
+
+These comparisons describe capabilities in public sources. AGUS's proposed advantage still needs hands-on validation.
+
+| Product | Existing overlap | What AGUS would have to demonstrate |
+| --- | --- | --- |
+| **HeyElsa** | Natural-language trading, portfolio assistance, external wallet connections and an optional provider wallet experience are documented. | Useful cross-wallet financial records outside trading. Explain transfers in wallet context and route any resulting action through the independently held account the user reviewed. [HeyElsa guide](https://docs.heyelsa.ai/a-field-guide-to-heyelsa) · [HeyElsa product](https://www.heyelsa.ai/) |
+| **Bankr** | Natural-language and API-driven wallet actions, monitoring and trading from Bankr wallets, with policy controls and an API-key boundary. | The ordinary workflow starts from existing ownership and on-chain evidence. Chat approval, wallet consent and standing grants must be distinguishable at the point of action. [Bankr wallet API](https://docs.bankr.bot/docs/wallet-api/overview.md) · [Bankr controls](https://docs.bankr.bot/docs/security/overview.md) |
+| **Phantom** | Multi-account management, switching between accounts, native transfers and swaps, and wallet-controlled dApp approvals. | Keep a Phantom signer while independently linked Solflare or Backpack accounts remain visible and actionable through validated routes. Explain aggregate and wallet-level changes from the same history. [Phantom account management](https://help.phantom.com/articles/manage-your-accounts-in-phantom-28355057809299) · [Phantom swaps](https://help.phantom.com/articles/swap-tokens-in-phantom-5985106844435) |
+| **Solflare** | Self-custody mobile wallet with transfer, DeFi and staking access and optional wallet import. Official SDK and MWA-compatible routes. | Unify views and actions across independently held wallet apps without a key or phrase import. Make permission and approval boundaries visible in AGUS. [Solflare overview](https://docs.solflare.com/solflare/overview.md) · [Solflare SDK](https://docs.solflare.com/solflare/technical/integrate-solflare/solflare-wallet-sdk.md) |
+| **Jupiter Portfolio and Exchange** | Jupiter Portfolio groups multiple Solana addresses, shows wallet-level history and position coverage, and advertises insights and weekly briefs. Jupiter also offers swap infrastructure. | Grouping, watch-only and insights alone are insufficient. Show an evidence-backed answer that links directly to wallet-attributed history and a verified Android action on the user's selected existing signer. [Jupiter Portfolio](https://jup.ag/portfolio) · [Jupiter Swap](https://developers.jup.ag/docs/swap/order-and-execute.md) |
+| **CoinStats** | Multi-wallet and exchange portfolio tracking, analytics, Solana integration and alerts. | Focus on reliable Solana activity and execution with an explicit signer and a unified evidence trail. Broad asset coverage is not a credible near-term competitive claim. [CoinStats integrations](https://coinstats.app/integrations/) · [CoinStats plans](https://coinstats.app/pricing/) |
+| **Cielo** | Wallet lists and activity alerts, a beta AI copilot with memory and scheduled reports, and trading with Turnkey-secured embedded wallets. | Chat and notifications are already competitive territory. Show utility for everyday self-owned wallet activity and a payment or swap approved from a separate existing wallet, with no new account dependency. [Cielo AI Copilot](https://docs.cielo.finance/trading/ai-copilot.md) · [Cielo security](https://docs.cielo.finance/security.md) |
+| **Agentic** | Existing-wallet routing via Android MWA and other transports, with approvals and an inbox. | Combine that routing with recurring personal context, computed portfolio explanations, and monitoring that remains useful when the user never initiates a trade. [Agentic approval tools](https://github.com/mstevens843/solana-agent-wallet-adapter/blob/f00f17f8283c1fca259cefc5d402ef07b463b899/packages/mcp-server/README.md) |
+
+## Users and journeys
+
+| User | First value and ongoing use |
+| --- | --- |
+| **Active self-custody user with multiple wallets** | Connect two wallets, see a deduped portfolio, understand why the balance changed, then choose the correct wallet for a payment. Weekly summaries and meaningful alerts create a reason to return. This is the initial audience. |
+| Creator or freelancer | The same portfolio, history and payment controls, with optional requests, receipts and exports. A person who receives stablecoins directly gets value from activity explanations before needing an invoice. |
+| Team or power user | The same source-account attribution, with reusable exports, policy controls, monitoring rules and auditable actions as depth increases. These are extensions with their own willingness-to-pay test. |
+
+Three journeys should drive the demo. First, **understand** two wallets and explain a transfer between them without double-counting. Second, **act** on a payment request in chat using the selected existing wallet, then verify and explain the outcome. Third, **monitor** an owned wallet and open a real, opted-in alert into the exact activity. Pocket can extend the second journey as a separate verified path. An invoice is one optional source of payment context. [Hackathon demo journeys](HACKATHON_READINESS.md)
+
+After the demo, deepen history and supported positions, verify more wallets, add safe supported swaps and long-lived monitoring, and make Pocket viable with recovery and policy management. Test demand with active multi-wallet holders across consumers, traders and creators. Measure second-week return, correctness and time saved on balance/history questions, verified execution completion, and how often users act on alerts. Run the core evaluation with both Pocket and financial tools disabled. Product hypotheses and pricing remain unvalidated. [Architecture decision](ARCHITECTURE_DECISION.md) · [Business model](BUSINESS_MODEL.md)

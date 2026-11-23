@@ -33,7 +33,12 @@ export function parseSavedAttempt(value: string | null): SavedAttempt | null {
 }
 
 export function canRecover(state: Schemas["CryptoAttempt"]["state"]) {
-  return state === "handoff" || state === "pending" || state === "unknown";
+  return (
+    state === "ready" ||
+    state === "handoff" ||
+    state === "pending" ||
+    state === "unknown"
+  );
 }
 
 export function solAtoms(amount: string): string {

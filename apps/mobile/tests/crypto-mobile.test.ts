@@ -28,7 +28,7 @@ vi.mock("@solana-mobile/mobile-wallet-adapter-protocol-web3js", () => ({
 }));
 
 import { createCryptoSigner } from "../src/crypto-signer";
-import { parseSavedAttempt, solAtoms } from "../src/crypto-device-state";
+import { canRecover, parseSavedAttempt, solAtoms } from "../src/crypto-device-state";
 import { walletFailure } from "../src/crypto-wallet-policy";
 
 type Schemas = components["schemas"];
@@ -242,5 +242,10 @@ describe("Android Crypto MWA boundary", () => {
     ).toEqual({ id: claim.attempt.id });
     expect(solAtoms("0.001")).toBe("1000000");
     expect(() => solAtoms("0.0000000001")).toThrow("INVALID_DEVNET_SOL_AMOUNT");
+  });
+
+  it("can reconcile a review interrupted before wallet handoff", () => {
+    expect(canRecover("ready")).toBe(true);
+    expect(canRecover("expired")).toBe(false);
   });
 });

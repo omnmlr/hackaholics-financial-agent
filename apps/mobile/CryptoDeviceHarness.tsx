@@ -311,10 +311,7 @@ export default function CryptoDeviceHarness() {
 
   async function prepare() {
     if (!selected) throw new Error("SELECT_DEVNET_WALLET");
-    if (
-      attempt &&
-      ["ready", "handoff", "pending", "unknown"].includes(attempt.state)
-    )
+    if (attempt && canRecover(attempt.state))
       throw new Error("RECOVER_PREVIOUS_ATTEMPT");
     const review = response(
       await api.POST("/api/v1/crypto/reviews", {
@@ -564,13 +561,22 @@ export default function CryptoDeviceHarness() {
             >{`Attempt ${attempt.id} · ${attempt.state}\n${attempt.signature ?? ""}`}</Text>
           )}
           {receipt && (
-            <Text
-              selectable
-            >{`Receipt ${receipt.id} · Finalized at slot ${receipt.slot} · ${receipt.feeLamports} lamports fee`}</Text>
+            <>
+              <Text
+                selectable
+              >{`Receipt ${receipt.id} · Finalized at slot ${receipt.slot} · ${receipt.feeLamports} lamports fee`}</Text>
+              {receipt.legs
+                .filter((leg) => leg.kind === "transfer" && leg.amount?.asset.kind === "sol")
+                .map((leg) => (
+                  <Text key={leg.id} selectable>
+                    {`${leg.amount?.atoms} lamports\nFrom ${leg.from}\nTo ${leg.to}`}
+                  </Text>
+                ))}
+            </>
           )}
           {receipt?.explorerUrl && (
             <Button
-              title="Open verified Devnet receipt"
+              title="Open finalized transfer in Solana Explorer"
               onPress={() => void Linking.openURL(receipt.explorerUrl!)}
             />
           )}

@@ -188,6 +188,32 @@ try {
     ).status,
     200,
   );
+  const anonymous = await jar().request(
+    "/api/v1/crypto/wallets?cluster=devnet",
+  );
+  assert.equal(anonymous.status, 401);
+  assert.equal(anonymous.data.error.code, "SESSION_REQUIRED");
+  const watched = await user.request("/api/v1/crypto/wallets/watch", {
+    cluster: "devnet",
+    address: Keypair.generate().publicKey.toBase58(),
+    label: "Disposable HTTP watch",
+    ownDeclared: false,
+  });
+  assert.equal(watched.status, 200);
+  assert.equal(watched.data.group, "third_party_watch");
+  assert.equal(
+    (await user.request("/api/v1/crypto/portfolio?cluster=devnet")).data
+      .holdings.length,
+    0,
+  );
+  assert.equal(
+    (
+      await other.request(
+        `/api/v1/crypto/wallets?cluster=devnet&walletIds=${watched.data.id}`,
+      )
+    ).status,
+    404,
+  );
   const connection = await user.request("/api/v1/banking/connections", {
     institutionId: "wema",
     provider: "fixture",

@@ -35,7 +35,7 @@ For local development and tests, pass `createCryptoFixtureTransport(scenario)` f
 | Identity | Better Auth Google OAuth and verified email registration, sign-in and recovery are wired. Email verification and password reset passed end to end with disposable mail transport. | Deploy Google OAuth client credentials and register the callback URL. Configure Resend with a verified sender and test real delivery and callback from Android. |
 | Execution | Devnet SOL and allowlisted classic SPL review bytes, fee and ATA rent checks, exact digest approval, one-time handoff, attempt polling and finalized receipt verification. Pending and unknown attempts are reconciled by the worker. | Real Devnet SOL and SPL execution, independent provider setup, signed handset return/recovery, and both wallet routes. |
 | Monitoring | Durable opt-in external inflow rule, worker, scoped inbox, mark read and replay-safe deduplication tested in Postgres. | A newly finalized public inflow observed by the worker without a chat or activity request. |
-| Pocket and supporting tools | Outgoing receipts are implemented. New Crypto request, swap and Pocket operations are gated off. | Validate payment URI/QR and exact request settlement on Devnet before enabling requests. Swig activation requires pinned deployment, root recovery and accepted handset signing. |
+| Pocket and supporting tools | Outgoing receipts and gated Devnet payment requests, PNG share QR, basic invoices and request receipt verification are implemented. | Verify a newly paid request and its receipt on Devnet before enabling request flags. Swaps and Pocket remain unavailable pending separate acceptance. |
 
 ### Frontend and deployment settings
 
@@ -67,3 +67,9 @@ Mainnet uses its own pinned RPC and mint registry in `src/server/crypto/rpc.ts`.
 - `npm run mobile:export:android` validates the JS bundle. The physical-device gate additionally requires a signed APK and a real handset session. The local signed-build preflight found no Android SDK configured.
 
 The 80/100 acceptance target remains conditional on the complete handset journey and two verified wallet routes. The integration branch is open for frontend work. No merges were performed.
+
+### Disposable transfer acceptance
+
+Set `AGUS_CRYPTO_DEVNET_SIGNER_FILE` only for the explicit live test, and point it to a fresh funded Devnet-only keypair outside the repository. The test prepares and approves one 0.001 Devnet SOL transfer to a new recipient and sends exactly once. It exercises lost-callback recovery, a finalized receipt and the recipient's opt-in inbox rule. Run `npx vitest run tests/crypto-backend.test.ts -t 'explicitly enabled disposable Devnet transfer'` with the disposable Postgres environment. This phase produces software-signer evidence. Signed Android and wallet-vendor acceptance still require the physical handset.
+
+For request and invoice acceptance, enable `AGUS_CRYPTO_REQUESTS` and optionally `AGUS_CRYPTO_INVOICES` on private Devnet. QR content is a network-labeled share URL. The public resource omits invoice metadata. The worker verifies finalized exact Solana Pay evidence before publishing a receipt and routes ambiguous candidates to review.

@@ -1,4 +1,6 @@
-import { randomUUID, sign } from "node:crypto";
+import { createHash, randomUUID, sign } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { setTimeout as delay } from "node:timers/promises";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { base58 } from "@scure/base";
 import {
@@ -19,9 +21,17 @@ import {
   normalizeTransaction,
   attributeEvent,
 } from "../src/server/crypto/ledger";
-import { evaluateAlertRule } from "../src/server/crypto/alerts";
-import { getAttempt, reconcileCrypto } from "../src/server/crypto/execution";
+import {
+  evaluateAlertRule,
+  runCryptoMonitoring,
+} from "../src/server/crypto/alerts";
+import {
+  getAttempt,
+  reconcileCrypto,
+  runCryptoReconciliation,
+} from "../src/server/crypto/execution";
 import { portfolio, sol } from "../src/server/crypto/portfolio";
+import { service as solanaService } from "../src/lib/solana";
 import { cryptoRpc } from "../src/server/crypto/rpc";
 import { createIdentity } from "../src/server/auth";
 import { sharedPlatform } from "./helpers/shared-platform";
@@ -258,7 +268,12 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
           lamports: 1000000n,
         }),
       );
-      const { createHash } = await import("node:crypto");
+      tx.instructions[0].keys.push({
+        pubkey: new PublicKey(outsider),
+        isSigner: false,
+        isWritable: false,
+      });
+      tx.sign(mockSender);
       const review = {
         id,
         revision: 0,
@@ -304,18 +319,31 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
       expect((await unknown.json()).state).toBe("unknown");
       expect((await getAttempt(p.id, attempt.id)).receiptId).toBeNull();
 
-      const finalSig = base58.encode(Buffer.alloc(64, 44));
+      const finalSig = base58.encode(tx.signature!);
+      const pre = [2_000_000, 0, 0, 0];
+      let post = [995_000, 900_000, 0, 0];
       const chain = {
         getSignaturesForAddress: async () => [{ signature: finalSig }],
         getTransaction: async () => ({
           version: "legacy",
           slot: 1234,
-          meta: { err: null, fee: 5000 },
+          meta: { err: null, fee: 5000, preBalances: pre, postBalances: post },
           transaction: { signatures: [finalSig], message: tx.compileMessage() },
+        }),
+        getSignatureStatuses: async () => ({
+          value: [{ confirmationStatus: "finalized", slot: 1234, err: null }],
         }),
         getParsedTransaction: async () =>
           parsedTransfer(wallet.address, review.recipient, finalSig),
       } as unknown as Connection;
+      const wrongEffects = await reconcileCrypto(
+        p.id,
+        attempt.id,
+        async () => chain,
+      );
+      expect(wrongEffects.state).toBe("unknown");
+      expect(wrongEffects.receiptId).toBeNull();
+      post = [995_000, 1_000_000, 0, 0];
       const settled = await Promise.all([
         reconcileCrypto(p.id, attempt.id, async () => chain),
         reconcileCrypto(p.id, attempt.id, async () => chain),
@@ -329,6 +357,52 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
       ).toBe(404);
     });
 
+    it("creates an owned Devnet request with a private invoice and a network-labeled PNG share link", async () => {
+      vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
+      vi.stubEnv("AGUS_CRYPTO_REQUESTS", "true");
+      vi.stubEnv("AGUS_CRYPTO_INVOICES", "true");
+      const wallet = await associateTestWallet(0, mockRecipient);
+      const args = {
+        walletId: wallet.id,
+        amount: sol(devnet, 1_000_000n),
+        invoice: { title: "Consulting", notes: "Private fixture note" },
+      };
+      const key = randomUUID();
+      const response = await POST(request(0, "requests", args, key));
+      expect(response.status).toBe(200);
+      const created = await response.json();
+      expect(
+        (await (await POST(request(0, "requests", args, key))).json()).id,
+      ).toBe(created.id);
+      expect((await GET(request(1, `requests/${created.id}`))).status).toBe(
+        404,
+      );
+      const shared = await GET(new Request(created.shareUrl));
+      expect(shared.status).toBe(200);
+      const publicView = await shared.json();
+      expect(publicView).toMatchObject({
+        network: "devnet",
+        testAssets: true,
+        requiresExplicitNetworkSelection: true,
+      });
+      expect(publicView).not.toHaveProperty("invoice");
+      const png = await GET(request(0, `requests/${created.id}/qr`));
+      expect(png.headers.get("content-type")).toBe("image/png");
+      expect(
+        Buffer.from(await png.arrayBuffer())
+          .subarray(1, 4)
+          .toString(),
+      ).toBe("PNG");
+      const cancellation = await POST(
+        request(0, `requests/${created.id}/cancel`, {
+          revision: created.revision,
+        }),
+      );
+      expect((await cancellation.json()).state).toBe("cancelled");
+      expect(
+        (await (await GET(new Request(created.shareUrl))).json()).solanaPayUri,
+      ).toBeUndefined();
+    });
     it("supports public email verification and reset with the existing identity tables", async () => {
       vi.stubEnv("AGUS_AUTH_PUBLIC", "true");
       vi.stubEnv("BETTER_AUTH_URL", "https://auth.fixture.invalid");
@@ -438,6 +512,24 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
           snapshot.holdings.find((item) => item.amount.asset.kind === "sol")
             ?.amount.atoms,
         ).toBe(String(actual));
+        const simulated = await solanaService().prepare(
+          fixture.users[0].id,
+          {
+            sender: publicAddress,
+            recipient: outsider,
+            asset: "SOL",
+            amount: "0.001",
+          },
+          undefined,
+          false,
+        );
+        expect(simulated.simulation?.passed).toBe(true);
+        const message = Transaction.from(
+          Buffer.from(simulated.unsignedTransactionBase64, "base64"),
+        ).serializeMessage();
+        expect(createHash("sha256").update(message).digest("hex")).toBe(
+          simulated.messageDigest,
+        );
         expect(snapshot.source.mode).toBe("public-rpc");
         const response = await GET(
           request(0, `activity?cluster=devnet&walletIds=${wallet.id}`),
@@ -505,6 +597,105 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
           ).status,
         ).toBe(200);
       },
+    );
+    it.skipIf(!process.env.AGUS_CRYPTO_DEVNET_SIGNER_FILE)(
+      "broadcasts one explicitly enabled disposable Devnet transfer and observes a finalized receipt and alert",
+      async () => {
+        const keyFile = process.env.AGUS_CRYPTO_DEVNET_SIGNER_FILE!;
+        const sender = Keypair.fromSecretKey(
+          Uint8Array.from(JSON.parse(await readFile(keyFile, "utf8"))),
+        );
+        const recipient = Keypair.generate();
+        const rpc = await cryptoRpc(devnet);
+        expect(
+          await rpc.getBalance(sender.publicKey, "finalized"),
+        ).toBeGreaterThan(1_010_000);
+        vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
+        vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", "phantom");
+        const from = await associateTestWallet(0, sender);
+        const to = await associateTestWallet(1, recipient);
+        const enabled = await POST(
+          request(1, "alert-rules", {
+            walletId: to.id,
+            kind: "external_inflow",
+            min: sol(devnet, 1_000_000n),
+          }),
+        );
+        expect(enabled.status).toBe(200);
+        const prepared = await POST(
+          request(0, "reviews", {
+            kind: "transfer",
+            sourceWalletId: from.id,
+            routeId: from.routes[0].id,
+            amount: sol(devnet, 1_000_000n),
+            recipient: to.address,
+          }),
+        );
+        expect(prepared.status).toBe(200);
+        const review = await prepared.json();
+        const approval = await POST(
+          request(0, `reviews/${review.id}/begin`, {
+            revision: review.revision,
+            reviewDigest: review.reviewDigest,
+          }),
+        );
+        expect(approval.status).toBe(200);
+        const attempt = await approval.json();
+        const handoff = await POST(
+          request(0, `attempts/${attempt.id}/handoff`, {}),
+        );
+        expect((await handoff.json()).launchGranted).toBe(true);
+
+        const tx = Transaction.from(
+          Buffer.from(review.unsignedTransactionBase64, "base64"),
+        );
+        expect(tx.feePayer?.equals(sender.publicKey)).toBe(true);
+        expect(
+          createHash("sha256").update(tx.serializeMessage()).digest("hex"),
+        ).toBe(review.messageDigest);
+        tx.sign(sender);
+        const expectedSignature = base58.encode(tx.signature!);
+        const unknown = await POST(
+          request(0, `attempts/${attempt.id}/wallet-outcome`, {
+            kind: "unknown",
+          }),
+        );
+        expect((await unknown.json()).state).toBe("unknown");
+        // One explicitly gated test-only broadcast. No retry after an ambiguous response.
+        const returned = await rpc.sendRawTransaction(tx.serialize(), {
+          skipPreflight: false,
+          maxRetries: 0,
+        });
+        expect(returned).toBe(expectedSignature);
+        let settled = await getAttempt(fixture.users[0].id, attempt.id);
+        for (
+          let round = 0;
+          round < 25 && settled.state !== "finalized";
+          round++
+        ) {
+          await delay(2000);
+          settled = await reconcileCrypto(fixture.users[0].id, attempt.id);
+        }
+        await runCryptoReconciliation();
+        expect(settled.state).toBe("finalized");
+        expect(settled.signature).toBe(expectedSignature);
+        const finalized = await GET(
+          request(0, `receipts/${settled.receiptId}`),
+        );
+        const receipt = await finalized.json();
+        expect(receipt.source.mode).toBe("public-rpc");
+        expect(receipt.messageDigest).toBe(review.messageDigest);
+        await runCryptoMonitoring();
+        const inbox = await GET(request(1, "alerts?cluster=devnet"));
+        const alerts = (await inbox.json()).items;
+        expect(
+          alerts.filter(
+            (item: { eventId: string }) => item.eventId === receipt.eventId,
+          ),
+        ).toHaveLength(1);
+        console.log("Verified disposable Devnet signature", expectedSignature);
+      },
+      120_000,
     );
   },
 );

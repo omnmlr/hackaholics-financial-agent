@@ -1,6 +1,6 @@
 # AGUS Pocket feasibility
 
-**Decision.** Pocket is technically credible as an optional, separately funded Swig account. Keep the external wallet and invoice workflow usable before Pocket is activated. The local experiment proves on-chain ownership, funding, spending and exit. Shipping in-app signing requires a separate Android acceptance run.
+**Decision.** Pocket is technically credible as an optional, separately funded Swig account. The core portfolio, intelligence, monitoring and external-wallet execution work without Pocket activation. Financial tools are optional. The local experiment proves on-chain ownership, funding, spending and exit. Shipping in-app signing requires a separate Android acceptance run.
 
 ## Create, fund, spend and exit
 

@@ -8,6 +8,7 @@ on:
       - "apps/mobile/**"
       - "packages/contracts/**"
       - "packages/api-client/**"
+      - "scripts/android/verify-devnet-apk.sh"
       - "package-lock.json"
 permissions:
   contents: read
@@ -136,8 +137,6 @@ jobs:
             echo "::error::AGUS_ANDROID_CERT_SHA256 must be the 64-digit certificate fingerprint."
             exit 1
           fi
-          curl --fail --silent --show-error --max-time 20 "$EXPO_PUBLIC_MWA_ORIGIN/.well-known/assetlinks.json" |
-            jq -e --arg fingerprint "$fingerprint" 'any(.[]; .target.package_name=="app.agus.prototype" and (.relation|index("delegate_permission/common.handle_all_urls")) and any(.target.sha256_cert_fingerprints[]; (gsub(":";"")|ascii_upcase)==$fingerprint))' >/dev/null
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
           input=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           output=phone-test/AGUS-Crypto-Devnet-arm64.apk
@@ -164,17 +163,11 @@ jobs:
             echo "::error::APK signing failed after certificate validation. Check the key password, private key entry and compiled APK."
             exit 1
           fi
-          identity="$("$build_tools/apksigner" verify --verbose --print-certs "$output")"
-          printf '%s\n' "$identity" | grep -F 'Verified using v2 scheme (APK Signature Scheme v2): true'
-          actual="$(printf '%s\n' "$identity" | awk '/^Signer #1 certificate SHA-256 digest:/ {print toupper($NF)}')"
-          [[ "$actual" == "$fingerprint" ]]
-          [[ "$(printf '%s\n' "$identity" | grep -c '^Signer #[0-9]* certificate SHA-256 digest:')" == 1 ]]
-          badging="$("$build_tools/aapt" dump badging "$output")"
-          printf '%s\n' "$badging" | grep -E "^package: name='app\.agus\.prototype' "
-          printf '%s\n' "$badging" | grep -E "^native-code: 'arm64-v8a' *$"
+          ANDROID_BUILD_TOOLS="$build_tools" bash scripts/android/verify-devnet-apk.sh \
+            "$output" "$fingerprint" "$EXPO_PUBLIC_API_URL" "$EXPO_PUBLIC_MWA_ORIGIN"
           cd phone-test
           sha256sum AGUS-Crypto-Devnet-arm64.apk > SHA256SUMS.txt
-          printf 'Commit: %s\nCertificate SHA-256: %s\n' "$GITHUB_SHA" "$actual" > BUILD-IDENTITY.txt
+          printf 'Commit: %s\nCertificate SHA-256: %s\n' "$GITHUB_SHA" "$fingerprint" > BUILD-IDENTITY.txt
           echo "ready=true" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@v4
         if: steps.sign.outputs.ready == 'true'
@@ -184,12 +177,16 @@ jobs:
           if-no-files-found: error
           compression-level: 0
   deliver:
-    needs: build
+    needs: [preflight, build]
     if: needs.build.outputs.signed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           name: agus-crypto-devnet-arm64
@@ -197,6 +194,9 @@ jobs:
       - name: Publish verified APK and checksum
         env:
           GH_TOKEN: ${{ github.token }}
+          AGUS_ANDROID_CERT_SHA256: ${{ vars.AGUS_ANDROID_CERT_SHA256 }}
+          DEVICE_API_ORIGIN: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL }}
+          WALLET_IDENTITY_ORIGIN: ${{ needs.preflight.outputs.identity_origin }}
         shell: bash
         run: |
           set -euo pipefail
@@ -209,8 +209,12 @@ jobs:
               --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease --title "AGUS Crypto Devnet handset test" --notes "$notes"
           fi
           receipt="$(mktemp -d)"
-          gh release download "$tag" --repo "$GITHUB_REPOSITORY" --pattern AGUS-Crypto-Devnet-arm64.apk --pattern SHA256SUMS.txt --dir "$receipt"
+          trap 'rm -rf -- "$receipt"' EXIT
+          gh release download "$tag" --repo "$GITHUB_REPOSITORY" \
+            --pattern AGUS-Crypto-Devnet-arm64.apk --pattern SHA256SUMS.txt --pattern BUILD-IDENTITY.txt --dir "$receipt"
           cmp SHA256SUMS.txt "$receipt/SHA256SUMS.txt"
-          cd "$receipt"
-          sha256sum --check SHA256SUMS.txt
+          cmp BUILD-IDENTITY.txt "$receipt/BUILD-IDENTITY.txt"
+          bash "$GITHUB_WORKSPACE/scripts/android/verify-devnet-apk.sh" \
+            "$receipt/AGUS-Crypto-Devnet-arm64.apk" "$AGUS_ANDROID_CERT_SHA256" \
+            "$DEVICE_API_ORIGIN" "$WALLET_IDENTITY_ORIGIN" "$receipt/SHA256SUMS.txt"
           printf 'APK: https://github.com/%s/releases/download/%s/AGUS-Crypto-Devnet-arm64.apk\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"

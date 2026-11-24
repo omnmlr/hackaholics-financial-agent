@@ -1,16 +1,41 @@
 # AGUS Crypto Devnet handset test
 
-The Android test build opens a diagnostic screen backed by the Crypto API. It uses `app.agus.prototype`, Solana Devnet and the stable Vercel project alias from the Android manifest. The release job checks the package, ARM64 ABI, APK v2 signature, certificate fingerprint, Digital Asset Links and Devnet API before publishing. Each release includes the APK, `SHA256SUMS.txt` and `BUILD-IDENTITY.txt`. [Digital Asset Links statement](https://agus-wallet-devnet-identity.vercel.app/.well-known/assetlinks.json)
+The Android test build opens a diagnostic screen backed by the Crypto API. It uses `app.agus.prototype`, Solana Devnet and the stable Vercel project alias from the Android manifest. The release job checks the package, ARM64 ABI, APK v2 signature, certificate fingerprint, Android manifest, API and identity origins embedded in the JS bundle, Digital Asset Links, and live Devnet API. It repeats those checks on the APK downloaded from GitHub. Each release includes the APK, `SHA256SUMS.txt` and `BUILD-IDENTITY.txt`. [Digital Asset Links statement](https://agus-wallet-devnet-identity.vercel.app/.well-known/assetlinks.json)
 
 ## Prepare the signed build
 
-The November 22 key is retired. Generate its replacement on a trusted workstation with GnuPG, an existing recoverable encryption key, and a durable backup directory outside the repository. With GitHub CLI authenticated as a repository administrator, run:
+The November 22 key is retired. First locate any existing encrypted replacement backup in the founder's storage. Reuse that exact archive if one exists. Use a trusted workstation with GnuPG, a recoverable GPG encryption key, and a private backup directory outside the repository. With GitHub CLI authenticated as a repository administrator, run the preparation script with the existing archive path or the chosen new backup path.
 
 ```bash
 bash scripts/android/prepare-release-signing.sh /durable/path/agus-signing.tar.gpg GPG_RECIPIENT_FINGERPRINT
 ```
 
-The script creates a 4096-bit RSA PKCS#12 signer, verifies an encrypted backup by restoring it, and installs the four repository secrets and the public `AGUS_ANDROID_CERT_SHA256` variable. A retry with the same backup reuses the same key. Retain a separate recoverable encrypted copy and the decryption key in the owner’s approved storage. Share the public fingerprint for updating the Vercel statement. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
+On a new path the script creates a 4096-bit RSA PKCS#12 signer and verifies the encrypted archive through restoration. It verifies that the private key can sign before installing the four repository secrets and the public `AGUS_ANDROID_CERT_SHA256` variable. A retry with the same backup reuses the same key. Retain a separate recoverable encrypted copy and the decryption key in the owner’s approved storage. Share the public fingerprint for updating the Vercel statement. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
+
+### Windows workstation
+
+Use Ubuntu under WSL 2 on the trusted Windows workstation. If Ubuntu is missing, run `wsl --install -d Ubuntu` in administrator PowerShell and complete the setup. Then run these commands in Ubuntu.
+
+```bash
+sudo apt update
+sudo apt install -y git gh gnupg openssl default-jdk-headless
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git
+git clone --branch feat/agus-crypto-backend https://github.com/omnmlr/hackaholics-financial-agent.git "$HOME/agus-crypto-release"
+cd "$HOME/agus-crypto-release"
+export GPG_TTY="$(tty)"
+gpg --list-secret-keys --with-fingerprint
+install -d -m 700 "$HOME/agus-signing-backup"
+```
+
+Use the founder's existing recoverable, encryption-capable GPG key. If its private key lives in approved recovery storage, import it into the Ubuntu GnuPG keyring following that storage provider's instructions. If setting up a GPG key for the first time, run `gpg --full-generate-key`, choose an encryption-capable key type, and store a protected export of the private key and its passphrase in approved recovery storage. Copy an existing encrypted replacement archive to the private directory before running the script. Use the exact existing filename and paste the GPG fingerprint without spaces.
+
+```bash
+read -r -p 'GPG fingerprint: ' recipient
+bash scripts/android/prepare-release-signing.sh "$HOME/agus-signing-backup/agus-signing.tar.gpg" "$recipient"
+```
+
+Keep the encrypted archive in two durable locations. For example, copy it to approved encrypted storage from WSL and confirm that the copy matches with `cmp`. Store the GPG private key and its passphrase through the founder's designated recovery channels. The only value needed for Vercel is the public certificate SHA-256 printed by the script. [WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install)
 
 | Repository secret | Value from the replacement signing backup |
 | --- | --- |
@@ -21,7 +46,28 @@ The script creates a 4096-bit RSA PKCS#12 signer, verifies an encrypted backup b
 
 Under **Variables**, choose **New repository variable** and set `AGUS_CRYPTO_DEVICE_API_URL` to the HTTPS origin of the private Devnet Crypto API. The service must pass `/api/v1/ready` and serve the Crypto handoff contract at `/api/v1/openapi`. The earlier APK’s API host and the Digital Asset Links site both returned HTTP 404 on those endpoints. [Repository Actions variables](https://github.com/omnmlr/hackaholics-financial-agent/settings/variables/actions)
 
-The stable Vercel alias must serve the new fingerprint for `app.agus.prototype` in `/.well-known/assetlinks.json`. The current statement can retain the old public fingerprint while the old binary is still in use. Re-run all jobs in the Android workflow after the new statement and API are available. The run summary reports which input names are available. [Devnet API deployment](DEVNET_DEPLOYMENT.md)
+The Vercel project `agus-wallet-devnet-identity` serves `public/assetlinks.json` at `/.well-known/assetlinks.json` through its existing rewrite. Update the Android statement for `app.agus.prototype` with the replacement fingerprint in colon-delimited form, using the same public certificate as the GitHub variable. Verify the stable alias over HTTPS after the deployment. After the new statement and API are available, re-run all jobs on the Android workflow for the intended release commit. The run summary reports which input names are available. [Devnet API deployment](DEVNET_DEPLOYMENT.md)
+
+```bash
+gh run list --workflow agus-crypto-android.yml --branch feat/agus-crypto-backend --repo omnmlr/hackaholics-financial-agent
+read -r -p 'Run ID for the intended commit: ' run_id
+gh run rerun "$run_id" --repo omnmlr/hackaholics-financial-agent
+gh run watch "$run_id" --exit-status --repo omnmlr/hackaholics-financial-agent
+```
+
+### Verify the GitHub download
+
+Download the release using its exact tag. Run the verifier from the repo in Bash with `node`, `unzip`, `jq`, `curl`, `sha256sum`, and Android SDK Build Tools available. Set `ANDROID_BUILD_TOOLS` to the directory containing `apksigner` and `aapt` when it differs from the newest tools under `ANDROID_HOME`.
+
+```bash
+download_dir="$(mktemp -d)"
+gh release download "<release-tag>" --repo omnmlr/hackaholics-financial-agent --dir "$download_dir"
+cat "$download_dir/BUILD-IDENTITY.txt"
+bash scripts/android/verify-devnet-apk.sh \
+  "$download_dir/AGUS-Crypto-Devnet-arm64.apk" \
+  "<replacement-certificate-sha256>" "<verified-devnet-https-origin>" \
+  https://agus-wallet-devnet-identity.vercel.app "$download_dir/SHA256SUMS.txt"
+```
 
 ## Install and verify on Android
 
@@ -50,6 +96,7 @@ Share the failure-time excerpt and wallet version, excluding session state, wall
 ## Current evidence
 
 - PR #46 supplied a previously signed local diagnostic APK on a different commit. The delivery workflow checked and uploaded the signed file from its artifact branch. Its downloaded checksum matched `c09bac72fbec54840e098cd01c55dc7de3d15d6a8c722d37fcccae7101c3ac03`. The accessible local debug stores have a different certificate. [November 22 delivery job](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/45001336325) · [Prior diagnostic APK release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-wallet-control-phone-test-20261122)
+- On November 24, the latest Android workflow compiled the ARM64 package. Its API verification, signing, upload and delivery steps were skipped. GitHub listed only the November 22 prerelease. An independent download confirmed it was ARM64, used the retired signer, embedded the old Railway API origin and had only the custom-scheme `open` host in its manifest. The Vercel statement still served the November 22 certificate. Both historical origins returned HTTP 404 on `/api/v1/ready`. [Android Actions run](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/45343383183)
 - The first physical Solflare result explicitly identified Battery Saver. The prior Phantom result included an identity warning and force-close. Their wallet-side causes and the current binary’s handset behavior still require the device run above. [Prior handset evidence](https://github.com/omnmlr/hackaholics-financial-agent/pull/47)
 - The server has independently finalized, receipted and monitored a Devnet SOL transfer sent with a disposable software signer. [Verified Devnet transaction](https://explorer.solana.com/tx/2ztFGAyjsrKmPLG84fY1jXYbZuEsaRBnVFVT9DmF4QJuBAd1GbHXaqWszd469fJSL98mBgQ78MsuJxFZo8bLidds?cluster=devnet)
 - MWA 3.0.2 awaits native teardown after the wallet callback. A teardown exception can hide an already returned result. AGUS now retains a validated signature or ownership proof across that exception. A regression test exercises the signature path with one wallet submission.

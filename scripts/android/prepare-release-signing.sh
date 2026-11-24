@@ -56,6 +56,17 @@ fingerprint="$(AGUS_SIGNING_PASSWORD="$(cat "$work/password")" keytool -exportce
   -storepass:env AGUS_SIGNING_PASSWORD 2>/dev/null | openssl dgst -sha256 -r)"
 fingerprint="${fingerprint%% *}"
 [[ "$fingerprint" =~ ^[0-9a-f]{64}$ ]]
+if [[ "$fingerprint" == 85ad785dff4a95d38dfa0e5799335e60d7a19266284bb0ffe062058fe7d8b7cf ]]; then
+  printf '%s\n' 'This backup contains the retired November 22 signer. Use the replacement signing backup.' >&2
+  exit 1
+fi
+if ! AGUS_SIGNING_PASSWORD="$(cat "$work/password")" keytool -certreq \
+  -keystore "$work/agus-android.p12" -alias agus-android \
+  -storepass:env AGUS_SIGNING_PASSWORD -keypass:env AGUS_SIGNING_PASSWORD \
+  -file "$work/restored.csr" >/dev/null 2>&1; then
+  printf '%s\n' 'The restored key cannot sign. GitHub settings have not been updated.' >&2
+  exit 1
+fi
 printf 'Verified encrypted backup: %s\nPublic certificate SHA-256: %s\n' "$backup" "${fingerprint^^}"
 
 repo=omnmlr/hackaholics-financial-agent

@@ -5,6 +5,7 @@ import {
   Transaction,
   type Connection,
   type Message,
+  type VersionedMessage,
 } from "@solana/web3.js";
 import { z } from "zod";
 import * as C from "../../../packages/contracts/src/crypto";
@@ -71,6 +72,7 @@ const terminal: Attempt["state"][] = [
   "expired",
   "finalized",
 ];
+const MAX_EXPIRY_TRANSACTIONS = 12;
 
 function view(row: AttemptRow) {
   return C.CryptoAttempt.parse({
@@ -517,24 +519,25 @@ export async function receipt(owner: string, id: string) {
 
 async function expiryEvidence(chain: Connection, review: Review) {
   const boundary = Math.max(0, review.minContextSlot - 128);
-  const [height, retained, source] = await Promise.all([
+  const [height, retained] = await Promise.all([
     chain.getBlockHeight("finalized"),
     chain.getFirstAvailableBlock(),
-    chain.getSignaturesForAddress(
-      new PublicKey(review.expectedSigner),
-      { limit: 50 },
-      "finalized",
-    ),
   ]);
-  if (
-    height <= review.lastValidBlockHeight ||
-    retained > boundary ||
-    !source.some((item) => item.slot < boundary)
-  )
-    return null;
+  if (height <= review.lastValidBlockHeight || retained > boundary) return null;
+  const source = await chain.getSignaturesForAddress(
+    new PublicKey(review.expectedSigner),
+    { limit: 50, minContextSlot: review.minContextSlot },
+    "finalized",
+  );
+  if (!source.some((item) => item.slot < boundary)) return null;
   return source
     .filter((item) => item.slot >= boundary)
-    .map((item) => item.signature);
+    .map(({ signature, slot }) => ({ signature, slot }))
+    .sort((a, b) => a.signature.localeCompare(b.signature));
+}
+
+function transactionDigest(message: VersionedMessage) {
+  return createHash("sha256").update(message.serialize()).digest("hex");
 }
 
 export async function reconcileCrypto(
@@ -573,24 +576,25 @@ export async function reconcileCrypto(
       const known = initial.signature ? [initial.signature] : [];
       const reference = review.reference
         ? (
-            await chain.getSignaturesForAddress(
-              new PublicKey(review.reference),
-              { limit: 10 },
-              "finalized",
-            )
+            await chain
+              .getSignaturesForAddress(
+                new PublicKey(review.reference),
+                { limit: 10 },
+                "finalized",
+              )
+              .catch(() => [])
           ).map((x) => x.signature)
         : [];
-      let expiredWithCoverage = false;
-      let scoped: string[] = [];
+      let expiry: { primary: Connection; slots: Map<string, number> } | null =
+        null;
+      let primaryRefs: string[] = [];
       if (
         process.env.AGUS_DEVNET_VERIFY_RPC &&
-        !known.length &&
-        !reference.length &&
         Date.parse(review.expiresAt) <= Date.now()
       ) {
-        const primary = await read(review.cluster, false);
-        const [primaryHistory, verifierHistory, primaryRefs] =
-          await Promise.all([
+        try {
+          const primary = await read(review.cluster, false);
+          const [primaryHistory, verifierHistory, refs] = await Promise.all([
             expiryEvidence(primary, review),
             expiryEvidence(chain, review),
             review.reference
@@ -601,35 +605,50 @@ export async function reconcileCrypto(
                 )
               : [],
           ]);
-        if (
-          primaryHistory &&
-          verifierHistory &&
-          instructionHash([...primaryHistory].sort()) ===
-            instructionHash([...verifierHistory].sort())
-        ) {
-          scoped = [
-            ...verifierHistory,
-            ...primaryRefs.map((item) => item.signature),
-          ];
-          expiredWithCoverage = scoped.length === 0;
+          primaryRefs = refs.map(({ signature }) => signature);
+          if (
+            primaryHistory &&
+            verifierHistory &&
+            verifierHistory.length <= MAX_EXPIRY_TRANSACTIONS &&
+            instructionHash(primaryHistory) === instructionHash(verifierHistory)
+          ) {
+            expiry = {
+              primary,
+              slots: new Map(
+                verifierHistory.map(({ signature, slot }) => [signature, slot]),
+              ),
+            };
+          }
+        } catch {
+          // Continue looking for finalized settlement on the pinned verifier.
         }
       }
-      const check = [...new Set([...known, ...reference, ...scoped])];
+      const references = new Set([...reference, ...primaryRefs]);
+      const check = [
+        ...new Set([...known, ...references, ...(expiry?.slots.keys() ?? [])]),
+      ];
+      const unrelated = new Map<string, string>();
+      let sawExactMessage = false;
+      let missingReference = false;
       for (const sig of check) {
         const tx = await chain.getTransaction(sig, {
           commitment: "finalized",
           maxSupportedTransactionVersion: 0,
         });
-        if (
-          !tx?.meta ||
-          (tx.version !== undefined && tx.version !== "legacy") ||
-          tx.transaction.signatures[0] !== sig
-        )
+        if (!tx || tx.transaction.signatures[0] !== sig) {
+          if (references.has(sig)) missingReference = true;
           continue;
+        }
         const message = tx.transaction.message;
+        const digest = transactionDigest(message);
+        if (digest !== review.messageDigest) {
+          if (expiry?.slots.get(sig) === tx.slot) unrelated.set(sig, digest);
+          continue;
+        }
+        sawExactMessage = true;
         if (
-          createHash("sha256").update(message.serialize()).digest("hex") !==
-            review.messageDigest ||
+          !tx.meta ||
+          (tx.version !== undefined && tx.version !== "legacy") ||
           message.staticAccountKeys[0]?.toBase58() !== review.expectedSigner ||
           message.header.numRequiredSignatures !== 1
         )
@@ -705,6 +724,33 @@ export async function reconcileCrypto(
         state = "finalized";
         reason = null;
         break;
+      }
+      let expiredWithCoverage = false;
+      if (
+        !match &&
+        !sawExactMessage &&
+        !missingReference &&
+        expiry &&
+        unrelated.size === expiry.slots.size
+      ) {
+        const signatures = [...expiry.slots.keys()];
+        const primaryTransactions = signatures.length
+          ? await expiry.primary.getTransactions(signatures, {
+              commitment: "finalized",
+              maxSupportedTransactionVersion: 0,
+            })
+          : [];
+        expiredWithCoverage =
+          primaryTransactions.length === signatures.length &&
+          signatures.every((sig, index) => {
+            const tx = primaryTransactions[index];
+            return (
+              tx &&
+              tx.slot === expiry.slots.get(sig) &&
+              tx.transaction.signatures[0] === sig &&
+              transactionDigest(tx.transaction.message) === unrelated.get(sig)
+            );
+          });
       }
       if (!match && expiredWithCoverage) {
         state = "expired";

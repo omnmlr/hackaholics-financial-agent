@@ -24,7 +24,10 @@ type Leg = Omit<
 export type ChainEvent = Omit<
   z.infer<typeof C.CryptoActivityEvent>,
   "legs" | "classification" | "reason"
-> & { legs: Leg[] };
+> & {
+  legs: Leg[];
+  tokenAccounts?: { address: string; owner: string }[];
+};
 const system = "11111111111111111111111111111111";
 const tokenProgram = TOKEN_PROGRAM_ID.toBase58();
 const associated = ASSOCIATED_TOKEN_PROGRAM_ID.toBase58();
@@ -75,28 +78,35 @@ export function normalizeTransaction(
     add("fee", "fee", payer, null, sol(cluster, safeLamports(meta.fee)));
   const tokenStates = new Map<
     string,
-    { mint: string; owner?: string; decimals: number; ambiguous: boolean }
+    {
+      mint: string;
+      owner?: string;
+      decimals: number;
+      ambiguous: boolean;
+      classic: boolean;
+    }
   >();
   for (const balance of [
     ...(meta.preTokenBalances ?? []),
     ...(meta.postTokenBalances ?? []),
   ]) {
-    if (balance.programId && balance.programId !== tokenProgram) continue;
     const key = message.accountKeys[balance.accountIndex]?.pubkey.toBase58();
     if (!key) continue;
     const old = tokenStates.get(key);
     const decimals = balance.uiTokenAmount.decimals;
     const ambiguous =
-      !!old &&
-      (old.ambiguous ||
-        old.mint !== balance.mint ||
-        old.decimals !== decimals ||
-        (!!old.owner && !!balance.owner && old.owner !== balance.owner));
+      Boolean(balance.programId && balance.programId !== tokenProgram) ||
+      (old !== undefined &&
+        (old.ambiguous ||
+          old.mint !== balance.mint ||
+          old.decimals !== decimals ||
+          (!!old.owner && !!balance.owner && old.owner !== balance.owner)));
     tokenStates.set(key, {
       mint: balance.mint,
       decimals,
       owner: balance.owner ?? old?.owner,
       ambiguous,
+      classic: balance.programId === tokenProgram || old?.classic === true,
     });
   }
   const plain = message.instructions.every(
@@ -242,11 +252,37 @@ export function normalizeTransaction(
     finality: "finalized",
     status: meta.err ? "failed" : "success",
     legs,
+    tokenAccounts: [...tokenStates].flatMap(([address, state]) =>
+      state.classic &&
+      !state.ambiguous &&
+      C.CryptoAddress.safeParse(state.mint).success &&
+      C.CryptoAddress.safeParse(state.owner).success
+        ? [{ address, owner: state.owner! }]
+        : [],
+    ),
     explorerUrl: explorerTransaction(cluster, signature),
   };
 }
 
-export function attributeEvent(event: ChainEvent, wallets: Wallet[]) {
+export function tokenAccountsFor(event: ChainEvent, owner: string) {
+  const addresses = new Set(
+    event.tokenAccounts
+      ?.filter((account) => account.owner === owner)
+      .map((account) => account.address),
+  );
+  // Older ledger entries still carry SPL transfer ownership in their legs.
+  for (const leg of event.legs) {
+    if (leg.amount?.asset.kind !== "token") continue;
+    if (leg.from && leg.fromOwner === owner) addresses.add(leg.from);
+    if (leg.to && leg.toOwner === owner) addresses.add(leg.to);
+  }
+  return addresses;
+}
+
+export function attributeEvent(
+  { tokenAccounts: _tokenAccounts, ...event }: ChainEvent,
+  wallets: Wallet[],
+) {
   const ids = new Map(
     wallets
       .filter((w) => w.ownership === "verified")

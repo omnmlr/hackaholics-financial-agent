@@ -4,10 +4,11 @@ import { z } from "zod";
 import * as C from "../../../packages/contracts/src/crypto";
 import { DomainError, invariant } from "../errors";
 import { operationalEvent } from "../observability";
-import { database, transaction } from "../sql";
+import { database, transaction, type Sql } from "../sql";
 import {
   attributeEvent,
   normalizeTransaction,
+  tokenAccountsFor,
   type ChainEvent,
 } from "./ledger";
 import { syncWalletBalances } from "./portfolio";
@@ -81,6 +82,21 @@ function decodeCursor(context: string, cursor: string) {
   }
 }
 
+async function rememberTokenAccounts(
+  sql: Sql,
+  owner: string,
+  wallet: Wallet,
+  addresses: Set<string>,
+) {
+  addresses.delete(wallet.address);
+  if (!addresses.size) return;
+  await sql.query(
+    `INSERT INTO agus_crypto_token_accounts(owner,wallet_id,address)
+     SELECT $1,$2,unnest($3::text[]) ON CONFLICT DO NOTHING`,
+    [owner, wallet.id, [...addresses].sort((a, b) => a.localeCompare(b))],
+  );
+}
+
 async function scanFeed(
   owner: string,
   wallet: Wallet,
@@ -118,14 +134,17 @@ async function scanFeed(
     ? (
         await (
           await database()
-        ).query<{ signature: string }>(
-          "SELECT signature FROM agus_crypto_chain_events WHERE cluster=$1 AND signature=ANY($2::text[])",
+        ).query<{ event: ChainEvent }>(
+          "SELECT event FROM agus_crypto_chain_events WHERE cluster=$1 AND signature=ANY($2::text[])",
           [wallet.cluster, keys],
         )
       ).rows
     : [];
-  const known = new Set(reused.map(({ signature }) => signature));
-  const missing = keys.filter((key) => !known.has(key));
+  const stored = new Map(reused.map(({ event }) => [event.signature, event]));
+  const known = reused.flatMap(({ event }) =>
+    event.slot === selectedSlots.get(event.signature) ? [event] : [],
+  );
+  const missing = keys.filter((key) => !stored.has(key));
   const fetched = missing.length
     ? await chain.getParsedTransactions(missing, {
         commitment: "finalized",
@@ -140,7 +159,7 @@ async function scanFeed(
     if (event) eventsBySignature.set(signature, event);
   }
   const events = [...eventsBySignature.values()];
-  const complete = events.length === missing.length;
+  const complete = known.length + events.length === keys.length;
   await transaction(async (sql) => {
     for (const event of events) {
       await sql.query(
@@ -155,7 +174,17 @@ async function scanFeed(
         ],
       );
     }
-    const observed = [...known, ...events.map((e) => e.signature)];
+    const observed: string[] = [];
+    const discovered = new Set<string>();
+    for (const event of [...known, ...events]) {
+      const accounts = tokenAccountsFor(event, wallet.address);
+      // An authority can change, so a historical token feed alone cannot
+      // attribute every transaction on that account to the wallet.
+      if (feed.address !== wallet.address && !accounts.has(feed.address))
+        continue;
+      observed.push(event.signature);
+      for (const address of accounts) discovered.add(address);
+    }
     if (observed.length) {
       await sql.query(
         `INSERT INTO agus_crypto_wallet_events(owner,wallet_id,cluster,signature)
@@ -163,6 +192,7 @@ async function scanFeed(
         [owner, wallet.id, wallet.cluster, observed],
       );
     }
+    await rememberTokenAccounts(sql, owner, wallet, discovered);
     if (complete) {
       await sql.query(
         `INSERT INTO agus_crypto_feeds(owner,wallet_id,address,head,candidate_head,continuation,observed_at,slot)
@@ -218,6 +248,28 @@ export async function syncWalletActivity(
   try {
     const chain = await read(wallet.cluster);
     await syncWalletBalances(owner, wallet, async () => chain);
+    // Seed history for existing wallets whose owner feed already passed
+    // these transactions before token discovery was part of the scanner.
+    const legacy = (
+      await sql.query<{ event: ChainEvent }>(
+        `SELECT e.event FROM agus_crypto_wallet_events w
+         JOIN agus_crypto_chain_events e ON e.cluster=w.cluster AND e.signature=w.signature
+         WHERE w.owner=$1 AND w.wallet_id=$2 AND NOT (e.event ? 'tokenAccounts')
+           AND (e.block_time IS NULL OR e.block_time>=now()-interval '7 days')
+         ORDER BY e.slot DESC LIMIT 25`,
+        [owner, wallet.id],
+      )
+    ).rows;
+    await rememberTokenAccounts(
+      sql,
+      owner,
+      wallet,
+      new Set(
+        legacy.flatMap(({ event }) => [
+          ...tokenAccountsFor(event, wallet.address),
+        ]),
+      ),
+    );
     const feeds = (
       await sql.query<Feed>(
         `SELECT a.address,f.head,f.candidate_head,f.continuation,f.observed_at,f.slot FROM (

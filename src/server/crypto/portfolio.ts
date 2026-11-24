@@ -6,6 +6,7 @@ import { MAX_U64, safeLamports } from "../../lib/solana/money";
 import { instructionHash } from "../approvals";
 import { operationalEvent } from "../observability";
 import { database, transaction } from "../sql";
+import { priceHoldings } from "./prices";
 import { cryptoRpc, SOLANA_NETWORKS } from "./rpc";
 import {
   listWallets,
@@ -25,6 +26,7 @@ type Balance = {
   slot: number;
   observedAt: string;
   partial: boolean;
+  chainEligibility?: true;
 };
 
 const TTL = 120_000;
@@ -76,6 +78,7 @@ async function pull(
       slot: data.context.slot,
       observedAt,
       partial: false,
+      chainEligibility: true,
       holdings: [
         {
           walletId: wallet.id,
@@ -84,7 +87,6 @@ async function pull(
           symbol: "SOL",
           valuation: null,
           spendable:
-            wallet.ownership === "verified" &&
             !!data.value?.owner.equals(SystemProgram.programId) &&
             data.value.data.length === 0,
         },
@@ -130,10 +132,7 @@ async function pull(
       amount,
       symbol,
       valuation: null,
-      spendable:
-        wallet.ownership === "verified" &&
-        info.state === "initialized" &&
-        symbol === "USDC",
+      spendable: info.state === "initialized" && symbol === "USDC",
     });
   }
   return {
@@ -141,6 +140,7 @@ async function pull(
     slot: data.context.slot,
     observedAt,
     partial,
+    chainEligibility: true,
     holdings: [...accounts.values()].sort((a, b) =>
       a.tokenAccount!.localeCompare(b.tokenAccount!),
     ),
@@ -169,6 +169,7 @@ export async function syncWalletBalances(
       !existing.some(
         (record) =>
           record.kind === kind &&
+          record.chainEligibility &&
           Date.now() - Date.parse(record.observedAt) < TTL,
       ),
   );
@@ -256,8 +257,25 @@ function coverage(wallet: Wallet, values: Balance[]): Coverage[] {
             : null,
     },
     { ...base, kind: "positions", state: "partial", reason: "unsupported" },
-    { ...base, kind: "prices", state: "unavailable", reason: "unpriced" },
   ];
+}
+
+function priceCoverage(wallet: Wallet, holdings: Holding[]): Coverage {
+  const items = holdings.filter(({ walletId }) => walletId === wallet.id);
+  const priced = items.flatMap(({ valuation }) => valuation ?? []);
+  const complete = priced.length > 0 && priced.length === items.length;
+  const providerFailed =
+    wallet.cluster === "mainnet-beta" &&
+    items.some(({ symbol, valuation }) => symbol !== null && !valuation);
+  return {
+    walletId: wallet.id,
+    kind: "prices",
+    state: complete ? "ready" : priced.length ? "partial" : "unavailable",
+    reason: complete ? null : providerFailed ? "provider_failure" : "unpriced",
+    observedAt: priced.map(({ observedAt }) => observedAt).sort()[0] ?? null,
+    throughSlot: null,
+    coveredWindow: null,
+  };
 }
 
 export async function portfolio(
@@ -289,26 +307,16 @@ export async function portfolio(
   const slot = snapshots.length
     ? Math.min(...snapshots.map((b) => b.slot))
     : null;
-  const digest = instructionHash({
-    owner,
-    scope,
-    snapshots: batches.map(({ wallet, values }) => [
-      wallet.id,
-      values.sort((a, b) => a.kind.localeCompare(b.kind)),
-    ]),
-  });
-  const id = [
-    digest.slice(0, 8),
-    digest.slice(8, 12),
-    "4" + digest.slice(13, 16),
-    "a" + digest.slice(17, 20),
-    digest.slice(20, 32),
-  ].join("-");
   const byAccount = new Map<
     string,
     { holding: Holding; slot: number; ambiguous: boolean }
   >();
   const disputed = new Set<string>();
+  const signerWallets = new Set(wallets.flatMap((wallet) =>
+    wallet.ownership === "verified" && wallet.routes.some((route) => route.status === "available" && route.operations.includes("transfer"))
+      ? [wallet.id]
+      : [],
+  ));
   for (const snapshot of snapshots) {
     for (const holding of snapshot.holdings) {
       const key = holding.tokenAccount ?? `sol:${holding.walletId}`;
@@ -327,18 +335,40 @@ export async function portfolio(
       }
     }
   }
-  const holdings = [...byAccount.values()]
-    .filter((item) => !item.ambiguous)
-    .map((item) => item.holding);
-  const observations = batches
-    .flatMap((b) => b.coverage)
-    .map((item) =>
+  const { holdings, quotes, subtotal } = await priceHoldings(
+    [...byAccount.values()]
+      .filter((item) => !item.ambiguous)
+      .map(({ holding }) => ({
+        ...holding,
+        spendable: holding.spendable && signerWallets.has(holding.walletId),
+      })),
+  );
+  const digest = instructionHash({
+    owner,
+    scope,
+    snapshots: batches.map(({ wallet, values }) => [
+      wallet.id,
+      values.sort((a, b) => a.kind.localeCompare(b.kind)),
+    ]),
+    ...(quotes.length && { quotes }),
+    signerWallets: [...signerWallets],
+  });
+  const id = [
+    digest.slice(0, 8),
+    digest.slice(8, 12),
+    "4" + digest.slice(13, 16),
+    "a" + digest.slice(17, 20),
+    digest.slice(20, 32),
+  ].join("-");
+  const observations = batches.flatMap((batch) =>
+    [...batch.coverage, priceCoverage(batch.wallet, holdings)].map((item) =>
       item.kind === "balances" &&
       item.state === "ready" &&
       disputed.has(item.walletId)
         ? { ...item, state: "partial" as const, reason: "rpc_lag" as const }
         : item,
-    );
+    ),
+  );
   return C.CryptoPortfolio.parse({
     id,
     walletIds: wallets.map((w) => w.id),
@@ -346,6 +376,6 @@ export async function portfolio(
     holdings,
     positions: [],
     coverage: observations,
-    pricedSubtotalUsd: null,
+    pricedSubtotalUsd: subtotal,
   });
 }

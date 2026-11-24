@@ -90,7 +90,7 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
 
 ---
 
-## 4. Enumerated Threat Scenarios (10 Scenarios)
+## 4. Enumerated Threat Scenarios (12 Scenarios)
 
 ### Scenario TM-01: Cross-Tenant Wallet Route Tampering and IDOR
 - **Attack Surface**: AS-01 (Cross-Tenant Access)
@@ -102,10 +102,10 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
   3. `DELETE /api/v1/crypto/wallets/${walletA.id}/routes/${routeId}`
   4. `POST /api/v1/crypto/reviews` specifying `sourceWalletId: walletA.id`
 - **Mitigation in Code**:
-  - `src/server/crypto/registry.ts:101-109`: `listWallets` filters `WHERE w.owner=$1 AND ($3::uuid[] IS NULL OR w.id=ANY($3))`. If unauthorized IDs are passed, `rows.length !== new Set(ids).size` triggers `invariant(..., "NOT_FOUND", 404)`.
-  - `src/server/crypto/registry.ts:162-171`: `updateWallet` filters `WHERE owner=$1 AND id=$2`. Zero affected rows returns 404.
-  - `src/server/crypto/registry.ts:200-210`: `unlinkRoute` filters `WHERE owner=$1 AND id=$2 AND wallet_id=$3`. Zero affected rows returns 404.
-  - `src/server/crypto/execution.ts:130-142`: `routeFor` joins `agus_crypto_wallets w WHERE r.id=$1 AND r.owner=$2 AND w.owner=$2`. If not owned by caller, throws 404 `NOT_FOUND`.
+  - `src/server/crypto/registry.ts:93-109, 157-169`: `listWallets` (`wallets`) filters `WHERE w.owner=$1 AND ($2::text IS NULL OR w.cluster=$2) AND ($3::uuid[] IS NULL OR w.id=ANY($3))`. If unauthorized IDs are passed, `rows.length !== new Set(ids).size` triggers `invariant(..., "NOT_FOUND", 404)`.
+  - `src/server/crypto/registry.ts:358-372`: `relabel` filters `WHERE owner=$1 AND id=$2` and calls `walletById(sql, p.id, id)`, which throws 404 `NOT_FOUND` when `walletA.id` does not belong to `p.id`.
+  - `src/server/crypto/registry.ts:374-398`: `unlink` executes `UPDATE agus_crypto_routes SET revoked_at=COALESCE(revoked_at,now()) WHERE owner=$1 AND wallet_id=$2 AND id=$3 RETURNING id` and throws `NOT_FOUND` (404) if `updated.rows.length === 0`.
+  - `src/server/crypto/execution.ts:116-153`: `routeFor` joins `agus_crypto_wallets w` and `agus_crypto_routes r` filtering `WHERE w.owner=$1 AND w.id=$2 AND w.cluster=$4`. If not owned by caller, throws 404 `NOT_FOUND`.
 - **Residual Risk**: Low. Application queries consistently bind `owner = $1`.
 
 ---
@@ -116,22 +116,23 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
 - **Attacker Capability**: Authenticated Tenant B (A2)
 - **Scenario Description**: Tenant B attempts to forge or manipulate the `cursor` parameter in `GET /api/v1/crypto/activity?cursor=...` to inspect transaction events belonging to Tenant A or other clusters.
 - **Mitigation in Code**:
-  - `src/server/crypto/activity.ts:45-82`: Cursors are encrypted/signed using HMAC-SHA256 with `BETTER_AUTH_SECRET`. The signed payload includes context: `${owner}:${cluster}:${walletIds.sort().join(",")}`.
-  - On receipt, `decodeCursor` computes expected HMAC and validates via `timingSafeEqual`. Any alteration or cross-tenant substitution immediately throws `DomainError("INVALID_CURSOR", 400)`.
-- **Residual Risk**: Low. HMAC verification is cryptographically sound and constant-time.
+  - `src/server/crypto/activity.ts:45-82, 324-330`: Cursors encode base64url JSON and are integrity-protected (signed, not encrypted) using HMAC-SHA256 with `BETTER_AUTH_SECRET`. The signed context is `JSON.stringify([owner, cluster, [...new Set(walletIds ?? [])].sort(), from ?? null, to ?? null])`.
+  - On receipt, `decodeCursor` computes the expected HMAC and validates via `timingSafeEqual`. Any alteration or cross-tenant substitution immediately throws `DomainError("INVALID_CURSOR", 400)`.
+- **Residual Risk**: Low. HMAC verification is cryptographically sound and constant-time (note: cursor payload contains only `observed`, `from`, `to`, `slot`, and `signature`, and is returned solely to the authenticated owner).
 
 ---
 
-### Scenario TM-03: RPC Genesis Hash and Cluster Identity Spoofing
+### Scenario TM-03: RPC Genesis Hash, Cluster Identity, and Signer Mismatch Spoofing
 - **Attack Surface**: AS-02 (Cluster & Signer Mismatch)
 - **Threat Category**: Spoofing / Tampering (STRIDE)
-- **Attacker Capability**: Network Attacker / Rogue RPC Provider (A4)
-- **Scenario Description**: An adversary points the application's RPC URL to a private testnet or simulated node with mismatched genesis hash in order to trick the system into accepting counterfeit transactions or simulating settlements.
+- **Attacker Capability**: Network Attacker / Rogue RPC Provider / Compromised Signer (A3/A4)
+- **Scenario Description**: An adversary points the application's RPC URL to a private testnet or simulated node with a mismatched genesis hash, or submits an on-chain transaction signed by an unauthorized signer (`staticAccountKeys[0] !== review.expectedSigner` or `numRequiredSignatures !== 1`), in order to trick reconciliation into crediting a counterfeit settlement.
 - **Mitigation in Code**:
-  - `src/server/crypto/rpc.ts:75-87`: Every RPC connection verification performs `connection.getGenesisHash()` and validates against hardcoded `DEVNET_GENESIS` (`"EtWTRABZaYq6iMfeYKouRu166VU2xqa2wcaWoxPkrZBG"`).
+  - `src/server/crypto/rpc.ts:75-87` and `src/lib/solana/contracts.ts:4-5`: Every RPC connection verification performs `connection.getGenesisHash()` and validates against hardcoded `DEVNET_GENESIS` (`"EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG"`).
   - Any mismatch throws `DomainError("CHAIN_IDENTITY_MISMATCH", 503)`.
-  - On `mainnet-beta`, `approvedCryptoProviders()` returns empty array (`registry.ts:31-46`), preventing execution on unapproved networks.
-- **Residual Risk**: Low. Genesis pinning prevents cluster confusion attacks.
+  - On `mainnet-beta`, `approvedCryptoProviders()` returns empty array (`src/server/crypto/registry.ts:29-46`), preventing execution on unapproved networks.
+  - `src/server/crypto/execution.ts:633-634`: During reconciliation, `reconcileCrypto` verifies `message.staticAccountKeys[0]?.toBase58() === review.expectedSigner` and `message.header.numRequiredSignatures === 1`, skipping any transaction with a substituted or multi-party signer.
+- **Residual Risk**: Low. Genesis pinning and strict single-signer verification prevent cluster and signer substitution attacks.
 
 ---
 
@@ -142,12 +143,11 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
 - **Scenario Description**: A user obtains a review for a transfer of 0.1 SOL, modifies the client state to submit a transfer of 10 SOL, and attempts to invoke `POST /api/v1/crypto/reviews/:id/begin` with forged parameters or an altered digest.
 - **Mitigation in Code**:
   - `src/server/crypto/execution.ts:245-252`: `prepareCrypto` creates a canonical review digest via `instructionHash({ owner: p.id, genesis: draft.genesisHash, review: bound })`.
-  - `src/server/crypto/execution.ts:293-297`: In `beginCrypto`, the backend retrieves the review `FOR UPDATE` and asserts:
+  - `src/server/crypto/execution.ts:293-297` & `src/server/errors.ts:15-21`: In `beginCrypto`, the backend retrieves the review `FOR UPDATE` and asserts (defaulting to HTTP `409`):
     ```ts
     invariant(
       review.reviewDigest === input.reviewDigest && review.revision === input.revision,
       "REVISION_CHANGED",
-      400
     );
     ```
   - Execution parameters (amount, recipient, tokens) are loaded exclusively from database storage, not accepted from client POST bodies.
@@ -239,19 +239,54 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
 - **Attack Surface**: AS-11 (SQL Privileges & DAL Boundaries)
 - **Threat Category**: Elevation of Privilege / Tampering / Repudiation (STRIDE)
 - **Attacker Capability**: Infiltrated Application Process / SQL Injection (A5)
-- **Scenario Description**: An attacker who compromises the application server or exploits a SQL injection flaw in a future route uses the existing `agus_runtime` database connection to `DELETE` or `UPDATE` records in `agus_crypto_receipts`, `agus_crypto_chain_events`, or `agus_audit`, destroying auditability.
+- **Scenario Description**: An attacker who compromises the application server or exploits a SQL injection flaw in a future route uses the existing `agus_runtime` database connection to `DELETE` or `UPDATE` records in `agus_crypto_receipts`, `agus_crypto_chain_events`, `agus_crypto_wallet_events`, `agus_crypto_reviews`, or `agus_audit`, destroying auditability.
 - **Mitigation in Code (Existing & Required)**:
   - Existing: 100% parameterized queries in `src/server/crypto/*.ts`.
-  - **Identified Gap**: `tests/helpers/shared-platform.ts` and standard role setups issue:
-    `GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO "agus_runtime";`
-    No table-level `REVOKE UPDATE, DELETE` was previously executed for financial ledger tables!
+  - **Identified Gap**: `scripts/sql/runtime-role.sql:6` issues:
+    `GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO agus_runtime;`
+    (`tests/helpers/shared-platform.ts:14,30` applies the same broad grant pattern to an ephemeral `agus_market_role_<uuid>`.)
+    No table-level `REVOKE UPDATE, DELETE` was previously executed for financial ledger, attribution, review, or audit tables!
   - **Required Remediation (AG-03 Remediation Script)**:
     Execute `scripts/sql/runtime-role-least-privilege.sql` to explicitly revoke mutation privileges:
     ```sql
-    REVOKE UPDATE, DELETE ON agus_crypto_chain_events, agus_crypto_receipts, agus_crypto_reviews, agus_audit FROM agus_runtime;
+    REVOKE UPDATE, DELETE ON
+      agus_crypto_chain_events,
+      agus_crypto_wallet_events,
+      agus_crypto_receipts,
+      agus_crypto_reviews,
+      agus_audit
+    FROM agus_runtime;
     ```
-  - **PostgreSQL Row Level Security (RLS) Gap**: Currently, RLS is not enabled on tables (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`). Tenant isolation depends entirely on `WHERE owner=$1` in application code. RLS policies must be introduced in future migrations to enforce defense-in-depth at the storage layer.
+  - **PostgreSQL Row Level Security (RLS) Gap**: Currently, RLS is not enabled on tables (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY`). Tenant isolation depends entirely on `WHERE owner=$1` in application code. RLS policies (matching `owner` as `text`, since `agus_users.id` and `owner` are `text` per `migrations/0004_identity_platform.sql:2` and `0022`–`0027`, using `NULLIF(current_setting('app.current_user_id', true), '')`) must be introduced in future migrations to enforce defense-in-depth at the storage layer.
 - **Residual Risk**: **Medium** until `runtime-role-least-privilege.sql` is applied in production and RLS is implemented.
+
+---
+
+### Scenario TM-11: Replayed On-Chain Alert Notifications and Evaluation Races
+- **Attack Surface**: AS-09 (Replayed Alerts & Race Conditions)
+- **Threat Category**: Tampering / Repudiation / Denial of Service (STRIDE)
+- **Attacker Capability**: Concurrent Monitoring Workers / Repeated Activity Sync Scans (A2/A4)
+- **Scenario Description**: Concurrent invocations of `runCryptoMonitoring()` or repeated `evaluateAlertRule()` executions process the same incoming finalized transfer signature for a monitored wallet, attempting to generate duplicate `agus_crypto_alerts` notifications or trigger false external-inflow alerts on internal self-transfers or historical pre-activation events.
+- **Mitigation in Code**:
+  - `src/server/crypto/alerts.ts:196-202`: `evaluateAlertRule` runs inside a PostgreSQL transaction and locks the target rule with `SELECT * FROM agus_crypto_alert_rules WHERE owner=$1 AND id=$2 AND enabled FOR UPDATE`.
+  - `src/server/crypto/alerts.ts:204-212`: Candidate events are filtered by `e.block_time >= target.activated_at` and `NOT EXISTS(SELECT 1 FROM agus_crypto_alert_observations o WHERE o.owner=$1 AND o.rule_id=$5 AND o.signature=w.signature)`.
+  - `src/server/crypto/alerts.ts:216-236`: Only `finalized` + `success` legs where `leg.fromWalletId === null && leg.toWalletId === target.wallet_id` (external inflows matching asset/decimals) accumulate toward `incoming`.
+  - `src/server/crypto/alerts.ts:238-247` & `migrations/0025_crypto_alerts.sql:13-32`: `agus_crypto_alerts` enforces `UNIQUE (owner,rule_id,cluster,signature)` with `ON CONFLICT(owner,rule_id,cluster,signature) DO NOTHING`, and `agus_crypto_alert_observations` enforces `PRIMARY KEY (owner,rule_id,signature)` with `ON CONFLICT DO NOTHING`.
+- **Residual Risk**: Low. Transactional `FOR UPDATE` locking plus composite uniqueness constraints prevent alert replay and duplicate emission.
+
+---
+
+### Scenario TM-12: Stale, Partial, or Ambiguous Token Account Portfolio Data
+- **Attack Surface**: AS-10 (Stale / Partial Portfolio Data)
+- **Threat Category**: Information Disclosure / Tampering (Misleading Financial State) (STRIDE)
+- **Attacker Capability**: Lagging/Failing RPC Provider or Malformed SPL Token Account Payload (A4)
+- **Scenario Description**: An RPC node fails on either the `sol` or `token` balance query, returns malformed/non-owned SPL token account metadata, lags behind recent blocks (>120s TTL), or reports conflicting ownership of the same SPL token account across two user wallets at the same slot—potentially causing overstated balances or stale snapshots overwriting fresher complete data.
+- **Mitigation in Code**:
+  - `src/server/crypto/portfolio.ts:101-143`: `pull()` validates SPL token account owner (`info.owner === wallet.address`), program (`TOKEN_PROGRAM_ID`), valid mint address, integer decimals (`0..255`), `u64` atom bounds, and account state (`initialized`/`frozen`). Invalid accounts are skipped and mark `partial: true`.
+  - `src/server/crypto/portfolio.ts:198-204`: Cache upsert into `agus_crypto_balances` enforces monotonic slot/timestamp progression (`agus_crypto_balances.slot <= excluded.slot`) and refuses to overwrite a non-partial snapshot with a partial one (`AND (NOT (excluded.value->>'partial')::boolean OR (agus_crypto_balances.value->>'partial')::boolean)`).
+  - `src/server/crypto/portfolio.ts:226-261`: `coverage()` computes explicit degradation states for `"balances"`: `"unavailable"` (no cached values), `"stale"` (`Date.now() - Date.parse(observedAt) >= 120_000`, reason `"provider_failure"`), or `"partial"` (missing `sol` or `token` snapshot or `partial === true`).
+  - `src/server/crypto/portfolio.ts:307-341`: Cross-wallet `byAccount` deduplication flags any token account observed across multiple wallets at the same slot (`ambiguous = true`), excludes ambiguous holdings from `holdings`, and downgrades affected wallets' `"balances"` coverage from `"ready"` to `"partial"` with `reason: "rpc_lag"`.
+- **Residual Risk**: Low. Degraded, stale, and disputed holdings fail closed into explicit coverage warnings rather than corrupting balance totals.
 
 ---
 
@@ -260,15 +295,17 @@ The AGUS Crypto subsystem provides multi-wallet custody delegation, transaction 
 | Threat Scenario | Asset | Attack Vector | STRIDE | Inherent Risk | Mitigations | Residual Risk |
 |---|---|---|---|---|---|---|
 | **TM-01** | Wallets / Routes | IDOR via `/wallets` & `/reviews` | Tampering | High | Tenant ownership assertions (`WHERE owner=$1`) | Low |
-| **TM-02** | Activity Stream | Forged cursor context | Info Disclosure | Medium | HMAC-SHA256 signature over `${owner}:${cluster}:${wallets}` | Low |
-| **TM-03** | Chain Connection | Rogue RPC endpoint | Spoofing | High | Genesis hash validation against `DEVNET_GENESIS` | Low |
-| **TM-04** | Review Proposal | Modified reviewDigest on begin | Tampering | High | Server-side digest match (`REVISION_CHANGED`) | Low |
+| **TM-02** | Activity Stream | Forged cursor context | Info Disclosure | Medium | HMAC-SHA256 signature over `JSON.stringify([owner, cluster, walletIds, from, to])` | Low |
+| **TM-03** | Chain / Signer | Rogue RPC or signer mismatch | Spoofing | High | `DEVNET_GENESIS` pinning (`qa1wca`) + `staticAccountKeys[0] === expectedSigner` | Low |
+| **TM-04** | Review Proposal | Modified reviewDigest on begin | Tampering | High | Server-side digest match (`REVISION_CHANGED`, HTTP 409) | Low |
 | **TM-05** | Transaction Bytes | Client mutates recipient/amount | Financial Loss | Critical | On-chain `messageDigest` match + leg atom verification | Low |
 | **TM-06** | Wallet Ownership | Replay challenge / session hijack | Spoofing | High | 5-min TTL, `consumed_at` lock, session hash binding | Low |
 | **TM-07** | Handoff Dispatch | Concurrent handoff spam | Race Condition | Medium | Idempotent single launch grant (`launchGranted: false`) | Low |
 | **TM-08** | Unsigned/Pending Tx | Dropped MWA callback | Inconsistency | High | Reference account scanning; non-destructive `unknown` state | Low |
 | **TM-09** | Receipt Settlement | Fork rollback on processed tx | Double Spend | High | Mandatory `"finalized"` commitment requirement | Low |
 | **TM-10** | Receipts / Audit | Privileged role updates receipts | Repudiation | Critical | Least-privilege SQL remediation (`REVOKE UPDATE,DELETE`) | **Medium** (Pending RLS) |
+| **TM-11** | Alert Feed | Replayed inflow alert evaluation | Tampering / DoS | Medium | `FOR UPDATE` rule lock + `UNIQUE(owner,rule_id,cluster,signature)` & observations PK | Low |
+| **TM-12** | Portfolio Balances | Stale/partial/disputed RPC data | Tampering / Info | Medium | Non-partial upsert guard, 120s TTL `stale` state, `byAccount` ambiguity `rpc_lag` | Low |
 
 ---
 

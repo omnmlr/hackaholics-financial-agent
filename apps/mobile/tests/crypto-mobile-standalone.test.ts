@@ -1,39 +1,29 @@
 /// <reference types="node" />
 import { createHash, randomUUID } from "node:crypto";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { base58 } from "@scure/base";
-import { Keypair, SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
+import { Keypair, SystemProgram, Transaction } from "@solana/web3.js";
 import type { components } from "@agus/api-client";
+import type {
+  WalletDiagnostic,
+  WalletStage,
+} from "../src/crypto-wallet-policy";
 
-// Mocks for React Native and Expo modules in isolated Node test environment
-const native = vi.hoisted(() => ({
-  store: new Map<string, string>(),
-  transact: vi.fn(),
-  send: vi.fn(),
-}));
+// Mocks for React Native, Expo, and Auth modules in isolated Node test environment
+const native = vi.hoisted(() => {
+  process.env.EXPO_PUBLIC_API_URL ??= "https://api.example";
+  return {
+    store: new Map<string, string>(),
+    transact: vi.fn(),
+    send: vi.fn(),
+    authenticateAsync: vi.fn(async () => ({ success: true })),
+    hasHardwareAsync: vi.fn(async () => true),
+    isEnrolledAsync: vi.fn(async () => true),
+  };
+});
 
 vi.mock("react-native", () => ({
   Platform: { OS: "android" },
-  AppState: {
-    currentState: "active",
-    listeners: new Set<(state: string) => void>(),
-    addEventListener(event: string, handler: (state: string) => void) {
-      if (event === "change") {
-        this.listeners.add(handler);
-      }
-      return {
-        remove: () => {
-          this.listeners.delete(handler);
-        },
-      };
-    },
-    simulateStateChange(state: string) {
-      this.currentState = state;
-      for (const listener of this.listeners) {
-        listener(state);
-      }
-    },
-  },
 }));
 
 vi.mock("expo-crypto", () => ({
@@ -44,7 +34,11 @@ vi.mock("expo-crypto", () => ({
 
 vi.mock("expo-secure-store", () => ({
   WHEN_UNLOCKED_THIS_DEVICE_ONLY: "fixture",
+  getItem: (key: string) => native.store.get(key) ?? null,
   getItemAsync: async (key: string) => native.store.get(key) ?? null,
+  setItem: (key: string, value: string) => {
+    native.store.set(key, value);
+  },
   setItemAsync: async (key: string, value: string) => {
     native.store.set(key, value);
   },
@@ -53,15 +47,62 @@ vi.mock("expo-secure-store", () => ({
   },
 }));
 
+vi.mock("expo-local-authentication", () => ({
+  hasHardwareAsync: native.hasHardwareAsync,
+  isEnrolledAsync: native.isEnrolledAsync,
+  authenticateAsync: native.authenticateAsync,
+}));
+
+vi.mock("better-auth/react", () => ({
+  createAuthClient: () => ({
+    getCookie: async () => "agus.session=fixture",
+    signIn: { email: vi.fn() },
+  }),
+}));
+
+vi.mock("better-auth/client/plugins", () => ({
+  twoFactorClient: () => ({}),
+}));
+
+vi.mock("@better-auth/expo/client", () => ({
+  expoClient: () => ({}),
+}));
+
 vi.mock("@solana-mobile/mobile-wallet-adapter-protocol-web3js", () => ({
   transact: native.transact,
 }));
 
 import { createCryptoSigner } from "../src/crypto-signer";
-import { canRecover, parseSavedAttempt, solAtoms } from "../src/crypto-device-state";
+import {
+  canRecover,
+  parseSavedAttempt,
+  solAtoms,
+} from "../src/crypto-device-state";
 import { WalletRouteError, walletFailure } from "../src/crypto-wallet-policy";
+import { api, lockSession, unlockSession } from "../src/session";
 
 type Schemas = components["schemas"];
+
+type MockAuthorizeParams = {
+  chain?: string;
+  identity?: { name?: string; uri?: string; icon?: string };
+  addresses?: string[];
+  auth_token?: string;
+};
+
+type MockMwaWallet = {
+  authorize: ReturnType<typeof vi.fn<(params: MockAuthorizeParams) => Promise<{
+    auth_token: string;
+    accounts: Array<{ address: string; chains?: string[] }>;
+  }>>>;
+  getCapabilities: ReturnType<typeof vi.fn<() => Promise<{
+    supported_transaction_versions: string[];
+    supports_sign_and_send_transactions: boolean;
+  }>>>;
+  signAndSendTransactions: typeof native.send;
+  signMessages: ReturnType<typeof vi.fn>;
+  deauthorize: ReturnType<typeof vi.fn>;
+};
 
 describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", () => {
   const sender = Keypair.generate().publicKey;
@@ -155,232 +196,208 @@ describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", ()
     },
   };
 
+  function createMockWallet(
+    overrides?: Partial<MockMwaWallet>,
+  ): MockMwaWallet {
+    return {
+      authorize: vi.fn(async () => ({
+        auth_token: "refreshed-auth-token",
+        accounts: [
+          {
+            address: sender.toBuffer().toString("base64"),
+            chains: ["solana:devnet"],
+          },
+        ],
+      })),
+      getCapabilities: vi.fn(async () => ({
+        supported_transaction_versions: ["legacy"],
+        supports_sign_and_send_transactions: true,
+      })),
+      signAndSendTransactions: native.send,
+      signMessages: vi.fn(async () => [rawSignatureBytes]),
+      deauthorize: vi.fn(async () => ({})),
+      ...overrides,
+    };
+  }
+
   beforeEach(() => {
     native.store.clear();
     native.transact.mockReset();
     native.send.mockReset();
+    native.authenticateAsync.mockClear();
+    native.hasHardwareAsync.mockClear();
+    native.isEnrolledAsync.mockClear();
+    lockSession();
   });
 
-  describe("1. MWA Session Reauthorization Logic", () => {
-    it("demonstrates MWA protocol violation when calling wallet.authorize with auth_token against a strict wallet", async () => {
-      // Setup stored bearer token
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  describe("1. MWA v3.0.2 Authorize & Reauthorization Semantics (createCryptoSigner)", () => {
+    it("calls wallet.authorize with chain, identity, addresses, and cached auth_token and rotates stored token", async () => {
+      const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
+      native.store.set(grantKey, "cached-auth-token-xyz");
+      native.send.mockResolvedValue([validBase58Signature]);
+
+      const wallet = createMockWallet();
+      native.transact.mockImplementation(async (callback) => callback(wallet));
+
+      const signer = createCryptoSigner("owner", "https://identity.example");
+      const result = await signer.handoff(claim, route, review);
+
+      expect(result).toEqual({
+        kind: "signature",
+        signature: validBase58Signature,
+      });
+      expect(wallet.authorize).toHaveBeenCalledWith({
+        chain: "solana:devnet",
+        identity: {
+          name: "AGUS",
+          uri: "https://identity.example",
+          icon: "favicon.png",
+        },
+        addresses: [sender.toBuffer().toString("base64")],
+        auth_token: "cached-auth-token-xyz",
+      });
+      expect(native.store.get(grantKey)).toBe("refreshed-auth-token");
+    });
+
+    it("maps revoked/expired auth_token (MWA code -1) to WALLET_RECONNECT_REQUIRED in handoff and signProof", async () => {
+      const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
+      native.store.set(grantKey, "expired-auth-token");
+
+      const wallet = createMockWallet({
+        authorize: vi.fn(async () => {
+          throw Object.assign(new Error("authorization failed"), { code: -1 });
+        }),
+      });
+      native.transact.mockImplementation(async (callback) => callback(wallet));
+
+      const diagnostics: WalletDiagnostic[] = [];
+      const signer = createCryptoSigner("owner", "https://identity.example", (d) =>
+        diagnostics.push(d),
+      );
+
+      const handoffOutcome = await signer.handoff(claim, route, review);
+      expect(handoffOutcome).toEqual({
+        kind: "unavailable",
+        reason: "WALLET_RECONNECT_REQUIRED",
+      });
+      expect(diagnostics).toContainEqual({
+        provider: "phantom",
+        stage: "authorization",
+        reason: "WALLET_RECONNECT_REQUIRED",
+      });
+
+      const challenge: Schemas["CryptoChallenge"] = {
+        id: randomUUID(),
+        messageBase64: Buffer.from("agus-proof-challenge").toString("base64"),
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      };
+      await expect(
+        signer.signProof("phantom", "devnet", route.address, challenge),
+      ).rejects.toMatchObject({
+        name: "Error",
+        reason: "WALLET_RECONNECT_REQUIRED",
+      });
+    });
+
+    it("returns WALLET_ACCOUNT_CHANGED when wallet.authorize returns a different account or mismatched chain", async () => {
       const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
       native.store.set(grantKey, "cached-auth-token-xyz");
 
-      // Strict MWA wallet stub: authorize must NOT accept auth_token per MWA specification
-      const strictWallet = {
-        authorize: vi.fn(async (params: any) => {
-          if (params.auth_token) {
-            throw new Error(
-              "MWA_PROTOCOL_ERROR: authorize does not accept auth_token; call reauthorize instead",
-            );
-          }
-          return {
-            auth_token: "new-token",
-            accounts: [
-              {
-                address: sender.toBuffer().toString("base64"),
-                chains: ["solana:devnet"],
-              },
-            ],
-          };
-        }),
-        reauthorize: vi.fn(async (params: any) => {
-          if (!params.auth_token) {
-            throw new Error("MWA_PROTOCOL_ERROR: reauthorize requires auth_token");
-          }
-          return {
-            auth_token: "refreshed-token",
-            accounts: [
-              {
-                address: sender.toBuffer().toString("base64"),
-                chains: ["solana:devnet"],
-              },
-            ],
-          };
-        }),
-        getCapabilities: vi.fn(async () => ({
-          supported_transaction_versions: ["legacy"],
-          supports_sign_and_send_transactions: true,
+      const wrongSigner = Keypair.generate().publicKey;
+      const wallet = createMockWallet({
+        authorize: vi.fn(async () => ({
+          auth_token: "rotated",
+          accounts: [
+            {
+              address: wrongSigner.toBuffer().toString("base64"),
+              chains: ["solana:devnet"],
+            },
+          ],
         })),
-        signAndSendTransactions: native.send,
-      };
-
-      native.transact.mockImplementation(async (run) => run(strictWallet));
+      });
+      native.transact.mockImplementation(async (callback) => callback(wallet));
 
       const signer = createCryptoSigner("owner", "https://identity.example");
-      // Current crypto-signer.ts lines 86-91 calls authorize with auth_token.
-      // Strict wallet throws, which causes handoff to fail with WALLET_TRANSPORT_LOST
       const result = await signer.handoff(claim, route, review);
+
       expect(result).toEqual({
         kind: "unavailable",
-        reason: "WALLET_TRANSPORT_LOST",
+        reason: "WALLET_ACCOUNT_CHANGED",
       });
-      expect(strictWallet.authorize).toHaveBeenCalledWith(
-        expect.objectContaining({
-          auth_token: "cached-auth-token-xyz",
-        }),
-      );
-      // Demonstrates that reauthorize was never invoked by the current implementation
-      expect(strictWallet.reauthorize).not.toHaveBeenCalled();
-    });
-
-    it("verifies protocol-compliant reauthorization logic with fallback to authorize on stale token", async () => {
-      // Protocol-compliant helper demonstrating the suggested fix for select()
-      async function protocolAccurateSelect(
-        wallet: {
-          reauthorize: (params: any) => Promise<any>;
-          authorize: (params: any) => Promise<any>;
-        },
-        cachedToken: string,
-        identity: any,
-        chain: string,
-        wantedAddressBase64: string,
-      ) {
-        let authResult;
-        try {
-          authResult = await wallet.reauthorize({
-            auth_token: cachedToken,
-            identity,
-          });
-        } catch (error: any) {
-          if (
-            error?.code === "ERROR_REAUTHORIZE" ||
-            error?.code === -1 ||
-            error?.message?.includes("REAUTHORIZE_FAILED")
-          ) {
-            // Token expired or revoked: gracefully fall back to full authorization
-            authResult = await wallet.authorize({
-              chain,
-              identity,
-              addresses: [wantedAddressBase64],
-            });
-          } else {
-            throw error;
-          }
-        }
-        return authResult;
-      }
-
-      // Scenario A: Valid cached token silently reauthorizes
-      const validWallet = {
-        reauthorize: vi.fn().mockResolvedValue({
-          auth_token: "refreshed-token-123",
-          accounts: [{ address: sender.toBuffer().toString("base64") }],
-        }),
-        authorize: vi.fn(),
-      };
-
-      const resA = await protocolAccurateSelect(
-        validWallet,
-        "token-123",
-        { name: "AGUS" },
-        "solana:devnet",
-        sender.toBuffer().toString("base64"),
-      );
-      expect(resA.auth_token).toBe("refreshed-token-123");
-      expect(validWallet.reauthorize).toHaveBeenCalledTimes(1);
-      expect(validWallet.authorize).not.toHaveBeenCalled();
-
-      // Scenario B: Expired token gracefully falls back to fresh authorize
-      const expiredWallet = {
-        reauthorize: vi.fn().mockRejectedValue({
-          code: "ERROR_REAUTHORIZE",
-          message: "REAUTHORIZE_FAILED: token expired",
-        }),
-        authorize: vi.fn().mockResolvedValue({
-          auth_token: "newly-granted-token-456",
-          accounts: [{ address: sender.toBuffer().toString("base64") }],
-        }),
-      };
-
-      const resB = await protocolAccurateSelect(
-        expiredWallet,
-        "stale-token",
-        { name: "AGUS" },
-        "solana:devnet",
-        sender.toBuffer().toString("base64"),
-      );
-      expect(resB.auth_token).toBe("newly-granted-token-456");
-      expect(expiredWallet.reauthorize).toHaveBeenCalledTimes(1);
-      expect(expiredWallet.authorize).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("2. Polymorphic Signature Parsing (Uint8Array vs Base58 String)", () => {
-    it("demonstrates TypeError when passing raw 64-byte Uint8Array directly into base58.decode", () => {
-      // MWA spec returns Uint8Array[], but crypto-signer.ts calls base58.decode(signature)
-      const rawBytes = new Uint8Array(64).fill(7);
-      expect(() => {
-        // @ts-expect-error simulating runtime passing Uint8Array to base58.decode
-        base58.decode(rawBytes);
-      }).toThrow(/string expected/);
+  describe("2. Signature Validation & Saved Attempt Persistence", () => {
+    it("rejects empty or wrong-length base58 signatures returned by signAndSendTransactions", async () => {
+      const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
+      native.store.set(grantKey, "cached-auth-token-xyz");
+      // Short base58 signature (4 bytes instead of 64 bytes)
+      native.send.mockResolvedValue([base58.encode(new Uint8Array(4).fill(1))]);
+
+      const wallet = createMockWallet();
+      native.transact.mockImplementation(async (callback) => callback(wallet));
+
+      const signer = createCryptoSigner("owner", "https://identity.example");
+      const result = await signer.handoff(claim, route, review);
+
+      // Failure occurs during stage === "submission", so walletFailure maps to unknown
+      expect(result).toEqual({
+        kind: "unknown",
+        reason: "WALLET_SIGNATURE_UNAVAILABLE",
+      });
     });
 
-    it("verifies robust polymorphic signature parser correctly handles both Uint8Array and base58 string", () => {
-      function normalizeSignature(sig: unknown): string {
-        if (!sig) throw new WalletRouteError("WALLET_SIGNATURE_UNAVAILABLE");
-        const sigBase58 =
-          typeof sig === "string"
-            ? sig
-            : base58.encode(Buffer.from(sig as Uint8Array));
-        if (base58.decode(sigBase58).length !== 64) {
-          throw new WalletRouteError("WALLET_SIGNATURE_UNAVAILABLE");
-        }
-        return sigBase58;
-      }
-
-      // Case A: Raw Uint8Array from standard MWA
-      const fromBytes = normalizeSignature(rawSignatureBytes);
-      expect(typeof fromBytes).toBe("string");
-      expect(fromBytes).toBe(validBase58Signature);
-
-      // Case B: Already base58 string from mock / web3 wrapper
-      const fromString = normalizeSignature(validBase58Signature);
-      expect(fromString).toBe(validBase58Signature);
-
-      // Case C: Malformed signature length (32 bytes instead of 64)
-      const shortBytes = new Uint8Array(32).fill(1);
-      expect(() => normalizeSignature(shortBytes)).toThrow(WalletRouteError);
-
-      // Case D: Null or undefined
-      expect(() => normalizeSignature(null)).toThrow(WalletRouteError);
-    });
-
-    it("verifies parseSavedAttempt accepts normalized signature and rejects invalid formats", () => {
-      // Valid base58 signature outcome
+    it("verifies parseSavedAttempt accepts 64-byte base58 signatures and drops invalid or signed outcomes", () => {
+      const attemptId = randomUUID();
       const validPayload = JSON.stringify({
-        id: randomUUID(),
+        id: attemptId,
         outcome: {
           kind: "signature",
           signature: validBase58Signature,
         },
       });
-      const parsedValid = parseSavedAttempt(validPayload);
-      expect(parsedValid?.outcome?.kind).toBe("signature");
-      if (parsedValid?.outcome?.kind === "signature") {
-        expect(parsedValid.outcome.signature).toBe(validBase58Signature);
-      }
+      expect(parseSavedAttempt(validPayload)).toEqual({
+        id: attemptId,
+        outcome: {
+          kind: "signature",
+          signature: validBase58Signature,
+        },
+      });
 
-      // If raw bytes or non-base58 characters were stored, outcome is dropped per parseSavedAttempt line 20
-      const invalidPayload = JSON.stringify({
-        id: randomUUID(),
+      const invalidSignaturePayload = JSON.stringify({
+        id: attemptId,
         outcome: {
           kind: "signature",
           signature: "not_base58_invalid_characters!!!",
         },
       });
-      const parsedInvalid = parseSavedAttempt(invalidPayload);
-      expect(parsedInvalid?.outcome).toBeUndefined();
+      expect(parseSavedAttempt(invalidSignaturePayload)).toEqual({
+        id: attemptId,
+      });
+
+      const signedBytesPayload = JSON.stringify({
+        id: attemptId,
+        outcome: {
+          kind: "signed",
+          signedTransactionBase64: "AQID",
+        },
+      });
+      expect(parseSavedAttempt(signedBytesPayload)).toEqual({
+        id: attemptId,
+      });
     });
   });
 
-  describe("3. Pre-Submission Retry Recovery and Idempotency", () => {
-    it("demonstrates the bug: premature launch marker locks out retries on pre-submission aborts", async () => {
+  describe("3. Pre-Submission Launch Marker Bug & Lifecycle Diagnostics (createCryptoSigner)", () => {
+    it("reproduces confirmed bug: premature launch marker locks out retries after ERROR_ASSOCIATION_CANCELLED", async () => {
       const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
       native.store.set(grantKey, "fixture-token");
 
-      // Simulate user cancelling during association stage
+      // Simulate user cancelling during association stage (transact rejects before callback runs)
       native.transact.mockRejectedValue({
         code: "ERROR_ASSOCIATION_CANCELLED",
         message: "User declined to associate",
@@ -388,152 +405,173 @@ describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", ()
 
       const signer = createCryptoSigner("owner", "https://identity.example");
 
-      // Attempt 1 fails during association
       const firstResult = await signer.handoff(claim, route, review);
       expect(firstResult).toEqual({ kind: "declined" });
 
-      // Bug manifestation: line 279 persisted the launch marker before transact().
-      // When retrying Attempt 1, line 278 finds the marker and permanently traps in { kind: "unknown" }
+      // Confirmed bug at crypto-signer.ts:278-279: marker was saved prior to transact(),
+      // so retrying the same attempt returns { kind: "unknown" } without invoking transact().
       const retryResult = await signer.handoff(claim, route, review);
       expect(retryResult).toEqual({ kind: "unknown" });
+      expect(native.transact).toHaveBeenCalledTimes(1);
     });
 
-    it("verifies scoped launch marker placement allows retry on pre-submission failure", async () => {
-      const markerStore = new Map<string, string>();
-      const markerKey = `agus.crypto.launch.owner.${claim.attempt.id}`;
+    it("reproduces confirmed bug: premature launch marker locks out retries after pre-submission ERROR_ASSOCIATION_TIMEOUT", async () => {
+      const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
+      native.store.set(grantKey, "fixture-token");
 
-      // Mock implementation with scoped launch marker committed only at submission stage
-      async function resilientHandoff(shouldFailAtAssociation: boolean) {
-        // If already submitted and marked, double-spend check blocks repeat
-        if (markerStore.has(markerKey)) {
-          return { kind: "unknown" };
-        }
+      native.transact.mockRejectedValue({
+        code: "ERROR_ASSOCIATION_TIMEOUT",
+        message: "Timed out waiting for local association",
+      });
 
-        let stage = "association";
-        try {
-          if (shouldFailAtAssociation) {
-            throw { code: "ERROR_ASSOCIATION_CANCELLED" };
-          }
-          stage = "submission";
-          // FIX: Only commit the launch marker once submission actually begins
-          markerStore.set(markerKey, review.messageDigest);
+      const signer = createCryptoSigner("owner", "https://identity.example");
 
-          return { kind: "signature", signature: validBase58Signature };
-        } catch (error: any) {
-          return walletFailure(error, stage).outcome;
-        }
-      }
+      const firstResult = await signer.handoff(claim, route, review);
+      expect(firstResult).toEqual({
+        kind: "unavailable",
+        reason: "WALLET_ASSOCIATION_TIMEOUT",
+      });
 
-      // Attempt 1: Fails at association stage
-      const result1 = await resilientHandoff(true);
-      expect(result1).toEqual({ kind: "declined" });
-      // Marker was NOT set because submission was never reached
-      expect(markerStore.has(markerKey)).toBe(false);
+      const retryResult = await signer.handoff(claim, route, review);
+      expect(retryResult).toEqual({ kind: "unknown" });
+      expect(native.transact).toHaveBeenCalledTimes(1);
+    });
 
-      // Attempt 2: Retry succeeds
-      const result2 = await resilientHandoff(false);
-      expect(result2).toEqual({
+    it("emits typed WalletStage diagnostics and retains returned signature when native teardown throws", async () => {
+      const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
+      native.store.set(grantKey, "fixture-token");
+      native.send.mockResolvedValue([validBase58Signature]);
+
+      const wallet = createMockWallet();
+      native.transact.mockImplementation(async (callback) => {
+        await callback(wallet);
+        throw new Error("native session teardown failed");
+      });
+
+      const observedStages: WalletStage[] = [];
+      const signer = createCryptoSigner("owner", "https://identity.example", (event) => {
+        observedStages.push(event.stage);
+      });
+
+      const outcome = await signer.handoff(claim, route, review);
+      expect(outcome).toEqual({
         kind: "signature",
         signature: validBase58Signature,
       });
-      expect(markerStore.has(markerKey)).toBe(true);
-
-      // Attempt 3: Double-spend attempt with same attempt id is correctly blocked
-      const result3 = await resilientHandoff(false);
-      expect(result3).toEqual({ kind: "unknown" });
+      expect(observedStages).toEqual([
+        "association",
+        "authorization",
+        "capabilities",
+        "submission",
+        "submission",
+        "submission",
+      ]);
     });
   });
 
-  describe("4. AppState Background Session Lock Contention", () => {
-    it("reproduces LOCAL_SESSION_LOCKED error when AppState background event locks session during external wallet handoff", async () => {
-      let sessionUnlocked = true;
-      function lockSession() {
-        sessionUnlocked = false;
-      }
+  describe("4. Real Session Lock Boundary (apps/mobile/src/session.ts)", () => {
+    it("throws LOCAL_SESSION_LOCKED when api.POST runs while session is locked and restores access after unlockSession()", async () => {
+      const fetchMock = vi.fn(async () =>
+        new Response(JSON.stringify({ id: claim.attempt.id, state: "pending" }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
 
-      function mockApiCall() {
-        if (!sessionUnlocked) {
-          throw new Error("LOCAL_SESSION_LOCKED");
-        }
-        return { success: true };
-      }
-
-      // 1. Session is initially unlocked
-      expect(sessionUnlocked).toBe(true);
-      expect(mockApiCall()).toEqual({ success: true });
-
-      // 2. User initiates wallet handoff -> Android switches to Phantom -> AppState becomes "background"
+      // AppState "background" invokes lockSession() (CryptoDeviceHarness.tsx:215)
       lockSession();
-      expect(sessionUnlocked).toBe(false);
 
-      // 3. Wallet returns to AGUS -> CryptoDeviceHarness:367 immediately calls recover() -> api.POST
-      // This reproduces the exact unhandled rejection observed on physical device
-      expect(() => mockApiCall()).toThrow("LOCAL_SESSION_LOCKED");
-    });
+      // Immediate recover() -> reportOutcome() -> api.POST throws LOCAL_SESSION_LOCKED (session.ts:70),
+      // which CryptoDeviceHarness.tsx:548 catches inside run() and sets as notice.
+      await expect(
+        api.POST("/api/v1/crypto/attempts/{id}/wallet-outcome", {
+          params: {
+            header: { "Idempotency-Key": claim.attempt.id },
+            path: { id: claim.attempt.id },
+          },
+          body: { kind: "signature", signature: validBase58Signature },
+        }),
+      ).rejects.toThrow("LOCAL_SESSION_LOCKED");
+      expect(fetchMock).not.toHaveBeenCalled();
 
-    it("verifies session lock mitigation: preserving handoff state prevents unhandled exception", async () => {
-      let sessionUnlocked = true;
-      let handoffPending = false;
+      // User taps "Unlock and resume" (CryptoDeviceHarness.tsx:436-444)
+      const unlocked = await unlockSession();
+      expect(unlocked).toBe(true);
 
-      function onAppStateChange(state: string) {
-        if (state === "background") {
-          // If a wallet handoff is actively in flight, defer full lock until handoff completes
-          if (!handoffPending) {
-            sessionUnlocked = false;
-          }
-        }
-      }
-
-      async function safeRecover() {
-        if (!sessionUnlocked) {
-          // Graceful fallback: return pending without crashing UI
-          return { status: "pending_unlock", notice: "Unlock AGUS to recover the saved Devnet attempt." };
-        }
-        return { status: "recovered", signature: validBase58Signature };
-      }
-
-      // Simulate handoff lifecycle with mitigation
-      handoffPending = true;
-      onAppStateChange("background");
-      // Session remains unlocked for the immediate recover() call upon wallet return
-      expect(sessionUnlocked).toBe(true);
-      const res = await safeRecover();
-      expect(res.status).toBe("recovered");
-      handoffPending = false;
+      const response = await api.POST(
+        "/api/v1/crypto/attempts/{id}/wallet-outcome",
+        {
+          params: {
+            header: { "Idempotency-Key": claim.attempt.id },
+            path: { id: claim.attempt.id },
+          },
+          body: { kind: "signature", signature: validBase58Signature },
+        },
+      );
+      expect(response.response.ok).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
   });
 
-  describe("5. Diagnostic Reason & Error Policy Classification", () => {
-    it("classifies battery saver / low power restriction accurately", () => {
+  describe("5. Diagnostic Reason, Error Policy, and Device State Helpers", () => {
+    it("classifies Low Power Mode, association errors, and MWA protocol error codes across WalletStage", () => {
+      const associationStage: WalletStage = "association";
+      const submissionStage: WalletStage = "submission";
+
       const solflareError = new Error(
         "Your device is in low power mode. Deactivate it to enable connection and signing.",
       );
-      const failure = walletFailure(solflareError, "association");
-      expect(failure.reason).toBe("WALLET_POWER_RESTRICTION");
-      expect(failure.outcome).toEqual({
-        kind: "unavailable",
+      expect(walletFailure(solflareError, associationStage)).toEqual({
         reason: "WALLET_POWER_RESTRICTION",
+        outcome: { kind: "unavailable", reason: "WALLET_POWER_RESTRICTION" },
+      });
+
+      expect(
+        walletFailure({ code: "ERROR_ASSOCIATION_TIMEOUT" }, associationStage),
+      ).toEqual({
+        reason: "WALLET_ASSOCIATION_TIMEOUT",
+        outcome: { kind: "unavailable", reason: "WALLET_ASSOCIATION_TIMEOUT" },
+      });
+
+      expect(
+        walletFailure({ code: "ERROR_ASSOCIATION_CANCELLED" }, associationStage),
+      ).toEqual({
+        reason: "WALLET_ASSOCIATION_CANCELLED",
+        outcome: { kind: "declined" },
+      });
+
+      expect(walletFailure({ code: -3 }, submissionStage)).toEqual({
+        reason: "WALLET_DECLINED",
+        outcome: { kind: "declined" },
+      });
+
+      expect(walletFailure({ code: -4 }, submissionStage)).toEqual({
+        reason: "WALLET_SUBMISSION_UNCERTAIN",
+        outcome: { kind: "unknown", reason: "WALLET_SUBMISSION_UNCERTAIN" },
+      });
+
+      expect(
+        walletFailure(new WalletRouteError("WALLET_ATTESTATION_REQUIRED"), "authorization"),
+      ).toEqual({
+        reason: "WALLET_ATTESTATION_REQUIRED",
+        outcome: { kind: "unavailable", reason: "WALLET_ATTESTATION_REQUIRED" },
       });
     });
 
-    it("classifies association timeouts and cancellations correctly", () => {
-      const timeoutError = { code: "ERROR_ASSOCIATION_TIMEOUT" };
-      expect(walletFailure(timeoutError, "association").reason).toBe(
-        "WALLET_ASSOCIATION_TIMEOUT",
-      );
-
-      const cancelError = { code: "ERROR_ASSOCIATION_CANCELLED" };
-      expect(walletFailure(cancelError, "association").reason).toBe(
-        "WALLET_ASSOCIATION_CANCELLED",
-      );
-    });
-
-    it("validates solAtoms parsing for valid Devnet amounts and rejects malformed values", () => {
+    it("validates solAtoms and canRecover state transitions", () => {
       expect(solAtoms("0.001")).toBe("1000000");
       expect(solAtoms("1")).toBe("1000000000");
       expect(() => solAtoms("-0.1")).toThrow("INVALID_DEVNET_SOL_AMOUNT");
       expect(() => solAtoms("abc")).toThrow("INVALID_DEVNET_SOL_AMOUNT");
       expect(() => solAtoms("0")).toThrow("INVALID_DEVNET_SOL_AMOUNT");
+
+      expect(canRecover("ready")).toBe(true);
+      expect(canRecover("handoff")).toBe(true);
+      expect(canRecover("pending")).toBe(true);
+      expect(canRecover("unknown")).toBe(true);
+      expect(canRecover("finalized")).toBe(false);
+      expect(canRecover("expired")).toBe(false);
     });
   });
 });

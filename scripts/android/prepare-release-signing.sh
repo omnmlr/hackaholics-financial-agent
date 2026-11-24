@@ -23,8 +23,17 @@ work="$(mktemp -d)"
 candidate=""
 trap 'rm -rf -- "$work"; if [[ -n "$candidate" ]]; then rm -f -- "$candidate"; fi' EXIT
 
+restore_backup() {
+  local source="$1" destination="$2"
+  gpg --quiet --decrypt -- "$source" > "$work/restoring.tar"
+  tar -xOf "$work/restoring.tar" -- agus-android.p12 > "$destination/agus-android.p12"
+  tar -xOf "$work/restoring.tar" -- password > "$destination/password"
+  [[ -s "$destination/agus-android.p12" && -s "$destination/password" ]]
+  rm -f -- "$work/restoring.tar"
+}
+
 if [[ -f "$backup" ]]; then
-  gpg --quiet --decrypt -- "$backup" | tar -xf - -C "$work" agus-android.p12 password
+  restore_backup "$backup" "$work"
 else
   openssl rand -base64 48 > "$work/password"
   AGUS_SIGNING_PASSWORD="$(cat "$work/password")" keytool -genkeypair \
@@ -36,7 +45,7 @@ else
   tar -cf - -C "$work" agus-android.p12 password |
     gpg --quiet --batch --yes --encrypt --recipient "$recipient" --output "$candidate"
   mkdir "$work/restored"
-  gpg --quiet --decrypt -- "$candidate" | tar -xf - -C "$work/restored" agus-android.p12 password
+  restore_backup "$candidate" "$work/restored"
   cmp "$work/agus-android.p12" "$work/restored/agus-android.p12"
   cmp "$work/password" "$work/restored/password"
   ln -- "$candidate" "$backup"

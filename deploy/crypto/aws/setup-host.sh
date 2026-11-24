@@ -7,7 +7,7 @@
 set -euo pipefail
 
 echo "==> [1/6] Verifying EC2 IMDSv2 configuration..."
-IMDS_TOKEN=$(curl -s -S -f -X PUT "http://169.254.169.254/latest/api/token" \
+IMDS_TOKEN=$(curl --connect-timeout 1 --max-time 2 -s -S -f -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 60" 2>/dev/null || true)
 
 if [ -n "${IMDS_TOKEN}" ]; then
@@ -93,5 +93,5 @@ echo "Host setup complete!"
 echo "Next steps:"
 echo "1. Populate /etc/agus/crypto.env with verified devnet runtime variables."
 echo "2. Run './preflight-check.sh' to verify configuration and connectivity."
-echo "3. Run 'docker compose up -d' to start services."
+echo "3. Load the pinned prebuilt image and run 'docker compose --env-file /etc/agus/crypto.env up -d' to start services."
 echo "=============================================================================="

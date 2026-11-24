@@ -46,7 +46,7 @@ The architecture consists of a single-host containerized stack deployed on an Am
    - Container processes run as non-root user `node` (`UID:GID 1000:1000`).
    - Logging is bounded via Docker's JSON file driver (`max-size: 20m`, `max-file: 5`).
    - Instance Metadata Service Version 2 (IMDSv2) is strictly enforced with hop limit 1.
-   - Secrets reside on host at `/etc/agus/crypto.env` (mode `0600`, owned by `root:root`) and are injected via Docker Compose `env_file`.
+   - Secrets reside on host at `/etc/agus/crypto.env` (mode `0600`, owned by `root:root`) and are injected into `api` and `worker` via Docker Compose `env_file`, while **only** `APP_DOMAIN` is interpolated into the `caddy` container environment (zero API/DB secrets enter the proxy container).
 
 ---
 
@@ -58,7 +58,7 @@ The architecture consists of a single-host containerized stack deployed on an Am
 |---|---|---|---|---|
 | **`t3.micro`** | 2 | 1.0 GiB | $0.0104 / hr ($7.59 / mo) | **INSUFFICIENT**: Next.js server runtime consumes ~350–600 MB RSS, while the Worker daemon with RPC polling consumes ~150–250 MB RSS. Combined with host OS, Docker daemon, and Caddy proxy (~400 MB), total memory demand exceeds 900 MB, triggering immediate Out-Of-Memory (OOM) kills. |
 | **`t3.small`** | 2 | 2.0 GiB | $0.0208 / hr ($15.18 / mo) | **OPTIMAL CANDIDATE**: 2.0 GiB provides reliable operational headroom: ~1024 MB limit for API container, ~512 MB limit for Worker container, ~100 MB for Caddy proxy, and ~400 MB for host OS and page cache. |
-| **`t3.medium`** | 2 | 4.0 GiB | $0.0416 / hr ($30.37 / mo) | **OVERPROVISIONED**: Unnecessary compute and memory for devnet workload. Only justified if on-host `next build` is executed (which is avoided via pre-built images). |
+| **`t3.medium`** | 2 | 4.0 GiB | $0.0416 / hr ($30.37 / mo) | **OVERPROVISIONED**: Unnecessary compute and memory for devnet workload. Only justified if on-host `next build` is executed without swap (which is avoided via pre-built images). |
 | **`t4g.small`** | 2 | 2.0 GiB (ARM64) | $0.0168 / hr ($12.26 / mo) | **NOT RECOMMENDED AT THIS STAGE**: While slightly cheaper, our current base image (`node:24-bookworm-slim`) and dependencies (`@noble/hashes`, `@solana/web3.js`) are x86_64-tested. Sticking to x86_64 avoids multi-architecture emulation divergence. |
 
 ### 2.2 CPU Credit Mode: Standard Enforcement
@@ -67,8 +67,11 @@ To completely eliminate financial risk and surprise billing:
 - Instances **MUST** be launched in **Standard mode**: `--credit-specification CpuCredits=standard`.
 - Under Standard mode, bursting is capped by accumulated CPU credits, ensuring predictable fixed pricing with zero burst surcharges.
 
-### 2.3 Off-Host Image Build Rationale
-Compiling Next.js (`next build`) is an intensive memory and CPU operation that spikes above 2 GB of memory. Building the container image directly on a 2 GB EC2 instance risks freezing the system or failing with `JavaScript heap out of memory`. Container images should be built off-host (or in CI) and transferred via short-lived authenticated access.
+### 2.3 Off-Host Image Build & Release Pinning Rationale
+Compiling Next.js (`next build`) is an intensive memory and CPU operation that spikes above 2 GiB of RAM. Building the container image directly on a 2 GiB `t3.small` instance risks freezing the kernel or failing with `JavaScript heap out of memory`.
+- **Default Production Path (Prebuilt Commit-Pinned Image)**: `docker-compose.yml` intentionally omits a default `build:` block and pins both `api` and `worker` to `${AGUS_IMAGE_REPO:-agus-crypto-app}:${AGUS_RELEASE_SHA:?}`. Running `docker compose --env-file /etc/agus/crypto.env up -d` on EC2 will never trigger an accidental `next build`.
+- **Optional Host-Build Override (With Swap)**: If an emergency build must be run on a `t3.small` host, first provision at least 2 GiB of swap (`sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile`) and explicitly layer `docker-compose.build.yml`:
+  `docker compose -f docker-compose.yml -f docker-compose.build.yml --env-file /etc/agus/crypto.env build`
 
 ---
 
@@ -133,7 +136,7 @@ Launch 1x EC2 instance with the following parameters:
   ```
 - **Security Group**: Inbound TCP ports `80` (HTTP) and `443` (HTTPS) from `0.0.0.0/0`. Inbound port `22` (SSH) restricted to founder IP or managed exclusively via AWS Systems Manager (SSM) Session Manager.
 
-### Step 2: Host Bootstrapping
+### Step 2: Host Bootstrapping & Pinned Image Delivery
 Connect to the instance via SSM Session Manager or SSH:
 ```bash
 git clone https://github.com/omnmlr/hackaholics-financial-agent.git /opt/agus
@@ -141,6 +144,17 @@ cd /opt/agus/deploy/crypto/aws
 sudo bash setup-host.sh
 ```
 This script installs Docker CE, Docker Compose, sets Docker log limits (`max-size: 20m`), and provisions `/etc/agus` with permissions `0700`.
+
+Build the commit-pinned `linux/amd64` image **off-host** (on a developer workstation or CI runner) and transfer it to the EC2 host via authenticated access:
+```bash
+# On build workstation (at exact release commit):
+export AGUS_RELEASE_SHA=$(git rev-parse --short=12 HEAD)
+docker build --platform linux/amd64 -t "agus-crypto-app:${AGUS_RELEASE_SHA}" -f deploy/crypto/Dockerfile .
+docker save "agus-crypto-app:${AGUS_RELEASE_SHA}" | gzip > "/tmp/agus-crypto-${AGUS_RELEASE_SHA}.tar.gz"
+# Transfer via short-lived authenticated channel (scp / private ECR / presigned S3 via SSM), then on EC2:
+gunzip -c "/tmp/agus-crypto-${AGUS_RELEASE_SHA}.tar.gz" | sudo docker load
+```
+*(If pulling from a private registry instead, set `AGUS_IMAGE_REPO` in `/etc/agus/crypto.env` and run `docker compose --env-file /etc/agus/crypto.env pull` after Step 3.)*
 
 ### Step 3: Secrets Injection
 Populate `/etc/agus/crypto.env` on the host:
@@ -150,23 +164,23 @@ sudo chmod 0600 /etc/agus/crypto.env
 sudo chown root:root /etc/agus/crypto.env
 sudo nano /etc/agus/crypto.env
 ```
-Fill in the database password, generated secrets (`openssl rand -base64 32`), and canonical origin.
+Fill in `AGUS_RELEASE_SHA` (matching the loaded commit SHA), `APP_DOMAIN`, `APP_ORIGIN`, `BETTER_AUTH_URL`, the database password, and generated secrets (`openssl rand -base64 32`), ensuring zero `REPLACE_WITH_*` placeholders remain.
 
 ### Step 4: Host Preflight Verification
 Execute the host verification script:
 ```bash
 sudo bash preflight-check.sh
 ```
-The script validates Docker, file permissions (0600), presence of required environment variables, absence of forbidden variables (`MIGRATION_DATABASE_URL`, `PAYSTACK_SECRET_KEY`), and port availability. Proceed only if it exits with code 0 (`[PASS]`).
+The script validates Docker, file permissions (0600), rejection of any `REPLACE_WITH_*` placeholders, valid JSON/32-byte encryption keys, monitoring and wallet route flags, `APP_DOMAIN`/`APP_ORIGIN` alignment, `AGUS_RELEASE_SHA`, absence of forbidden variables (`MIGRATION_DATABASE_URL`, `PAYSTACK_SECRET_KEY`, `LIVE_TRANSFERS_ENABLED`), and port availability. Proceed only if it exits with code 0 (`[PASS]`).
 
 ### Step 5: Launch Stack
-Start the containerized services:
+Start the containerized services passing `--env-file /etc/agus/crypto.env` so Compose interpolates `APP_DOMAIN` into `caddy` (for public Let's Encrypt / ZeroSSL TLS) and `AGUS_RELEASE_SHA` into `api` and `worker`:
 ```bash
-docker compose up -d
+docker compose --env-file /etc/agus/crypto.env up -d
 ```
 Monitor startup logs:
 ```bash
-docker compose logs -f
+docker compose --env-file /etc/agus/crypto.env logs -f
 ```
 
 ### Step 6: Post-Deployment Readiness Verification

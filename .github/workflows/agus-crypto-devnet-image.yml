@@ -1,0 +1,32 @@
+name: AGUS Crypto Devnet release image
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/agus-crypto-devnet-image.yml"
+      - "deploy/crypto/**"
+      - "scripts/crypto-devnet.ts"
+      - "src/**"
+      - "migrations/**"
+      - "packages/**"
+      - "package*.json"
+permissions:
+  contents: read
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build the Railway image
+        run: docker build --pull --file deploy/crypto/Dockerfile --tag agus-crypto-devnet:check .
+      - name: Check the worker rejects an unconfigured deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          if docker run --rm agus-crypto-devnet:check sh deploy/crypto/start.sh worker > worker.log 2>&1; then
+            echo 'Worker accepted an unconfigured deployment.' >&2
+            exit 1
+          fi
+          grep -F 'Crypto Devnet startup failed' worker.log

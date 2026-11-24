@@ -1,6 +1,8 @@
 import { createHash, randomUUID, sign } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { PGlite } from "@electric-sql/pglite";
 import { base58 } from "@scure/base";
 import {
   Connection,
@@ -16,15 +18,23 @@ import {
   challenge,
   listWallets,
   approvedCryptoProviders,
+  readSource,
 } from "../src/server/crypto/registry";
 import {
   beginCrypto,
   getAttempt,
   reconcileCrypto,
 } from "../src/server/crypto/execution";
+import {
+  addAlertRule,
+  evaluateAlertRule,
+  listAlerts,
+} from "../src/server/crypto/alerts";
 import { cryptoRpc } from "../src/server/crypto/rpc";
 import { DEVNET_GENESIS } from "../src/lib/solana/contracts";
-import { sol } from "../src/server/crypto/portfolio";
+import { CIRCLE_DEVNET_USDC_MINT } from "../src/lib/solana/assets";
+import { TOKEN_PROGRAM_ID } from "../src/lib/solana/classic-spl";
+import { portfolio, sol, syncWalletBalances } from "../src/server/crypto/portfolio";
 import { createIdentity, type Principal } from "../src/server/auth";
 import { migrate } from "../src/server/migrations";
 import { sharedPlatform } from "./helpers/shared-platform";
@@ -83,12 +93,17 @@ function parsedTransfer(
 
 interface TestUser extends Principal {
   cookie: string;
-  email: string;
+  email?: string;
 }
 
 interface TestHarness {
   users: TestUser[];
-  admin: { query: (sql: string, params?: unknown[]) => Promise<{ rows: any[] }> };
+  admin: {
+    query: (
+      sql: string,
+      params?: unknown[],
+    ) => Promise<{ rows: Record<string, unknown>[] }>;
+  };
   close: () => Promise<void>;
 }
 
@@ -309,9 +324,9 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
   });
 
   // ==========================================================================
-  // NEG-02: Cluster and Genesis Mismatch Rejection
+  // NEG-02: Cluster, Genesis, and Signer Mismatch Rejection
   // ==========================================================================
-  describe("NEG-02: Cluster and genesis mismatch rejection", () => {
+  describe("NEG-02: Cluster, genesis, and signer mismatch rejection", () => {
     it("throws CHAIN_IDENTITY_MISMATCH (503) when RPC genesis hash does not match devnet", async () => {
       const spy = vi
         .spyOn(Connection.prototype, "getGenesisHash")
@@ -338,6 +353,220 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
     it("rejects unapproved crypto providers for mainnet-beta", () => {
       const providers = approvedCryptoProviders("mainnet-beta");
       expect(providers).toEqual([]);
+    });
+
+    it("rejects transaction during reconciliation when signer mismatches review.expectedSigner or numRequiredSignatures !== 1", async () => {
+      const user1 = harness.users[1];
+      const expectedKey = Keypair.generate();
+      const rogueSigner = Keypair.generate();
+      const coSigner = Keypair.generate();
+      const wallet = await associateWallet(1, expectedKey);
+      const route = wallet.routes[0];
+
+      // Case A: rogueSigner signs instead of expectedSigner (message.staticAccountKeys[0] !== review.expectedSigner)
+      const rogueTx = new Transaction();
+      rogueTx.feePayer = rogueSigner.publicKey;
+      rogueTx.recentBlockhash = mockOutsider;
+      rogueTx.add(
+        SystemProgram.transfer({
+          fromPubkey: rogueSigner.publicKey,
+          toPubkey: mockRecipient.publicKey,
+          lamports: 1_000_000n,
+        }),
+      );
+      rogueTx.instructions[0].keys.push({
+        pubkey: new PublicKey(mockOutsider),
+        isSigner: false,
+        isWritable: false,
+      });
+      rogueTx.sign(rogueSigner);
+
+      const rogueSig = base58.encode(rogueTx.signature!);
+      const rogueReviewId = randomUUID();
+      const rogueReviewDigest = createHash("sha256")
+        .update("signer-mismatch-review")
+        .digest("hex");
+      const rogueReview = {
+        id: rogueReviewId,
+        revision: 0,
+        reviewDigest: rogueReviewDigest,
+        routeId: route.id,
+        cluster: devnet,
+        expectedSigner: wallet.address,
+        sourceWalletId: wallet.id,
+        reference: mockOutsider,
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+        // Match messageDigest intentionally to isolate the expectedSigner check at execution.ts:633
+        messageDigest: createHash("sha256")
+          .update(rogueTx.serializeMessage())
+          .digest("hex"),
+        recipient: mockRecipient.publicKey.toBase58(),
+        sourceTokenAccount: null,
+        destinationTokenAccount: null,
+        amount: sol(devnet, 1_000_000n),
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_reviews(owner, id, wallet_id, fingerprint, review) VALUES($1,$2,$3,$4,$5::jsonb)",
+        [
+          user1.id,
+          rogueReviewId,
+          wallet.id,
+          `fingerprint-${randomUUID()}`,
+          JSON.stringify(rogueReview),
+        ],
+      );
+
+      const beginRes = await POST(
+        apiRequest(1, `reviews/${rogueReviewId}/begin`, {
+          revision: 0,
+          reviewDigest: rogueReviewDigest,
+        }),
+      );
+      expect(beginRes.status).toBe(200);
+      const attemptA = await beginRes.json();
+
+      await POST(apiRequest(1, `attempts/${attemptA.id}/handoff`, {}, randomUUID()));
+      await POST(
+        apiRequest(1, `attempts/${attemptA.id}/wallet-outcome`, {
+          kind: "signature",
+          signature: rogueSig,
+        }),
+      );
+
+      const mockRogueChain = {
+        getSignaturesForAddress: async () => [{ signature: rogueSig }],
+        getTransaction: async () => ({
+          version: "legacy",
+          slot: 2100,
+          meta: {
+            err: null,
+            fee: 5000,
+            preBalances: [2_000_000, 0, 0],
+            postBalances: [995_000, 1_000_000, 0],
+          },
+          transaction: {
+            signatures: [rogueSig],
+            message: rogueTx.compileMessage(),
+          },
+        }),
+        getSignatureStatuses: async () => ({
+          value: [{ confirmationStatus: "finalized", slot: 2100, err: null }],
+        }),
+        getParsedTransaction: async () =>
+          parsedTransfer(
+            rogueSigner.publicKey.toBase58(),
+            rogueReview.recipient,
+            rogueSig,
+            1_000_000,
+            2100,
+          ),
+      } as unknown as Connection;
+
+      const outcomeA = await reconcileCrypto(
+        user1.id,
+        attemptA.id,
+        async () => mockRogueChain,
+      );
+      expect(outcomeA.state).not.toBe("finalized");
+      expect(outcomeA.receiptId).toBeNull();
+
+      // Case B: Multi-signer transaction (numRequiredSignatures === 2 !== 1)
+      const multiTx = new Transaction();
+      multiTx.feePayer = expectedKey.publicKey;
+      multiTx.recentBlockhash = mockOutsider;
+      multiTx.add(
+        SystemProgram.transfer({
+          fromPubkey: expectedKey.publicKey,
+          toPubkey: mockRecipient.publicKey,
+          lamports: 1_000_000n,
+        }),
+      );
+      multiTx.instructions[0].keys.push({
+        pubkey: coSigner.publicKey,
+        isSigner: true,
+        isWritable: false,
+      });
+      multiTx.sign(expectedKey, coSigner);
+
+      const multiSig = base58.encode(multiTx.signatures[0].signature!);
+      const multiReviewId = randomUUID();
+      const multiReviewDigest = createHash("sha256")
+        .update("multi-signer-review")
+        .digest("hex");
+      const multiReview = {
+        ...rogueReview,
+        id: multiReviewId,
+        reviewDigest: multiReviewDigest,
+        messageDigest: createHash("sha256")
+          .update(multiTx.serializeMessage())
+          .digest("hex"),
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_reviews(owner, id, wallet_id, fingerprint, review) VALUES($1,$2,$3,$4,$5::jsonb)",
+        [
+          user1.id,
+          multiReviewId,
+          wallet.id,
+          `fingerprint-${randomUUID()}`,
+          JSON.stringify(multiReview),
+        ],
+      );
+
+      const beginMultiRes = await POST(
+        apiRequest(1, `reviews/${multiReviewId}/begin`, {
+          revision: 0,
+          reviewDigest: multiReviewDigest,
+        }),
+      );
+      expect(beginMultiRes.status).toBe(200);
+      const attemptB = await beginMultiRes.json();
+
+      await POST(apiRequest(1, `attempts/${attemptB.id}/handoff`, {}, randomUUID()));
+      await POST(
+        apiRequest(1, `attempts/${attemptB.id}/wallet-outcome`, {
+          kind: "signature",
+          signature: multiSig,
+        }),
+      );
+
+      const mockMultiChain = {
+        getSignaturesForAddress: async () => [{ signature: multiSig }],
+        getTransaction: async () => ({
+          version: "legacy",
+          slot: 2105,
+          meta: {
+            err: null,
+            fee: 5000,
+            preBalances: [2_000_000, 0, 0],
+            postBalances: [995_000, 1_000_000, 0],
+          },
+          transaction: {
+            signatures: multiTx.signatures.map((s) => base58.encode(s.signature!)),
+            message: multiTx.compileMessage(),
+          },
+        }),
+        getSignatureStatuses: async () => ({
+          value: [{ confirmationStatus: "finalized", slot: 2105, err: null }],
+        }),
+        getParsedTransaction: async () =>
+          parsedTransfer(
+            wallet.address,
+            multiReview.recipient,
+            multiSig,
+            1_000_000,
+            2105,
+          ),
+      } as unknown as Connection;
+
+      const outcomeB = await reconcileCrypto(
+        user1.id,
+        attemptB.id,
+        async () => mockMultiChain,
+      );
+      expect(outcomeB.state).not.toBe("finalized");
+      expect(outcomeB.receiptId).toBeNull();
     });
   });
 
@@ -1125,6 +1354,642 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
       );
       expect(receiptsPost.rows).toHaveLength(1);
       expect(receiptsPost.rows[0].signature).toBe(finalSig);
+    });
+  });
+
+  // ==========================================================================
+  // NEG-08: Missing Callback Recovery and Premature Outcome Rejection
+  // ==========================================================================
+  describe("NEG-08: Missing callback recovery and premature outcome rejection", () => {
+    it("rejects reportWalletOutcome while attempt is in ready state with 403 APPROVAL_REQUIRED", async () => {
+      const user0 = harness.users[0];
+      const senderKey = Keypair.generate();
+      const wallet = await associateWallet(0, senderKey);
+      const route = wallet.routes[0];
+      const reviewId = randomUUID();
+      const reviewDigest = createHash("sha256")
+        .update("premature-outcome-review")
+        .digest("hex");
+
+      const review = {
+        id: reviewId,
+        revision: 0,
+        reviewDigest,
+        routeId: route.id,
+        cluster: devnet,
+        expectedSigner: wallet.address,
+        sourceWalletId: wallet.id,
+        reference: Keypair.generate().publicKey.toBase58(),
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+        messageDigest: "f".repeat(64),
+        recipient: mockRecipient.publicKey.toBase58(),
+        sourceTokenAccount: null,
+        destinationTokenAccount: null,
+        amount: sol(devnet, 1_000_000n),
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_reviews(owner, id, wallet_id, fingerprint, review) VALUES($1,$2,$3,$4,$5::jsonb)",
+        [
+          user0.id,
+          reviewId,
+          wallet.id,
+          `fingerprint-${randomUUID()}`,
+          JSON.stringify(review),
+        ],
+      );
+
+      const beginRes = await POST(
+        apiRequest(0, `reviews/${reviewId}/begin`, {
+          revision: 0,
+          reviewDigest,
+        }),
+      );
+      expect(beginRes.status).toBe(200);
+      const attempt = await beginRes.json();
+
+      // Reporting wallet-outcome before handoffCrypto must fail with 403 APPROVAL_REQUIRED
+      const prematureRes = await POST(
+        apiRequest(0, `attempts/${attempt.id}/wallet-outcome`, {
+          kind: "unknown",
+        }),
+      );
+      expect(prematureRes.status).toBe(403);
+      const data = await prematureRes.json();
+      expect(data.error.code).toBe("APPROVAL_REQUIRED");
+    });
+
+    it("discovers and finalizes transaction via review.reference when mobile callback is dropped", async () => {
+      const user0 = harness.users[0];
+      const senderKey = Keypair.generate();
+      const wallet = await associateWallet(0, senderKey);
+      const route = wallet.routes[0];
+      const uniqueReference = Keypair.generate().publicKey.toBase58();
+      const reviewId = randomUUID();
+      const reviewDigest = createHash("sha256")
+        .update("missing-callback-reference-discovery")
+        .digest("hex");
+
+      const tx = new Transaction();
+      tx.feePayer = senderKey.publicKey;
+      tx.recentBlockhash = mockOutsider;
+      tx.add(
+        SystemProgram.transfer({
+          fromPubkey: senderKey.publicKey,
+          toPubkey: mockRecipient.publicKey,
+          lamports: 1_000_000n,
+        }),
+      );
+      tx.instructions[0].keys.push({
+        pubkey: new PublicKey(uniqueReference),
+        isSigner: false,
+        isWritable: false,
+      });
+      tx.sign(senderKey);
+
+      const finalSig = base58.encode(tx.signature!);
+
+      const review = {
+        id: reviewId,
+        revision: 0,
+        reviewDigest,
+        routeId: route.id,
+        cluster: devnet,
+        expectedSigner: wallet.address,
+        sourceWalletId: wallet.id,
+        reference: uniqueReference,
+        expiresAt: new Date(Date.now() + 120_000).toISOString(),
+        messageDigest: createHash("sha256")
+          .update(tx.serializeMessage())
+          .digest("hex"),
+        recipient: mockRecipient.publicKey.toBase58(),
+        sourceTokenAccount: null,
+        destinationTokenAccount: null,
+        amount: sol(devnet, 1_000_000n),
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_reviews(owner, id, wallet_id, fingerprint, review) VALUES($1,$2,$3,$4,$5::jsonb)",
+        [
+          user0.id,
+          reviewId,
+          wallet.id,
+          `fingerprint-${randomUUID()}`,
+          JSON.stringify(review),
+        ],
+      );
+
+      const beginRes = await POST(
+        apiRequest(0, `reviews/${reviewId}/begin`, {
+          revision: 0,
+          reviewDigest,
+        }),
+      );
+      const attempt = await beginRes.json();
+
+      await POST(apiRequest(0, `attempts/${attempt.id}/handoff`, {}, randomUUID()));
+
+      // Client reports 'unknown' with no signature (simulating dropped Android MWA deep-link callback)
+      const outcomeRes = await POST(
+        apiRequest(0, `attempts/${attempt.id}/wallet-outcome`, {
+          kind: "unknown",
+        }),
+      );
+      expect(outcomeRes.status).toBe(200);
+      const afterOutcome = await outcomeRes.json();
+      expect(afterOutcome.state).toBe("unknown");
+      expect(afterOutcome.signature).toBeNull();
+
+      let queriedAddress: string | null = null;
+      const mockChain = {
+        getSignaturesForAddress: async (pubkey: PublicKey) => {
+          queriedAddress = pubkey.toBase58();
+          return [{ signature: finalSig }];
+        },
+        getTransaction: async () => ({
+          version: "legacy",
+          slot: 3600,
+          meta: {
+            err: null,
+            fee: 5000,
+            preBalances: [2_000_000, 0, 0, 0],
+            postBalances: [995_000, 1_000_000, 0, 0],
+          },
+          transaction: {
+            signatures: [finalSig],
+            message: tx.compileMessage(),
+          },
+        }),
+        getSignatureStatuses: async () => ({
+          value: [{ confirmationStatus: "finalized", slot: 3600, err: null }],
+        }),
+        getParsedTransaction: async () =>
+          parsedTransfer(
+            wallet.address,
+            review.recipient,
+            finalSig,
+            1_000_000,
+            3600,
+          ),
+      } as unknown as Connection;
+
+      const reconciled = await reconcileCrypto(
+        user0.id,
+        attempt.id,
+        async () => mockChain,
+      );
+      expect(queriedAddress).toBe(uniqueReference);
+      expect(reconciled.state).toBe("finalized");
+      expect(reconciled.receiptId).toBeTruthy();
+      expect(reconciled.signature).toBe(finalSig);
+    });
+  });
+
+  // ==========================================================================
+  // NEG-09: Replayed Alert Deduplication & Uniqueness Enforcement
+  // ==========================================================================
+  describe("NEG-09: Replayed alert deduplication and uniqueness enforcement", () => {
+    it("deduplicates replayed alert evaluations and rejects duplicate alert inserts", async () => {
+      const user0 = harness.users[0];
+      const alertKey = Keypair.generate();
+      const alertWallet = await associateWallet(0, alertKey);
+
+      const rule = await addAlertRule(
+        user0,
+        {
+          walletId: alertWallet.id,
+          kind: "external_inflow",
+          min: sol(devnet, 500_000n),
+        },
+        randomUUID(),
+      );
+
+      const inflowSig = base58.encode(Buffer.alloc(64, 88));
+      const futureBlockTime = new Date(Date.now() + 10_000).toISOString();
+      const inflowEvent = {
+        id: `${devnet}:${inflowSig}`,
+        signature: inflowSig,
+        slot: 4200,
+        blockTime: futureBlockTime,
+        source: readSource(devnet, 4200, futureBlockTime),
+        finality: "finalized" as const,
+        status: "success" as const,
+        legs: [
+          {
+            id: `${devnet}:${inflowSig}:0`,
+            instructionPath: "0",
+            kind: "transfer" as const,
+            from: mockOutsider,
+            to: alertWallet.address,
+            fromOwner: mockOutsider,
+            toOwner: alertWallet.address,
+            amount: sol(devnet, 1_500_000n),
+          },
+        ],
+        explorerUrl: `https://explorer.solana.com/tx/${inflowSig}?cluster=devnet`,
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_chain_events(cluster, signature, slot, block_time, event) VALUES($1,$2,$3,$4,$5::jsonb)",
+        [devnet, inflowSig, 4200, futureBlockTime, JSON.stringify(inflowEvent)],
+      );
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_wallet_events(owner, wallet_id, cluster, signature) VALUES($1,$2,$3,$4)",
+        [user0.id, alertWallet.id, devnet, inflowSig],
+      );
+
+      // First evaluation emits exactly 1 alert and 1 observation
+      await evaluateAlertRule(user0.id, devnet, rule.id);
+      const afterFirst = await listAlerts(user0.id, {
+        cluster: devnet,
+        walletIds: [alertWallet.id],
+      });
+      expect(afterFirst.items).toHaveLength(1);
+      expect(afterFirst.items[0].dedupeKey).toBe(
+        `${rule.id}:${devnet}:${inflowSig}:${alertWallet.id}`,
+      );
+
+      // Replay evaluation: observation index skips re-emission
+      await evaluateAlertRule(user0.id, devnet, rule.id);
+      const afterReplay = await listAlerts(user0.id, {
+        cluster: devnet,
+        walletIds: [alertWallet.id],
+      });
+      expect(afterReplay.items).toHaveLength(1);
+
+      // Simulate race bypassing observation table: UNIQUE(owner, rule_id, cluster, signature) + ON CONFLICT prevents duplicate
+      await harness.admin.query(
+        "DELETE FROM agus_crypto_alert_observations WHERE owner=$1 AND rule_id=$2",
+        [user0.id, rule.id],
+      );
+      await evaluateAlertRule(user0.id, devnet, rule.id);
+      const afterObsReset = await listAlerts(user0.id, {
+        cluster: devnet,
+        walletIds: [alertWallet.id],
+      });
+      expect(afterObsReset.items).toHaveLength(1);
+
+      // Verify raw duplicate insert without ON CONFLICT is rejected by schema UNIQUE constraint
+      await expect(
+        harness.admin.query(
+          "INSERT INTO agus_crypto_alerts(owner, id, rule_id, cluster, signature) VALUES($1,$2,$3,$4,$5)",
+          [user0.id, randomUUID(), rule.id, devnet, inflowSig],
+        ),
+      ).rejects.toThrow(/duplicate key|unique constraint/i);
+    });
+  });
+
+  // ==========================================================================
+  // NEG-10: Stale, Partial, and Disputed Portfolio Coverage Handling
+  // ==========================================================================
+  describe("NEG-10: Stale, partial, and disputed portfolio coverage handling", () => {
+    it("surfaces stale coverage when RPC fails over expired cache and blocks partial overwrite of complete snapshot", async () => {
+      const user2 = harness.users[2];
+      const staleKey = Keypair.generate();
+      const staleWallet = await associateWallet(2, staleKey);
+
+      const expiredAt = new Date(Date.now() - 300_000).toISOString();
+      const cachedSol = {
+        kind: "sol" as const,
+        slot: 5000,
+        observedAt: expiredAt,
+        partial: false,
+        holdings: [
+          {
+            walletId: staleWallet.id,
+            tokenAccount: null,
+            amount: sol(devnet, 2_000_000n),
+            symbol: "SOL",
+            valuation: null,
+            spendable: true,
+          },
+        ],
+      };
+      const cachedToken = {
+        kind: "token" as const,
+        slot: 5000,
+        observedAt: expiredAt,
+        partial: false,
+        holdings: [],
+      };
+
+      await harness.admin.query(
+        "INSERT INTO agus_crypto_balances(owner, wallet_id, kind, observed_at, slot, value) VALUES($1,$2,'sol',$3,$4,$5::jsonb), ($1,$2,'token',$3,$4,$6::jsonb)",
+        [
+          user2.id,
+          staleWallet.id,
+          expiredAt,
+          5000,
+          JSON.stringify(cachedSol),
+          JSON.stringify(cachedToken),
+        ],
+      );
+
+      const failingRpc = {
+        getAccountInfoAndContext: async () => {
+          throw new Error("RPC_TIMEOUT");
+        },
+        getParsedTokenAccountsByOwner: async () => {
+          throw new Error("RPC_TIMEOUT");
+        },
+      } as unknown as Connection;
+
+      const stalePortfolio = await portfolio(
+        user2.id,
+        { cluster: devnet, walletIds: [staleWallet.id] },
+        async () => failingRpc,
+      );
+      const balancesCov = stalePortfolio.coverage.find(
+        (c) => c.walletId === staleWallet.id && c.kind === "balances",
+      );
+      expect(balancesCov).toBeDefined();
+      expect(balancesCov!.state).toBe("stale");
+      expect(balancesCov!.reason).toBe("provider_failure");
+
+      // Partial RPC response (malformed/mismatched token account owner) must NOT overwrite complete token cache
+      const partialRpc = {
+        getAccountInfoAndContext: async () => ({
+          context: { slot: 5100 },
+          value: {
+            lamports: 3_000_000,
+            owner: SystemProgram.programId,
+            data: Buffer.alloc(0),
+          },
+        }),
+        getParsedTokenAccountsByOwner: async () => ({
+          context: { slot: 5100 },
+          value: [
+            {
+              pubkey: Keypair.generate().publicKey,
+              account: {
+                owner: TOKEN_PROGRAM_ID,
+                data: {
+                  parsed: {
+                    info: {
+                      // Wrong owner triggers partial = true in portfolio.ts:108
+                      owner: mockOutsider,
+                      mint: CIRCLE_DEVNET_USDC_MINT,
+                      tokenAmount: { amount: "1000000", decimals: 6 },
+                      state: "initialized",
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        }),
+      } as unknown as Connection;
+
+      const synced = await syncWalletBalances(
+        user2.id,
+        staleWallet,
+        async () => partialRpc,
+      );
+      const tokenSnapshot = synced.find((b) => b.kind === "token");
+      expect(tokenSnapshot).toBeDefined();
+      expect(tokenSnapshot!.slot).toBe(5000);
+      expect(tokenSnapshot!.partial).toBe(false);
+    });
+
+    it("excludes disputed token account shared across two wallets at same slot and flags rpc_lag", async () => {
+      const user2 = harness.users[2];
+      const walletD1 = await associateWallet(2, Keypair.generate());
+      const walletD2 = await associateWallet(2, Keypair.generate());
+      const sharedTokenAccount = Keypair.generate().publicKey;
+
+      const disputedRpc = {
+        getAccountInfoAndContext: async () => ({
+          context: { slot: 6000 },
+          value: {
+            lamports: 2_000_000,
+            owner: SystemProgram.programId,
+            data: Buffer.alloc(0),
+          },
+        }),
+        getParsedTokenAccountsByOwner: async (ownerPubkey: PublicKey) => ({
+          context: { slot: 6000 },
+          value: [
+            {
+              pubkey: sharedTokenAccount,
+              account: {
+                owner: TOKEN_PROGRAM_ID,
+                data: {
+                  parsed: {
+                    info: {
+                      owner: ownerPubkey.toBase58(),
+                      mint: CIRCLE_DEVNET_USDC_MINT,
+                      tokenAmount: { amount: "5000000", decimals: 6 },
+                      state: "initialized",
+                    },
+                  },
+                },
+              },
+            },
+          ],
+        }),
+      } as unknown as Connection;
+
+      const result = await portfolio(
+        user2.id,
+        { cluster: devnet, walletIds: [walletD1.id, walletD2.id] },
+        async () => disputedRpc,
+      );
+
+      // Ambiguous token account must be omitted from holdings
+      expect(
+        result.holdings.some(
+          (h) => h.tokenAccount === sharedTokenAccount.toBase58(),
+        ),
+      ).toBe(false);
+
+      // Coverage for both wallets must degrade to partial with reason 'rpc_lag'
+      for (const wid of [walletD1.id, walletD2.id]) {
+        const cov = result.coverage.find(
+          (c) => c.walletId === wid && c.kind === "balances",
+        );
+        expect(cov).toBeDefined();
+        expect(cov!.state).toBe("partial");
+        expect(cov!.reason).toBe("rpc_lag");
+      }
+    });
+  });
+
+  // ==========================================================================
+  // NEG-11: SQL Least-Privilege Immutability & Text Owner RLS Verification
+  // ==========================================================================
+  describe("NEG-11: SQL least-privilege immutability and text owner RLS verification", () => {
+    it("revokes UPDATE and DELETE from agus_runtime on ledger/audit tables and enforces text owner RLS", async () => {
+      const pg = new PGlite();
+      try {
+        const sqlAdapter: Sql = {
+          exec: (text) => pg.exec(text),
+          query: (text, params) => pg.query(text, params),
+        };
+        await migrate(sqlAdapter, join(process.cwd(), "migrations"), false);
+
+        // Step 1: Apply baseline runtime-role.sql and verify the pre-remediation flaw
+        const baselineSql = readFileSync(
+          join(process.cwd(), "scripts/sql/runtime-role.sql"),
+          "utf8",
+        );
+        await pg.exec(baselineSql);
+
+        const ownerId = "better-auth-user-text-id-001";
+        const otherOwnerId = "better-auth-user-text-id-002";
+        const walletId = randomUUID();
+        const reviewId = randomUUID();
+        const attemptId = randomUUID();
+        const receiptId = randomUUID();
+        const auditId = randomUUID();
+        const sig = base58.encode(Buffer.alloc(64, 91));
+
+        await pg.query(
+          "INSERT INTO agus_users(id, name, email) VALUES($1, 'Owner One', 'one@fixture.invalid'), ($2, 'Owner Two', 'two@fixture.invalid')",
+          [ownerId, otherOwnerId],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_wallets(owner, id, cluster, address, label) VALUES($1, $2, 'devnet', $3, 'W1'), ($4, $5, 'devnet', $6, 'W2')",
+          [
+            ownerId,
+            walletId,
+            Keypair.generate().publicKey.toBase58(),
+            otherOwnerId,
+            randomUUID(),
+            Keypair.generate().publicKey.toBase58(),
+          ],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_chain_events(cluster, signature, slot, event) VALUES('devnet', $1, 100, '{}'::jsonb)",
+          [sig],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_wallet_events(owner, wallet_id, cluster, signature) VALUES($1, $2, 'devnet', $3)",
+          [ownerId, walletId, sig],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_reviews(owner, id, wallet_id, fingerprint, review) VALUES($1, $2, $3, 'fp-1', '{}'::jsonb)",
+          [ownerId, reviewId, walletId],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_attempts(owner, id, review_id, fingerprint, state) VALUES($1, $2, $3, 'fp-1', 'finalized')",
+          [ownerId, attemptId, reviewId],
+        );
+        await pg.query(
+          "INSERT INTO agus_crypto_receipts(owner, id, attempt_id, cluster, signature, receipt) VALUES($1, $2, $3, 'devnet', $4, '{}'::jsonb)",
+          [ownerId, receiptId, attemptId, sig],
+        );
+        await pg.query(
+          "INSERT INTO agus_audit(id, owner, resource_type, resource_id, action) VALUES($1, $2, 'crypto_attempt', $3, 'crypto.approved')",
+          [auditId, ownerId, attemptId],
+        );
+
+        // Before remediation: agus_runtime CAN update agus_crypto_receipts (demonstrating the flaw)
+        await pg.exec("SET ROLE agus_runtime;");
+        await expect(
+          pg.query(
+            "UPDATE agus_crypto_receipts SET cluster='devnet' WHERE id=$1",
+            [receiptId],
+          ),
+        ).resolves.toBeDefined();
+        await pg.exec("RESET ROLE;");
+
+        // Step 2: Apply runtime-role-least-privilege.sql verbatim
+        const remediationSql = readFileSync(
+          join(process.cwd(), "scripts/sql/runtime-role-least-privilege.sql"),
+          "utf8",
+        );
+        await pg.exec(remediationSql);
+
+        // Step 3: Verify agus_runtime can SELECT and INSERT, but CANNOT UPDATE or DELETE immutable tables
+        await pg.exec("SET ROLE agus_runtime;");
+
+        const sig2 = base58.encode(Buffer.alloc(64, 92));
+        await expect(
+          pg.query("SELECT id FROM agus_crypto_receipts WHERE id=$1", [receiptId]),
+        ).resolves.toMatchObject({ rows: [{ id: receiptId }] });
+
+        await expect(
+          pg.query(
+            "INSERT INTO agus_crypto_chain_events(cluster, signature, slot, event) VALUES('devnet', $1, 101, '{}'::jsonb)",
+            [sig2],
+          ),
+        ).resolves.toBeDefined();
+        await expect(
+          pg.query(
+            "INSERT INTO agus_crypto_wallet_events(owner, wallet_id, cluster, signature) VALUES($1, $2, 'devnet', $3)",
+            [ownerId, walletId, sig2],
+          ),
+        ).resolves.toBeDefined();
+        await expect(
+          pg.query(
+            "INSERT INTO agus_audit(id, owner, resource_type, resource_id, action) VALUES($1, $2, 'crypto_attempt', $3, 'crypto.handoff')",
+            [randomUUID(), ownerId, attemptId],
+          ),
+        ).resolves.toBeDefined();
+
+        // UPDATE and DELETE must be denied on all 5 immutable financial/audit tables
+        await expect(
+          pg.query("UPDATE agus_crypto_chain_events SET slot=999 WHERE signature=$1", [sig]),
+        ).rejects.toThrow(/permission denied/i);
+        await expect(
+          pg.query("DELETE FROM agus_crypto_chain_events WHERE signature=$1", [sig]),
+        ).rejects.toThrow(/permission denied/i);
+
+        await expect(
+          pg.query("UPDATE agus_crypto_wallet_events SET cluster='devnet' WHERE signature=$1", [sig]),
+        ).rejects.toThrow(/permission denied/i);
+        await expect(
+          pg.query("DELETE FROM agus_crypto_wallet_events WHERE signature=$1", [sig]),
+        ).rejects.toThrow(/permission denied/i);
+
+        await expect(
+          pg.query("UPDATE agus_crypto_receipts SET cluster='devnet' WHERE id=$1", [receiptId]),
+        ).rejects.toThrow(/permission denied/i);
+        await expect(
+          pg.query("DELETE FROM agus_crypto_receipts WHERE id=$1", [receiptId]),
+        ).rejects.toThrow(/permission denied/i);
+
+        await expect(
+          pg.query("UPDATE agus_crypto_reviews SET fingerprint='tampered' WHERE id=$1", [reviewId]),
+        ).rejects.toThrow(/permission denied/i);
+        await expect(
+          pg.query("DELETE FROM agus_crypto_reviews WHERE id=$1", [reviewId]),
+        ).rejects.toThrow(/permission denied/i);
+
+        await expect(
+          pg.query("UPDATE agus_audit SET action='tampered' WHERE id=$1", [auditId]),
+        ).rejects.toThrow(/permission denied/i);
+        await expect(
+          pg.query("DELETE FROM agus_audit WHERE id=$1", [auditId]),
+        ).rejects.toThrow(/permission denied/i);
+
+        await pg.exec("RESET ROLE;");
+
+        // Step 4: Verify the documented text-typed RLS policy executes cleanly and isolates Better Auth string IDs
+        await pg.exec(`
+          ALTER TABLE agus_crypto_wallets ENABLE ROW LEVEL SECURITY;
+          CREATE POLICY crypto_tenant_isolation ON agus_crypto_wallets
+            FOR ALL
+            TO agus_runtime
+            USING (owner = NULLIF(current_setting('app.current_user_id', true), ''))
+            WITH CHECK (owner = NULLIF(current_setting('app.current_user_id', true), ''));
+        `);
+
+        await pg.exec("SET ROLE agus_runtime;");
+        // Unset session context fails closed (0 rows visible)
+        const unsetRows = await pg.query("SELECT owner FROM agus_crypto_wallets");
+        expect(unsetRows.rows).toHaveLength(0);
+
+        // Tenant-scoped session context reveals only ownerId's wallet
+        await pg.query("SELECT set_config('app.current_user_id', $1, false)", [
+          ownerId,
+        ]);
+        const scopedRows = await pg.query("SELECT owner FROM agus_crypto_wallets");
+        expect(scopedRows.rows).toEqual([{ owner: ownerId }]);
+        await pg.exec("RESET ROLE;");
+      } finally {
+        await pg.close();
+      }
     });
   });
 });

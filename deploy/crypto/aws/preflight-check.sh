@@ -14,7 +14,7 @@ yellow(){ printf "\033[33m%s\033[0m\n" "$*"; }
 
 pass()  { green "  [PASS] $*"; }
 fail()  { red   "  [FAIL] $*"; FAILURES=$((FAILURES + 1)); }
-warn()  { yellow"  [WARN] $*"; }
+warn()  { yellow "  [WARN] $*"; }
 
 echo "=============================================================================="
 echo "AGUS Crypto AWS Host Preflight Verification"
@@ -63,7 +63,7 @@ fi
 # 3. IMDSv2 Instance Metadata Check
 # ------------------------------------------------------------------------------
 echo "==> [3/6] Checking EC2 IMDSv2 configuration..."
-IMDS_TOKEN=$(curl -s -S -f -X PUT "http://169.254.169.254/latest/api/token" \
+IMDS_TOKEN=$(curl --connect-timeout 1 --max-time 2 -s -S -f -X PUT "http://169.254.169.254/latest/api/token" \
   -H "X-aws-ec2-metadata-token-ttl-seconds: 60" 2>/dev/null || true)
 if [ -n "${IMDS_TOKEN}" ]; then
   pass "IMDSv2 token acquisition successful"
@@ -94,10 +94,29 @@ fi
 # ------------------------------------------------------------------------------
 echo "==> [5/6] Validating required and forbidden runtime environment variables..."
 if [ -f "${ENV_FILE}" ]; then
-  # Helper to read variable without leaking value
+  # Helper to read variable without leaking value or corrupting inner JSON quotes
   get_val() {
-    grep "^${1}=" "${ENV_FILE}" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '"'\''\r' || true
+    local raw
+    raw=$(grep "^${1}=" "${ENV_FILE}" 2>/dev/null | head -1 | cut -d'=' -f2- | tr -d '\r' || true)
+    if [[ "${raw}" =~ ^\'(.*)\'$ ]]; then
+      raw="${BASH_REMATCH[1]}"
+    elif [[ "${raw}" =~ ^\"(.*)\"$ ]]; then
+      raw="${BASH_REMATCH[1]}"
+    fi
+    printf '%s' "${raw}"
   }
+
+  has_placeholder() {
+    [[ "${1}" == *"REPLACE_WITH_"* ]]
+  }
+
+  # Global scan for unedited template placeholders (prints variable names only, never values)
+  PLACEHOLDER_VARS=$(grep -E '^[^#[:space:]][^=]*=.*REPLACE_WITH_' "${ENV_FILE}" 2>/dev/null | cut -d'=' -f1 | tr '\n' ',' | sed 's/,$//' || true)
+  if [ -n "${PLACEHOLDER_VARS}" ]; then
+    fail "Unedited template placeholder(s) (REPLACE_WITH_*) detected in: ${PLACEHOLDER_VARS}"
+  else
+    pass "No unedited REPLACE_WITH_* template placeholders detected"
+  fi
 
   # Forbidden variables (must NEVER be present in runtime container)
   MIG_DB=$(get_val "MIGRATION_DATABASE_URL")
@@ -119,6 +138,16 @@ if [ -f "${ENV_FILE}" ]; then
     fail "LIVE_TRANSFERS_ENABLED=true is forbidden in devnet deployment"
   else
     pass "LIVE_TRANSFERS_ENABLED is disabled"
+  fi
+
+  # Required release pinning
+  RELEASE_SHA=$(get_val "AGUS_RELEASE_SHA")
+  if [ -z "${RELEASE_SHA}" ] || has_placeholder "${RELEASE_SHA}"; then
+    fail "AGUS_RELEASE_SHA is missing or still contains a REPLACE_WITH_* placeholder"
+  elif [[ "${RELEASE_SHA}" =~ ^[0-9a-fA-F]{7,40}$ ]] || [[ "${RELEASE_SHA}" =~ ^sha256:[0-9a-fA-F]{64}$ ]]; then
+    pass "AGUS_RELEASE_SHA is pinned to release revision: ${RELEASE_SHA}"
+  else
+    fail "AGUS_RELEASE_SHA must be a 7-40 hex commit SHA or sha256 digest (got '${RELEASE_SHA}')"
   fi
 
   # Required variables
@@ -143,15 +172,41 @@ if [ -f "${ENV_FILE}" ]; then
     fail "AGUS_SOLANA_DEVNET_ENABLED must be 'true'"
   fi
 
+  CRYPTO_MON=$(get_val "AGUS_CRYPTO_MONITORING")
+  if [ "${CRYPTO_MON}" = "true" ]; then
+    pass "AGUS_CRYPTO_MONITORING is set to 'true'"
+  else
+    fail "AGUS_CRYPTO_MONITORING must be 'true' (DEVNET_WALLET_ROUTES_AND_MONITORING_REQUIRED)"
+  fi
+
+  CRYPTO_ROUTES=$(get_val "AGUS_CRYPTO_DEVNET_ROUTES")
+  HAS_PHANTOM=0
+  HAS_SOLFLARE=0
+  IFS=',' read -ra ROUTE_LIST <<< "${CRYPTO_ROUTES}"
+  for route in "${ROUTE_LIST[@]}"; do
+    trimmed=$(printf '%s' "${route}" | tr -d '[:space:]')
+    [ "${trimmed}" = "phantom" ] && HAS_PHANTOM=1
+    [ "${trimmed}" = "solflare" ] && HAS_SOLFLARE=1
+  done
+  if [ "${HAS_PHANTOM}" -eq 1 ] && [ "${HAS_SOLFLARE}" -eq 1 ]; then
+    pass "AGUS_CRYPTO_DEVNET_ROUTES enables both phantom and solflare"
+  else
+    fail "AGUS_CRYPTO_DEVNET_ROUTES must include both phantom and solflare (DEVNET_WALLET_ROUTES_AND_MONITORING_REQUIRED)"
+  fi
+
   DB_URL=$(get_val "DATABASE_URL")
-  if [[ "${DB_URL}" =~ ^postgres(ql)?:// ]]; then
-    pass "DATABASE_URL uses valid postgresql protocol"
+  if has_placeholder "${DB_URL}"; then
+    fail "DATABASE_URL still contains a REPLACE_WITH_* placeholder (POSTGRES_RUNTIME_ROLE_REQUIRED)"
+  elif [[ "${DB_URL}" =~ ^postgres(ql)?:// ]]; then
+    pass "DATABASE_URL uses valid postgresql protocol without template placeholders"
   else
     fail "DATABASE_URL is missing or invalid protocol (POSTGRES_RUNTIME_ROLE_REQUIRED)"
   fi
 
   AUTH_SECRET=$(get_val "BETTER_AUTH_SECRET")
-  if [ ${#AUTH_SECRET} -ge 32 ]; then
+  if has_placeholder "${AUTH_SECRET}"; then
+    fail "BETTER_AUTH_SECRET still contains a REPLACE_WITH_* placeholder (IDENTITY_CONFIGURATION_REQUIRED)"
+  elif [ ${#AUTH_SECRET} -ge 32 ]; then
     pass "BETTER_AUTH_SECRET is configured with adequate entropy (${#AUTH_SECRET} chars >= 32)"
   else
     fail "BETTER_AUTH_SECRET is missing or shorter than 32 chars (IDENTITY_CONFIGURATION_REQUIRED)"
@@ -159,18 +214,59 @@ if [ -f "${ENV_FILE}" ]; then
 
   ENC_KEY=$(get_val "AGUS_ENCRYPTION_ACTIVE_KEY")
   ENC_KEYS=$(get_val "AGUS_ENCRYPTION_KEYS")
-  if [ -n "${ENC_KEY}" ] && [ -n "${ENC_KEYS}" ]; then
-    pass "AGUS_ENCRYPTION_ACTIVE_KEY and AGUS_ENCRYPTION_KEYS are defined"
-  else
+  if [ -z "${ENC_KEY}" ] || [ -z "${ENC_KEYS}" ]; then
     fail "Encryption keys missing: ACTIVE_KEY or KEYS undefined (ENCRYPTION_KEY_UNAVAILABLE)"
+  elif has_placeholder "${ENC_KEY}" || has_placeholder "${ENC_KEYS}"; then
+    fail "Encryption keys still contain a REPLACE_WITH_* placeholder (ENCRYPTION_KEY_UNAVAILABLE)"
+  else
+    ENC_VALID=0
+    if command -v node >/dev/null 2>&1; then
+      if ENC_KEY="${ENC_KEY}" ENC_KEYS="${ENC_KEYS}" node -e '
+        const keys = JSON.parse(process.env.ENC_KEYS || "{}");
+        const val = keys[process.env.ENC_KEY || ""];
+        if (typeof val !== "string") process.exit(1);
+        const buf = Buffer.from(val, "base64");
+        if (buf.length !== 32) process.exit(1);
+      ' 2>/dev/null; then
+        ENC_VALID=1
+      fi
+    elif command -v python3 >/dev/null 2>&1; then
+      if ENC_KEY="${ENC_KEY}" ENC_KEYS="${ENC_KEYS}" python3 -c '
+import base64, json, os, sys
+keys = json.loads(os.environ.get("ENC_KEYS", "{}"))
+val = keys.get(os.environ.get("ENC_KEY", ""))
+if not isinstance(val, str):
+    sys.exit(1)
+raw = base64.b64decode(val, validate=True)
+if len(raw) != 32:
+    sys.exit(1)
+' 2>/dev/null; then
+        ENC_VALID=1
+      fi
+    else
+      if [[ "${ENC_KEYS}" =~ ^\{.*\"${ENC_KEY}\"[[:space:]]*:[[:space:]]*\"[A-Za-z0-9+/=]{43,44}\" ]]; then
+        ENC_VALID=1
+      fi
+    fi
+
+    if [ "${ENC_VALID}" -eq 1 ]; then
+      pass "AGUS_ENCRYPTION_ACTIVE_KEY (${ENC_KEY}) and AGUS_ENCRYPTION_KEYS verified (valid JSON, 32-byte key)"
+    else
+      fail "AGUS_ENCRYPTION_KEYS must be valid JSON mapping '${ENC_KEY}' to a 32-byte base64 key (ENCRYPTION_KEY_UNAVAILABLE)"
+    fi
   fi
 
+  APP_DOMAIN=$(get_val "APP_DOMAIN")
   APP_ORIGIN=$(get_val "APP_ORIGIN")
   AUTH_URL=$(get_val "BETTER_AUTH_URL")
-  if [[ "${APP_ORIGIN}" =~ ^https:// ]] && [[ ! "${APP_ORIGIN}" =~ /$ ]] && [ "${APP_ORIGIN}" = "${AUTH_URL}" ]; then
-    pass "APP_ORIGIN is canonical HTTPS and matches BETTER_AUTH_URL: ${APP_ORIGIN}"
+  if [ -z "${APP_DOMAIN}" ] || has_placeholder "${APP_DOMAIN}" || [ "${APP_DOMAIN}" = "localhost" ]; then
+    fail "APP_DOMAIN must be set to a real public hostname (got '${APP_DOMAIN}')"
+  elif has_placeholder "${APP_ORIGIN}" || has_placeholder "${AUTH_URL}"; then
+    fail "APP_ORIGIN / BETTER_AUTH_URL still contain a REPLACE_WITH_* placeholder"
+  elif [[ "${APP_ORIGIN}" =~ ^https:// ]] && [[ ! "${APP_ORIGIN}" =~ /$ ]] && [ "${APP_ORIGIN}" = "${AUTH_URL}" ] && [ "${APP_ORIGIN}" = "https://${APP_DOMAIN}" ]; then
+    pass "APP_DOMAIN (${APP_DOMAIN}) and canonical HTTPS APP_ORIGIN/BETTER_AUTH_URL match"
   else
-    fail "APP_ORIGIN must be HTTPS with no trailing slash and match BETTER_AUTH_URL (CANONICAL_HTTPS_AUTH_ORIGIN_REQUIRED)"
+    fail "APP_ORIGIN must be 'https://${APP_DOMAIN}' with no trailing slash and match BETTER_AUTH_URL (CANONICAL_HTTPS_AUTH_ORIGIN_REQUIRED)"
   fi
 
   RPC_DEV=$(get_val "AGUS_DEVNET_RPC")

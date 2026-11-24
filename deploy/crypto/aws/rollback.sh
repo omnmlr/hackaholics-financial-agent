@@ -19,13 +19,23 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
+ENV_FILE="${ENV_FILE:-/etc/agus/crypto.env}"
+COMPOSE_ENV_ARGS=()
+if [ -f "${ENV_FILE}" ]; then
+  COMPOSE_ENV_ARGS=(--env-file "${ENV_FILE}")
+else
+  # Compose down still validates ${VAR:?} interpolation even when tearing down.
+  export APP_DOMAIN="${APP_DOMAIN:-rollback.invalid}"
+  export AGUS_RELEASE_SHA="${AGUS_RELEASE_SHA:-rollback}"
+fi
+
 echo "==> [1/3] Stopping and removing containers and internal networks..."
 if [ "${PURGE_VOLUMES}" = "--purge-volumes" ] || [ "${PURGE_VOLUMES}" = "-v" ]; then
   echo "    Purging persistent volumes (caddy_data, caddy_config)..."
-  docker compose down --volumes --remove-orphans
+  docker compose "${COMPOSE_ENV_ARGS[@]}" down --volumes --remove-orphans
 else
   echo "    Preserving persistent Caddy certificate volumes. (Pass --purge-volumes to remove)."
-  docker compose down --remove-orphans
+  docker compose "${COMPOSE_ENV_ARGS[@]}" down --remove-orphans
 fi
 
 echo "==> [2/3] Checking for dangling crypto deployment containers..."

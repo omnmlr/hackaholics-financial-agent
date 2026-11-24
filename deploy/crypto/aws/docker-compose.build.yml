@@ -1,0 +1,7 @@
+# Explicit build override for off-host CI/workstations or EC2 hosts with swap provisioned.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.build.yml --env-file /etc/agus/crypto.env build
+services:
+  api:
+    build:
+      context: ../../../
+      dockerfile: deploy/crypto/Dockerfile

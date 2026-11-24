@@ -1,8 +1,10 @@
 services:
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.8.4-alpine
     container_name: agus-crypto-caddy
     restart: unless-stopped
+    environment:
+      - APP_DOMAIN=${APP_DOMAIN:?APP_DOMAIN must be set}
     ports:
       - "80:80"
       - "443:443"
@@ -23,10 +25,7 @@ services:
         max-file: "5"
 
   api:
-    build:
-      context: ../../../
-      dockerfile: deploy/crypto/Dockerfile
-    image: agus-crypto-app:devnet
+    image: ${AGUS_IMAGE_REPO:-agus-crypto-app}:${AGUS_RELEASE_SHA:?AGUS_RELEASE_SHA must be set to a pinned release commit SHA}
     container_name: agus-crypto-api
     restart: unless-stopped
     command: ["sh", "deploy/crypto/start.sh", "api"]
@@ -53,7 +52,7 @@ services:
         max-file: "5"
 
   worker:
-    image: agus-crypto-app:devnet
+    image: ${AGUS_IMAGE_REPO:-agus-crypto-app}:${AGUS_RELEASE_SHA:?AGUS_RELEASE_SHA must be set to a pinned release commit SHA}
     container_name: agus-crypto-worker
     restart: unless-stopped
     command: ["sh", "deploy/crypto/start.sh", "worker"]

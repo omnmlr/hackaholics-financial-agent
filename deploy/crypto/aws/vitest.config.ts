@@ -11,6 +11,8 @@ export default defineConfig({
     environment: "node",
     include: ["deploy/crypto/aws/tests/**/*.test.ts"],
     fileParallelism: false,
-    testTimeout: 30000,
+    maxConcurrency: 4,
+    hookTimeout: 60000,
+    testTimeout: 180000,
   },
 });

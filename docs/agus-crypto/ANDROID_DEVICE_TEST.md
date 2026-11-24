@@ -1,27 +1,31 @@
 # AGUS Crypto Devnet handset test
 
-The Android test build opens a diagnostic screen backed by the Crypto API. It uses the existing test package `app.agus.prototype`, Devnet only, and the published test origin. The release job checks the installed package metadata, ARM64 ABI, APK v2 signature, certificate fingerprint, Digital Asset Links, and Devnet API before publishing. Each release includes the APK, `SHA256SUMS.txt` and `BUILD-IDENTITY.txt`. [Digital Asset Links statement](https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app/.well-known/assetlinks.json)
+The Android test build opens a diagnostic screen backed by the Crypto API. It uses `app.agus.prototype`, Solana Devnet and the stable Vercel project alias from the Android manifest. The release job checks the package, ARM64 ABI, APK v2 signature, certificate fingerprint, Digital Asset Links and Devnet API before publishing. Each release includes the APK, `SHA256SUMS.txt` and `BUILD-IDENTITY.txt`. [Digital Asset Links statement](https://agus-wallet-devnet-identity.vercel.app/.well-known/assetlinks.json)
 
 ## Prepare the signed build
 
-Open the repository’s **Settings → Secrets and variables → Actions**. Under **Secrets**, choose **New repository secret** for each unavailable signing input. Keep the original keystore and its credentials in the approved secret store. Enter their values directly in GitHub. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
+The November 22 key is retired. Generate its replacement on a trusted workstation with GnuPG, an existing recoverable encryption key, and a durable backup directory outside the repository. With GitHub CLI authenticated as a repository administrator, run:
 
-| Repository secret | Value from the original build environment |
+```bash
+bash scripts/android/prepare-release-signing.sh /durable/path/agus-signing.tar.gpg GPG_RECIPIENT_FINGERPRINT
+```
+
+The script creates a 4096-bit RSA PKCS#12 signer, verifies an encrypted backup by restoring it, and installs the four repository secrets and the public `AGUS_ANDROID_CERT_SHA256` variable. A retry with the same backup reuses the same key. Retain a separate recoverable encrypted copy and the decryption key in the owner’s approved storage. Share the public fingerprint for updating the Vercel statement. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
+
+| Repository secret | Value from the replacement signing backup |
 | --- | --- |
-| `AGUS_ANDROID_KEYSTORE_BASE64` | Base64 encoding of the original November 22 test keystore file |
+| `AGUS_ANDROID_KEYSTORE_BASE64` | Base64 encoding of the replacement PKCS#12 file |
 | `AGUS_ANDROID_KEYSTORE_PASSWORD` | Password that opens that keystore |
 | `AGUS_ANDROID_KEY_ALIAS` | Alias of the private key with the published certificate |
 | `AGUS_ANDROID_KEY_PASSWORD` | Password used to access that private key entry |
 
 Under **Variables**, choose **New repository variable** and set `AGUS_CRYPTO_DEVICE_API_URL` to the HTTPS origin of the private Devnet Crypto API. The service must pass `/api/v1/ready` and serve the Crypto handoff contract at `/api/v1/openapi`. The earlier APK’s API host and the Digital Asset Links site both returned HTTP 404 on those endpoints. [Repository Actions variables](https://github.com/omnmlr/hackaholics-financial-agent/settings/variables/actions)
 
-The API and persistent worker use a disposable Postgres database and Devnet RPC. Set `AGUS_SOLANA_DEVNET_ENABLED=true`, `AGUS_CRYPTO_DEVNET_ROUTES=phantom,solflare` and `AGUS_CRYPTO_MONITORING=true`. For handset acceptance set `AGUS_DEVNET_VERIFY_RPC` to a separately operated provider, such as `https://devnet.rpcpool.com` when using Solana's public Devnet RPC as primary. Invite an email test account through Better Auth. Staging access stays limited to acceptance users. Re-run the Android Devnet APK workflow on the PR branch after configuration. The run summary reports only whether each named input is available to that run.
-
-The public test certificate SHA-256 is `85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF`. The signing job verifies this certificate and refuses to deliver an APK with a different identity.
+The stable Vercel alias must serve the new fingerprint for `app.agus.prototype` in `/.well-known/assetlinks.json`. The current statement can retain the old public fingerprint while the old binary is still in use. Re-run all jobs in the Android workflow after the new statement and API are available. The run summary reports which input names are available. [Devnet API deployment](DEVNET_DEPLOYMENT.md)
 
 ## Install and verify on Android
 
-1. Download `AGUS-Crypto-Devnet-arm64.apk` from the GitHub prerelease for the tested commit. Compare its SHA-256 with the published `SHA256SUMS.txt`. Open the APK in Downloads and allow installation from that app if Android prompts. An existing build signed by the same test certificate can update in place. If Android reports a conflicting package signature, stop and record the existing build identity so its local state can be preserved.
+1. Download `AGUS-Crypto-Devnet-arm64.apk` from the tested GitHub prerelease and compare its SHA-256 with `SHA256SUMS.txt`. Before replacing the November 22 AGUS APK, save any attempt IDs, receipts, signatures and screenshots you need. The new signer requires a clean AGUS install when Android rejects the update. Uninstall only AGUS, then open the new APK from Downloads and allow installation if prompted. Keep Phantom and Solflare installed with their existing accounts.
 2. Record the Android version, device model and installed Phantom and Solflare versions. Disable Android Battery Saver for the Solflare test. In both wallets select Devnet and select separate, funded, disposable accounts. Leave enough test SOL for three transfers and fees.
 3. Open **AGUS Android signing diagnostics**, sign in with the invited test account, and connect Phantom and Solflare separately. For each wallet, select the exact disposable address and tap **Prove ownership**. Review and confirm the ownership message in the wallet. If Android locks the AGUS session on app switch, tap **Unlock and resume** after returning. AGUS retains the proof for the same authenticated owner and submits it within its challenge lifetime.
 4. Select **Use phantom**, enter the Solflare Devnet address and `0.001` SOL, then tap **Prepare Devnet review**. Compare the sender, recipient, 1,000,000 lamports, fee estimate, and Devnet label. Tap **Approve in phantom** once. If Phantom displays an identity warning, capture its text and stop before approving. Otherwise approve the exact transfer in the wallet, return to AGUS and unlock if prompted.

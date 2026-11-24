@@ -18,7 +18,19 @@ jobs:
     outputs:
       signing_ready: ${{ steps.configuration.outputs.signing_ready }}
       api_ready: ${{ steps.api.outputs.ready }}
+      identity_origin: ${{ steps.identity.outputs.origin }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Read the Android app association origin
+        id: identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          host="$(jq -er '.expo.android.intentFilters | [.[] | select(.autoVerify == true) | .data[] | select(.scheme == "https") | .host] | if length == 1 then .[0] else empty end' apps/mobile/app.json)"
+          [[ "$host" =~ ^[a-z0-9-]+(\.[a-z0-9-]+)+$ ]]
+          printf 'origin=https://%s\n' "$host" >> "$GITHUB_OUTPUT"
       - name: Check release input availability without reading secret values
         id: configuration
         env:
@@ -26,12 +38,13 @@ jobs:
           AGUS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.AGUS_ANDROID_KEYSTORE_PASSWORD != '' }}
           AGUS_ANDROID_KEY_ALIAS: ${{ secrets.AGUS_ANDROID_KEY_ALIAS != '' }}
           AGUS_ANDROID_KEY_PASSWORD: ${{ secrets.AGUS_ANDROID_KEY_PASSWORD != '' }}
+          AGUS_ANDROID_CERT_SHA256: ${{ vars.AGUS_ANDROID_CERT_SHA256 != '' }}
           AGUS_CRYPTO_DEVICE_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL != '' }}
         shell: bash
         run: |
           set -euo pipefail
           signing_ready=true
-          for name in AGUS_ANDROID_KEYSTORE_BASE64 AGUS_ANDROID_KEYSTORE_PASSWORD AGUS_ANDROID_KEY_ALIAS AGUS_ANDROID_KEY_PASSWORD AGUS_CRYPTO_DEVICE_API_URL; do
+          for name in AGUS_ANDROID_KEYSTORE_BASE64 AGUS_ANDROID_KEYSTORE_PASSWORD AGUS_ANDROID_KEY_ALIAS AGUS_ANDROID_KEY_PASSWORD AGUS_ANDROID_CERT_SHA256 AGUS_CRYPTO_DEVICE_API_URL; do
             if [[ "${!name}" == true ]]; then
               status=available
             else
@@ -48,7 +61,7 @@ jobs:
         if: steps.configuration.outputs.api_configured == 'true'
         env:
           DEVICE_API_URL: ${{ vars.AGUS_CRYPTO_DEVICE_API_URL }}
-          IDENTITY_ORIGIN: https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app
+          IDENTITY_ORIGIN: ${{ steps.identity.outputs.origin }}
         shell: bash
         run: |
           set -euo pipefail
@@ -85,7 +98,7 @@ jobs:
       EXPO_NO_TELEMETRY: "1"
       CI: "1"
       EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST: "true"
-      EXPO_PUBLIC_MWA_ORIGIN: https://agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app
+      EXPO_PUBLIC_MWA_ORIGIN: ${{ needs.preflight.outputs.identity_origin }}
       EXPO_PUBLIC_API_URL: ${{ needs.preflight.outputs.api_ready == 'true' && vars.AGUS_CRYPTO_DEVICE_API_URL || 'https://compile.invalid' }}
     steps:
       - uses: actions/checkout@v4
@@ -114,10 +127,15 @@ jobs:
           AGUS_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.AGUS_ANDROID_KEYSTORE_PASSWORD }}
           AGUS_ANDROID_KEY_ALIAS: ${{ secrets.AGUS_ANDROID_KEY_ALIAS }}
           AGUS_ANDROID_KEY_PASSWORD: ${{ secrets.AGUS_ANDROID_KEY_PASSWORD }}
+          AGUS_ANDROID_CERT_SHA256: ${{ vars.AGUS_ANDROID_CERT_SHA256 }}
         shell: bash
         run: |
           set -euo pipefail
-          fingerprint=85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF
+          fingerprint="${AGUS_ANDROID_CERT_SHA256^^}"
+          if [[ ! "$fingerprint" =~ ^[0-9A-F]{64}$ ]]; then
+            echo "::error::AGUS_ANDROID_CERT_SHA256 must be the 64-digit certificate fingerprint."
+            exit 1
+          fi
           curl --fail --silent --show-error --max-time 20 "$EXPO_PUBLIC_MWA_ORIGIN/.well-known/assetlinks.json" |
             jq -e --arg fingerprint "$fingerprint" 'any(.[]; .target.package_name=="app.agus.prototype" and (.relation|index("delegate_permission/common.handle_all_urls")) and any(.target.sha256_cert_fingerprints[]; (gsub(":";"")|ascii_upcase)==$fingerprint))' >/dev/null
           build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"

@@ -42,7 +42,7 @@
           "data": [
             {
               "scheme": "https",
-              "host": "agus-wallet-devnet-identity-2o66ayctk-youngfrankcreator-7012.vercel.app",
+              "host": "agus-wallet-devnet-identity.vercel.app",
               "pathPrefix": "/open"
             }
           ]

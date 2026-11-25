@@ -42,9 +42,6 @@
         header_up X-Forwarded-Host {host}
     }
 
-    # Structured request logging
-    log {
-        output stdout
-        format json
-    }
+    # Application events carry redacted correlation IDs. Avoid full request URIs,
+    # which can contain authentication and recovery query parameters.
 }

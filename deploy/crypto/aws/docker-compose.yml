@@ -1,6 +1,6 @@
 services:
   caddy:
-    image: caddy:2.8.4-alpine
+    image: caddy:2.11.2-alpine@sha256:834468128c7696cec0ceea6172f7d692daf645ae51983ca76e39da54a97c570d
     container_name: agus-crypto-caddy
     restart: unless-stopped
     environment:
@@ -31,6 +31,9 @@ services:
     command: ["sh", "deploy/crypto/start.sh", "api"]
     env_file:
       - ${ENV_FILE:-/etc/agus/crypto.env}
+      - path: ${AGUS_API_ENV_FILE:-/etc/agus/crypto-api.env}
+        required: false
+        format: raw
     expose:
       - "3000"
     networks:

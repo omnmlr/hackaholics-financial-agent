@@ -164,7 +164,7 @@ sudo chmod 0600 /etc/agus/crypto.env
 sudo chown root:root /etc/agus/crypto.env
 sudo nano /etc/agus/crypto.env
 ```
-Fill in `AGUS_RELEASE_SHA` (matching the loaded commit SHA), `APP_DOMAIN`, `APP_ORIGIN`, `BETTER_AUTH_URL`, the database password, and generated secrets (`openssl rand -base64 32`), ensuring zero `REPLACE_WITH_*` placeholders remain.
+Fill in `AGUS_RELEASE_SHA` (matching the loaded commit SHA), `APP_DOMAIN`, `APP_ORIGIN`, `BETTER_AUTH_URL`, the database password, and generated secrets (`openssl rand -base64 32`), ensuring zero `REPLACE_WITH_*` placeholders remain. Put provider keys only in `/etc/agus/crypto-api.env` with mode `0600`. Compose mounts that file on the API only. Use `AI_PROVIDER=gemini` with `AI_API_KEY`, `AGUS_CRYPTO_IMAGES=true` for local screening and visual Gemini turns, `FIRECRAWL_API_KEY` for research, and `AGUS_CRYPTO_VOICE_ENABLED=true` with `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` for voice. Set values according to `.env.example`.
 
 ### Step 4: Host Preflight Verification
 Execute the host verification script:

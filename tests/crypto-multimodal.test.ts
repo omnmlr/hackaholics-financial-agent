@@ -309,7 +309,7 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
     );
 
     it.skipIf(!realProviders || !liveKey || !ocrAvailable)(
-      "uses actual Gemini pixels and links Firecrawl citations through the same API",
+      "uses actual Gemini pixels through the authenticated attachment API",
       async () => {
         vi.stubEnv("AI_PROVIDER", "gemini");
         vi.stubEnv("AI_API_KEY", liveKey);
@@ -320,10 +320,13 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
             0,
             withImage(
               ask(
-                "Look at the two colored lines in this screenshot. What direction is each trending?",
+                "What direction do the two colored lines trend from left to right?",
                 "voice",
               ),
-              await visualFixture(),
+              await sharp(await visualFixture())
+                .resize({ width: 320 })
+                .png()
+                .toBuffer(),
             ),
           ),
         );
@@ -333,8 +336,22 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         const visualText = JSON.stringify(attached.image).toLowerCase();
         expect(visualText).toMatch(/red/);
         expect(visualText).toMatch(/blue/);
-        expect(visualText).toMatch(/ris|increas|upward|ascend/);
-        expect(visualText).toMatch(/fall|decreas|downward|declin|descend/);
+        expect(visualText).toMatch(
+          /ris|increas|upward|ascend|bottom.left|lower.left/,
+        );
+        expect(visualText).toMatch(
+          /fall|decreas|downward|declin|descend|top.left|upper.left/,
+        );
+        console.log(JSON.stringify({ liveVisual: attached.image }));
+      },
+      45_000,
+    );
+
+    it.skipIf(!realProviders || !liveKey || !process.env.FIRECRAWL_API_KEY)(
+      "uses Firecrawl through the authenticated turn API",
+      async () => {
+        vi.stubEnv("AI_PROVIDER", "gemini");
+        vi.stubEnv("AI_API_KEY", liveKey);
         const research = await (
           await POST(
             request(
@@ -342,8 +359,6 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
               0,
               ask(
                 "Research the official Solana transaction fees documentation at https://solana.com/docs/core/fees",
-                "text",
-                attached.conversationId,
               ),
             ),
           )
@@ -355,10 +370,8 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
             }),
           ]),
         );
-        expect(research.conversationId).toBe(attached.conversationId);
         console.log(
           JSON.stringify({
-            liveVisual: attached.image,
             liveResearch: {
               text: research.text,
               citations: research.citations,

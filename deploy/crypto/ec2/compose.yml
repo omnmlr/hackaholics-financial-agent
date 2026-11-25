@@ -2,7 +2,6 @@ name: agus-crypto-devnet
 
 x-devnet-environment: &devnet-environment
   AGUS_ENVIRONMENT: devnet
-  AGUS_AUTH_PUBLIC: "false"
   AGUS_SOLANA_DEVNET_ENABLED: "true"
   AGUS_CRYPTO_DEVNET_ROUTES: phantom,solflare
   AGUS_CRYPTO_MONITORING: "true"

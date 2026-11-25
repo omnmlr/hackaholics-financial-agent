@@ -227,7 +227,7 @@ it("streams only the matching owner's saved reply and aborts upstream when playb
   });
   const fetcher = vi.fn(async (_url: URL, opts: RequestInit) => {
     expect(JSON.parse(String(opts.body)).text).toBe(
-      "Transfer of 0.001 SOL finalized. Details at link in the written response",
+      "Transfer of one thousandth of one Solana token finalized. Details at link in the written response",
     );
     return new Response(audio, { headers: { "content-type": "audio/mpeg" } });
   });
@@ -276,6 +276,51 @@ it("propagates a midstream provider disconnect without exposing provider details
   await expect(response.arrayBuffer()).rejects.toThrow(
     /^VOICE_STREAM_INTERRUPTED$/,
   );
+});
+
+it("smooths structured narration without changing amounts or the written reply", async () => {
+  const formattedTurn = randomUUID();
+  const written =
+    "- **Transfer** — 0.001 SOL finalized at 2026-11-25T15:04:07.000Z [1].\n" +
+    "- Fees · 0.000005 SOL… [2]";
+  await sql.fixture!.query(
+    "INSERT INTO agus_crypto_turns VALUES ($1,$2,$3,$4,'test',now(),$5)",
+    [
+      owner,
+      conversation,
+      formattedTurn,
+      randomUUID(),
+      JSON.stringify({ text: written }),
+    ],
+  );
+  const provider = vi.fn(async (_url: URL, options: RequestInit) => {
+    const request = JSON.parse(String(options.body));
+    expect(request.model_id).toBe("eleven_flash_v2_5");
+    expect(request.voice_settings.speed).toBe(1);
+    expect(request.text).toBe(
+      "Transfer, one thousandth of one Solana token finalized at November 25, 2026 at 3:04:07 PM UTC. Fees, five millionths of one Solana token.",
+    );
+    return new Response(Uint8Array.of(0xff), {
+      headers: { "content-type": "audio/mpeg" },
+    });
+  });
+  vi.stubGlobal("fetch", provider);
+  const response = await streamCryptoVoice(
+    owner,
+    conversation,
+    formattedTurn,
+    new AbortController().signal,
+  );
+  await response.arrayBuffer();
+  expect(provider).toHaveBeenCalledOnce();
+  expect(
+    (
+      await sql.fixture!.query<{ text: string }>(
+        "SELECT result->>'text' AS text FROM agus_crypto_turns WHERE id=$1",
+        [formattedTurn],
+      )
+    ).rows[0].text,
+  ).toBe(written);
 });
 
 it("cancels a microphone upload before it can reach ElevenLabs", async () => {
@@ -350,8 +395,10 @@ it.skipIf(process.env.AGUS_ELEVENLABS_LIVE_TEST !== "true")(
       owner,
       recording(encoded.stdout, "audio/aac"),
     );
-    expect(result.text).toMatch(/0\.001|zero point zero zero one/i);
-    expect(result.text).toMatch(/SOL|s\. ?o\. ?l\./i);
+    expect(result.text).toMatch(
+      /0\.001\b|zero point zero zero one|(?:one|1)[ -]thousandth/i,
+    );
+    expect(result.text).toMatch(/\bSOL(?:ana)?\b|s\. ?o\. ?l\./i);
     expect(result.text).toMatch(/finali[sz]ed/i);
     expect(result.durationMs).toBeLessThanOrEqual(30_000);
   },

@@ -148,12 +148,60 @@ export async function transcribeCryptoVoice(owner: string, request: Request) {
   };
 }
 
+const placeValues = [
+  "thousandth",
+  "ten-thousandth",
+  "hundred-thousandth",
+  "millionth",
+  "ten-millionth",
+  "hundred-millionth",
+  "billionth",
+];
+const spokenDigits = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+];
+
 function spokenText(answer: string) {
-  const text = pronounceResponse(answer)
+  const text = pronounceResponse(
+    answer.replace(/^\s*(?:[-*+] +|> +)/gm, "").replace(/\s*\[\d+\]/g, ""),
+  )
+    .replace(
+      /(?<![\w.])(-?)0\.(0{2,8})([1-9])0*\s+(SOL|USDC)\b/g,
+      (_amount, sign: string, zeros: string, digit: string, asset: string) =>
+        `${sign ? "negative " : ""}${spokenDigits[Number(digit)]} ${placeValues[zeros.length - 2]}${digit === "1" ? "" : "s"} of one ${asset === "SOL" ? "Solana token" : "USD Coin"}`,
+    )
+    .replace(
+      /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z\b/g,
+      (timestamp) => {
+        const date = new Date(timestamp);
+        if (Number.isNaN(date.getTime())) return timestamp;
+        return `${date.toLocaleString("en-US", {
+          timeZone: "UTC",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          ...(date.getUTCSeconds() && { second: "2-digit" }),
+        })} UTC`;
+      },
+    )
     .replace(
       /\b[1-9A-HJ-NP-Za-km-z]{32,90}\b/g,
       "see the written address or signature",
     )
+    .replace(/\s+[·–—]\s+/g, ", ")
+    .replace(/\.{2,}|…/g, ".")
+    .replace(/([.!?])[,;]+/g, "$1")
     .replace(/\s+/g, " ")
     .trim();
   if (text.length <= MAX_CHARACTERS) return text;
@@ -200,7 +248,7 @@ export async function streamCryptoVoice(
     body: JSON.stringify({
       text,
       model_id: "eleven_flash_v2_5",
-      voice_settings: { stability: 0.52, similarity_boost: 0.75, speed: 0.96 },
+      voice_settings: { stability: 0.52, similarity_boost: 0.75, speed: 1 },
     }),
     signal: AbortSignal.any([
       clientSignal,

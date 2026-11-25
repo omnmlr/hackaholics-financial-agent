@@ -312,11 +312,17 @@ export async function portfolio(
     { holding: Holding; slot: number; ambiguous: boolean }
   >();
   const disputed = new Set<string>();
-  const signerWallets = new Set(wallets.flatMap((wallet) =>
-    wallet.ownership === "verified" && wallet.routes.some((route) => route.status === "available" && route.operations.includes("transfer"))
-      ? [wallet.id]
-      : [],
-  ));
+  const signerWallets = new Set(
+    wallets.flatMap((wallet) =>
+      wallet.ownership === "verified" &&
+      wallet.routes.some(
+        (route) =>
+          route.status === "available" && route.operations.includes("transfer"),
+      )
+        ? [wallet.id]
+        : [],
+    ),
+  );
   for (const snapshot of snapshots) {
     for (const holding of snapshot.holdings) {
       const key = holding.tokenAccount ?? `sol:${holding.walletId}`;

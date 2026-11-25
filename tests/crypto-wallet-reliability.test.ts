@@ -14,7 +14,12 @@ import { activity, syncWalletActivity } from "../src/server/crypto/activity";
 import { reconcileCrypto } from "../src/server/crypto/execution";
 import { portfolio, sol } from "../src/server/crypto/portfolio";
 import { priceHoldings } from "../src/server/crypto/prices";
-import { associate, challenge, unlink, watch } from "../src/server/crypto/registry";
+import {
+  associate,
+  challenge,
+  unlink,
+  watch,
+} from "../src/server/crypto/registry";
 import { SOLANA_NETWORKS } from "../src/server/crypto/rpc";
 import { sharedPlatform } from "./helpers/shared-platform";
 
@@ -97,40 +102,73 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
       await fixture?.close();
     });
 
-  it("uses current wallet authorization with a cached finalized balance", async () => {
-    const user = fixture.users[0];
-    const key = Keypair.generate();
-    const recipient = key.publicKey.toBase58();
-    const scope = { cluster: "devnet" as const };
-    const watched = await watch(user, { ...scope, address: recipient, label: "Authorization fixture", ownDeclared: false }, randomUUID());
-    const getAccountInfoAndContext = vi.fn(async () => ({
-      context: { slot: 1236 },
-      value: { owner: SystemProgram.programId, data: Buffer.alloc(0), lamports: 1_000_000 },
-    }));
-    const chain = {
-      getAccountInfoAndContext,
-      getParsedTokenAccountsByOwner: async () => ({ context: { slot: 1236 }, value: [] }),
-    } as unknown as Connection;
-    const read = () => portfolio(user.id, { ...scope, walletIds: [watched.id] }, async () => chain);
-    vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
-    vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", "phantom");
-    try {
-      expect((await read()).holdings[0].spendable).toBe(false);
-      const issued = await challenge(user, { ...scope, address: recipient, provider: "phantom" }, randomUUID());
-      const proof = sign(null, Buffer.from(issued.messageBase64, "base64"), {
-        key: Buffer.concat([Buffer.from("302e020100300506032b657004220420", "hex"), Buffer.from(key.secretKey.subarray(0, 32))]),
-        format: "der", type: "pkcs8",
-      });
-      const linked = await associate(user, { challengeId: issued.id, signature: base58.encode(proof) }, randomUUID());
-      expect((await read()).holdings[0].spendable).toBe(true);
-      await unlink(user, linked.id, linked.routes[0].id, randomUUID());
-      expect((await read()).holdings[0].spendable).toBe(false);
-      expect(getAccountInfoAndContext).toHaveBeenCalledTimes(1);
-    } finally {
-      vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", undefined);
-      vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", undefined);
-    }
-  });
+    it("uses current wallet authorization with a cached finalized balance", async () => {
+      const user = fixture.users[0];
+      const key = Keypair.generate();
+      const recipient = key.publicKey.toBase58();
+      const scope = { cluster: "devnet" as const };
+      const watched = await watch(
+        user,
+        {
+          ...scope,
+          address: recipient,
+          label: "Authorization fixture",
+          ownDeclared: false,
+        },
+        randomUUID(),
+      );
+      const getAccountInfoAndContext = vi.fn(async () => ({
+        context: { slot: 1236 },
+        value: {
+          owner: SystemProgram.programId,
+          data: Buffer.alloc(0),
+          lamports: 1_000_000,
+        },
+      }));
+      const chain = {
+        getAccountInfoAndContext,
+        getParsedTokenAccountsByOwner: async () => ({
+          context: { slot: 1236 },
+          value: [],
+        }),
+      } as unknown as Connection;
+      const read = () =>
+        portfolio(
+          user.id,
+          { ...scope, walletIds: [watched.id] },
+          async () => chain,
+        );
+      vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", "true");
+      vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", "phantom");
+      try {
+        expect((await read()).holdings[0].spendable).toBe(false);
+        const issued = await challenge(
+          user,
+          { ...scope, address: recipient, provider: "phantom" },
+          randomUUID(),
+        );
+        const proof = sign(null, Buffer.from(issued.messageBase64, "base64"), {
+          key: Buffer.concat([
+            Buffer.from("302e020100300506032b657004220420", "hex"),
+            Buffer.from(key.secretKey.subarray(0, 32)),
+          ]),
+          format: "der",
+          type: "pkcs8",
+        });
+        const linked = await associate(
+          user,
+          { challengeId: issued.id, signature: base58.encode(proof) },
+          randomUUID(),
+        );
+        expect((await read()).holdings[0].spendable).toBe(true);
+        await unlink(user, linked.id, linked.routes[0].id, randomUUID());
+        expect((await read()).holdings[0].spendable).toBe(false);
+        expect(getAccountInfoAndContext).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.stubEnv("AGUS_SOLANA_DEVNET_ENABLED", undefined);
+        vi.stubEnv("AGUS_CRYPTO_DEVNET_ROUTES", undefined);
+      }
+    });
 
     it("discovers a closed classic token account, deduplicates its history and excludes later unrelated ownership", async () => {
       const ownerAddress = address();

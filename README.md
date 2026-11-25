@@ -1,5 +1,9 @@
 # AGUS
 
+## AGUS Crypto · Dev3pack Global Hackathon
+
+AGUS Crypto is the Android-first Solana wallet workspace in development. It builds on the earlier AGUS financial agent described below. Before the 27 November kickoff, the Crypto branch already contained wallet registration, Devnet portfolio and transfers, alerts, receipt reconciliation and the Android test harness. This branch also records pre-event work on Gemini image understanding, ElevenLabs voice, Firecrawl research and the release infrastructure. Record new work from 27–29 November in the submission's README section with commit and verifiable demo references. [Crypto pull request](https://github.com/omnmlr/hackaholics-financial-agent/pull/52) · [Pre-event implementation evidence](docs/agus-crypto/IMPLEMENTATION.md) · [Submission requirements](docs/agus-crypto/DEV3PACK_SUBMISSION.md)
+
 **Your money, and what's next.**
 
 AGUS is a personal AI financial agent that turns natural-language requests into financial responsibilities, payment requests, and owner-reviewed actions. It understands English and Nigerian Pidgin, keeps useful context across conversations, and brings privacy-focused Zcash receiving and Stellar Testnet USDC workflows into one interface.

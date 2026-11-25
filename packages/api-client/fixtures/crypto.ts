@@ -89,8 +89,19 @@ export const cryptoFixtureScenarios = [
   "partial_and_stale",
   "decline_and_wrong_wallet",
   "lost_callback_then_finalized",
+  "multimodal_assistant",
 ] as const;
 export type CryptoFixtureScenario = (typeof cryptoFixtureScenarios)[number];
+
+export const cryptoAssistantFixtureIds = {
+  conversationId: "2a8cb2d7-8a3e-40a1-a049-6ba8576c49b1",
+  processingClientTurnId: "2a8cb2d7-8a3e-40a1-a049-6ba8576c49b2",
+  interruptedClientTurnId: "2a8cb2d7-8a3e-40a1-a049-6ba8576c49b3",
+};
+
+// A locally synthesized chime for testing the audio controls without a provider.
+const fixtureChime =
+  "//MYxAAEeHK0oUYIAfbu7u7/8REZjRd9iAIAAhB9HkN4kXxE//MYxAUF6Hq8AYXAAAX5UQmS50ksTA5LihGVrJvKnVX//rom//MYxAQGKH6AAdVIACYjKlwtAZZc4GQg6AoARBEAwJAU0p86//MYxAIFUIJ0AAB4gEhthgFB5oiZmlwiXoYm/7+OHT8qigVN//MYxAMFmIJwAAD4gBl2lbQCGDRmQNNhpAbFqsaaTLe1h//+//MYxAMFoH6MIVVIAuYC5B/HWBjtCAYwBwWwFgEAoFEFyLfO//MYxAMF6ILAAYJoAHVcEIYNE/AYCQA+ggUlq80E4WH8gvVV//MYxAIFCGYEAcYIAVrzOvMzLHEmBgpI0iiiFcCmxdVMQU1F";
 
 export function createCryptoFixtureTransport(
   scenario: CryptoFixtureScenario = "owned_duplicate_watch",
@@ -99,6 +110,7 @@ export function createCryptoFixtureTransport(
     scenario === "internal_transfer" || scenario === "outside_inflow_replay";
   const partial = scenario === "partial_and_stale";
   const inflow = scenario === "outside_inflow_replay";
+  const assistant = scenario === "multimodal_assistant";
   const holdings = [
     {
       walletId: walletA,
@@ -264,6 +276,18 @@ export function createCryptoFixtureTransport(
     receiptId: null,
   };
   const fixtureEvent = event(false);
+  const conversationId = cryptoAssistantFixtureIds.conversationId;
+  const completed = new Map<string, Schemas["CryptoAnswer"]>();
+  const processing: Schemas["CryptoTurnStatus"] = {
+    state: "processing",
+    conversationId,
+    turnId: "2a8cb2d7-8a3e-40a1-a049-6ba8576c49b4",
+  };
+  const interrupted: Schemas["CryptoTurnStatus"] = {
+    state: "interrupted",
+    conversationId,
+    turnId: "2a8cb2d7-8a3e-40a1-a049-6ba8576c49b5",
+  };
   const settledLegs = fixtureEvent.legs.map((leg) =>
     leg.kind === "transfer"
       ? {
@@ -327,6 +351,126 @@ export function createCryptoFixtureTransport(
     const scopedCoverage = coverage.filter((item) =>
       scopedIds.includes(item.walletId),
     );
+    if (assistant && request.method === "POST") {
+      if (path === "/assistant/transcriptions") {
+        if (
+          !/^(audio\/aac|audio\/wav)$/.test(
+            request.headers.get("content-type") ?? "",
+          )
+        )
+          return error("AUDIO_FORMAT_UNSUPPORTED", 415);
+        return Response.json({
+          text: "What does this transaction screenshot show?",
+          languageCode: "eng",
+          durationMs: 2_000,
+        } satisfies Schemas["CryptoTranscription"]);
+      }
+      if (path === "/assistant/turns") {
+        const form = request.headers
+          .get("content-type")
+          ?.startsWith("multipart/form-data")
+          ? await request.formData()
+          : null;
+        const question = (
+          form ? JSON.parse(String(form.get("turn"))) : await request.json()
+        ) as Schemas["CryptoAsk"];
+        if (
+          question.scope.cluster !== cluster ||
+          (question.conversationId &&
+            question.conversationId !== conversationId)
+        )
+          return error("NOT_FOUND", 404);
+        const previous = completed.get(question.clientTurnId);
+        if (previous) return Response.json(previous);
+        const hasImage = form?.has("image") ?? false;
+        const isResearch = /\bresearch\b/i.test(question.text) && !hasImage;
+        const followsImage = [...completed.values()].some((turn) => turn.image);
+        const showActivity = hasImage || followsImage;
+        const answer: Schemas["CryptoAnswer"] = {
+          conversationId,
+          turnId: `2a8cb2d7-8a3e-40a1-a049-${String(completed.size + 1).padStart(12, "0")}`,
+          kind: "answer",
+          text: hasImage
+            ? "Fixture image: the receipt shows 10 USDC. Fixture activity includes a matching transfer."
+            : isResearch
+              ? "Fixture research: Solana's fee documentation describes a base fee and an optional prioritization fee."
+              : showActivity
+                ? "The fixture transaction paid a network fee of 0.000005 SOL."
+                : "The fixture portfolio shows 125 USDC.",
+          scope: question.scope,
+          source,
+          window: null,
+          facts: isResearch
+            ? []
+            : showActivity
+              ? [fixtureEvent.legs[hasImage ? 0 : 1].amount!]
+              : [token("125000000")],
+          evidence: isResearch
+            ? []
+            : showActivity
+              ? [
+                  {
+                    kind: "activity",
+                    id: fixtureEvent.id,
+                    cluster,
+                    walletIds: [walletA, walletB],
+                  },
+                ]
+              : [
+                  {
+                    kind: "portfolio",
+                    id: snapshot,
+                    scope: question.scope,
+                    observedAt: source.observedAt,
+                  },
+                ],
+          coverage: [],
+          suggestion: null,
+          input: { mode: question.inputMode ?? "text", image: hasImage },
+          image: hasImage
+            ? {
+                summary: "A fixture wallet receipt for a 10 USDC transfer.",
+                observations: ["The displayed amount is 10 USDC."],
+                signature,
+              }
+            : null,
+          citations: isResearch
+            ? [
+                {
+                  id: "src_d57f2bcee5954a0e",
+                  url: "https://solana.com/docs/core/fees",
+                  title: "Solana transaction fees",
+                  publishedAt: null,
+                  retrievedAt: source.observedAt,
+                  kind: "web",
+                },
+              ]
+            : [],
+        };
+        completed.set(question.clientTurnId, answer);
+        return Response.json(answer);
+      }
+      const audioTurn =
+        /^\/assistant\/conversations\/([^/]+)\/turns\/([^/]+)\/audio$/.exec(
+          path,
+        );
+      if (audioTurn) {
+        if (
+          audioTurn[1] !== conversationId ||
+          ![...completed.values()].some(({ turnId }) => turnId === audioTurn[2])
+        )
+          return error("NOT_FOUND", 404);
+        const audio = Uint8Array.from(atob(fixtureChime), (value) =>
+          value.charCodeAt(0),
+        );
+        return new Response(audio, {
+          headers: {
+            "Content-Type": "audio/mpeg",
+            "Cache-Control": "no-store, private",
+          },
+        });
+      }
+    }
     if (execution && request.method === "POST") {
       if (path === "/reviews") {
         prepared = true;
@@ -386,6 +530,29 @@ export function createCryptoFixtureTransport(
         url.searchParams.get("cluster") !== cluster
       )
         return error("NOT_FOUND", 404);
+      if (assistant && path === `/assistant/conversations/${conversationId}`)
+        return Response.json({
+          conversationId,
+          scope: { cluster },
+          turns: [...completed.values()],
+          processing,
+        } satisfies Schemas["CryptoConversation"]);
+      if (assistant && path.startsWith("/assistant/turns/")) {
+        const clientTurnId = path.slice("/assistant/turns/".length);
+        if (clientTurnId === cryptoAssistantFixtureIds.processingClientTurnId)
+          return Response.json(processing);
+        if (clientTurnId === cryptoAssistantFixtureIds.interruptedClientTurnId)
+          return Response.json(interrupted);
+        const answer = completed.get(clientTurnId);
+        return answer
+          ? Response.json({
+              state: "completed",
+              conversationId,
+              turnId: answer.turnId,
+              answer,
+            } satisfies Schemas["CryptoTurnStatus"])
+          : error("NOT_FOUND", 404);
+      }
       if (execution && path === "/attempts") {
         return Response.json({
           items: begun ? [attempt] : [],
@@ -404,7 +571,11 @@ export function createCryptoFixtureTransport(
           source,
           features: {
             portfolio: true,
-            assistant: false,
+            assistant,
+            assistantImage: assistant,
+            assistantResearch: assistant,
+            assistantTranscription: assistant,
+            assistantPlayback: assistant,
             monitoring: inflow,
             requests: false,
             invoices: false,

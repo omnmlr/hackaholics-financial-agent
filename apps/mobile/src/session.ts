@@ -3,7 +3,9 @@ import { twoFactorClient } from "better-auth/client/plugins";
 import { expoClient } from "@better-auth/expo/client";
 import * as SecureStore from "expo-secure-store";
 import * as LocalAuthentication from "expo-local-authentication";
+import { fetch as streamingFetch } from "expo/fetch";
 import { createApiClient } from "@agus/api-client";
+import type { CryptoVoiceTransport } from "./crypto-voice";
 
 const base = process.env.EXPO_PUBLIC_API_URL;
 if (!base) throw new Error("EXPO_PUBLIC_API_URL_REQUIRED");
@@ -66,39 +68,60 @@ export async function freshSignIn(email: string, password: string) {
   unlocked = true;
   return auth.signIn.email({ email, password });
 }
-export const api = createApiClient(apiOrigin, async (input, init) => {
+async function sessionHeaders(headers?: HeadersInit) {
   if (!unlocked) throw new Error("LOCAL_SESSION_LOCKED");
+  const cookie = await auth.getCookie();
+  if (!unlocked) throw new Error("LOCAL_SESSION_LOCKED");
+  const result = new Headers(headers);
+  result.set("cookie", cookie);
+  result.set("origin", "agus://");
+  return result;
+}
+
+async function expireSession(response: Response) {
+  if (response.status !== 401) return;
+  lockSession();
+  await SecureStore.deleteItemAsync("agus_cookie");
+  await SecureStore.deleteItemAsync("agus_session_data");
+}
+
+export const api = createApiClient(apiOrigin, async (input, init) => {
   const request = new Request(input, init);
-  request.headers.set("cookie", await auth.getCookie());
-  request.headers.set("origin", "agus://");
+  const headers = await sessionHeaders();
+  headers.forEach((value, name) => request.headers.set(name, value));
   const response = await fetch(request);
-  if (response.status === 401) {
-    lockSession();
-    await SecureStore.deleteItemAsync("agus_cookie");
-    await SecureStore.deleteItemAsync("agus_session_data");
-  }
+  await expireSession(response);
   return response;
 });
+
+export const cryptoVoiceTransport: CryptoVoiceTransport = async (
+  path,
+  init,
+) => {
+  const response = await streamingFetch(apiOrigin + path, {
+    ...init,
+    headers: await sessionHeaders(init.headers),
+    redirect: "error",
+  });
+  await expireSession(response);
+  return response;
+};
+
 export async function apiRequest(
   path: string,
   body?: unknown,
   idempotencyKey?: string,
 ) {
-  if (!unlocked) throw new Error("LOCAL_SESSION_LOCKED");
   const response = await fetch(apiOrigin + "/api/v1/" + path, {
     method: body === undefined ? "GET" : "POST",
-    headers: {
-      cookie: await auth.getCookie(),
-      origin: "agus://",
+    headers: await sessionHeaders({
       ...(body === undefined ? {} : { "content-type": "application/json" }),
       ...(idempotencyKey ? { "idempotency-key": idempotencyKey } : {}),
-    },
+    }),
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (response.status === 401) {
-    lockSession();
-    await SecureStore.deleteItemAsync("agus_cookie");
-    await SecureStore.deleteItemAsync("agus_session_data");
+    await expireSession(response);
     throw new Error("SESSION_REVOKED_OR_EXPIRED");
   }
   const result = await response.json();

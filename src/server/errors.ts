@@ -88,13 +88,10 @@ export async function endpoint(fn: () => Promise<unknown>) {
     );
   }
 }
-export async function jsonText(req: Request) {
-  invariant(
-    req.headers.get("content-type")?.split(";")[0] === "application/json",
-    "JSON_REQUIRED",
-    415,
-  );
+export async function requestBytes(req: Request, maxBytes: number) {
   invariant(req.body, "BODY_REQUIRED", 400);
+  if (Number(req.headers.get("content-length")) > maxBytes)
+    throw new DomainError("BODY_TOO_LARGE", 413);
   const reader = req.body.getReader(),
     chunks: Uint8Array[] = [];
   let bytes = 0;
@@ -102,13 +99,21 @@ export async function jsonText(req: Request) {
     const part = await reader.read();
     if (part.done) break;
     bytes += part.value.length;
-    if (bytes > 16_384) {
+    if (bytes > maxBytes) {
       await reader.cancel();
       throw new DomainError("BODY_TOO_LARGE", 413);
     }
     chunks.push(part.value);
   }
-  return Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks);
+}
+export async function jsonText(req: Request) {
+  invariant(
+    req.headers.get("content-type")?.split(";")[0] === "application/json",
+    "JSON_REQUIRED",
+    415,
+  );
+  return (await requestBytes(req, 16_384)).toString("utf8");
 }
 export async function body(req: Request) {
   return JSON.parse(await jsonText(req));

@@ -208,6 +208,10 @@ export const CryptoActivityQuery = CryptoScope.extend({
 export const CryptoFeatures = z.strictObject({
   portfolio: z.boolean(),
   assistant: z.boolean(),
+  assistantImage: z.boolean().optional(),
+  assistantResearch: z.boolean().optional(),
+  assistantTranscription: z.boolean().optional(),
+  assistantPlayback: z.boolean().optional(),
   monitoring: z.boolean(),
   requests: z.boolean(),
   invoices: z.boolean(),
@@ -299,6 +303,7 @@ export const CryptoAsk = z.strictObject({
   conversationId: CryptoId.optional(),
   clientTurnId: CryptoId,
   text: z.string().trim().min(1).max(1000),
+  inputMode: z.enum(["text", "voice"]).optional(),
   scope: CryptoScope,
   reportingTimeZone: TimeZone,
 });
@@ -316,6 +321,19 @@ export const CryptoSuggestion = z.discriminatedUnion("kind", [
     suggestedWalletIds: z.array(CryptoId),
   }),
 ]);
+export const CryptoCitation = z.strictObject({
+  id: z.string().regex(/^src_[a-f0-9]{16}$/),
+  url: z.url({ protocol: /^https$/ }).max(512),
+  title: z.string().min(1).max(160),
+  publishedAt: CryptoUtc.nullable(),
+  retrievedAt: CryptoUtc,
+  kind: z.enum(["web", "news"]),
+});
+export const CryptoImageObservation = z.strictObject({
+  summary: z.string().min(1),
+  observations: z.array(z.string().min(1)),
+  signature: CryptoSignature.nullable(),
+});
 export const CryptoAnswer = z.strictObject({
   turnId: CryptoId,
   conversationId: CryptoId,
@@ -328,6 +346,35 @@ export const CryptoAnswer = z.strictObject({
   evidence: z.array(CryptoEvidence),
   coverage: z.array(CryptoCoverage),
   suggestion: CryptoSuggestion.nullable(),
+  input: z
+    .strictObject({ mode: z.enum(["text", "voice"]), image: z.boolean() })
+    .optional(),
+  image: CryptoImageObservation.nullable().optional(),
+  citations: z.array(CryptoCitation).optional(),
+});
+const CryptoTurnIdentity = {
+  conversationId: CryptoId,
+  turnId: CryptoId,
+};
+export const CryptoTurnStatus = z.discriminatedUnion("state", [
+  z.strictObject({ ...CryptoTurnIdentity, state: z.literal("processing") }),
+  z.strictObject({ ...CryptoTurnIdentity, state: z.literal("interrupted") }),
+  z.strictObject({
+    ...CryptoTurnIdentity,
+    state: z.literal("completed"),
+    answer: CryptoAnswer,
+  }),
+]);
+export const CryptoConversation = z.strictObject({
+  conversationId: CryptoId,
+  scope: CryptoScope,
+  turns: z.array(CryptoAnswer),
+  processing: CryptoTurnStatus.nullable(),
+});
+export const CryptoTranscription = z.strictObject({
+  text: z.string().min(1).max(1000),
+  languageCode: z.string().nullable(),
+  durationMs: z.number().int().positive().max(30_000),
 });
 export const CryptoEligibilityInput = z.strictObject({
   scope: CryptoScope,

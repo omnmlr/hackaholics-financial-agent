@@ -21,6 +21,8 @@ Core actions remain usable during AI throttling or provider failure. Gemini cred
 
 ## Frontend integration
 
+The 1.1.0 contract covers text, voice and image turns, processing and recovery, research citations and assistant audio playback. [Android frontend integration](FRONTEND_CONTRACT_1_1.md)
+
 Run `npm run contracts:generate` and import `createApiClient` from `@agus/api-client`. The generated HTTP namespace is `/api/v1/crypto`. Wallet scope uses repeated `walletIds` query parameters. With openapi-fetch, use the default form-array serializer. All credentials are handled by the existing authenticated transport.
 
 For local development and tests, pass `createCryptoFixtureTransport(scenario)` from `packages/api-client/fixtures/crypto.ts` as the second argument. Available fixtures exercise the duplicate-route portfolio, internal transfer, outside inflow, stale coverage and transfer lifecycle states. They are in-memory transports with deterministic timestamps and no explorer links. Keep this import out of release builds. The generated contract includes disabled operations so feature-labeled screens can compile as backend work progresses.

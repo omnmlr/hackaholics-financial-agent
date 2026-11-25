@@ -1,5 +1,7 @@
 import { addCryptoPaths } from "./crypto-openapi.ts";
 import { writeFile, mkdir } from "node:fs/promises";
+import openapiTS, { astToString, COMMENT_HEADER } from "openapi-typescript";
+import ts from "typescript";
 const ref = (name) => ({ $ref: `#/components/schemas/${name}` });
 const object = (properties, required = Object.keys(properties)) => ({
   type: "object",
@@ -616,7 +618,7 @@ const document = {
   openapi: "3.1.0",
   info: {
     title: "AGUS shared API",
-    version: "1.0.0",
+    version: "1.1.0",
     description:
       "Integer atomic-unit money; owner-bound resources; explicit provider/environment/provenance; no live source-bank acceptance implied.",
   },
@@ -636,4 +638,14 @@ await mkdir("packages/contracts", { recursive: true });
 await writeFile(
   "packages/contracts/openapi.json",
   JSON.stringify(document, null, 2) + "\n",
+);
+const client = await openapiTS(document, {
+  transform(schema) {
+    if (schema["x-agus-binary-blob"])
+      return ts.factory.createTypeReferenceNode("Blob");
+  },
+});
+await writeFile(
+  "packages/api-client/src/generated.ts",
+  COMMENT_HEADER + astToString(client),
 );

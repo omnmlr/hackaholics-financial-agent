@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AGUS shared API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Integer atomic-unit money; owner-bound resources; explicit provider/environment/provenance; no live source-bank acceptance implied."
   },
   "paths": {
@@ -5005,6 +5005,7 @@
     "/api/v1/crypto/assistant/turns": {
       "post": {
         "operationId": "cryptoAsk",
+        "description": "Submit text or a reviewed voice transcript. Attach one transient image as multipart data. Keep clientTurnId and Idempotency-Key to recover the same turn.",
         "security": [
           {
             "Session": []
@@ -5029,6 +5030,39 @@
               "schema": {
                 "$ref": "#/components/schemas/CryptoAsk"
               }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "turn",
+                  "image"
+                ],
+                "properties": {
+                  "turn": {
+                    "type": "string",
+                    "contentMediaType": "application/json",
+                    "contentSchema": {
+                      "$ref": "#/components/schemas/CryptoAsk"
+                    }
+                  },
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "x-agus-binary-blob": true,
+                    "description": "One PNG, JPEG, or WebP image up to 5 MiB."
+                  }
+                }
+              },
+              "encoding": {
+                "turn": {
+                  "contentType": "text/plain"
+                },
+                "image": {
+                  "contentType": "image/png, image/jpeg, image/webp"
+                }
+              }
             }
           }
         },
@@ -5039,6 +5073,200 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CryptoAnswer"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crypto/assistant/turns/{clientTurnId}": {
+      "get": {
+        "operationId": "cryptoTurnStatus",
+        "description": "Recover an owned turn by the original clientTurnId.",
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "clientTurnId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CryptoId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authenticated crypto resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoTurnStatus"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crypto/assistant/conversations/{id}": {
+      "get": {
+        "operationId": "cryptoConversation",
+        "description": "Read an owned conversation's recent turns and active turn.",
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CryptoId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authenticated crypto resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoConversation"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crypto/assistant/transcriptions": {
+      "post": {
+        "operationId": "cryptoTranscribe",
+        "description": "Transcribe a recording up to 2 MiB and 30 seconds. The client can edit the transcript before submitting it as a turn.",
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "audio/wav": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "x-agus-binary-blob": true,
+                "description": "Signed 16-bit PCM audio."
+              }
+            },
+            "audio/aac": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "x-agus-binary-blob": true,
+                "description": "ADTS AAC-LC audio."
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated crypto resource",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoTranscription"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Stable API error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CryptoError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/crypto/assistant/conversations/{id}/turns/{turnId}/audio": {
+      "post": {
+        "operationId": "cryptoStreamAudio",
+        "description": "Stream the stored text of an owned assistant response as MP3. No request body. Cancel the request to stop delivery.",
+        "security": [
+          {
+            "Session": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CryptoId"
+            }
+          },
+          {
+            "name": "turnId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CryptoId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authenticated crypto resource",
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "x-agus-binary-blob": true
                 }
               }
             }
@@ -7261,6 +7489,42 @@
                 "type": "null"
               }
             ]
+          },
+          "input": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "voice"
+                ]
+              },
+              "image": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "mode",
+              "image"
+            ],
+            "additionalProperties": false
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CryptoImageObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CryptoCitation"
+            }
           }
         },
         "required": [
@@ -7291,6 +7555,13 @@
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
+          },
+          "inputMode": {
+            "type": "string",
+            "enum": [
+              "text",
+              "voice"
+            ]
           },
           "scope": {
             "$ref": "#/components/schemas/CryptoScope"
@@ -7644,12 +7915,94 @@
         ],
         "additionalProperties": false
       },
+      "CryptoCitation": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^src_[a-f0-9]{16}$"
+          },
+          "url": {
+            "type": "string",
+            "maxLength": 512,
+            "format": "uri"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "publishedAt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CryptoUtc"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retrievedAt": {
+            "$ref": "#/components/schemas/CryptoUtc"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "web",
+              "news"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "title",
+          "publishedAt",
+          "retrievedAt",
+          "kind"
+        ],
+        "additionalProperties": false
+      },
       "CryptoCluster": {
         "type": "string",
         "enum": [
           "devnet",
           "mainnet-beta"
         ]
+      },
+      "CryptoConversation": {
+        "type": "object",
+        "properties": {
+          "conversationId": {
+            "$ref": "#/components/schemas/CryptoId"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/CryptoScope"
+          },
+          "turns": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CryptoAnswer"
+            }
+          },
+          "processing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CryptoTurnStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "conversationId",
+          "scope",
+          "turns",
+          "processing"
+        ],
+        "additionalProperties": false
       },
       "CryptoCoverage": {
         "type": "object",
@@ -7935,6 +8288,18 @@
           "assistant": {
             "type": "boolean"
           },
+          "assistantImage": {
+            "type": "boolean"
+          },
+          "assistantResearch": {
+            "type": "boolean"
+          },
+          "assistantTranscription": {
+            "type": "boolean"
+          },
+          "assistantPlayback": {
+            "type": "boolean"
+          },
           "monitoring": {
             "type": "boolean"
           },
@@ -8064,6 +8429,38 @@
         "type": "string",
         "format": "uuid",
         "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+      },
+      "CryptoImageObservation": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "observations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "signature": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CryptoSignature"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "summary",
+          "observations",
+          "signature"
+        ],
+        "additionalProperties": false
       },
       "CryptoIntent": {
         "oneOf": [
@@ -9372,6 +9769,33 @@
           }
         ]
       },
+      "CryptoTranscription": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "languageCode": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "durationMs": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 30000
+          }
+        },
+        "required": [
+          "text",
+          "languageCode",
+          "durationMs"
+        ],
+        "additionalProperties": false
+      },
       "CryptoTransferIntent": {
         "type": "object",
         "properties": {
@@ -9403,6 +9827,77 @@
           "recipient"
         ],
         "additionalProperties": false
+      },
+      "CryptoTurnStatus": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "conversationId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "turnId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "state": {
+                "type": "string",
+                "const": "processing"
+              }
+            },
+            "required": [
+              "conversationId",
+              "turnId",
+              "state"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "conversationId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "turnId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "state": {
+                "type": "string",
+                "const": "interrupted"
+              }
+            },
+            "required": [
+              "conversationId",
+              "turnId",
+              "state"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "conversationId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "turnId": {
+                "$ref": "#/components/schemas/CryptoId"
+              },
+              "state": {
+                "type": "string",
+                "const": "completed"
+              },
+              "answer": {
+                "$ref": "#/components/schemas/CryptoAnswer"
+              }
+            },
+            "required": [
+              "conversationId",
+              "turnId",
+              "state",
+              "answer"
+            ],
+            "additionalProperties": false
+          }
+        ]
       },
       "CryptoUtc": {
         "type": "string",

@@ -11,6 +11,8 @@ type Parameter = {
 
 const json = (schema: unknown) => ({ "application/json": { schema } });
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
+const binary = { type: "string", format: "binary" };
+const blob = { ...binary, "x-agus-binary-blob": true };
 const schema = (value: z.ZodType) => {
   const { $schema: _dialect, ...document } = z.toJSONSchema(value, {
     io: "input",
@@ -60,13 +62,15 @@ export function addCryptoPaths(
     method: string,
     path: string,
     operationId: string,
-    output: SchemaName | "png",
+    output: SchemaName | "png" | "mp3",
     options: {
       input?: SchemaName;
+      mediaInput?: Record<string, unknown>;
       query?: z.ZodObject;
       idempotency?: boolean;
       nullable?: boolean;
       public?: boolean;
+      description?: string;
     } = {},
   ) {
     const parameters: Parameter[] = Array.from(
@@ -98,26 +102,31 @@ export function addCryptoPaths(
         required: true,
         schema: { type: "string", minLength: 8, maxLength: 128 },
       });
+    const inputContent = {
+      ...(options.input && json(ref(options.input))),
+      ...options.mediaInput,
+    };
     (paths[`/api/v1/crypto${path}`] ??= {})[method] = {
       operationId,
+      ...(options.description && { description: options.description }),
       security: options.public ? [] : [{ Session: [] }],
       parameters,
-      ...(options.input && {
-        requestBody: { required: true, content: json(ref(options.input)) },
+      ...(Object.keys(inputContent).length && {
+        requestBody: { required: true, content: inputContent },
       }),
       responses: {
         200: {
           description: "Authenticated crypto resource",
           content:
             output === "png"
-              ? {
-                  "image/png": { schema: { type: "string", format: "binary" } },
-                }
-              : json(
-                  options.nullable
-                    ? { anyOf: [ref(output), { type: "null" }] }
-                    : ref(output),
-                ),
+              ? { "image/png": { schema: binary } }
+              : output === "mp3"
+                ? { "audio/mpeg": { schema: blob } }
+                : json(
+                    options.nullable
+                      ? { anyOf: [ref(output), { type: "null" }] }
+                      : ref(output),
+                  ),
         },
         default: {
           description: "Stable API error",
@@ -178,7 +187,77 @@ export function addCryptoPaths(
   operation("post", "/assistant/turns", "cryptoAsk", "CryptoAnswer", {
     input: "CryptoAsk",
     ...mutation,
+    description:
+      "Submit text or a reviewed voice transcript. Attach one transient image as multipart data. Keep clientTurnId and Idempotency-Key to recover the same turn.",
+    mediaInput: {
+      "multipart/form-data": {
+        schema: {
+          type: "object",
+          additionalProperties: false,
+          required: ["turn", "image"],
+          properties: {
+            turn: {
+              type: "string",
+              contentMediaType: "application/json",
+              contentSchema: ref("CryptoAsk"),
+            },
+            image: {
+              ...blob,
+              description: "One PNG, JPEG, or WebP image up to 5 MiB.",
+            },
+          },
+        },
+        encoding: {
+          turn: { contentType: "text/plain" },
+          image: { contentType: "image/png, image/jpeg, image/webp" },
+        },
+      },
+    },
   });
+  operation(
+    "get",
+    "/assistant/turns/{clientTurnId}",
+    "cryptoTurnStatus",
+    "CryptoTurnStatus",
+    { description: "Recover an owned turn by the original clientTurnId." },
+  );
+  operation(
+    "get",
+    "/assistant/conversations/{id}",
+    "cryptoConversation",
+    "CryptoConversation",
+    {
+      description: "Read an owned conversation's recent turns and active turn.",
+    },
+  );
+  operation(
+    "post",
+    "/assistant/transcriptions",
+    "cryptoTranscribe",
+    "CryptoTranscription",
+    {
+      description:
+        "Transcribe a recording up to 2 MiB and 30 seconds. The client can edit the transcript before submitting it as a turn.",
+      mediaInput: {
+        "audio/wav": {
+          schema: { ...blob, description: "Signed 16-bit PCM audio." },
+        },
+        "audio/aac": {
+          schema: { ...blob, description: "ADTS AAC-LC audio." },
+        },
+      },
+    },
+  );
+  operation(
+    "post",
+    "/assistant/conversations/{id}/turns/{turnId}/audio",
+    "cryptoStreamAudio",
+    "mp3",
+    {
+      description:
+        "Stream the stored text of an owned assistant response as MP3. No request body. Cancel the request to stop delivery.",
+    },
+  );
   operation("post", "/eligibility", "cryptoEligibility", "CryptoEligibility", {
     input: "CryptoEligibilityInput",
   });

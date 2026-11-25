@@ -1,10 +1,28 @@
 import { z } from "zod";
 import * as C from "../../../../../../packages/contracts/src/crypto";
 import { mutationOrigin, principal } from "@/server/auth";
-import { body, DomainError, endpoint } from "@/server/errors";
+import { body, DomainError, endpoint, requestBytes } from "@/server/errors";
 import { idempotencyKey } from "@/server/idempotency";
 import { activity, activityEvent } from "@/server/crypto/activity";
-import { askCrypto, cryptoAssistantReady } from "@/server/crypto/assistant";
+import {
+  askCrypto,
+  cryptoAssistantReady,
+  getCryptoConversation,
+  getCryptoTurn,
+} from "@/server/crypto/assistant";
+import {
+  checkCryptoImage,
+  cryptoImageReady,
+  maxImageBytes,
+  reserveCryptoImageScreening,
+} from "@/server/crypto/assistant-image";
+import { cryptoResearchReady } from "@/server/crypto/research";
+import { containsWalletSecret } from "@/server/crypto/sensitive";
+import {
+  cryptoVoiceCapabilities,
+  streamCryptoVoice,
+  transcribeCryptoVoice,
+} from "@/server/crypto/voice";
 import {
   addAlertRule,
   cryptoMonitoringReady,
@@ -62,6 +80,46 @@ function query(url: URL) {
   return values;
 }
 
+async function assistantTurn(owner: string, request: Request) {
+  const key = idempotencyKey(request);
+  const contentType = request.headers.get("content-type") ?? "";
+  if (contentType.split(";")[0] !== "multipart/form-data")
+    return askCrypto(owner, await input(C.CryptoAsk, body(request)), key);
+  if (!cryptoAssistantReady() || !cryptoImageReady())
+    throw new DomainError("FEATURE_DISABLED", 503);
+  await reserveCryptoImageScreening(owner);
+  const bytes = await requestBytes(request, maxImageBytes + 24 * 1024);
+  const form = await new Response(new Uint8Array(bytes), {
+    headers: { "content-type": contentType },
+  })
+    .formData()
+    .catch(() => {
+      throw new DomainError("INVALID_INPUT", 400);
+    });
+  const turn = form.get("turn"),
+    image = form.get("image");
+  if (
+    form.getAll("turn").length !== 1 ||
+    form.getAll("image").length !== 1 ||
+    [...form.keys()].some((name) => name !== "turn" && name !== "image") ||
+    typeof turn !== "string" ||
+    turn.length > 16_384 ||
+    !image ||
+    typeof image === "string"
+  )
+    throw new DomainError("INVALID_INPUT", 400);
+  if (image.size > maxImageBytes) throw new DomainError("BODY_TOO_LARGE", 413);
+  const ask = await input(C.CryptoAsk, JSON.parse(turn));
+  if (containsWalletSecret(ask.text))
+    throw new DomainError("SENSITIVE_CONTENT", 422);
+  const attachment = await checkCryptoImage(
+    Buffer.from(await image.arrayBuffer()),
+    image.type,
+    request.signal,
+  );
+  return askCrypto(owner, ask, key, attachment);
+}
+
 async function handle(request: Request) {
   return endpoint(async () => {
     const url = new URL(request.url);
@@ -85,6 +143,8 @@ async function handle(request: Request) {
           query(url),
         );
         if (path[0] === "pocket") return null;
+        const assistant = cryptoAssistantReady();
+        const voice = cryptoVoiceCapabilities();
         return C.CryptoCapabilities.parse({
           source: registry.readSource(cluster),
           approvedRoutes: registry
@@ -92,7 +152,11 @@ async function handle(request: Request) {
             .map((provider) => ({ provider, operations: ["transfer"] })),
           features: {
             portfolio: true,
-            assistant: cryptoAssistantReady(),
+            assistant,
+            assistantImage: assistant && cryptoImageReady(),
+            assistantResearch: assistant && cryptoResearchReady(),
+            assistantTranscription: voice.transcription,
+            assistantPlayback: voice.playback,
             monitoring: cryptoMonitoringReady(),
             requests: cluster === "devnet" && cryptoRequestsReady(),
             invoices: cluster === "devnet" && cryptoInvoicesReady(),
@@ -162,12 +226,36 @@ async function handle(request: Request) {
           idempotencyKey(request),
         );
     }
-    if (method === "POST" && path.join("/") === "assistant/turns")
-      return askCrypto(
-        p.id,
-        await input(C.CryptoAsk, body(request)),
-        idempotencyKey(request),
-      );
+    if (path[0] === "assistant") {
+      if (method === "POST" && path.length === 2 && path[1] === "turns")
+        return assistantTurn(p.id, request);
+      if (
+        method === "POST" &&
+        path.length === 2 &&
+        path[1] === "transcriptions"
+      )
+        return C.CryptoTranscription.parse(
+          await transcribeCryptoVoice(p.id, request),
+        );
+      if (method === "GET" && path.length === 3 && path[1] === "turns")
+        return getCryptoTurn(p.id, await input(C.CryptoId, path[2]));
+      if (path[1] === "conversations") {
+        if (method === "GET" && path.length === 3)
+          return getCryptoConversation(p.id, await input(C.CryptoId, path[2]));
+        if (
+          method === "POST" &&
+          path.length === 6 &&
+          path[3] === "turns" &&
+          path[5] === "audio"
+        )
+          return streamCryptoVoice(
+            p.id,
+            await input(C.CryptoId, path[2]),
+            await input(C.CryptoId, path[4]),
+            request.signal,
+          );
+      }
+    }
     if (path[0] === "alert-rules") {
       if (method === "GET" && path.length === 1)
         return listAlertRules(p.id, await input(C.CryptoScope, query(url)));

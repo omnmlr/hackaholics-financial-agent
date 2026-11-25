@@ -62,7 +62,15 @@
           "faceIDPermission": "Unlock the local AGUS session."
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Record a voice message for the AGUS assistant.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
     ],
     "scheme": "agus",
     "platforms": [

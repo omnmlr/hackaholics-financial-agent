@@ -1453,7 +1453,76 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Submit text or a reviewed voice transcript. Attach one transient image as multipart data. Keep clientTurnId and Idempotency-Key to recover the same turn. */
         post: operations["cryptoAsk"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/assistant/turns/{clientTurnId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Recover an owned turn by the original clientTurnId. */
+        get: operations["cryptoTurnStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/assistant/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Read an owned conversation's recent turns and active turn. */
+        get: operations["cryptoConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/assistant/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Transcribe a recording up to 2 MiB and 30 seconds. The client can edit the transcript before submitting it as a turn. */
+        post: operations["cryptoTranscribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/crypto/assistant/conversations/{id}/turns/{turnId}/audio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Stream the stored text of an owned assistant response as MP3. No request body. Cancel the request to stop delivery. */
+        post: operations["cryptoStreamAudio"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2027,11 +2096,20 @@ export interface components {
             evidence: components["schemas"]["CryptoEvidence"][];
             coverage: components["schemas"]["CryptoCoverage"][];
             suggestion: components["schemas"]["CryptoSuggestion"] | null;
+            input?: {
+                /** @enum {string} */
+                mode: "text" | "voice";
+                image: boolean;
+            };
+            image?: components["schemas"]["CryptoImageObservation"] | null;
+            citations?: components["schemas"]["CryptoCitation"][];
         };
         CryptoAsk: {
             conversationId?: components["schemas"]["CryptoId"];
             clientTurnId: components["schemas"]["CryptoId"];
             text: string;
+            /** @enum {string} */
+            inputMode?: "text" | "voice";
             scope: components["schemas"]["CryptoScope"];
             reportingTimeZone: string;
         };
@@ -2104,8 +2182,24 @@ export interface components {
             address: components["schemas"]["CryptoAddress"];
             provider: components["schemas"]["CryptoProvider"];
         };
+        CryptoCitation: {
+            id: string;
+            /** Format: uri */
+            url: string;
+            title: string;
+            publishedAt: components["schemas"]["CryptoUtc"] | null;
+            retrievedAt: components["schemas"]["CryptoUtc"];
+            /** @enum {string} */
+            kind: "web" | "news";
+        };
         /** @enum {string} */
         CryptoCluster: "devnet" | "mainnet-beta";
+        CryptoConversation: {
+            conversationId: components["schemas"]["CryptoId"];
+            scope: components["schemas"]["CryptoScope"];
+            turns: components["schemas"]["CryptoAnswer"][];
+            processing: components["schemas"]["CryptoTurnStatus"] | null;
+        };
         CryptoCoverage: {
             walletId: components["schemas"]["CryptoId"];
             /** @enum {string} */
@@ -2156,6 +2250,10 @@ export interface components {
         CryptoFeatures: {
             portfolio: boolean;
             assistant: boolean;
+            assistantImage?: boolean;
+            assistantResearch?: boolean;
+            assistantTranscription?: boolean;
+            assistantPlayback?: boolean;
             monitoring: boolean;
             requests: boolean;
             invoices: boolean;
@@ -2184,6 +2282,11 @@ export interface components {
         };
         /** Format: uuid */
         CryptoId: string;
+        CryptoImageObservation: {
+            summary: string;
+            observations: string[];
+            signature: components["schemas"]["CryptoSignature"] | null;
+        };
         CryptoIntent: components["schemas"]["CryptoTransferIntent"] | {
             sourceWalletId: components["schemas"]["CryptoId"];
             routeId: components["schemas"]["CryptoId"];
@@ -2453,6 +2556,11 @@ export interface components {
             output: components["schemas"]["CryptoAsset"];
             suggestedWalletIds: components["schemas"]["CryptoId"][];
         };
+        CryptoTranscription: {
+            text: string;
+            languageCode: string | null;
+            durationMs: number;
+        };
         CryptoTransferIntent: {
             sourceWalletId: components["schemas"]["CryptoId"];
             routeId: components["schemas"]["CryptoId"];
@@ -2461,6 +2569,23 @@ export interface components {
             amount: components["schemas"]["CryptoAmount"];
             recipient: components["schemas"]["CryptoAddress"];
             requestId?: components["schemas"]["CryptoId"];
+        };
+        CryptoTurnStatus: {
+            conversationId: components["schemas"]["CryptoId"];
+            turnId: components["schemas"]["CryptoId"];
+            /** @constant */
+            state: "processing";
+        } | {
+            conversationId: components["schemas"]["CryptoId"];
+            turnId: components["schemas"]["CryptoId"];
+            /** @constant */
+            state: "interrupted";
+        } | {
+            conversationId: components["schemas"]["CryptoId"];
+            turnId: components["schemas"]["CryptoId"];
+            /** @constant */
+            state: "completed";
+            answer: components["schemas"]["CryptoAnswer"];
         };
         /** Format: date-time */
         CryptoUtc: string;
@@ -5850,6 +5975,14 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CryptoAsk"];
+                "multipart/form-data": {
+                    turn: string;
+                    /**
+                     * Format: binary
+                     * @description One PNG, JPEG, or WebP image up to 5 MiB.
+                     */
+                    image: Blob;
+                };
             };
         };
         responses: {
@@ -5860,6 +5993,134 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CryptoAnswer"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoTurnStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                clientTurnId: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoTurnStatus"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoConversation"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoTranscribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "audio/wav": Blob;
+                "audio/aac": Blob;
+            };
+        };
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoTranscription"];
+                };
+            };
+            /** @description Stable API error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CryptoError"];
+                };
+            };
+        };
+    };
+    cryptoStreamAudio: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["CryptoId"];
+                turnId: components["schemas"]["CryptoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authenticated crypto resource */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": Blob;
                 };
             };
             /** @description Stable API error */

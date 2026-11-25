@@ -1,27 +1,26 @@
 # AGUS Crypto Devnet deployment
 
-The EC2 target runs the Crypto API, the continuous monitoring and reconciliation worker, and Caddy on a single Frankfurt `t3.small`. Neon stores durable application state. Caddy serves the canonical HTTPS origin on a stable IPv4 address and forwards only the Crypto, identity, OpenAPI and health endpoints. The staged Railway fallback is recorded separately. [Railway checkpoint](RAILWAY_STAGED_REPURPOSE_20261124.md)
+The existing Stockholm EC2 host is the Devnet target for the Crypto API, monitoring and reconciliation worker, and Caddy. Neon stores durable application state. Caddy will serve the canonical HTTPS origin and forward the Crypto, identity, OpenAPI and health endpoints. [Railway checkpoint](RAILWAY_STAGED_REPURPOSE_20261124.md)
 
-## AWS access and cost
+## Stockholm handoff · November 25, 2026
 
-The 730-hour list-price estimate is **$23.07/month** before credits and variable egress. It includes $17.52 for Linux `t3.small`, $1.90 for 20 GB encrypted gp3, and $3.65 for one IPv4 address. The CPU credit mode is `standard`. Containers have rotating logs and combined memory limits of 1,430 MiB on the 2 GiB host. GitHub builds the image and the host runs it. [EC2 Free Tier](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-free-tier-usage.html), [Frankfurt rate breakdown](https://cloud-credits.org/prices/ec2/t3-small/eu-central-1), [IPv4 pricing](https://aws.amazon.com/vpc/pricing/)
+| Item | Provisioned target reported by the founder |
+| --- | --- |
+| Region | Stockholm, `eu-north-1` |
+| CloudFormation stack | `agus-crypto-devnet` |
+| Instance | `i-0b608f6472205b337`, `t3.small`, Ubuntu 24.04 |
+| Public IPv4 | `13.48.206.202` |
+| Canonical origin | `https://13-48-206-202.sslip.io` |
+| Host administration | AWS Systems Manager Session Manager |
+| Billing | Active Free plan, approximately $108.42 verified by the founder, intended for about one week through judging |
 
-Use a time-limited AWS session with `freetier:GetAccountPlanState` and read access to the existing Frankfurt subnet and EC2 offerings. The deployment operator needs permission to manage the dedicated CloudFormation stack and its EC2, IAM and Session Manager resources. Use the founder's chosen API hostname and an existing public subnet. Find both VPC and subnet IDs in EC2 or the VPC console.
+Use the existing instance and a time-limited identity permitted to open a Session Manager shell on that instance and close its own session. The current task requires no CloudFormation deployment. Verify host and resource status through the existing Stockholm stack. [Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
 
 ```bash
-bash deploy/crypto/ec2/preflight.sh "$AGUS_EC2_PUBLIC_SUBNET" 168
+aws ssm start-session --region eu-north-1 --target i-0b608f6472205b337
 ```
 
-Use the expected hold time in hours. The script checks the active Free account plan, remaining credits, expiry, instance eligibility, and the subnet's Internet Gateway. Confirm the final forecast in Billing and create **one $25 monthly cost budget** that excludes credits, with an actual alert at 80% and a forecast alert at 100%. Set a reminder to remove the Devnet stack when the agreed run window ends. Stopping the instance leaves EBS and IPv4 charges in place. [Track credits](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/tracking-free-tier-usage.html), [AWS Budgets](https://docs.aws.amazon.com/cost-management/latest/userguide/budgets-managing-costs.html)
-
-```bash
-aws cloudformation deploy --region eu-central-1 --stack-name agus-crypto-devnet \
-  --template-file deploy/crypto/ec2/host.yml --capabilities CAPABILITY_IAM \
-  --parameter-overrides VpcId="$AGUS_EC2_VPC" PublicSubnetId="$AGUS_EC2_PUBLIC_SUBNET" \
-  --no-execute-changeset
-```
-
-Inspect the change set for the one host, IPv4 address, security group and Session Manager role and profile. Execute it after the account, credits, budget and DNS owner are confirmed. Publish an A record for the chosen API hostname pointing to `StableIPv4` from the stack outputs. The host has one encrypted root volume and inbound HTTP/HTTPS. Use AWS Systems Manager Session Manager for administration. [Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
+Review the actual Stockholm charges after judging before authorizing stack cleanup. Stopping the instance leaves EBS and IPv4 charges in place. [Track credits](https://docs.aws.amazon.com/awsaccountbilling/latest/aboutv2/tracking-free-tier-usage.html)
 
 ## Neon and runtime secrets
 
@@ -29,29 +28,46 @@ The database is `agus_crypto_devnet_20261124`, project `empty-bonus-20525410`, b
 
 The 27 migration checksums through `0027_crypto_requests.sql` and the normalized archive marker were independently checked on 24 November 2026. Runtime access to alerts, invitation consumption and migration status was verified through the restricted login. Runtime writes to the archive and ledger, schema creation, and invitation email updates were denied after grant correction. The historical `agus_staging` database defaults let the runtime login connect but give it no access to any of its 13 existing public relations.
 
-On the EC2 host create `/etc/agus-crypto/shared.env` and `/etc/agus-crypto/api.env` as root-owned files with mode `0600`. Use one `NAME=value` per line without surrounding quotes. The host volume is encrypted. Keep durable auth and encryption material in the approved secret store for recovery. Avoid printing these files or Docker container environment values. Fill the values through the secure operations session.
+On the EC2 host use `/etc/agus-crypto/shared.env` and `/etc/agus-crypto/api.env` as root-owned files with mode `0600`. Use one `NAME=value` per line without surrounding quotes. Recover existing Crypto auth and encryption settings from the host or the approved secret store before writing configuration. Preserve the current active key and every existing decryption key. Fill missing values through the secure operations session and keep values out of command arguments, logs and Docker inspection output.
 
 | File         | Settings                                                                                                                                                                                      |
 | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `shared.env` | `DATABASE_URL` for the restricted runtime login with TLS certificate verification, `AGUS_DEVNET_RPC=https://api.devnet.solana.com`, `AGUS_DEVNET_VERIFY_RPC=https://devnet.rpcpool.com`.      |
 | `api.env`    | `BETTER_AUTH_SECRET` with at least 32 characters, `AGUS_ENCRYPTION_ACTIVE_KEY=devnet-v1`, `AGUS_ENCRYPTION_KEYS` as a JSON object mapping `devnet-v1` to a base64-encoded random 32-byte key. |
 | `api.env`    | `AI_PROVIDER=gemini` and `AI_API_KEY`.                                                                                                                                                        |
-| `api.env`    | For voice, set `AGUS_CRYPTO_VOICE_ENABLED=true`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID` and, on the verified free tier, `ELEVENLABS_ZERO_RETENTION=false`.                               |
+| `api.env`    | Set `AGUS_CRYPTO_IMAGES=true` for Gemini image turns. For Jessica, set `AGUS_CRYPTO_VOICE_ENABLED=true`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID=cgSgspJ2msm6clMCkdW9` and `ELEVENLABS_ZERO_RETENTION=false` on the verified free tier. |
 | `api.env`    | For live research, set `FIRECRAWL_API_KEY`.                                                                                                                                                   |
 
 Compose sets the Devnet profile, invite-only authentication, the approved external-wallet routes, and the worker schedule. Leave Mainnet and experimental transaction capabilities disabled during Devnet acceptance. Cloud HTTP secret binding placeholders work only in that Cloud environment. The EC2 runtime uses its own secure bindings.
 
-## Build and activate
+## Verify and activate the existing bundle
 
-Dispatch **AGUS Crypto Devnet release image** from the intended revision and set `retain_bundle` after checking Actions artifact allowance. The workflow builds the same AMD64 image for API and worker. The bundle contains the exact Git revision, image ID, image archive and checksums. Use a trusted GitHub session to download it and check `SHA256SUMS.txt` on the operations workstation before transferring the directory to EC2.
-
-Use Session Manager SSH to transfer the checked directory without opening port 22. For a host without an SSH key, install a temporary public key for the `ubuntu` account through a Session Manager shell, transfer over `AWS-StartSSHSession`, then remove that temporary key. [SSH through Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-getting-started-enable-ssh-connections.html)
+PR #57 packaged backend revision `126a528c2b7b0accc380d2af7cddae58ed6e624a`. The founder reports that the archive was downloaded to `/home/ssm-user/agus-release`, extracted and checked. Image loading was initiated. Verify the existing image ID and labels before running the bundled activation script. Its explicit image load path applies only if inspection shows the verified image is missing. [Bundle workflow](https://github.com/omnmlr/hackaholics-financial-agent/pull/57)
 
 ```bash
-sudo bash /path/to/bundle/activate-release.sh /path/to/bundle "$AGUS_CRYPTO_HOST"
+sudo bash -euo pipefail <<'BASH'
+mapfile -t manifests < <(find /home/ssm-user/agus-release -maxdepth 4 -type f -name SHA256SUMS.txt)
+(( ${#manifests[@]} == 1 ))
+bundle=$(dirname -- "${manifests[0]}")
+cd "$bundle"
+sha256sum --check --strict --status SHA256SUMS.txt
+expected=126a528c2b7b0accc380d2af7cddae58ed6e624a
+[[ $(<revision.txt) == "$expected" ]]
+image=$(<image-id.txt)
+[[ $image =~ ^sha256:[0-9a-f]{64}$ ]]
+if docker image inspect "$image" >/dev/null 2>&1; then
+  [[ $(docker image inspect --format '{{.Os}}/{{.Architecture}} {{index .Config.Labels "org.opencontainers.image.revision"}}' "$image") == "linux/amd64 $expected" ]]
+  printf 'Verified the existing Linux AMD64 image.\n'
+else
+  printf 'The verified local archive is present and activation will load its image.\n'
+fi
+bash "$bundle/activate-release.sh" "$bundle" 13-48-206-202.sslip.io
+BASH
 ```
 
 Activation checks the bundle again, verifies the Linux AMD64 image's ID and revision label, then starts the three services. It waits for `/api/v1/ready`, a successful monitoring and reconciliation cycle, and a trusted TLS certificate. On replacement failure it reapplies the previous Compose release. Keep the previous image until the new version passes acceptance. Do not roll back database schemas to revert an image. Docker starts on boot and the three containers restart after process or host restarts. Certificate state stays in the Caddy volumes.
+
+At the initial takeover, independent public probing could not establish HTTPS readiness. The restricted Neon login still returned all 27 migrations and its expected financial write restrictions. Host activation, authenticated acceptance, and publication of the signed APK require the outstanding release access and signing inputs.
 
 ## Hosted acceptance
 

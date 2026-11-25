@@ -326,11 +326,18 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         "INSERT INTO agus_crypto_reviews VALUES($1,$2,$3,$4,$5::jsonb)",
         [p.id, id, wallet.id, "fixture-fingerprint", JSON.stringify(review)],
       );
-      const begin = await POST(
-        request(0, `reviews/${id}/begin`, { revision: 0, reviewDigest }),
+      const begins = await Promise.all(
+        Array.from({ length: 3 }, () =>
+          POST(
+            request(0, `reviews/${id}/begin`, { revision: 0, reviewDigest }),
+          ),
+        ),
       );
-      expect(begin.status).toBe(200);
-      const attempt = await begin.json();
+      expect(begins.map(({ status }) => status)).toEqual([200, 200, 200]);
+      const [attempt, ...replays] = await Promise.all(
+        begins.map((response) => response.json()),
+      );
+      expect(replays.map(({ id }) => id)).toEqual([attempt.id, attempt.id]);
       const key = randomUUID();
       const responses = await Promise.all(
         Array.from({ length: 4 }, () =>

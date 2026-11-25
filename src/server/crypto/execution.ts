@@ -284,9 +284,15 @@ export async function beginCrypto(
     key,
     { reviewId, ...input },
     async (sql) => {
+      // Serialize begin requests with distinct idempotency keys without
+      // requiring UPDATE permission on immutable review rows.
+      await sql.query(
+        "SELECT id FROM agus_users WHERE id=$1 FOR NO KEY UPDATE",
+        [p.id],
+      );
       const record = (
         await sql.query<{ review: Review; fingerprint: string }>(
-          "SELECT review,fingerprint FROM agus_crypto_reviews WHERE owner=$1 AND id=$2 FOR UPDATE",
+          "SELECT review,fingerprint FROM agus_crypto_reviews WHERE owner=$1 AND id=$2",
           [p.id, reviewId],
         )
       ).rows[0];

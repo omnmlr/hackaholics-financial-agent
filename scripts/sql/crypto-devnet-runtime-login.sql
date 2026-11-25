@@ -15,4 +15,8 @@ ALTER DEFAULT PRIVILEGES FOR ROLE agus_staging_owner IN SCHEMA public
   REVOKE ALL PRIVILEGES ON SEQUENCES FROM agus_crypto_devnet_runtime;
 REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM agus_crypto_devnet_runtime;
 REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM agus_crypto_devnet_runtime;
+REVOKE UPDATE, DELETE, TRUNCATE ON
+  agus_crypto_chain_events, agus_crypto_wallet_events, agus_crypto_receipts,
+  agus_crypto_reviews, agus_audit
+FROM agus_runtime;
 COMMIT;

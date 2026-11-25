@@ -45,6 +45,12 @@ try {
        AND NOT has_table_privilege(current_user, 'agus_legacy_archive', 'INSERT,UPDATE,DELETE,TRUNCATE')
        AND NOT has_column_privilege(current_user, 'agus_invitations', 'email', 'UPDATE')
        AND has_column_privilege(current_user, 'agus_invitations', 'consumed_at', 'UPDATE')
+       AND ($1::text IS NULL OR NOT EXISTS (
+         SELECT 1 FROM unnest(ARRAY['agus_crypto_chain_events','agus_crypto_wallet_events',
+           'agus_crypto_receipts','agus_crypto_reviews','agus_audit']) AS immutable(table_name)
+         WHERE has_table_privilege(current_user, immutable.table_name, 'UPDATE,DELETE,TRUNCATE')
+            OR has_any_column_privilege(current_user, immutable.table_name, 'UPDATE')
+       ))
        AND NOT EXISTS (
          SELECT 1 FROM pg_roles WHERE rolname = current_user
            AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolbypassrls)

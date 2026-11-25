@@ -1,3 +1,5 @@
+-- Historical audit proposal. Do not apply this file.
+-- Use scripts/sql/crypto-devnet-runtime-login.sql after the matching code deploy.
 -- ============================================================================
 -- AGUS Crypto Least-Privilege Role Hardening & Audit Immutability Remediation
 -- Task: AG-03 Financial Security & Reliability Audit

@@ -29,6 +29,10 @@ export async function sharedPlatform(count = 7) {
   await admin.query(
     `REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE ON SCHEMA public TO "${role}"; GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA public TO "${role}"; REVOKE INSERT,UPDATE,DELETE ON agus_migrations,agus_legacy_archive,agus_institutions,agus_institution_capabilities,agus_fixture_escrow_authorities,agus_invitations FROM "${role}"; GRANT UPDATE(consumed_at) ON agus_invitations TO "${role}"; REVOKE UPDATE,DELETE ON agus_legacy_authority,agus_p2p_events,agus_request_chain_observations FROM "${role}"`,
   );
+  await admin.query(
+    `REVOKE UPDATE, DELETE ON agus_crypto_chain_events, agus_crypto_wallet_events,
+     agus_crypto_receipts, agus_crypto_reviews, agus_audit FROM "${role}"`,
+  );
   url.username = role;
   url.password = "fixture-market-only";
   vi.stubEnv("DATABASE_URL", url.href);

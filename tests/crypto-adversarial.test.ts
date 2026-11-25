@@ -1893,9 +1893,10 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
         ).resolves.toBeDefined();
         await pg.exec("RESET ROLE;");
 
-        // Step 2: Apply runtime-role-least-privilege.sql verbatim
+        // Exercise the published audit proposal in this disposable engine.
+        // The deployed grant script is separately guarded by owner and database.
         const remediationSql = readFileSync(
-          join(process.cwd(), "scripts/sql/runtime-role-least-privilege.sql"),
+          join(process.cwd(), "docs/agus-crypto/engineering/evidence/ag-03-proposed.sql.txt"),
           "utf8",
         );
         await pg.exec(remediationSql);

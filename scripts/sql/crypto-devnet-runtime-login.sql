@@ -19,4 +19,19 @@ REVOKE UPDATE, DELETE, TRUNCATE ON
   agus_crypto_chain_events, agus_crypto_wallet_events, agus_crypto_receipts,
   agus_crypto_reviews, agus_audit
 FROM agus_runtime;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM unnest(ARRAY['agus_crypto_chain_events','agus_crypto_wallet_events',
+      'agus_crypto_receipts','agus_crypto_reviews','agus_audit']) AS immutable(table_name)
+    WHERE has_table_privilege('agus_crypto_devnet_runtime', immutable.table_name, 'UPDATE,DELETE,TRUNCATE')
+       OR has_any_column_privilege('agus_crypto_devnet_runtime', immutable.table_name, 'UPDATE')
+       OR NOT has_table_privilege('agus_crypto_devnet_runtime', immutable.table_name, 'INSERT')
+       OR NOT has_table_privilege('agus_crypto_devnet_runtime', immutable.table_name, 'SELECT')
+  ) OR NOT has_table_privilege('agus_crypto_devnet_runtime', 'agus_crypto_attempts', 'UPDATE')
+    OR NOT has_column_privilege('agus_crypto_devnet_runtime', 'agus_invitations', 'consumed_at', 'UPDATE') THEN
+    RAISE EXCEPTION 'EFFECTIVE_ACL_MISMATCH';
+  END IF;
+END $$;
 COMMIT;

@@ -17,9 +17,16 @@ const mode = process.argv[2];
 if (mode !== "api" && mode !== "worker") throw new Error("START_MODE_REQUIRED");
 
 try {
+  const publicAuthReady =
+    process.env.AGUS_AUTH_PUBLIC === "true" &&
+    Boolean(
+      process.env.RESEND_API_KEY &&
+        process.env.AGUS_AUTH_EMAIL_FROM &&
+        process.env.APP_ORIGIN?.startsWith("https://"),
+    );
   if (
     validateEnvironment().profile !== "devnet" ||
-    process.env.AGUS_AUTH_PUBLIC !== "false"
+    (process.env.AGUS_AUTH_PUBLIC !== "false" && !publicAuthReady)
   ) {
     throw new Error("INVITE_ONLY_DEVNET_REQUIRED");
   }

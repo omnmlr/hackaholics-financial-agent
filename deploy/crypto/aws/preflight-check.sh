@@ -161,8 +161,23 @@ if [ -f "${ENV_FILE}" ]; then
   AUTH_PUB=$(get_val "AGUS_AUTH_PUBLIC")
   if [ "${AUTH_PUB}" = "false" ]; then
     pass "AGUS_AUTH_PUBLIC is set to 'false' (invite-only devnet enforced)"
+  elif [ "${AUTH_PUB}" = "true" ]; then
+    API_ENV_FILE="${API_ENV_FILE:-/etc/agus/crypto-api.env}"
+    RESEND_KEY=$(get_val "RESEND_API_KEY")
+    if [ -z "${RESEND_KEY}" ] && [ -r "${API_ENV_FILE}" ]; then
+      RESEND_KEY=$(grep -E '^RESEND_API_KEY=' "${API_ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2- || true)
+    fi
+    EMAIL_FROM=$(get_val "AGUS_AUTH_EMAIL_FROM")
+    if [ -z "${EMAIL_FROM}" ] && [ -r "${API_ENV_FILE}" ]; then
+      EMAIL_FROM=$(grep -E '^AGUS_AUTH_EMAIL_FROM=' "${API_ENV_FILE}" 2>/dev/null | head -n1 | cut -d= -f2- || true)
+    fi
+    if [ -n "${RESEND_KEY}" ] && [ -n "${EMAIL_FROM}" ]; then
+      pass "AGUS_AUTH_PUBLIC is 'true' with verified Resend email settings configured"
+    else
+      fail "AGUS_AUTH_PUBLIC=true requires RESEND_API_KEY and AGUS_AUTH_EMAIL_FROM in ${API_ENV_FILE} (INVITE_ONLY_DEVNET_REQUIRED)"
+    fi
   else
-    fail "AGUS_AUTH_PUBLIC must be 'false' (INVITE_ONLY_DEVNET_REQUIRED)"
+    fail "AGUS_AUTH_PUBLIC must be 'false' or 'true' with Resend (INVITE_ONLY_DEVNET_REQUIRED)"
   fi
 
   SOL_DEV=$(get_val "AGUS_SOLANA_DEVNET_ENABLED")

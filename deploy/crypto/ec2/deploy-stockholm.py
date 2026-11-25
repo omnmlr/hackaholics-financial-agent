@@ -17,15 +17,17 @@ import tempfile
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import warnings
 
-HOST = "13-48-206-202.sslip.io"
-REVISION = "126a528c2b7b0accc380d2af7cddae58ed6e624a"
+DEFAULT_HOST = "agus.grindcity.app"
 DATABASE = "agus_crypto_devnet_20261124"
 ROLE = "agus_crypto_devnet_runtime"
 JESSICA = "cgSgspJ2msm6clMCkdW9"
+DEFAULT_EMAIL_FROM = "AGUS <noreply@mail.grindcity.app>"
 ROOT = Path("/etc/agus-crypto")
 FILES = set("Caddyfile compose.yml activate-release.sh favicon.png revision.txt image-id.txt image.tar.gz".split())
 DURABLE = ("BETTER_AUTH_SECRET", "AGUS_ENCRYPTION_ACTIVE_KEY", "AGUS_ENCRYPTION_KEYS")
 PROVIDERS = ("AI_API_KEY", "FIRECRAWL_API_KEY", "ELEVENLABS_API_KEY")
+IDENTITY_SECRETS = ("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "RESEND_API_KEY")
+IDENTITY_CONFIG = ("AGUS_AUTH_EMAIL_FROM", "AGUS_AUTH_PUBLIC")
 
 
 class DeploymentError(Exception):
@@ -41,7 +43,7 @@ def run(args, message, capture=False, timeout=None, cwd=None):
     return result.stdout if capture else None
 
 
-def bundle_image(delivery_root):
+def bundle_image(delivery_root, expected_revision=None):
     manifests = list(delivery_root.glob("SHA256SUMS.txt"))
     for levels in range(1, 5):
         manifests.extend(delivery_root.glob("*/" * levels + "SHA256SUMS.txt"))
@@ -58,7 +60,9 @@ def bundle_image(delivery_root):
         "The downloaded release files failed their checksums.", capture=True, cwd=bundle)
     revision = (bundle / "revision.txt").read_text().strip()
     image = (bundle / "image-id.txt").read_text().strip()
-    if revision != REVISION or not re.fullmatch(r"sha256:[a-f0-9]{64}", image):
+    if (not re.fullmatch(r"[0-9a-f]{40}", revision)
+            or (expected_revision and revision != expected_revision)
+            or not re.fullmatch(r"sha256:[a-f0-9]{64}", image)):
         raise DeploymentError("The bundle does not match the approved backend revision.")
     if subprocess.run(["docker", "image", "inspect", image], stdout=subprocess.DEVNULL,
                       stderr=subprocess.DEVNULL).returncode:
@@ -68,7 +72,7 @@ def bundle_image(delivery_root):
     facts = run(["docker", "image", "inspect", "--format",
                  '{{.Os}}/{{.Architecture}} {{index .Config.Labels "org.opencontainers.image.revision"}}', image],
                 "Docker could not inspect the release image.", capture=True)
-    if facts.strip() != f"linux/amd64 {REVISION}":
+    if facts.strip() != f"linux/amd64 {revision}":
         raise DeploymentError("Docker image platform or revision label mismatch.")
     print("Verified the approved Linux AMD64 image and all seven bundle files.", flush=True)
     return bundle, image
@@ -206,7 +210,7 @@ def validate_keyring(api, required):
         raise DeploymentError("BETTER_AUTH_SECRET must contain at least 32 characters.")
 
 
-def configure(image, recovery):
+def configure(image, recovery, configure_identity=False, public_auth=False):
     shared_path, api_path = ROOT / "shared.env", ROOT / "api.env"
     shared, api = read_config(shared_path), read_config(api_path)
     recovered = read_config(recovery) if recovery else {}
@@ -214,7 +218,7 @@ def configure(image, recovery):
         if any(re.fullmatch(r"MIGRATION_DATABASE_URL|PAYSTACK_SECRET_KEY|LIVE_[A-Z_]*|PAYSTACK_TRANSFERS_ENABLED", name)
                for name in settings):
             raise DeploymentError("A runtime file contains a migration or live-payment setting.")
-    for name in (*DURABLE, *PROVIDERS, "DATABASE_URL"):
+    for name in (*DURABLE, *PROVIDERS, *IDENTITY_SECRETS, *IDENTITY_CONFIG, "DATABASE_URL"):
         seen = {settings[name] for settings in (shared, api, recovered) if settings.get(name)}
         if name == "DATABASE_URL":
             seen = {verified_database_url(value) for value in seen}
@@ -223,7 +227,7 @@ def configure(image, recovery):
         if seen:
             target = shared if name == "DATABASE_URL" else api
             target[name] = seen.pop()
-    for name in (*DURABLE, *PROVIDERS):
+    for name in (*DURABLE, *PROVIDERS, *IDENTITY_SECRETS, *IDENTITY_CONFIG):
         shared.pop(name, None)
     api.pop("DATABASE_URL", None)
 
@@ -250,6 +254,23 @@ def configure(image, recovery):
     for name in PROVIDERS:
         if not api.get(name):
             api[name] = ask_secret(name)
+    if configure_identity:
+        for name in IDENTITY_SECRETS:
+            if not api.get(name):
+                api[name] = ask_secret(name)
+        if not api.get("AGUS_AUTH_EMAIL_FROM"):
+            entered = input(f"AGUS_AUTH_EMAIL_FROM [{DEFAULT_EMAIL_FROM}]: ").strip()
+            api["AGUS_AUTH_EMAIL_FROM"] = entered or DEFAULT_EMAIL_FROM
+    if bool(api.get("GOOGLE_CLIENT_ID")) != bool(api.get("GOOGLE_CLIENT_SECRET")):
+        raise DeploymentError("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together.")
+    if public_auth:
+        api["AGUS_AUTH_PUBLIC"] = "true"
+    else:
+        api.setdefault("AGUS_AUTH_PUBLIC", "false")
+    if api["AGUS_AUTH_PUBLIC"] not in ("true", "false"):
+        raise DeploymentError("AGUS_AUTH_PUBLIC must be true or false.")
+    if api["AGUS_AUTH_PUBLIC"] == "true" and (not api.get("RESEND_API_KEY") or not api.get("AGUS_AUTH_EMAIL_FROM")):
+        raise DeploymentError("AGUS_AUTH_PUBLIC=true requires RESEND_API_KEY and AGUS_AUTH_EMAIL_FROM.")
     api.update(AI_PROVIDER="gemini", AGUS_CRYPTO_IMAGES="true", AGUS_CRYPTO_VOICE_ENABLED="true",
                ELEVENLABS_VOICE_ID=JESSICA)
     api.setdefault("ELEVENLABS_ZERO_RETENTION", "false")
@@ -262,7 +283,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--release-dir", type=Path, default=Path("/home/ssm-user/agus-release"))
     parser.add_argument("--recover-from", type=Path, help="optional root-owned 0600 Crypto env backup")
+    parser.add_argument("--host", default=DEFAULT_HOST, help="public HTTPS hostname served by Caddy")
+    parser.add_argument("--revision", help="optional 40-char git revision expected in release bundle")
+    parser.add_argument("--configure-identity", action="store_true",
+                        help="prompt for missing GOOGLE_CLIENT_ID/SECRET, RESEND_API_KEY, and AGUS_AUTH_EMAIL_FROM")
+    parser.add_argument("--public-auth", action="store_true",
+                        help="enable AGUS_AUTH_PUBLIC=true (requires RESEND_API_KEY and AGUS_AUTH_EMAIL_FROM)")
     args = parser.parse_args()
+    if not re.fullmatch(r"([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,63}", args.host):
+        raise DeploymentError("A valid public HTTPS hostname is required for --host.")
+    if args.revision and not re.fullmatch(r"[0-9a-f]{40}", args.revision):
+        raise DeploymentError("--revision must be a 40-character lowercase git commit SHA.")
     if os.geteuid() != 0 or not sys.stdin.isatty():
         raise DeploymentError("Run with sudo in the existing interactive SSM terminal.")
     args.release_dir = args.release_dir.resolve(strict=True)
@@ -271,23 +302,27 @@ def main():
     metadata = ROOT.lstat()
     if not stat.S_ISDIR(metadata.st_mode) or metadata.st_uid != 0 or metadata.st_mode & 0o022:
         raise DeploymentError(f"Expected a root-owned configuration directory at {ROOT}.")
-    bundle, image = bundle_image(args.release_dir)
+    bundle, image = bundle_image(args.release_dir, args.revision)
     lock_fd = os.open(ROOT / ".stockholm-deploy.lock", os.O_CREAT | os.O_NOFOLLOW | os.O_WRONLY, 0o600)
     with os.fdopen(lock_fd, "w") as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             raise DeploymentError("Another interactive deployment is using the runtime files.") from None
-        configure(image, args.recover_from)
-        run(["bash", str(bundle / "activate-release.sh"), str(bundle), HOST],
+        configure(image, args.recover_from, configure_identity=args.configure_identity, public_auth=args.public_auth)
+        run(["bash", str(bundle / "activate-release.sh"), str(bundle), args.host],
             "Activation stopped. The protected runtime files remain available for retry.")
     ready = run(["curl", "--proto", "=https", "--fail", "--silent", "--max-time", "20",
-                 f"https://{HOST}/api/v1/ready"],
+                 f"https://{args.host}/api/v1/ready"],
                 "Local HTTPS passed activation, but the public readiness request failed.", capture=True)
     if json.loads(ready).get("status") != "ready":
         raise DeploymentError("The public endpoint did not return ready.")
+    for web_path in ("/", "/privacy", "/terms", "/support", "/auth"):
+        run(["curl", "--proto", "=https", "--fail", "--silent", "--output", "/dev/null", "--max-time", "20",
+             f"https://{args.host}{web_path}"],
+            f"Public HTTPS website route check failed for {web_path}.")
     contract = run(["curl", "--proto", "=https", "--fail", "--silent", "--max-time", "20",
-                    f"https://{HOST}/api/v1/openapi"],
+                    f"https://{args.host}/api/v1/openapi"],
                    "Readiness passed, but the public Crypto OpenAPI request failed.", capture=True)
     paths = json.loads(contract).get("paths", {})
     if any(method not in paths.get(f"/api/v1/crypto/{route}", {}) for route, method in (
@@ -296,7 +331,7 @@ def main():
         ("assistant/conversations/{id}/turns/{turnId}/audio", "post"),
     )):
         raise DeploymentError("Readiness passed, but the public OpenAPI contract is incomplete.")
-    print(f"Healthy Devnet API at https://{HOST}/api/v1/ready")
+    print(f"Healthy Devnet API and public website at https://{args.host}/")
 
 
 if __name__ == "__main__":

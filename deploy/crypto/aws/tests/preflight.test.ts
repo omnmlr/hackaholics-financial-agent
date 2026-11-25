@@ -211,10 +211,23 @@ describe.concurrent("AG-01 Genuine Startup Subprocess Verification (scripts/cryp
       expect(res.stderr).toContain("Crypto Devnet startup failed (STARTUP_CHECK_FAILED)");
     });
 
-    it("exits 1 with INVITE_ONLY_DEVNET_REQUIRED when AGUS_AUTH_PUBLIC is true", async () => {
+    it("exits 1 with INVITE_ONLY_DEVNET_REQUIRED when AGUS_AUTH_PUBLIC is true without Resend settings", async () => {
       const res = await runCryptoDevnet({ AGUS_AUTH_PUBLIC: "true" });
       expect(res.exitCode).toBe(1);
       expect(res.stderr).toContain("Crypto Devnet startup failed (INVITE_ONLY_DEVNET_REQUIRED)");
+    });
+
+    it("exits 0 when AGUS_AUTH_PUBLIC is true with RESEND_API_KEY, AGUS_AUTH_EMAIL_FROM, and HTTPS origin", async () => {
+      const res = await runCryptoDevnet(
+        {
+          AGUS_AUTH_PUBLIC: "true",
+          RESEND_API_KEY: "re_fixture_only",
+          AGUS_AUTH_EMAIL_FROM: "AGUS <noreply@mail.fixture.invalid>",
+        },
+        { useHarness: true, dbMode: "valid-runtime", rpcGenesis: VALID_DEVNET_GENESIS },
+      );
+      expect(res.exitCode).toBe(0);
+      expect(res.stdout).toContain("Crypto Devnet API startup verified");
     });
 
     it("exits 1 with POSTGRES_RUNTIME_ROLE_REQUIRED when DATABASE_URL lacks postgres prefix", async () => {

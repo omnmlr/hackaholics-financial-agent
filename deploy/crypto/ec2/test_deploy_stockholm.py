@@ -1,5 +1,6 @@
 """Regression tests for the Stockholm launcher's read-only database check."""
 import importlib.util
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -48,3 +49,68 @@ class DatabaseCheckTests(unittest.TestCase):
                     {"users": False, "versions": []},
                 )
             self.assertFalse(env_paths[0].exists())
+
+    def test_configure_enforces_google_pair_and_public_resend_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "shared.env").write_text(
+                "DATABASE_URL=postgresql://agus_crypto_devnet_runtime:fixture@ep-fixture.neon.tech/agus_crypto_devnet_20261124?sslmode=verify-full\n",
+                encoding="utf-8",
+            )
+            (root / "shared.env").chmod(0o600)
+            valid_key = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+            (root / "api.env").write_text(
+                "\n".join(
+                    [
+                        "BETTER_AUTH_SECRET=abcdefghijklmnopqrstuvwxyz123456",
+                        "AGUS_ENCRYPTION_ACTIVE_KEY=v1",
+                        f'AGUS_ENCRYPTION_KEYS={{"v1":"{valid_key}"}}',
+                        "AI_API_KEY=ai-fixture",
+                        "FIRECRAWL_API_KEY=fc-fixture",
+                        "ELEVENLABS_API_KEY=el-fixture",
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            (root / "api.env").chmod(0o600)
+
+            real_fstat = os.fstat
+
+            def root_owned_fstat(fd):
+                st = real_fstat(fd)
+                return os.stat_result(
+                    (
+                        st.st_mode,
+                        st.st_ino,
+                        st.st_dev,
+                        st.st_nlink,
+                        0,
+                        st.st_gid,
+                        st.st_size,
+                        st.st_atime,
+                        st.st_mtime,
+                        st.st_ctime,
+                    )
+                )
+
+            with patch.object(launcher, "ROOT", root), patch.object(
+                launcher, "db_check", return_value={"users": False, "versions": []}
+            ), patch.object(launcher, "run"), patch("os.fstat", side_effect=root_owned_fstat):
+                with self.assertRaises(launcher.DeploymentError):
+                    launcher.configure("fixture-image", None, configure_identity=False, public_auth=True)
+
+            (root / "api.env").write_text(
+                (root / "api.env").read_text(encoding="utf-8")
+                + "RESEND_API_KEY=re_fixture\nAGUS_AUTH_EMAIL_FROM=AGUS <noreply@mail.grindcity.app>\n"
+                + "GOOGLE_CLIENT_ID=gid-fixture\nGOOGLE_CLIENT_SECRET=gsec-fixture\n",
+                encoding="utf-8",
+            )
+            (root / "api.env").chmod(0o600)
+            with patch.object(launcher, "ROOT", root), patch.object(
+                launcher, "db_check", return_value={"users": False, "versions": []}
+            ), patch("os.fstat", side_effect=root_owned_fstat):
+                launcher.configure("fixture-image", None, configure_identity=False, public_auth=True)
+            written = (root / "api.env").read_text(encoding="utf-8")
+            self.assertIn("AGUS_AUTH_PUBLIC=true\n", written)
+            self.assertIn("GOOGLE_CLIENT_ID=gid-fixture\n", written)

@@ -1,4 +1,5 @@
 import { AgusWorkspace } from "@/components/agus/workspace";
+import { CryptoPublicHome } from "@/components/agus/crypto-public-home";
 import { FinancialConversation } from "@/components/financial-conversation";
 import { config } from "@/lib/config";
 import { redirect } from "next/navigation";
@@ -8,6 +9,9 @@ export default async function Page({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  if (process.env.AGUS_ENVIRONMENT === "devnet") {
+    return <CryptoPublicHome />;
+  }
   const params = await searchParams;
   if (params.workspace === "payments" || params.fromChat) {
     const chat =

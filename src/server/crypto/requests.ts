@@ -5,7 +5,7 @@ import * as C from "../../../packages/contracts/src/crypto";
 import { DEVNET_GENESIS } from "../../lib/solana/contracts";
 import { MAX_U64, safeLamports } from "../../lib/solana/money";
 import type { Principal } from "../auth";
-import { invariant } from "../errors";
+import { DomainError, invariant } from "../errors";
 import { operationalEvent } from "../observability";
 import { inspectRequestPayment } from "../request-chain";
 import { discoverRequest } from "../request-discovery";
@@ -202,8 +202,63 @@ export async function cryptoRequestQr(owner: string, id: string) {
   });
 }
 
-export async function shareCryptoRequest(reference: string) {
+const SHARE_RATE_WINDOW_MS = 60_000;
+const SHARE_IP_LIMIT = 30;
+const SHARE_GLOBAL_LIMIT = 120;
+
+async function incrementShareRateLimit(key: string, now: number) {
+  const db = await database();
+  const result = await db.query<{ count: number }>(
+    `INSERT INTO agus_rate_limit(id, key, count, last_request)
+     VALUES($1, $2, 1, $3::bigint)
+     ON CONFLICT (key) DO UPDATE SET
+       count = CASE
+         WHEN $3::bigint - agus_rate_limit.last_request >= $4::bigint THEN 1
+         ELSE agus_rate_limit.count + 1
+       END,
+       last_request = CASE
+         WHEN $3::bigint - agus_rate_limit.last_request >= $4::bigint THEN $3::bigint
+         ELSE agus_rate_limit.last_request
+       END
+     RETURNING count`,
+    [randomUUID(), key, now, SHARE_RATE_WINDOW_MS],
+  );
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+function shareClientIpHash(request?: Request) {
+  const forwarded = request?.headers
+    .get("x-forwarded-for")
+    ?.split(",")
+    .at(-1)
+    ?.trim();
+  const ip =
+    request?.headers.get("x-real-ip")?.trim() || forwarded || "unknown";
+  return createHash("sha256").update(ip).digest("hex").slice(0, 24);
+}
+
+async function enforcePublicShareRateLimit(request?: Request) {
+  const now = Date.now();
+  const ipCount = await incrementShareRateLimit(
+    `crypto:share:ip:${shareClientIpHash(request)}`,
+    now,
+  );
+  if (ipCount > SHARE_IP_LIMIT) {
+    operationalEvent("crypto.share.rate_limited", { code: "RATE_LIMITED_IP" });
+    throw new DomainError("RATE_LIMITED", 429, true);
+  }
+  const globalCount = await incrementShareRateLimit("crypto:share:global", now);
+  if (globalCount > SHARE_GLOBAL_LIMIT) {
+    operationalEvent("crypto.share.rate_limited", {
+      code: "RATE_LIMITED_GLOBAL",
+    });
+    throw new DomainError("RATE_LIMITED", 429, true);
+  }
+}
+
+export async function shareCryptoRequest(reference: string, request?: Request) {
   invariant(cryptoRequestsReady(), "FEATURE_DISABLED", 503);
+  await enforcePublicShareRateLimit(request);
   const row = (
     await (
       await database()

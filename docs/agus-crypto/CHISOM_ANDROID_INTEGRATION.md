@@ -1,6 +1,6 @@
 # Chisom Android Integration Guide · API 1.1.0
 
-**Target checkpoint:** `63abaebee506efc45308039167a7ffddef29257a` (with approved [PRD](PRD.md) and [v1 API contract](API_CONTRACT.md) from PR #51)  
+**Canonical integration branch:** `integration/agus-crypto-hackathon-20261129` (with approved [PRD](PRD.md) and [v1 API contract](API_CONTRACT.md) from PR #51)  
 **Normative references:** [API Contract v1](API_CONTRACT.md) · [Frontend Contract 1.1.0](FRONTEND_CONTRACT_1_1.md) · [OpenAPI 3.1.0](../../packages/contracts/openapi.json) · [Generated Client](../../packages/api-client/src/generated.ts)
 
 This guide gives Chisom the exact setup, authentication, multimodal API 1.1.0 wiring, wallet-handoff lifecycle, fixture transport, and verification gates to build the Android UI without waiting on live provider credits or duplicating backend work.
@@ -9,7 +9,7 @@ This guide gives Chisom the exact setup, authentication, multimodal API 1.1.0 wi
 
 ## 1. Branching, Packages, and Ownership Boundaries
 
-1. **Branch from the consolidated release candidate** (or `integration/agus-crypto-hackathon-20261129` once merged) on a dedicated frontend branch.
+1. **Branch directly from `integration/agus-crypto-hackathon-20261129`** on a dedicated frontend branch (`git clone --branch integration/agus-crypto-hackathon-20261129 ...`).
 2. **Do not modify** backend routes (`src/app/api/v1/crypto/**`), server modules (`src/server/crypto/**`), database migrations/SQL, or the engineering test harness files (`apps/mobile/CryptoDeviceHarness.tsx`, `apps/mobile/src/crypto-signer.ts`, `apps/mobile/src/session.ts`, `apps/mobile/src/crypto-voice.ts`, `apps/mobile/src/crypto-device-state.ts`, `apps/mobile/src/crypto-wallet-policy.ts`, `apps/mobile/plugins/with-wallet-package.cjs`).
 3. **Keep `apps/mobile/App.tsx` gated safely**: `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST=true` renders `CryptoDeviceHarness` for CI/handset signing diagnostics (`apps/mobile/App.tsx:4-6`). Wire product screens into the non-diagnostic path or coordinate a clean root router switch without breaking `CryptoDeviceHarness`.
 4. **Install dependencies and regenerate/verify contracts** before coding:

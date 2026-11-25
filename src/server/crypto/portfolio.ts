@@ -286,19 +286,20 @@ export async function portfolio(
   const wallets = await listWallets(owner, scope, true);
   const batches = await Promise.all(
     wallets.map(async (wallet) => {
-      const timer = AbortSignal.timeout(4300);
+      const sync = syncWalletBalances(owner, wallet, read);
+      let timer: ReturnType<typeof setTimeout> | undefined;
       const values = await Promise.race([
-        syncWalletBalances(owner, wallet, read),
+        sync,
         new Promise<Balance[]>((resolve, reject) => {
-          timer.addEventListener(
-            "abort",
-            () => {
-              void cached(owner, wallet).then(resolve, reject);
-            },
-            { once: true },
-          );
+          timer = setTimeout(() => {
+            // Suppress late post-timeout rejections from the losing RPC sync once fallback takes over.
+            void sync.catch(() => undefined);
+            void cached(owner, wallet).then(resolve, reject);
+          }, 4300);
         }),
-      ]);
+      ]).finally(() => {
+        if (timer !== undefined) clearTimeout(timer);
+      });
       return { wallet, values, coverage: coverage(wallet, values) };
     }),
   );

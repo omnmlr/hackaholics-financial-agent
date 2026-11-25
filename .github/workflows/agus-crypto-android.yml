@@ -2,7 +2,7 @@ name: AGUS Crypto Android Devnet APK
 on:
   workflow_dispatch:
   push:
-    branches: [feat/agus-crypto-backend]
+    branches: [feat/agus-crypto-backend, integration/agus-crypto-hackathon-20261129]
     paths:
       - ".github/workflows/agus-crypto-android.yml"
       - "apps/mobile/**"

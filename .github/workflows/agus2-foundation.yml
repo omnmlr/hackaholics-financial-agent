@@ -2,7 +2,7 @@ name: AGUS 2 foundation (isolated fixtures)
 on:
   pull_request:
   push:
-    branches: ["integration/agus2-**"]
+    branches: ["integration/agus2-**", "integration/agus-crypto-hackathon-20261129"]
 permissions:
   contents: read
 concurrency:

@@ -31,6 +31,7 @@ import {
   listAlerts,
 } from "../src/server/crypto/alerts";
 import { cryptoRpc } from "../src/server/crypto/rpc";
+import { activity } from "../src/server/crypto/activity";
 import { DEVNET_GENESIS } from "../src/lib/solana/contracts";
 import { CIRCLE_DEVNET_USDC_MINT } from "../src/lib/solana/assets";
 import { TOKEN_PROGRAM_ID } from "../src/lib/solana/classic-spl";
@@ -1827,7 +1828,7 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
         };
         await migrate(sqlAdapter, join(process.cwd(), "migrations"), false);
 
-        // Step 1: Apply baseline runtime-role.sql and verify the pre-remediation flaw
+        // Step 1: Apply baseline runtime-role.sql and verify immutability out of the box
         const baselineSql = readFileSync(
           join(process.cwd(), "scripts/sql/runtime-role.sql"),
           "utf8",
@@ -1883,7 +1884,18 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
           [auditId, ownerId, attemptId],
         );
 
-        // Before remediation: agus_runtime CAN update agus_crypto_receipts (demonstrating the flaw)
+        // Baseline runtime-role.sql must already block UPDATE/DELETE on immutable tables
+        await pg.exec("SET ROLE agus_runtime;");
+        await expect(
+          pg.query(
+            "UPDATE agus_crypto_receipts SET cluster='devnet' WHERE id=$1",
+            [receiptId],
+          ),
+        ).rejects.toThrow(/permission denied/i);
+        await pg.exec("RESET ROLE;");
+
+        // Simulate privilege drift and verify ag-03-proposed.sql.txt restores immutability and RLS
+        await pg.exec("GRANT UPDATE ON agus_crypto_receipts TO agus_runtime;");
         await pg.exec("SET ROLE agus_runtime;");
         await expect(
           pg.query(
@@ -1990,6 +2002,131 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
         await pg.exec("RESET ROLE;");
       } finally {
         await pg.close();
+      }
+    });
+  });
+
+  // ==========================================================================
+  // NEG-12: Public Share Endpoint Malformed Encoding & Rate-Limit Protection
+  // ==========================================================================
+  describe("NEG-12: Public share endpoint malformed encoding and rate-limit enforcement", () => {
+    it("returns 400 on malformed URI segments and enforces per-IP 429 limits on GET /share/:reference", async () => {
+      const prevRequests = process.env.AGUS_CRYPTO_REQUESTS;
+      const prevDevnet = process.env.AGUS_SOLANA_DEVNET_ENABLED;
+      process.env.AGUS_CRYPTO_REQUESTS = "true";
+      process.env.AGUS_SOLANA_DEVNET_ENABLED = "true";
+      try {
+        const malformed = await GET(apiRequest(null, "share/%E0%A4%A"));
+        expect(malformed.status).toBe(400);
+        const malformedBody = await malformed.json();
+        expect(malformedBody.error.code).toBe("INVALID_INPUT");
+
+        const wallets = await listWallets(harness.users[0].id, {
+          cluster: devnet,
+        });
+        const verifiedWallet =
+          wallets.find((wallet) => wallet.ownership === "verified") ??
+          (await associateWallet(0, Keypair.generate()));
+
+        const createdRes = await POST(
+          apiRequest(0, "requests", {
+            walletId: verifiedWallet.id,
+            amount: sol(devnet, 1_000_000n),
+          }),
+        );
+        expect(createdRes.status).toBe(200);
+        const created = await createdRes.json();
+
+        const shareReq = (ip: string) =>
+          new Request(`${origin}/api/v1/crypto/share/${created.reference}`, {
+            method: "GET",
+            headers: { "x-forwarded-for": ip },
+          });
+
+        for (let i = 0; i < 30; i++) {
+          const res = await GET(shareReq("198.51.100.10"));
+          expect(res.status).toBe(200);
+          const payload = await res.json();
+          expect(payload.reference).toBe(created.reference);
+        }
+
+        const blocked = await GET(shareReq("198.51.100.10"));
+        expect(blocked.status).toBe(429);
+        const blockedBody = await blocked.json();
+        expect(blockedBody.error.code).toBe("RATE_LIMITED");
+
+        const otherIp = await GET(shareReq("198.51.100.11"));
+        expect(otherIp.status).toBe(200);
+      } finally {
+        if (prevRequests === undefined) delete process.env.AGUS_CRYPTO_REQUESTS;
+        else process.env.AGUS_CRYPTO_REQUESTS = prevRequests;
+        if (prevDevnet === undefined)
+          delete process.env.AGUS_SOLANA_DEVNET_ENABLED;
+        else process.env.AGUS_SOLANA_DEVNET_ENABLED = prevDevnet;
+      }
+    });
+  });
+
+  // ==========================================================================
+  // NEG-13: Post-Timeout RPC Rejection Safety in Portfolio & Activity Sync
+  // ==========================================================================
+  describe("NEG-13: Post-timeout RPC rejection safety", () => {
+    it("suppresses unhandled rejections if RPC fails after portfolio or activity timeout fallback", async () => {
+      const freshWallet = await associateWallet(0, Keypair.generate());
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => {
+        unhandled.push(reason);
+      };
+      process.on("unhandledRejection", onUnhandled);
+
+      let rejectPortfolioRpc: ((err: unknown) => void) | undefined;
+      let portfolioCalled = false;
+      let rejectActivityRpc: ((err: unknown) => void) | undefined;
+      let activityCalled = false;
+
+      try {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+
+        const portfolioPromise = portfolio(
+          harness.users[0].id,
+          { cluster: devnet, walletIds: [freshWallet.id] },
+          (() => {
+            portfolioCalled = true;
+            return new Promise<Connection>((_resolve, reject) => {
+              rejectPortfolioRpc = reject;
+            });
+          }) as unknown as typeof cryptoRpc,
+        );
+        await vi.advanceTimersByTimeAsync(4300);
+        const portfolioResult = await portfolioPromise;
+        expect(portfolioCalled).toBe(true);
+        expect(portfolioResult.holdings).toEqual([]);
+
+        const activityPromise = activity(
+          harness.users[0].id,
+          { cluster: devnet, walletIds: [freshWallet.id] },
+          (() => {
+            activityCalled = true;
+            return new Promise<Connection>((_resolve, reject) => {
+              rejectActivityRpc = reject;
+            });
+          }) as unknown as typeof cryptoRpc,
+        );
+        await vi.advanceTimersByTimeAsync(4200);
+        const activityResult = await activityPromise;
+        expect(activityCalled).toBe(true);
+        expect(activityResult.items).toEqual([]);
+
+        rejectPortfolioRpc?.({ code: "CHAIN_IDENTITY_MISMATCH" });
+        rejectActivityRpc?.(new Error("late activity rpc failure"));
+        await vi.runAllTimersAsync();
+        vi.useRealTimers();
+        await new Promise((resolve) => setTimeout(resolve, 30));
+
+        expect(unhandled).toEqual([]);
+      } finally {
+        vi.useRealTimers();
+        process.off("unhandledRejection", onUnhandled);
       }
     });
   });

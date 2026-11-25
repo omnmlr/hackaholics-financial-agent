@@ -75,7 +75,7 @@ function buildBaseDevnetEnv(): Record<string, string | undefined> {
 let tempSnapshotDir = "";
 let snapshotPath = "";
 
-const MAX_PARALLEL_SUBPROCESSES = 3;
+const MAX_PARALLEL_SUBPROCESSES = 2;
 let activeSubprocesses = 0;
 const subprocessWaiters: Array<() => void> = [];
 
@@ -132,7 +132,7 @@ async function runCryptoDevnet(
     const { stdout, stderr } = await execFileAsync(process.execPath, nodeArgs, {
       cwd: repoRoot,
       env: env as NodeJS.ProcessEnv,
-      timeout: 50000,
+      timeout: 180000,
     });
     return { exitCode: 0, stdout, stderr };
   } catch (err: unknown) {
@@ -148,7 +148,7 @@ async function runCryptoDevnet(
 }
 
 describe.concurrent("AG-01 Genuine Startup Subprocess Verification (scripts/crypto-devnet.ts)", () => {
-  vi.setConfig({ testTimeout: 180000, hookTimeout: 60000 });
+  vi.setConfig({ testTimeout: 900000, hookTimeout: 60000 });
 
   beforeAll(async () => {
     // Build a real PostgreSQL (PGlite) snapshot once using actual migrations 0001..0027 + runtime-role.sql

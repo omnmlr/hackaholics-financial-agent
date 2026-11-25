@@ -120,16 +120,24 @@ async function assistantTurn(owner: string, request: Request) {
   return askCrypto(owner, ask, key, attachment);
 }
 
+function decodePathSegment(segment: string) {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    throw new DomainError("INVALID_INPUT", 400);
+  }
+}
+
 async function handle(request: Request) {
   return endpoint(async () => {
     const url = new URL(request.url);
     const path = url.pathname
       .replace(/^\/api\/v1\/crypto\/?/, "")
       .split("/")
-      .map(decodeURIComponent);
+      .map(decodePathSegment);
     const method = request.method;
     if (method === "GET" && path.length === 2 && path[0] === "share")
-      return shareCryptoRequest(await input(C.CryptoAddress, path[1]));
+      return shareCryptoRequest(await input(C.CryptoAddress, path[1]), request);
     const p = await principal(request).catch((error) => {
       if (error instanceof DomainError && error.status === 401)
         throw new DomainError("SESSION_REQUIRED", 401);

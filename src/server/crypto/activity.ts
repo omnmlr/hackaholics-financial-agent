@@ -324,18 +324,31 @@ export async function syncWalletActivity(
   );
 }
 
-async function syncScopedWallets(owner: string, scope: Scope) {
+async function syncScopedWallets(
+  owner: string,
+  scope: Scope,
+  read: typeof cryptoRpc = cryptoRpc,
+) {
   const [wallets, owned] = await Promise.all([
     listWallets(owner, scope, true),
     listWallets(owner, { cluster: scope.cluster }, true),
   ]);
-  const timeout = AbortSignal.timeout(4200);
+  const sync = Promise.all(
+    wallets.map((wallet) => syncWalletActivity(owner, wallet, read)),
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
   await Promise.race([
-    Promise.all(wallets.map((wallet) => syncWalletActivity(owner, wallet))),
-    new Promise<void>((resolve) =>
-      timeout.addEventListener("abort", () => resolve(), { once: true }),
-    ),
-  ]);
+    sync,
+    new Promise<void>((resolve) => {
+      timer = setTimeout(() => {
+        // Suppress late post-timeout rejections once the activity request proceeds with stored rows.
+        void sync.catch(() => undefined);
+        resolve();
+      }, 4200);
+    }),
+  ]).finally(() => {
+    if (timer !== undefined) clearTimeout(timer);
+  });
   return { wallets, owned };
 }
 
@@ -366,7 +379,11 @@ async function activityCoverage(owner: string, wallets: Wallet[]) {
   });
 }
 
-export async function activity(owner: string, input: WindowQuery) {
+export async function activity(
+  owner: string,
+  input: WindowQuery,
+  read: typeof cryptoRpc = cryptoRpc,
+) {
   const { cluster, walletIds, from, to, cursor } = input;
   invariant(
     !from || !to || Date.parse(from) < Date.parse(to),
@@ -381,7 +398,7 @@ export async function activity(owner: string, input: WindowQuery) {
     to ?? null,
   ]);
   const previous = cursor ? decodeCursor(context, cursor) : null;
-  const { wallets, owned } = await syncScopedWallets(owner, input);
+  const { wallets, owned } = await syncScopedWallets(owner, input, read);
   const cutoff = Math.max(
     Date.parse(previous?.observed ?? new Date().toISOString()) - 7 * DAY,
     from ? Date.parse(from) : 0,

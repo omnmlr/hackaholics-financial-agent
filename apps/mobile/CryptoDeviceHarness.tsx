@@ -105,9 +105,11 @@ export default function CryptoDeviceHarness() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       setNotice(
-        /^[A-Z_]{1,100}$/.test(message)
-          ? message
-          : "Check the API or unlock the session to recover the saved attempt.",
+        message === "LOCAL_SESSION_LOCKED"
+          ? "Unlock AGUS to recover the saved Devnet attempt."
+          : /^[A-Z_]{1,100}$/.test(message)
+            ? message
+            : "Check the API or unlock the session to recover the saved attempt.",
       );
     } finally {
       active.current = false;
@@ -566,7 +568,10 @@ export default function CryptoDeviceHarness() {
                 selectable
               >{`Receipt ${receipt.id} · Finalized at slot ${receipt.slot} · ${receipt.feeLamports} lamports fee`}</Text>
               {receipt.legs
-                .filter((leg) => leg.kind === "transfer" && leg.amount?.asset.kind === "sol")
+                .filter(
+                  (leg) =>
+                    leg.kind === "transfer" && leg.amount?.asset.kind === "sol",
+                )
                 .map((leg) => (
                   <Text key={leg.id} selectable>
                     {`${leg.amount?.atoms} lamports\nFrom ${leg.from}\nTo ${leg.to}`}

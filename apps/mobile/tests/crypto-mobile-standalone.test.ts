@@ -79,6 +79,8 @@ import {
   solAtoms,
 } from "../src/crypto-device-state";
 import { WalletRouteError, walletFailure } from "../src/crypto-wallet-policy";
+vi.mock("expo/fetch", () => ({ fetch: globalThis.fetch }));
+
 import { api, lockSession, unlockSession } from "../src/session";
 
 type Schemas = components["schemas"];
@@ -392,8 +394,8 @@ describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", ()
     });
   });
 
-  describe("3. Pre-Submission Launch Marker Bug & Lifecycle Diagnostics (createCryptoSigner)", () => {
-    it("reproduces confirmed bug: premature launch marker locks out retries after ERROR_ASSOCIATION_CANCELLED", async () => {
+  describe("3. Pre-submission marker and lifecycle diagnostics", () => {
+    it("leaves no submission marker after association cancellation", async () => {
       const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
       native.store.set(grantKey, "fixture-token");
 
@@ -408,14 +410,13 @@ describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", ()
       const firstResult = await signer.handoff(claim, route, review);
       expect(firstResult).toEqual({ kind: "declined" });
 
-      // Confirmed bug at crypto-signer.ts:278-279: marker was saved prior to transact(),
-      // so retrying the same attempt returns { kind: "unknown" } without invoking transact().
-      const retryResult = await signer.handoff(claim, route, review);
+      expect(native.store.has(`agus.crypto.launch.owner.${claim.attempt.id}`)).toBe(false);
+      const retryResult = await signer.handoff({ ...claim, launchGranted: false }, route, review);
       expect(retryResult).toEqual({ kind: "unknown" });
       expect(native.transact).toHaveBeenCalledTimes(1);
     });
 
-    it("reproduces confirmed bug: premature launch marker locks out retries after pre-submission ERROR_ASSOCIATION_TIMEOUT", async () => {
+    it("leaves no submission marker after association timeout", async () => {
       const grantKey = `agus.crypto.grant.owner.phantom.devnet.${route.address}`;
       native.store.set(grantKey, "fixture-token");
 
@@ -432,7 +433,8 @@ describe("AG-02 Standalone Regression Test Suite: Android & External Wallet", ()
         reason: "WALLET_ASSOCIATION_TIMEOUT",
       });
 
-      const retryResult = await signer.handoff(claim, route, review);
+      expect(native.store.has(`agus.crypto.launch.owner.${claim.attempt.id}`)).toBe(false);
+      const retryResult = await signer.handoff({ ...claim, launchGranted: false }, route, review);
       expect(retryResult).toEqual({ kind: "unknown" });
       expect(native.transact).toHaveBeenCalledTimes(1);
     });

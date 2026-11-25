@@ -43,6 +43,8 @@ function keyAddress(value: string) {
   return new PublicKey(bytes).toBase58();
 }
 
+const activeHandoffs = new Set<string>();
+
 export function createCryptoSigner(
   userId: string,
   publishedOrigin: string,
@@ -221,6 +223,9 @@ export function createCryptoSigner(
       )
         return { kind: "unavailable", reason: "EXACT_FRESH_REVIEW_REQUIRED" };
       const provider = providerFor(route);
+      const marker = `agus.crypto.launch.${userId}.${attempt.id}`;
+      if (activeHandoffs.has(marker)) return { kind: "unknown" };
+      activeHandoffs.add(marker);
       let stage: WalletStage = "association";
       let returnedSignature: string | undefined;
       try {
@@ -274,9 +279,7 @@ export function createCryptoSigner(
           )
             return { kind: "unavailable", reason: "REVIEW_MESSAGE_MISMATCH" };
         }
-        const marker = `agus.crypto.launch.${userId}.${attempt.id}`;
         if (await SecureStore.getItemAsync(marker)) return { kind: "unknown" };
-        await SecureStore.setItemAsync(marker, review.messageDigest, storage);
         emit(provider, stage, "STARTED");
         return await transact(async (wallet) => {
           stage = "authorization";
@@ -290,6 +293,11 @@ export function createCryptoSigner(
             !caps.supports_sign_and_send_transactions
           )
             throw new WalletRouteError("UNSUPPORTED_SIGNER_CAPABILITY");
+          if (!(Date.parse(review.expiresAt) > Date.now()))
+            throw new WalletRouteError("EXACT_FRESH_REVIEW_REQUIRED");
+          // Record before invoking the native submission. After a process death,
+          // the server never reissues the original one-time launch grant.
+          await SecureStore.setItemAsync(marker, review.messageDigest, storage);
           if (!(Date.parse(review.expiresAt) > Date.now()))
             throw new WalletRouteError("EXACT_FRESH_REVIEW_REQUIRED");
           stage = "submission";
@@ -313,6 +321,8 @@ export function createCryptoSigner(
         const failure = walletFailure(error, stage);
         emit(provider, stage, failure.reason);
         return failure.outcome;
+      } finally {
+        activeHandoffs.delete(marker);
       }
     },
     async unlink(route: Route) {

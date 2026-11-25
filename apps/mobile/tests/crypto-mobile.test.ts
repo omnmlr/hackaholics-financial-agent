@@ -28,7 +28,11 @@ vi.mock("@solana-mobile/mobile-wallet-adapter-protocol-web3js", () => ({
 }));
 
 import { createCryptoSigner } from "../src/crypto-signer";
-import { canRecover, parseSavedAttempt, solAtoms } from "../src/crypto-device-state";
+import {
+  canRecover,
+  parseSavedAttempt,
+  solAtoms,
+} from "../src/crypto-device-state";
 import { walletFailure } from "../src/crypto-wallet-policy";
 
 type Schemas = components["schemas"];
@@ -214,6 +218,30 @@ describe("Android Crypto MWA boundary", () => {
       kind: "unknown",
     });
     expect(native.send).toHaveBeenCalledTimes(1);
+  });
+
+  it("records no submission on an association failure and rejects overlapping handoffs", async () => {
+    const signer = createCryptoSigner("owner", "https://identity.example");
+    const second = createCryptoSigner("owner", "https://identity.example");
+    const marker = `agus.crypto.launch.owner.${claim.attempt.id}`;
+    const association = Promise.withResolvers<never>();
+    native.transact.mockReturnValueOnce(association.promise);
+    const first = signer.handoff(claim, route, review);
+    await vi.waitFor(() => expect(native.transact).toHaveBeenCalledTimes(1));
+    await expect(second.handoff(claim, route, review)).resolves.toEqual({
+      kind: "unknown",
+    });
+    expect(native.store.has(marker)).toBe(false);
+    association.reject(
+      Object.assign(new Error(), { code: "ERROR_ASSOCIATION_CANCELLED" }),
+    );
+    await expect(first).resolves.toEqual({ kind: "declined" });
+    expect(native.send).not.toHaveBeenCalled();
+    expect(native.store.has(marker)).toBe(false);
+    await expect(
+      second.handoff({ ...claim, launchGranted: false }, route, review),
+    ).resolves.toEqual({ kind: "unknown" });
+    expect(native.send).not.toHaveBeenCalled();
   });
 
   it("separates Battery Saver, attestation and explicit wallet decline", () => {

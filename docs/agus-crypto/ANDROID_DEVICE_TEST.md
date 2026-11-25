@@ -14,45 +14,22 @@ On a new path the script creates a 4096-bit RSA PKCS#12 signer and verifies the 
 
 ### Windows workstation
 
-Use Ubuntu under WSL 2 on the trusted Windows workstation. If Ubuntu is missing, run `wsl --install -d Ubuntu` in administrator PowerShell and complete the setup. Then run these commands in Ubuntu.
+Use Ubuntu under WSL 2 on the trusted signing workstation. If needed, run `wsl --install -d Ubuntu` in administrator PowerShell and finish Ubuntu setup. Run the following commands inside Ubuntu from the AGUS checkout. [WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install)
 
 ```bash
 sudo apt update
-sudo apt install -y git gh gnupg openssl default-jdk-headless
+sudo apt install -y git gh gnupg openssl default-jdk-headless curl jq
 gh auth login --hostname github.com --git-protocol https --web
-gh auth setup-git
-git clone --branch feat/agus-crypto-backend https://github.com/omnmlr/hackaholics-financial-agent.git "$HOME/agus-crypto-release"
-cd "$HOME/agus-crypto-release"
-export GPG_TTY="$(tty)"
-gpg --list-secret-keys --with-fingerprint
-install -d -m 700 "$HOME/agus-signing-backup"
+bash scripts/android/prepare-release-signing-windows.sh
 ```
 
-Use the founder's existing recoverable, encryption-capable GPG key. If its private key lives in approved recovery storage, import it into the Ubuntu GnuPG keyring following that storage provider's instructions. If setting up a GPG key for the first time, run `gpg --full-generate-key`, choose an encryption-capable key type, and store a protected export of the private key and its passphrase in approved recovery storage. Copy an existing encrypted replacement archive to the private directory before running the script. Use the exact existing filename and paste the GPG fingerprint without spaces.
+Enter the exact WSL path to the existing encrypted replacement backup and the public fingerprint of its GPG recipient. If the key is stored in approved recovery storage, import it into the WSL GnuPG keyring first. The wrapper verifies the backup and installs the signing settings via GitHub CLI. It keeps decrypted working files in WSL's memory-backed temporary directory. The optional `--create` mode requires explicit confirmation and an existing private, durable backup directory. Keep a second encrypted copy in approved recovery storage.
 
-```bash
-read -r -p 'GPG fingerprint: ' recipient
-bash scripts/android/prepare-release-signing.sh "$HOME/agus-signing-backup/agus-signing.tar.gpg" "$recipient"
-```
-
-Keep the encrypted archive in two durable locations. For example, copy it to approved encrypted storage from WSL and confirm that the copy matches with `cmp`. Store the GPG private key and its passphrase through the founder's designated recovery channels. The only value needed for Vercel is the public certificate SHA-256 printed by the script. [WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install)
-
-| Repository secret | Value from the replacement signing backup |
-| --- | --- |
-| `AGUS_ANDROID_KEYSTORE_BASE64` | Base64 encoding of the replacement PKCS#12 file |
-| `AGUS_ANDROID_KEYSTORE_PASSWORD` | Password that opens that keystore |
-| `AGUS_ANDROID_KEY_ALIAS` | Alias of the private key with the published certificate |
-| `AGUS_ANDROID_KEY_PASSWORD` | Password used to access that private key entry |
-
-Under **Variables**, choose **New repository variable** and set `AGUS_CRYPTO_DEVICE_API_URL` to the HTTPS origin of the private Devnet Crypto API. The service must pass `/api/v1/ready` and serve the Crypto handoff contract at `/api/v1/openapi`. The earlier APK’s API host and the Digital Asset Links site both returned HTTP 404 on those endpoints. [Repository Actions variables](https://github.com/omnmlr/hackaholics-financial-agent/settings/variables/actions)
-
-The Vercel project `agus-wallet-devnet-identity` serves `public/assetlinks.json` at `/.well-known/assetlinks.json` through its existing rewrite. Update the Android statement for `app.agus.prototype` with the replacement fingerprint in colon-delimited form, using the same public certificate as the GitHub variable. Verify the stable alias over HTTPS after the deployment. After the new statement and API are available, re-run all jobs on the Android workflow for the intended release commit. The run summary reports which input names are available. [Devnet API deployment](DEVNET_DEPLOYMENT.md)
+Share only the replacement public certificate SHA-256 to update the Vercel Digital Asset Links statement for `app.agus.prototype`. After that change and after hosted readiness, use the same wrapper to verify both gates, set `AGUS_CRYPTO_DEVICE_API_URL`, and rerun the selected completed Android workflow.
 
 ```bash
 gh run list --workflow agus-crypto-android.yml --branch feat/agus-crypto-backend --repo omnmlr/hackaholics-financial-agent
-read -r -p 'Run ID for the intended commit: ' run_id
-gh run rerun "$run_id" --repo omnmlr/hackaholics-financial-agent
-gh run watch "$run_id" --exit-status --repo omnmlr/hackaholics-financial-agent
+bash scripts/android/prepare-release-signing-windows.sh --release <github-run-id>
 ```
 
 ### Verify the GitHub download

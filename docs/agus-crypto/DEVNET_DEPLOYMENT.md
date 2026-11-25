@@ -28,46 +28,23 @@ The database is `agus_crypto_devnet_20261124`, project `empty-bonus-20525410`, b
 
 The 27 migration checksums through `0027_crypto_requests.sql` and the normalized archive marker were independently checked on 24 November 2026. Runtime access to alerts, invitation consumption and migration status was verified through the restricted login. Runtime writes to the archive and ledger, schema creation, and invitation email updates were denied after grant correction. The historical `agus_staging` database defaults let the runtime login connect but give it no access to any of its 13 existing public relations.
 
-On the EC2 host use `/etc/agus-crypto/shared.env` and `/etc/agus-crypto/api.env` as root-owned files with mode `0600`. Use one `NAME=value` per line without surrounding quotes. Recover existing Crypto auth and encryption settings from the host or the approved secret store before writing configuration. Preserve the current active key and every existing decryption key. Fill missing values through the secure operations session and keep values out of command arguments, logs and Docker inspection output.
+The staged Railway plan called for new Crypto-specific auth and encryption secrets. Its snapshot preserved variable names only and the patch was never deployed. No recoverable Crypto auth or encryption values were found in the checked repository or workspace. On November 25, a read-only query on the isolated Neon database found zero users and zero encrypted records in the four envelope-bearing tables. The launcher checks again before offering first-time initialization.
 
-| File         | Settings                                                                                                                                                                                      |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `shared.env` | `DATABASE_URL` for the restricted runtime login with TLS certificate verification, `AGUS_DEVNET_RPC=https://api.devnet.solana.com`, `AGUS_DEVNET_VERIFY_RPC=https://devnet.rpcpool.com`.      |
-| `api.env`    | `BETTER_AUTH_SECRET` with at least 32 characters, `AGUS_ENCRYPTION_ACTIVE_KEY=devnet-v1`, `AGUS_ENCRYPTION_KEYS` as a JSON object mapping `devnet-v1` to a base64-encoded random 32-byte key. |
-| `api.env`    | `AI_PROVIDER=gemini` and `AI_API_KEY`.                                                                                                                                                        |
-| `api.env`    | Set `AGUS_CRYPTO_IMAGES=true` for Gemini image turns. For Jessica, set `AGUS_CRYPTO_VOICE_ENABLED=true`, `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID=cgSgspJ2msm6clMCkdW9` and `ELEVENLABS_ZERO_RETENTION=false` on the verified free tier. |
-| `api.env`    | For live research, set `FIRECRAWL_API_KEY`.                                                                                                                                                   |
+### Get the credentials
 
-Compose sets the Devnet profile, invite-only authentication, the approved external-wallet routes, and the worker schedule. Leave Mainnet and experimental transaction capabilities disabled during Devnet acceptance. Cloud HTTP secret binding placeholders work only in that Cloud environment. The EC2 runtime uses its own secure bindings.
+1. Open the Neon project **agus-isolated-staging-20261023**. Click **Connect**, select branch **staging**, database **agus_crypto_devnet_20261124**, and role **agus_crypto_devnet_runtime**. Copy the PostgreSQL connection string with its existing password. You can leave pooling enabled. Paste it at the launcher's hidden **Restricted Neon DATABASE_URL** prompt. The launcher verifies TLS, database name, role, migration checksums and effective grants. Use the original password from the approved vault if the console cannot show it. [Neon project](https://console.neon.tech/app/projects/empty-bonus-20525410)
+2. Locate any Crypto-specific recovery material in your approved vault. The launcher first checks root-owned `/etc/agus-crypto/api.env` and `/etc/agus-crypto/shared.env`. To restore a separate backup, place it on EC2 as a root-owned mode-`0600` file of raw `NAME=value` lines and pass `--recover-from /absolute/path/to/crypto.env`. Preserve all key versions in `AGUS_ENCRYPTION_KEYS` and the existing `AGUS_ENCRYPTION_ACTIVE_KEY`. If the three settings never existed, the launcher offers `INITIALIZE` only after it verifies that there are no accounts or encrypted data. Keep a protected recovery copy afterward.
+3. Supply the Gemini, Firecrawl and ElevenLabs API keys at the hidden terminal prompts. The launcher enables image turns and selects the verified ElevenLabs premade **Jessica**, voice ID `cgSgspJ2msm6clMCkdW9`. To confirm it in ElevenLabs, open **Voices**, locate Jessica, and choose **Copy voice ID** from the voice menu. [ElevenLabs Voices](https://elevenlabs.io/app/voice-library)
 
-## Verify and activate the existing bundle
+## Activate in the open SSM session
 
-PR #57 packaged backend revision `126a528c2b7b0accc380d2af7cddae58ed6e624a`. The founder reports that the archive was downloaded to `/home/ssm-user/agus-release`, extracted and checked. Image loading was initiated. Verify the existing image ID and labels before running the bundled activation script. Its explicit image load path applies only if inspection shows the verified image is missing. [Bundle workflow](https://github.com/omnmlr/hackaholics-financial-agent/pull/57)
+[PR #57](https://github.com/omnmlr/hackaholics-financial-agent/pull/57) packaged backend revision `126a528c2b7b0accc380d2af7cddae58ed6e624a`. The bundle is already on the host under `/home/ssm-user/agus-release`. Transfer only [deploy-stockholm.py](../../deploy/crypto/ec2/deploy-stockholm.py) to the EC2 host and run it in the existing SSM terminal.
 
 ```bash
-sudo bash -euo pipefail <<'BASH'
-mapfile -t manifests < <(find /home/ssm-user/agus-release -maxdepth 4 -type f -name SHA256SUMS.txt)
-(( ${#manifests[@]} == 1 ))
-bundle=$(dirname -- "${manifests[0]}")
-cd "$bundle"
-sha256sum --check --strict --status SHA256SUMS.txt
-expected=126a528c2b7b0accc380d2af7cddae58ed6e624a
-[[ $(<revision.txt) == "$expected" ]]
-image=$(<image-id.txt)
-[[ $image =~ ^sha256:[0-9a-f]{64}$ ]]
-if docker image inspect "$image" >/dev/null 2>&1; then
-  [[ $(docker image inspect --format '{{.Os}}/{{.Architecture}} {{index .Config.Labels "org.opencontainers.image.revision"}}' "$image") == "linux/amd64 $expected" ]]
-  printf 'Verified the existing Linux AMD64 image.\n'
-else
-  printf 'The verified local archive is present and activation will load its image.\n'
-fi
-bash "$bundle/activate-release.sh" "$bundle" 13-48-206-202.sslip.io
-BASH
+sudo python3 ./deploy-stockholm.py
 ```
 
-Activation checks the bundle again, verifies the Linux AMD64 image's ID and revision label, then starts the three services. It waits for `/api/v1/ready`, a successful monitoring and reconciliation cycle, and a trusted TLS certificate. On replacement failure it reapplies the previous Compose release. Keep the previous image until the new version passes acceptance. Do not roll back database schemas to revert an image. Docker starts on boot and the three containers restart after process or host restarts. Certificate state stays in the Caddy volumes.
-
-At the initial takeover, independent public probing could not establish HTTPS readiness. The restricted Neon login still returned all 27 migrations and its expected financial write restrictions. Host activation, authenticated acceptance, and publication of the signed APK require the outstanding release access and signing inputs.
+The launcher verifies the seven bundle files and the Linux AMD64 image label. It loads the already downloaded archive only if the expected image is absent. It installs root-owned mode-`0600` shared and API files and invokes the bundled `activate-release.sh`. Activation waits for local TLS, readiness and the worker health check. The launcher then checks HTTPS readiness and the Crypto OpenAPI contract via the public hostname from EC2. Runtime files remain available for a safe retry if activation stops. The Caddy volumes retain certificate state.
 
 ## Hosted acceptance
 

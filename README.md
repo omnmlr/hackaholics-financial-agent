@@ -24,7 +24,7 @@ npm ci
 
 | Layer | Paths | Stack & Responsibilities |
 | --- | --- | --- |
-| **Web & API Backend** | `src/app/`, `src/server/`, `src/lib/` | Next.js 16 App Router (`next build --webpack`), React 19, Better Auth (`better-auth`, `@better-auth/expo`) on `agus_*` PostgreSQL tables, Drizzle ORM / `pg` (with `@electric-sql/pglite` for offline test suites), SQL least-privilege runtime role (`scripts/sql/runtime-role.sql`). |
+| **Web & API Backend** | `src/app/`, `src/server/`, `src/lib/` | Next.js 16 App Router (`next build --webpack`), React 19, Better Auth (`better-auth`, `@better-auth/expo`) on `agus_*` PostgreSQL tables, Drizzle ORM / `pg` (with `@electric-sql/pglite` for offline test suites), Devnet public web/auth/legal routes (`/`, `/auth`, `/privacy`, `/terms`, `/support`, `/reset-password`), SQL least-privilege runtime role (`scripts/sql/runtime-role.sql`). |
 | **Solana Devnet Engine** | `src/server/crypto/`, `src/lib/solana/` | Non-custodial wallet registration, Devnet balance & activity sync, transfer/swap quote review, MWA handoff lifecycle, Solana Pay request & invoice creation, public `/api/v1/crypto/share/:reference` lookup (IP + global PostgreSQL rate-limited), and immutable receipt/audit recording. |
 | **Multimodal AI & Research** | `src/server/crypto/assistant*.ts`, `voice*.ts`, `research*.ts` | Gemini (`@google/genai`) assistant with optional local Tesseract image screening, ElevenLabs speech streaming, and Firecrawl public research under per-user/global daily quotas. |
 | **Contracts & Typed Client** | `packages/contracts/`, `packages/api-client/`, `scripts/generate-openapi.mjs` | Zod contracts mapped to OpenAPI 3.1.0 (`packages/contracts/openapi.json`) and TypeScript client types (`packages/api-client/src/generated.ts`). |
@@ -127,7 +127,7 @@ python3 -B -m unittest discover -s deploy/crypto/ec2 -p "test_*.py"
 - [API Contract v1](docs/agus-crypto/API_CONTRACT.md) & [Frontend Contract 1.1.0](docs/agus-crypto/FRONTEND_CONTRACT_1_1.md)
 - [Chisom Android Integration Guide](docs/agus-crypto/CHISOM_ANDROID_INTEGRATION.md)
 - [Engineering Control Plane](docs/agus-crypto/engineering/CONTROL_PLANE.md) & [Task Board](docs/agus-crypto/engineering/TASK_BOARD.md)
-- [Devnet Deployment](docs/agus-crypto/DEVNET_DEPLOYMENT.md) & [AWS Preflight](docs/agus-crypto/engineering/AWS_PREFLIGHT.md)
+- [Devnet Deployment](docs/agus-crypto/DEVNET_DEPLOYMENT.md), [Public Launch Handoff](docs/agus-crypto/engineering/INFRA_PUBLIC_LAUNCH_HANDOFF.md) & [AWS Preflight](docs/agus-crypto/engineering/AWS_PREFLIGHT.md)
 - [Pre-Event Implementation Record](docs/agus-crypto/IMPLEMENTATION.md) & [Dev3pack Submission Rules](docs/agus-crypto/DEV3PACK_SUBMISSION.md)
 - [Repository Consolidation Audit (Nov 25)](docs/agus-crypto/engineering/CONSOLIDATION_AUDIT_20261125.md)
 - [Historical Zcash / AGUS 2.0 Notes](docs/zcash-native/README.md) (pre-Crypto prototype reference)

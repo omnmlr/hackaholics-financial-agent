@@ -46,6 +46,8 @@ sudo python3 ./deploy-stockholm.py
 
 The launcher verifies the seven bundle files and the Linux AMD64 image label. It loads the already downloaded archive only if the expected image is absent. It installs root-owned mode-`0600` shared and API files and invokes the bundled `activate-release.sh`. Activation waits for local TLS, readiness and the worker health check. The launcher then checks HTTPS readiness and the Crypto OpenAPI contract via the public hostname from EC2. Runtime files remain available for a safe retry if activation stops. The Caddy volumes retain certificate state.
 
+On November 25, the founder activated the approved image on Stockholm EC2 after adding a bounded writable `/tmp` to the launcher's read-only database-check container. The checked-in launcher now includes the same mount and a Foundation regression test. The host deployment does not need to be repeated to pick up this launcher change. Independent checks passed for public readiness, the exact OpenAPI document, HTTPS access and session enforcement on wallet, portfolio, alert and assistant routes. See the authentication handoff for evidence and remaining checks. [Hosted verification and authentication](HOSTED_AUTHENTICATION.md)
+
 ## Hosted acceptance
 
 1. From an independent client, check the HTTPS origin and `/api/v1/ready`, then inspect `/api/v1/openapi` for the Crypto endpoints, including the attempts handoff, assistant, voice and receipt endpoints. Verify unauthorized wallet requests require a session.

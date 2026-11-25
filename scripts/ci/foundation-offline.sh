@@ -9,6 +9,7 @@ trap 'sudo iptables -D OUTPUT -d "$postgres_ip" -p tcp --dport 5432 -j ACCEPT; s
 
 case "$mode" in
   core)
+    python3 -B -m unittest discover -s deploy/crypto/ec2 -p 'test_*.py'
     AGUS_ENVIRONMENT=fixture npm run config:validate
     npm run typecheck
     npm run contracts:generate

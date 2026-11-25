@@ -181,7 +181,9 @@ def db_check(image, url):
         env = Path(directory) / "runtime.env"
         write_config(env, {"DATABASE_URL": url})
         result = run(["docker", "run", "--rm", "--read-only", "--cap-drop=ALL",
-                      "--security-opt=no-new-privileges", "--env-file", str(env),
+                      "--security-opt=no-new-privileges",
+                      "--tmpfs", "/tmp:size=64m,uid=1000,gid=1000,mode=1777",
+                      "--env-file", str(env),
                       "--entrypoint", "node", image, "--import", "tsx",
                       "--input-type=module", "-e", DB_CHECK],
                      "Neon verification failed. Check the restricted URL, TLS, schema, and grants.",

@@ -27,6 +27,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          ref: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'ops/agus-ec2-bundle-20261125' && github.event.pull_request.base.ref == 'feat/agus-crypto-backend' && github.event.pull_request.head.repo.full_name == github.repository) && '126a528c2b7b0accc380d2af7cddae58ed6e624a' || github.sha }}
       - name: Build the Crypto Devnet image from the checked-out revision
         shell: bash
         run: |
@@ -46,7 +47,7 @@ jobs:
           fi
           grep -F 'Crypto Devnet startup failed' worker.log
       - name: Package the verified image and EC2 files
-        if: github.event_name == 'workflow_dispatch' && inputs.retain_bundle
+        if: (github.event_name == 'workflow_dispatch' && inputs.retain_bundle) || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'ops/agus-ec2-bundle-20261125' && github.event.pull_request.base.ref == 'feat/agus-crypto-backend' && github.event.pull_request.head.repo.full_name == github.repository)
         shell: bash
         run: |
           set -euo pipefail
@@ -58,10 +59,10 @@ jobs:
           cd bundle
           sha256sum Caddyfile compose.yml activate-release.sh favicon.png revision.txt image-id.txt image.tar.gz > SHA256SUMS.txt
       - name: Retain the EC2 bundle for deployment
-        if: github.event_name == 'workflow_dispatch' && inputs.retain_bundle
+        if: (github.event_name == 'workflow_dispatch' && inputs.retain_bundle) || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'ops/agus-ec2-bundle-20261125' && github.event.pull_request.base.ref == 'feat/agus-crypto-backend' && github.event.pull_request.head.repo.full_name == github.repository)
         uses: actions/upload-artifact@v4
         with:
-          name: agus-crypto-ec2-${{ github.sha }}
+          name: agus-crypto-ec2-${{ (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'ops/agus-ec2-bundle-20261125' && github.event.pull_request.base.ref == 'feat/agus-crypto-backend' && github.event.pull_request.head.repo.full_name == github.repository) && '126a528c2b7b0accc380d2af7cddae58ed6e624a' || github.sha }}
           path: bundle/
           compression-level: 0
           retention-days: 1

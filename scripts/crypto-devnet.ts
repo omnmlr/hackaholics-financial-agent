@@ -1,4 +1,5 @@
 import { setTimeout as delay } from "node:timers/promises";
+import { rm, writeFile } from "node:fs/promises";
 import { validateEnvironment } from "../src/lib/environment";
 import { identity } from "../src/server/auth";
 import { closeDatabase, database } from "../src/server/sql";
@@ -36,14 +37,21 @@ try {
   }
   const db = await database();
   await assertSchema(db);
-  const { rows } = await db.query<{ safe: boolean }>(`
-    SELECT pg_has_role(current_user, 'agus_runtime', 'USAGE')
+  const { rows } = await db.query<{ safe: boolean }>(
+    `SELECT pg_has_role(current_user, 'agus_runtime', 'USAGE')
+       AND ($1::text IS NULL OR current_database() = $1)
        AND NOT has_schema_privilege(current_user, 'public', 'CREATE')
+       AND NOT has_table_privilege(current_user, 'agus_migrations', 'INSERT,UPDATE,DELETE,TRUNCATE')
+       AND NOT has_table_privilege(current_user, 'agus_legacy_archive', 'INSERT,UPDATE,DELETE,TRUNCATE')
+       AND NOT has_column_privilege(current_user, 'agus_invitations', 'email', 'UPDATE')
+       AND has_column_privilege(current_user, 'agus_invitations', 'consumed_at', 'UPDATE')
        AND NOT EXISTS (
          SELECT 1 FROM pg_roles WHERE rolname = current_user
            AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolbypassrls)
        ) AS safe
-  `);
+    `,
+    [process.env.AGUS_CRYPTO_DATABASE_NAME ?? null],
+  );
   if (!rows[0]?.safe) throw new Error("POSTGRES_RUNTIME_ROLE_REQUIRED");
   await Promise.all([cryptoRpc("devnet"), cryptoRpc("devnet", true)]);
 
@@ -62,6 +70,8 @@ try {
     await identity();
     console.log("Crypto Devnet API startup verified");
   } else {
+    const healthFile = process.env.AGUS_CRYPTO_WORKER_HEALTH_FILE;
+    if (healthFile) await rm(healthFile, { force: true });
     const stop = new AbortController();
     for (const signal of ["SIGINT", "SIGTERM"] as const) {
       process.once(signal, () => stop.abort());
@@ -72,16 +82,17 @@ try {
         runCryptoMonitoring(),
         runCryptoReconciliation(),
       ]);
-      if (results.some(({ status }) => status === "rejected")) {
+      const incomplete = results.some(({ status }) => status === "rejected");
+      if (incomplete) {
         console.error("Crypto Devnet worker cycle incomplete");
       } else {
+        if (healthFile) await writeFile(healthFile, "ok\n", { mode: 0o600 });
         console.log(
           "Crypto Devnet monitoring and reconciliation cycle completed",
         );
       }
       if (process.argv.includes("--once")) {
-        if (results.some(({ status }) => status === "rejected"))
-          process.exitCode = 1;
+        if (incomplete) process.exitCode = 1;
         break;
       }
       await delay(30_000, undefined, { signal: stop.signal }).catch((error) => {

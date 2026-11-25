@@ -1,10 +1,18 @@
 name: AGUS Crypto Devnet release image
 on:
+  workflow_dispatch:
+    inputs:
+      retain_bundle:
+        description: Retain the checked image and EC2 bundle for one day
+        required: true
+        type: boolean
+        default: false
   pull_request:
     paths:
       - ".github/workflows/agus-crypto-devnet-image.yml"
       - "deploy/crypto/**"
       - "scripts/crypto-devnet.ts"
+      - "scripts/sql/**"
       - "src/**"
       - "migrations/**"
       - "packages/**"
@@ -19,8 +27,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Build the Railway image
-        run: docker build --pull --file deploy/crypto/Dockerfile --tag agus-crypto-devnet:check .
+      - name: Build the Crypto Devnet image from the checked-out revision
+        shell: bash
+        run: |
+          set -euo pipefail
+          revision=$(git rev-parse HEAD)
+          docker build --platform linux/amd64 --pull --file deploy/crypto/Dockerfile \
+            --build-arg "SOURCE_DATE_EPOCH=$(git show -s --format=%ct HEAD)" \
+            --label "org.opencontainers.image.revision=$revision" \
+            --tag agus-crypto-devnet:check .
       - name: Check the worker rejects an unconfigured deployment
         shell: bash
         run: |
@@ -30,3 +45,24 @@ jobs:
             exit 1
           fi
           grep -F 'Crypto Devnet startup failed' worker.log
+      - name: Package the verified image and EC2 files
+        if: github.event_name == 'workflow_dispatch' && inputs.retain_bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir bundle
+          cp deploy/crypto/ec2/{Caddyfile,compose.yml,activate-release.sh} apps/mobile/assets/favicon.png bundle/
+          git rev-parse HEAD > bundle/revision.txt
+          docker image inspect --format '{{.Id}}' agus-crypto-devnet:check > bundle/image-id.txt
+          docker image save agus-crypto-devnet:check | gzip -n > bundle/image.tar.gz
+          cd bundle
+          sha256sum Caddyfile compose.yml activate-release.sh favicon.png revision.txt image-id.txt image.tar.gz > SHA256SUMS.txt
+      - name: Retain the EC2 bundle for deployment
+        if: github.event_name == 'workflow_dispatch' && inputs.retain_bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: agus-crypto-ec2-${{ github.sha }}
+          path: bundle/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error

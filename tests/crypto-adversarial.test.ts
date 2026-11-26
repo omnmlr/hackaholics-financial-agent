@@ -2079,10 +2079,10 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
       };
       process.on("unhandledRejection", onUnhandled);
 
-      let rejectPortfolioRpc: ((err: unknown) => void) | undefined;
-      let portfolioCalled = false;
-      let rejectActivityRpc: ((err: unknown) => void) | undefined;
-      let activityCalled = false;
+      const portfolioStarted = Promise.withResolvers<void>();
+      const portfolioRpc = Promise.withResolvers<Connection>();
+      const activityStarted = Promise.withResolvers<void>();
+      const activityRpc = Promise.withResolvers<Connection>();
 
       try {
         vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
@@ -2090,35 +2090,31 @@ describe("AG-03 Adversarial Financial Security & Reliability Audit", () => {
         const portfolioPromise = portfolio(
           harness.users[0].id,
           { cluster: devnet, walletIds: [freshWallet.id] },
-          (() => {
-            portfolioCalled = true;
-            return new Promise<Connection>((_resolve, reject) => {
-              rejectPortfolioRpc = reject;
-            });
-          }) as unknown as typeof cryptoRpc,
+          () => {
+            portfolioStarted.resolve();
+            return portfolioRpc.promise;
+          },
         );
+        // Wallet lookup and cache reads complete asynchronously in PostgreSQL.
+        await portfolioStarted.promise;
         await vi.advanceTimersByTimeAsync(4300);
         const portfolioResult = await portfolioPromise;
-        expect(portfolioCalled).toBe(true);
         expect(portfolioResult.holdings).toEqual([]);
+        portfolioRpc.reject({ code: "CHAIN_IDENTITY_MISMATCH" });
 
         const activityPromise = activity(
           harness.users[0].id,
           { cluster: devnet, walletIds: [freshWallet.id] },
-          (() => {
-            activityCalled = true;
-            return new Promise<Connection>((_resolve, reject) => {
-              rejectActivityRpc = reject;
-            });
-          }) as unknown as typeof cryptoRpc,
+          () => {
+            activityStarted.resolve();
+            return activityRpc.promise;
+          },
         );
+        await activityStarted.promise;
         await vi.advanceTimersByTimeAsync(4200);
         const activityResult = await activityPromise;
-        expect(activityCalled).toBe(true);
         expect(activityResult.items).toEqual([]);
-
-        rejectPortfolioRpc?.({ code: "CHAIN_IDENTITY_MISMATCH" });
-        rejectActivityRpc?.(new Error("late activity rpc failure"));
+        activityRpc.reject(new Error("late activity rpc failure"));
         await vi.runAllTimersAsync();
         vi.useRealTimers();
         await new Promise((resolve) => setTimeout(resolve, 30));

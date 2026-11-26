@@ -51,9 +51,16 @@ jobs:
             (yes || true) | "$sdkmanager" --licenses >/dev/null
           fi
           "$sdkmanager" "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;default;x86_64"
-          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$ANDROID_HOME" "$ANDROID_HOME" >> "$GITHUB_ENV"
+          export ANDROID_AVD_HOME="$AGUS_LAB/avd"
+          mkdir -p "$ANDROID_AVD_HOME"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\nANDROID_AVD_HOME=%s\n' \
+            "$ANDROID_HOME" "$ANDROID_HOME" "$ANDROID_AVD_HOME" >> "$GITHUB_ENV"
           printf '%s/platform-tools\n' "$ANDROID_HOME" >> "$GITHUB_PATH"
-          printf 'no\n' | "$(dirname "$sdkmanager")/avdmanager" create avd -n agus_ci -k 'system-images;android-35;default;x86_64' --force
+          printf 'no\n' | "$(dirname "$sdkmanager")/avdmanager" create avd -n agus_ci \
+            -p "$ANDROID_AVD_HOME/agus_ci.avd" -k 'system-images;android-35;default;x86_64' --force
+          printf 'avd.ini.encoding=UTF-8\npath=%s\ntarget=android-35\n' "$ANDROID_AVD_HOME/agus_ci.avd" > "$ANDROID_AVD_HOME/agus_ci.ini"
+          test -f "$ANDROID_AVD_HOME/agus_ci.avd/config.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds | grep -x agus_ci
           npm ci --no-audit --no-fund
           npm test --workspace @agus/mobile-test
       - name: Build native fixture and download local Solana

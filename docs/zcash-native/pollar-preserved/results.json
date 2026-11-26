@@ -1,0 +1,38 @@
+{
+  "genuineNetwork": true,
+  "signingAttempted": false,
+  "credentialsPrinted": false,
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://sdk.api.pollar.xyz/v3/applications/config",
+      "origin": "https://agusweb.up.railway.app",
+      "keyFingerprint": "a809c2d83884"
+    }
+  ],
+  "responses": [
+    {
+      "url": "https://sdk.api.pollar.xyz/v3/applications/config",
+      "status": 200,
+      "code": "SDK_APPLICATION_CONFIG"
+    }
+  ],
+  "failures": [],
+  "configured": true,
+  "keyFingerprint": "a809c2d83884",
+  "browserOrigin": "https://agusweb.up.railway.app",
+  "network": "testnet",
+  "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+  "remoteConfigStatus": 200,
+  "remoteApplication": {
+    "name": "Pollux",
+    "network": "testnet",
+    "chains": [
+      "STELLAR"
+    ]
+  },
+  "authenticationFormVisible": true,
+  "error": [
+    ""
+  ]
+}

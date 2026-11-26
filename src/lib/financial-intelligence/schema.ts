@@ -1,0 +1,85 @@
+import { pgTable, text, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import {
+  type FinancialAccount,
+  type FinancialTransaction,
+  type AccountBalanceSnapshot,
+} from "./types";
+
+export const financialAccountsTable = pgTable("agus_financial_accounts", {
+  id: text("id").primaryKey(),
+  ownerId: text("owner_id").notNull(),
+  tenantId: text("tenant_id").notNull().default("default"),
+  institutionCode: text("institution_code").notNull(),
+  institutionName: text("institution_name").notNull(),
+  institutionType: text("institution_type").notNull(),
+  accountNumberMasked: text("account_number_masked").notNull(),
+  accountName: text("account_name").notNull(),
+  currency: text("currency").notNull(),
+  accountType: text("account_type").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  metadata: jsonb("metadata").$type<FinancialAccount["metadata"]>(),
+});
+
+export const statementImportsTable = pgTable("agus_statement_imports", {
+  id: text("id").primaryKey(),
+  fileHash: text("file_hash").notNull(),
+  fileName: text("file_name").notNull(),
+  accountId: text("account_id").notNull().references(() => financialAccountsTable.id, { onDelete: "cascade" }),
+  ownerId: text("owner_id").notNull(),
+  tenantId: text("tenant_id").notNull().default("default"),
+  format: text("format").notNull(),
+  importedAt: timestamp("imported_at", { withTimezone: true }).notNull().defaultNow(),
+  totalRows: integer("total_rows").notNull(),
+  importedCount: integer("imported_count").notNull(),
+  duplicateCount: integer("duplicate_count").notNull(),
+  skippedCount: integer("skipped_count").notNull(),
+  openingBalanceAtoms: text("opening_balance_atoms"),
+  closingBalanceAtoms: text("closing_balance_atoms"),
+  asOf: timestamp("as_of", { withTimezone: true }),
+  warnings: jsonb("warnings").$type<string[]>().notNull(),
+});
+
+export const financialTransactionsTable = pgTable("agus_financial_transactions", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull().references(() => financialAccountsTable.id, { onDelete: "cascade" }),
+  ownerId: text("owner_id").notNull(),
+  tenantId: text("tenant_id").notNull().default("default"),
+  postedAt: timestamp("posted_at", { withTimezone: true }).notNull(),
+  valueAt: timestamp("value_at", { withTimezone: true }),
+  amountAtoms: text("amount_atoms").notNull(), // signed bigint string
+  currency: text("currency").notNull(),
+  scale: integer("scale").notNull(),
+  status: text("status").notNull(),
+  reversalOfId: text("reversal_of_id"),
+  rawDescription: text("raw_description").notNull(),
+  cleanDescription: text("clean_description").notNull(),
+  counterparty: jsonb("counterparty").$type<FinancialTransaction["counterparty"]>().notNull(),
+  category: text("category").notNull(),
+  reference: text("reference"),
+  statementBalanceAtoms: text("statement_balance_atoms"),
+  fingerprint: text("fingerprint").notNull(),
+  internalTransfer: jsonb("internal_transfer").$type<FinancialTransaction["internalTransferMetadata"]>(),
+  userOverride: jsonb("user_override").$type<FinancialTransaction["userOverride"]>(),
+  provenance: jsonb("provenance").$type<FinancialTransaction["provenance"]>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const accountBalanceObservationsTable = pgTable("agus_account_balance_observations", {
+  id: text("id").primaryKey(),
+  accountId: text("account_id").notNull().references(() => financialAccountsTable.id, { onDelete: "cascade" }),
+  ownerId: text("owner_id").notNull(),
+  tenantId: text("tenant_id").notNull().default("default"),
+  currency: text("currency").notNull(),
+  scale: integer("scale").notNull(),
+  availableAtoms: text("available_atoms"),
+  currentAtoms: text("current_atoms"),
+  ledgerAtoms: text("ledger_atoms"),
+  asOf: timestamp("as_of", { withTimezone: true }).notNull(),
+  source: text("source").notNull(),
+  confidence: text("confidence").notNull(),
+  isStale: boolean("is_stale").notNull().default(false),
+  stalenessReason: text("staleness_reason"),
+  evidenceProvenance: jsonb("evidence_provenance").$type<AccountBalanceSnapshot["evidenceProvenance"]>(),
+  observedAt: timestamp("observed_at", { withTimezone: true }).notNull().defaultNow(),
+});

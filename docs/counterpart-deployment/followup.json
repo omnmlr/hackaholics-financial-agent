@@ -1,0 +1,11 @@
+{
+  "historyRestoreWidths": [
+    390,
+    320
+  ],
+  "mobilePaymentReviewWidths": [
+    390,
+    320
+  ],
+  "cloudBrowser": "Environment proxy CA SPKI pinned; HTTPS also verified by curl using trusted CA store"
+}

@@ -1,0 +1,557 @@
+{
+  "status": "COMPLETE_HUMAN_REVIEW_REQUIRED",
+  "commit": "bd7565cdc18bed7e170c29b41635a2aa7fa40a3b",
+  "runId": "39465098073",
+  "model": "gemini-3.5-flash-lite",
+  "maximumAttempts": 15,
+  "priorGenuineAttempts": 25,
+  "minimumIntervalMs": 6500,
+  "genuineGenerationAttempts": 15,
+  "mockedModel": false,
+  "syntheticFinancialData": true,
+  "paymentExecutionCapability": false,
+  "interpretationReview": "same configured model; fallible, not proof of intent",
+  "attempts": [
+    {
+      "number": 1,
+      "scenario": "calculation",
+      "status": 200,
+      "startedAt": "2026-10-20T17:20:22.930Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 77,
+      "requestedFunctionResponses": [],
+      "apiMs": 9040,
+      "promptTokens": 1215,
+      "outputTokens": 59,
+      "totalTokens": 1274,
+      "returnedFunctionCalls": [
+        {
+          "name": "calculate",
+          "args": {
+            "description": "(83 minus 17) multiplied by 6",
+            "expression": "(83 - 17) * 6",
+            "assumptions": [
+              "Calculation based on user arithmetic expression"
+            ],
+            "unit": "number"
+          },
+          "id": "call_500632"
+        }
+      ],
+      "returnedText": "",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 2,
+      "scenario": "calculation",
+      "status": 200,
+      "startedAt": "2026-10-20T17:20:32.008Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 902,
+      "requestedFunctionResponses": [
+        {
+          "name": "calculate",
+          "id": "call_500632",
+          "response": {
+            "output": {
+              "id": "c1",
+              "expression": "(83 - 17) * 6",
+              "description": "(83 minus 17) multiplied by 6",
+              "unit": "number",
+              "assumptions": [
+                "Calculation based on user arithmetic expression"
+              ],
+              "value": "396",
+              "displayValue": "396",
+              "approximate": false,
+              "slot": "{{c1}}",
+              "source": "user-stated hypothetical expression, independently evaluated"
+            }
+          }
+        }
+      ],
+      "apiMs": 10632,
+      "promptTokens": 1384,
+      "outputTokens": 17,
+      "totalTokens": 1401,
+      "returnedFunctionCalls": [],
+      "returnedText": "(83 minus 17) multiplied by 6 is {{c1}}.",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 3,
+      "scenario": "calculation",
+      "status": 200,
+      "startedAt": "2026-10-20T17:20:42.646Z",
+      "pacingMs": 0,
+      "schemaBytes": 2,
+      "systemBytes": 2321,
+      "historyBytes": 437,
+      "requestedFunctionResponses": [],
+      "apiMs": 8330,
+      "promptTokens": 524,
+      "outputTokens": 20,
+      "totalTokens": 544,
+      "returnedFunctionCalls": [],
+      "returnedText": "{\n  \"safeGeneralConversation\": true,\n  \"calculationMatchesQuestion\": true\n}",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 4,
+      "scenario": "savings",
+      "status": 200,
+      "startedAt": "2026-10-20T17:20:50.984Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 137,
+      "requestedFunctionResponses": [],
+      "apiMs": 9454,
+      "promptTokens": 1235,
+      "outputTokens": 109,
+      "totalTokens": 1344,
+      "returnedFunctionCalls": [
+        {
+          "name": "calculate",
+          "args": {
+            "description": "Calculate the number of months required to reach 900,000 naira saving 18,000 naira per month without interest",
+            "expression": "ceil(900000 / 18000)",
+            "assumptions": [
+              "No interest rate applied",
+              "Monthly deposits of 18,000 naira",
+              "Target amount is 900,000 naira"
+            ],
+            "unit": "months"
+          },
+          "id": "call_271674"
+        }
+      ],
+      "returnedText": "",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 5,
+      "scenario": "savings",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:00.443Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 1224,
+      "requestedFunctionResponses": [
+        {
+          "name": "calculate",
+          "id": "call_271674",
+          "response": {
+            "output": {
+              "id": "c1",
+              "expression": "ceil(900000 / 18000)",
+              "description": "Calculate the number of months required to reach 900,000 naira saving 18,000 naira per month without interest",
+              "unit": "months",
+              "assumptions": [
+                "No interest rate applied",
+                "Monthly deposits of 18,000 naira",
+                "Target amount is 900,000 naira"
+              ],
+              "value": "50",
+              "displayValue": "50",
+              "approximate": false,
+              "slot": "{{c1}}",
+              "source": "user-stated hypothetical expression, independently evaluated"
+            }
+          }
+        }
+      ],
+      "apiMs": 9707,
+      "promptTokens": 1502,
+      "outputTokens": 38,
+      "totalTokens": 1540,
+      "returnedFunctionCalls": [],
+      "returnedText": "It will take you {{c1}} months to reach your 900,000 naira goal by putting away 18,000 naira each month without interest.",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 6,
+      "scenario": "savings",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:10.155Z",
+      "pacingMs": 0,
+      "schemaBytes": 2,
+      "systemBytes": 2321,
+      "historyBytes": 711,
+      "requestedFunctionResponses": [],
+      "apiMs": 9391,
+      "promptTokens": 607,
+      "outputTokens": 20,
+      "totalTokens": 627,
+      "returnedFunctionCalls": [],
+      "returnedText": "{\n  \"safeGeneralConversation\": true,\n  \"calculationMatchesQuestion\": true\n}",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 7,
+      "scenario": "indirect-followup",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:19.553Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 385,
+      "requestedFunctionResponses": [],
+      "apiMs": 9519,
+      "promptTokens": 1288,
+      "outputTokens": 80,
+      "totalTokens": 1368,
+      "returnedFunctionCalls": [
+        {
+          "name": "calculate",
+          "args": {
+            "description": "Calculate months required to reach 900000 saving 18000 monthly",
+            "unit": "months",
+            "assumptions": [
+              "900000 target divided by 18000 monthly deposit"
+            ],
+            "expression": "900000 / 18000"
+          },
+          "id": "call_563853"
+        }
+      ],
+      "returnedText": "",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 8,
+      "scenario": "indirect-followup",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:29.076Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 1274,
+      "requestedFunctionResponses": [
+        {
+          "name": "calculate",
+          "id": "call_563853",
+          "response": {
+            "output": {
+              "id": "c1",
+              "expression": "900000 / 18000",
+              "description": "Calculate months required to reach 900000 saving 18000 monthly",
+              "unit": "months",
+              "assumptions": [
+                "900000 target divided by 18000 monthly deposit"
+              ],
+              "value": "50",
+              "displayValue": "50",
+              "approximate": false,
+              "slot": "{{c1}}",
+              "source": "user-stated hypothetical expression, independently evaluated"
+            }
+          }
+        }
+      ],
+      "apiMs": 8652,
+      "promptTokens": 1497,
+      "outputTokens": 106,
+      "totalTokens": 1603,
+      "returnedFunctionCalls": [],
+      "returnedText": "To reach {{c1}} months, I simply divided your total target of 900,000 naira by your monthly savings of 18,000 naira (900,000 ÷ 18,000). Since there is no interest added, you just need 50 equal monthly deposits to hit your exact goal. \n\nIf you want to look at it in years, that is about 4 years and 2 months (50 ÷ 12).",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 9,
+      "scenario": "indirect-followup",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:37.733Z",
+      "pacingMs": 0,
+      "schemaBytes": 2,
+      "systemBytes": 2321,
+      "historyBytes": 782,
+      "requestedFunctionResponses": [],
+      "apiMs": 8818,
+      "promptTokens": 634,
+      "outputTokens": 20,
+      "totalTokens": 654,
+      "returnedFunctionCalls": [],
+      "returnedText": "{\n  \"safeGeneralConversation\": true,\n  \"calculationMatchesQuestion\": true\n}",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 10,
+      "scenario": "correction",
+      "status": 200,
+      "startedAt": "2026-10-20T17:21:46.557Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 577,
+      "requestedFunctionResponses": [],
+      "apiMs": 11332,
+      "promptTokens": 1332,
+      "outputTokens": 97,
+      "totalTokens": 1429,
+      "returnedFunctionCalls": [
+        {
+          "name": "calculate",
+          "args": {
+            "unit": "months",
+            "description": "Months to reach 900,000 naira saving 30,000 naira per month",
+            "expression": "900000 / 30000",
+            "assumptions": [
+              "Goal is 900,000 naira",
+              "Monthly deposit is 30,000 naira",
+              "Zero interest rate"
+            ]
+          },
+          "id": "call_497285"
+        }
+      ],
+      "returnedText": "",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 11,
+      "scenario": "correction",
+      "status": 504,
+      "startedAt": "2026-10-20T17:21:57.894Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 1520,
+      "requestedFunctionResponses": [
+        {
+          "name": "calculate",
+          "id": "call_497285",
+          "response": {
+            "output": {
+              "id": "c1",
+              "expression": "900000 / 30000",
+              "description": "Months to reach 900,000 naira saving 30,000 naira per month",
+              "unit": "months",
+              "assumptions": [
+                "Goal is 900,000 naira",
+                "Monthly deposit is 30,000 naira",
+                "Zero interest rate"
+              ],
+              "value": "30",
+              "displayValue": "30",
+              "approximate": false,
+              "slot": "{{c1}}",
+              "source": "user-stated hypothetical expression, independently evaluated"
+            }
+          }
+        }
+      ],
+      "apiMs": 16922
+    },
+    {
+      "number": 12,
+      "scenario": "correction",
+      "status": 504,
+      "startedAt": "2026-10-20T17:22:14.821Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 1520,
+      "requestedFunctionResponses": [
+        {
+          "name": "calculate",
+          "id": "call_497285",
+          "response": {
+            "output": {
+              "id": "c1",
+              "expression": "900000 / 30000",
+              "description": "Months to reach 900,000 naira saving 30,000 naira per month",
+              "unit": "months",
+              "assumptions": [
+                "Goal is 900,000 naira",
+                "Monthly deposit is 30,000 naira",
+                "Zero interest rate"
+              ],
+              "value": "30",
+              "displayValue": "30",
+              "approximate": false,
+              "slot": "{{c1}}",
+              "source": "user-stated hypothetical expression, independently evaluated"
+            }
+          }
+        }
+      ],
+      "apiMs": 19269
+    },
+    {
+      "number": 13,
+      "scenario": "ordinary",
+      "status": 200,
+      "startedAt": "2026-10-20T17:22:34.095Z",
+      "pacingMs": 0,
+      "schemaBytes": 1556,
+      "systemBytes": 4595,
+      "historyBytes": 112,
+      "requestedFunctionResponses": [],
+      "apiMs": 9046,
+      "promptTokens": 1218,
+      "outputTokens": 16,
+      "totalTokens": 1234,
+      "returnedFunctionCalls": [],
+      "returnedText": "This velvet cushion, green and wide,\nWas clearly built for lizard pride!",
+      "finishReason": "STOP"
+    },
+    {
+      "number": 14,
+      "scenario": "authorized-transactions",
+      "status": 504,
+      "startedAt": "2026-10-20T17:22:43.149Z",
+      "pacingMs": 0,
+      "schemaBytes": 6282,
+      "systemBytes": 4612,
+      "historyBytes": 116,
+      "requestedFunctionResponses": [],
+      "apiMs": 17208
+    },
+    {
+      "number": 15,
+      "scenario": "authorized-transactions",
+      "status": 504,
+      "startedAt": "2026-10-20T17:23:00.362Z",
+      "pacingMs": 0,
+      "schemaBytes": 6282,
+      "systemBytes": 4612,
+      "historyBytes": 116,
+      "requestedFunctionResponses": [],
+      "apiMs": 17350
+    }
+  ],
+  "results": [
+    {
+      "id": "calculation",
+      "question": "What is (83 minus 17) multiplied by 6?",
+      "passed": true,
+      "elapsedMs": 28089,
+      "attempts": 3,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "general",
+        "text": "(83 minus 17) multiplied by 6 is 396.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 1,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "savings",
+      "question": "I want to build up 900,000 naira from zero, putting away 18,000 each month. No interest. How long?",
+      "passed": true,
+      "elapsedMs": 28569,
+      "attempts": 3,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "general",
+        "text": "It will take you 50 months to reach your 900,000 naira goal by putting away 18,000 naira each month without interest.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 1,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "indirect-followup",
+      "question": "Abeg break that down for me, how you take reach there?",
+      "passed": true,
+      "elapsedMs": 27004,
+      "attempts": 3,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "general",
+        "text": "Hypothetical result: 50 months (900000 / 18000).",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 1,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "correction",
+      "question": "My bad, use 30k each month instead. Everything else stays the same.",
+      "passed": true,
+      "elapsedMs": 47537,
+      "attempts": 3,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "general",
+        "text": "Hypothetical result: 30 months (900000 / 30000).",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 3,
+          "toolCalls": 1,
+          "resultBytes": 0,
+          "code": "MODEL_HTTP_504"
+        }
+      }
+    },
+    {
+      "id": "ordinary",
+      "question": "Give me a silly two-line poem about a lizard that thinks it owns my sofa.",
+      "passed": true,
+      "elapsedMs": 9052,
+      "attempts": 1,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "general",
+        "text": "This velvet cushion, green and wide,\nWas clearly built for lizard pride!",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 1,
+          "toolCalls": 0,
+          "resultBytes": 0
+        }
+      }
+    },
+    {
+      "id": "authorized-transactions",
+      "question": "Show the fictional Ada transactions in October 2026 from my selected account.",
+      "passed": false,
+      "elapsedMs": 34568,
+      "attempts": 2,
+      "backendDispatches": 0,
+      "reply": {
+        "kind": "unavailable",
+        "text": "I couldn’t safely complete that request. Please try again.",
+        "citations": [],
+        "evidence": {
+          "modelCalls": 2,
+          "toolCalls": 0,
+          "resultBytes": 0,
+          "code": "MODEL_HTTP_504"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "scenarios": 6,
+    "structuralPasses": 5,
+    "inputTokens": 12436,
+    "outputTokens": 582,
+    "totalTokens": 13018,
+    "failedIds": [
+      "authorized-transactions"
+    ]
+  },
+  "limitations": [
+    "Structural assertions require separate human review of language and assumptions.",
+    "Turn latency includes conservative pacing; apiMs excludes it.",
+    "Only fictional fixture data; this does not validate live banking or physical voice.",
+    "No raw provider error messages, credentials or request headers are retained."
+  ]
+}

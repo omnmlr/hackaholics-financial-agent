@@ -32,6 +32,8 @@ import {
   type TransferData,
 } from "./paystack";
 import { hash } from "./auth";
+import { paymentSimulationSource } from "./financial-integration/service";
+import { reserveSimulation } from "./financial-integration/simulation";
 export function findBatch(s: State, batchId: string, actor: string) {
   const b = s.batches.find((x) => x.id === batchId && x.owner === actor);
   if (!b) throw new AppError("Payment batch not found", 404);
@@ -54,6 +56,7 @@ export async function preparePaymentBatch(
   const values = z.array(instructionSchema).min(1).max(10).parse(input);
   const c = config();
   const b: Batch = {
+    simulationSource: await paymentSimulationSource(actor),
     id: id(),
     owner: actor,
     mode: c.mode,
@@ -502,16 +505,65 @@ async function uncertain(
     return b;
   });
 }
+/** A rejection receipt is written only after this invocation has ended before
+ * the one-use claim. A concurrent/replayed invocation checks the same receipt
+ * inside its claim transaction, so it cannot execute after rejection. */
 export async function executeBatch(
   actor: string,
   batchId: string,
   nonce: string,
   api: PaymentProvider = provider(),
+  attemptId?: string,
+) {
+  try {
+    return await executeBatchAttempt(actor, batchId, nonce, api, attemptId);
+  } catch (error) {
+    if (attemptId)
+      await mutate((s) => {
+        const batch = findBatch(s, batchId, actor);
+        if (
+          !batch.approval?.consumedAt &&
+          !s.audit.some(
+            (e) =>
+              e.actor === actor &&
+              e.batchId === batchId &&
+              e.action === "batch.execution_rejected" &&
+              (e.details as { attemptId?: string })?.attemptId === attemptId,
+          )
+        )
+          audit(
+            s,
+            actor,
+            "batch.execution_rejected",
+            { attemptId, nonce },
+            batchId,
+          );
+      });
+    throw error;
+  }
+}
+
+async function executeBatchAttempt(
+  actor: string,
+  batchId: string,
+  nonce: string,
+  api: PaymentProvider,
+  attemptId?: string,
 ) {
   const before = findBatch(await readState(), batchId, actor);
   executionGate(before.mode, (await readState()).emergencyDisabled);
   if (api.mode !== before.mode)
     throw new AppError("Provider environment mismatch", 409);
+  if (before.simulationSource) {
+    const currentSource = await paymentSimulationSource(actor);
+    if (
+      !currentSource ||
+      currentSource.tenantId !== before.simulationSource.tenantId ||
+      currentSource.ownerId !== before.simulationSource.ownerId ||
+      currentSource.accountId !== before.simulationSource.accountId
+    )
+      throw new AppError("Fictional source authorization changed", 403);
+  }
   const balance = await api.balance();
   const claimed = await mutate((s) => {
     const b = findBatch(s, batchId, actor);
@@ -524,6 +576,20 @@ export async function executeBatch(
       )
     )
       throw new AppError("Beneficiary allowlist changed", 403);
+    if (
+      attemptId &&
+      s.audit.some(
+        (e) =>
+          e.actor === actor &&
+          e.batchId === batchId &&
+          e.action === "batch.execution_rejected" &&
+          (e.details as { attemptId?: string })?.attemptId === attemptId,
+      )
+    )
+      throw new AppError(
+        "Execution attempt was rejected. Review the saved payment before a new explicit submission.",
+        409,
+      );
     const a = b.approval;
     if (
       !a ||
@@ -558,6 +624,7 @@ export async function executeBatch(
       p.operationGeneration = (p.operationGeneration ?? 0) + 1;
     });
     b.status = "submitted";
+    reserveSimulation(s, b);
     audit(
       s,
       actor,

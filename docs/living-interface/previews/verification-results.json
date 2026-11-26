@@ -1,0 +1,369 @@
+{
+  "checks": [
+    {
+      "direction": "orbit",
+      "width": 320,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 320,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 320,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 320,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 320,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 390,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 390,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 390,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 390,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 390,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 768,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 768,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 768,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 768,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 768,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1440,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1440,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1440,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1440,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1440,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1920,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1920,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1920,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1920,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "orbit",
+      "width": 1920,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 320,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 320,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 320,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 320,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 320,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 390,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 390,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 390,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 390,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 390,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 768,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 768,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 768,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 768,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 768,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1440,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1440,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1440,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1440,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1440,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1920,
+      "view": "home",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1920,
+      "view": "assistant",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1920,
+      "view": "money",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1920,
+      "view": "obligations",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    },
+    {
+      "direction": "margin",
+      "width": 1920,
+      "view": "activity",
+      "horizontalOverflow": false,
+      "navigationDestinations": 5
+    }
+  ],
+  "interactionChecks": [
+    "Home composer preserves submitted text",
+    "Scripted reply is explicitly labeled",
+    "Message input is escaped as plain text",
+    "Payment-method discovery labels proposed networks",
+    "Mobile saved conversations and new conversation",
+    "Six companion states",
+    "Reduced motion disables animation",
+    "Escape closes dialogs",
+    "Composer stays above mobile navigation"
+  ],
+  "browserErrors": [],
+  "externalRequests": [],
+  "financialApiRequests": [],
+  "result": "passed"
+}

@@ -1,0 +1,50 @@
+{
+	admin off
+}
+
+{$AGUS_CRYPTO_HOST} {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	@api path /api/v1/health /api/v1/ready /api/v1/openapi /api/v1/crypto /api/v1/crypto/* /api/auth /api/auth/*
+	handle @api {
+		request_body {
+			max_size 16MB
+		}
+		reverse_proxy api:3000 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 100s
+			}
+		}
+	}
+
+	@public_web path / /privacy /terms /support /auth /auth/* /reset-password /robots.txt /sitemap.xml /_next/static/* /_next/image /brand/* /fonts/*
+	handle @public_web {
+		reverse_proxy api:3000 {
+			transport http {
+				dial_timeout 5s
+				response_header_timeout 30s
+			}
+		}
+	}
+
+	handle /favicon.ico {
+		rewrite * /favicon.png
+		root * /srv/agus
+		file_server
+	}
+
+	handle /favicon.png {
+		root * /srv/agus
+		file_server
+	}
+
+	handle {
+		respond 404
+	}
+}

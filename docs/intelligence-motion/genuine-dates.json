@@ -1,0 +1,90 @@
+{
+  "commit": "8e95f116c622b884da5379769aaf54aeb223649b",
+  "priorHttpAttempts": 39,
+  "maximumAdditionalAttempts": 9,
+  "aggregateMaximum": 48,
+  "genuineProvider": true,
+  "syntheticRecords": true,
+  "turns": [
+    {
+      "question": "Find payments to Ada in October 2026",
+      "kind": "clarify",
+      "narration": "factual_fallback",
+      "explanation": [
+        "I found 2 possible matches in the selected records.\n\nAda Obi (fictional): ₦7,500.00 on 7 October 2026.\n\nAda Okafor (fictional): ₦5,000.00 on 5 October 2026.\n\nWhich one would you like to inspect?"
+      ],
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 2,
+        "resultBytes": 2226,
+        "narrationCode": "NARRATION_REVIEW_REJECTED",
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "literal_value",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "colon",
+            "record_slot",
+            "text",
+            "record_slot",
+            "text",
+            "record_slot",
+            "comma",
+            "text",
+            "record_slot",
+            "text",
+            "record_slot",
+            "text",
+            "record_slot",
+            "period"
+          ]
+        }
+      }
+    },
+    {
+      "question": "Show details for the first candidate",
+      "kind": "financial",
+      "narration": "ai",
+      "explanation": [
+        "Payment to Ada Obi (fictional): ₦7,500.00 on 7 October 2026.",
+        "Coverage not supplied.",
+        "Source status does not confirm the recipient’s bank was credited.",
+        "Fictional demo records; no real bank account data."
+      ],
+      "evidence": {
+        "modelCalls": 3,
+        "toolCalls": 2,
+        "resultBytes": 1027,
+        "narrationDiagnostic": {
+          "version": 1,
+          "stage": "claim",
+          "category": "unsupported_structure",
+          "paragraphIndex": 0,
+          "clauseIndex": 0,
+          "structure": [
+            "text",
+            "record_slot",
+            "colon",
+            "record_slot",
+            "text",
+            "record_slot",
+            "period"
+          ]
+        }
+      }
+    }
+  ],
+  "status": "complete_requires_human_review",
+  "attempts": 6,
+  "httpStatuses": [
+    200,
+    200,
+    200,
+    200,
+    200,
+    200
+  ]
+}

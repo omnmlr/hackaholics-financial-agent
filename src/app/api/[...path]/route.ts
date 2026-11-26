@@ -8,10 +8,13 @@ import {
   login,
   logout,
   sessionCookie,
-  checkPassword,
+  reauthenticate,
 } from "@/lib/auth";
 import { mutate, readState } from "@/lib/db";
 import { provider, fixtureBeneficiaries } from "@/lib/paystack";
+import { conversationImage } from "@/lib/conversation-image";
+import { financialContext } from "@/lib/financial-integration/service";
+import { simulatedConfirmation } from "@/lib/payment-status";
 import {
   approveBatch,
   editBatch,
@@ -112,11 +115,45 @@ async function handle(req: Request) {
         audit: s.audit
           .filter((e) => e.actor === actor || e.actor === "paystack")
           .slice(-100),
+        executionRejections: s.audit
+          .filter(
+            (e) => e.actor === actor && e.action === "batch.execution_rejected",
+          )
+          .map((e) => ({
+            batchId: e.batchId,
+            attemptId: (e.details as { attemptId: string }).attemptId,
+          })),
         fixtureBeneficiaries: c.mode === "fixture" ? fixtureBeneficiaries : [],
       });
     }
     if (action === "banks" && req.method === "GET")
       return reply(await provider().banks());
+    if (
+      action === "batches" &&
+      path[2] === "confirmation" &&
+      req.method === "GET"
+    ) {
+      const paymentId = z
+        .uuid()
+        .parse(new URL(req.url).searchParams.get("payment"));
+      const batch = (await readState()).batches.find(
+        (b) => b.id === path[1] && b.owner === actor,
+      );
+      const payment = batch?.payments.find((p) => p.id === paymentId);
+      if (!batch || !payment) throw new AppError("Payment not found", 404);
+      return new Response(
+        simulatedConfirmation(batch, payment, await provider().banks()),
+        {
+          headers: {
+            "Content-Type": "text/plain; charset=utf-8",
+            "Content-Disposition":
+              'attachment; filename="AGUS-SIMULATED-confirmation.txt"',
+            "Cache-Control": "no-store, private",
+            "X-Content-Type-Options": "nosniff",
+          },
+        },
+      );
+    }
     if (action === "balance" && req.method === "GET") {
       const r = await provider().balance();
       return reply({ availableKobo: r.data, mode: config().mode, at: now() });
@@ -213,15 +250,16 @@ async function handle(req: Request) {
           "audio/webm",
         ].includes(mimeType)
       )
-        throw new AppError("This browser's audio format is not supported.", 415);
-      return reply(
-        {
-          transcript: await transcribeAudio(
-            Buffer.from(await file.arrayBuffer()),
-            mimeType,
-          ),
-        },
-      );
+        throw new AppError(
+          "This browser's audio format is not supported.",
+          415,
+        );
+      return reply({
+        transcript: await transcribeAudio(
+          Buffer.from(await file.arrayBuffer()),
+          mimeType,
+        ),
+      });
     }
     if (action === "extract" && req.method === "POST") {
       if (Number(req.headers.get("content-length") ?? 0) > 6 * 1024 * 1024)
@@ -232,6 +270,25 @@ async function handle(req: Request) {
       }).formData();
       const file = form.get("image");
       if (!(file instanceof File)) throw new AppError("Image file required");
+      const conversationId = form.get("conversationId"),
+        uploadId = form.get("uploadId");
+      if (conversationId || uploadId) {
+        const ids = z
+          .object({ conversationId: z.uuid(), uploadId: z.uuid() })
+          .parse({ conversationId, uploadId });
+        await financialContext(req);
+        return reply(
+          await conversationImage(
+            actor,
+            ids.conversationId,
+            ids.uploadId,
+            Buffer.from(await file.arrayBuffer()),
+            file.type,
+          ),
+          200,
+          { "Cache-Control": "no-store, private" },
+        );
+      }
       return reply(
         await extractImage(
           Buffer.from(await file.arrayBuffer()),
@@ -322,18 +379,20 @@ async function handle(req: Request) {
             password: z.string().max(256),
             reviewDigest: z.string().length(64),
           })
-          .parse(body); // Reuse rate-limited password authentication; immediately revoke the extra session.
-        const token = await login(password);
-        await logout(
-          new Request(req.url, { headers: { cookie: `ha_session=${token}` } }),
-        );
-        if (!checkPassword(password, process.env.OPERATOR_PASSWORD_HASH ?? ""))
-          throw new AppError("Reauthentication required", 401);
+          .parse(body);
+        await reauthenticate(actor, password);
         return reply(await approveBatch(actor, batchId, reviewDigest));
       }
       if (operation === "execute") {
-        const { nonce } = z.object({ nonce: z.string().uuid() }).parse(body);
-        return reply(await executeBatch(actor, batchId, nonce));
+        const { nonce, attemptId } = z
+          .object({
+            nonce: z.string().uuid(),
+            attemptId: z.string().uuid().optional(),
+          })
+          .parse(body);
+        return reply(
+          await executeBatch(actor, batchId, nonce, provider(), attemptId),
+        );
       }
       if (operation === "reconcile")
         return reply(await reconcileBatch(actor, batchId));
@@ -345,10 +404,7 @@ async function handle(req: Request) {
             password: z.string().max(256),
           })
           .parse(body);
-        const token = await login(password);
-        await logout(
-          new Request(req.url, { headers: { cookie: `ha_session=${token}` } }),
-        );
+        await reauthenticate(actor, password);
         return reply(await finalizeOTP(actor, batchId, paymentId, otp));
       }
     }

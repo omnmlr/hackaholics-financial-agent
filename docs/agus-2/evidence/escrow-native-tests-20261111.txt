@@ -1,0 +1,21 @@
+running 2 tests
+test test_id ... ok
+test tests::authority_policy ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/bank.rs (/tmp/agus2-escrow-host-target/debug/deps/bank-546cc8d4aa00919c)
+
+running 4 tests
+test fund_release_replay_destinations_and_independent_verifier ... ok
+test disputes_fixed_two_of_three_and_mutual_cancellation ... ok
+test invalid_terms_mint_destination_and_arbitrated_release ... ok
+test unused_counterparty_account_cannot_block_arbitration ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.47s
+
+   Doc-tests agus_devnet_escrow
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

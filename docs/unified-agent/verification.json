@@ -1,0 +1,33 @@
+{
+  "implementationCommit": "cfdc464a02f00fb40ba8bde5fa894fab6ddd2528",
+  "railwayDeployment": "a5b0dc38-2c45-4cab-b350-7241b01fdd79",
+  "deploymentStatus": "SUCCESS",
+  "olderServiceUnchanged": true,
+  "productionBuild": true,
+  "lint": true,
+  "pidginNativeTool": "prepare_responsibility",
+  "pidginInlineApproval": true,
+  "voice": {
+    "genuineTranscriptionStatus": 200,
+    "source": "Synthetic spoken PCM through real Chromium MediaRecorder",
+    "reviewAndExplicitSend": true,
+    "physicalMicrophoneTested": false
+  },
+  "reminders": {
+    "localCancellationStates": ["awaiting_approval", "active", "paused"],
+    "deployedKeepPreservesBothAdaRecords": true,
+    "sameConversationRepeatBlocked": true,
+    "newChatRestoresExisting": true,
+    "noAdaDeletedOrMerged": true
+  },
+  "browserWidths": [1440, 820, 390, 320],
+  "sdk": {
+    "transport": "mocked",
+    "sharedSessionVerified": true,
+    "genuineFundedWallet": false,
+    "genuineTransfer": false,
+    "independentSettlementGuardVerified": true
+  },
+  "pollarRemaining": "HTTP 403 ORIGIN_NOT_ALLOWED for acceptance preview origin",
+  "zcashSendingEnabled": false
+}

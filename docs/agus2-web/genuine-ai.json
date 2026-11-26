@@ -1,0 +1,23 @@
+{
+  "provider": "gemini",
+  "model": "gemini-3.5-flash-lite",
+  "httpStatus": 200,
+  "genuineProviderCall": true,
+  "syntheticRecordsOnly": true,
+  "replyKind": "general",
+  "reply": "Based on your AGUS financial snapshot:\n\n* **What remains owed:** There is an open receivable of **9 USDC** from the **Synthetic client** for the synthetic design project, due by November 14, 2026.\n* **Safe next step:** Following the instruction not to prepare or initiate any payment, a safe next step is to review your open responsibilities or follow up directly with the Synthetic client regarding the invoice status (or verify receipt independently if payment was made off-platform).",
+  "execution": {
+    "id": "3c79228a-4d02-4ca5-8c13-a8aafe37c1d7",
+    "state": "completed",
+    "plan": [],
+    "steps": [
+      {
+        "sequence": 1,
+        "tool": "read_agus_financial_snapshot",
+        "state": "succeeded",
+        "summary": "Read user-owned imported financial records and evidence-based invoice states."
+      }
+    ]
+  },
+  "noPaymentExecutionAuthorized": true
+}

@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-11T09:28:59.995749+00:00",
+  "branch": "integration/agus2-foundation-20261110",
+  "baseline": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+  "classification": "local-implementation-and-fixture-acceptance",
+  "checks": [
+    {
+      "command": "npm test",
+      "result": "passed",
+      "files": 83,
+      "tests": 1492,
+      "database": "real isolated PostgreSQL and embedded compatibility fixtures",
+      "evidence": "regression-20261111.txt"
+    },
+    {
+      "command": "npm run test:marketplace",
+      "result": "passed",
+      "files": 6,
+      "tests": 22,
+      "database": "real isolated PostgreSQL",
+      "limits": "Signed chain transactions and RPC observations are synthetic; fiat and USD effects simulated"
+    },
+    {
+      "command": "npm run typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run mobile:typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "npm run lint",
+      "result": "passed"
+    },
+    {
+      "command": "npm run build",
+      "result": "passed",
+      "evidence": "production-build-20261111.txt"
+    },
+    {
+      "command": "npm run test:platform:http",
+      "result": "passed",
+      "evidence": "platform-http-20261111.txt",
+      "includes": "Devnet-disabled discovery returns 503 without chain calls; production HTTP, TOTP and least-privilege PostgreSQL"
+    },
+    {
+      "command": "npm run test:http",
+      "result": "passed",
+      "evidence": "legacy-http-20261111.txt"
+    },
+    {
+      "command": "npm run test:agent-workspace",
+      "result": "passed",
+      "evidence": "workspace-20261111.txt"
+    },
+    {
+      "command": "npm run test:agent-followup",
+      "result": "passed",
+      "evidence": "followup-20261111.txt"
+    },
+    {
+      "command": "npm run test:agent-runner",
+      "result": "passed",
+      "evidence": "runner-20261111.txt"
+    },
+    {
+      "command": "npm run mobile:export:android",
+      "result": "passed",
+      "evidence": "android-bundle-20261111.txt",
+      "bundle": "Hermes Android, 5.5 MB",
+      "limits": "Not an APK, physical installation or wallet/push acceptance; Metro reported package-export fallbacks"
+    },
+    {
+      "command": "npm run test:browser:workspace",
+      "result": "passed",
+      "viewports": [
+        "1440x1000",
+        "1024x768",
+        "820x1000",
+        "390x844",
+        "320x740",
+        "740x390"
+      ],
+      "evidence": "visual-20261111/browser-results.json"
+    },
+    {
+      "command": "BROWSER_WIDTHS=1440,390 npm run test:browser:chat-payments",
+      "result": "passed",
+      "integratedGroups": {
+        "1440": 15,
+        "390": 13
+      },
+      "evidence": "visual-20261111/chat-payments-results.json"
+    },
+    {
+      "command": "cargo test --manifest-path escrow/Cargo.toml --locked --features bank-tests",
+      "result": "passed",
+      "nativeLibraryTests": 2,
+      "nativeBankTests": 4,
+      "evidence": "escrow-native-tests-20261111.txt"
+    },
+    {
+      "command": "npm run build:escrow:sbf",
+      "result": "passed",
+      "evidence": "escrow-sbf-build-20261111.json",
+      "deployed": false
+    },
+    {
+      "command": "AGUS_ESCROW_SBF_TEST=1 SBF_OUT_DIR=.data/agus2-sbf-artifacts .data/agus2-escrow-validation/bank-tests --nocapture --test-threads=1",
+      "result": "passed",
+      "compiledSbfBankTests": 4,
+      "evidence": "escrow-sbf-tests-20261111.txt",
+      "limits": "Preserved bank-test executable from the successful native Cargo run; no native escrow fallback; SPL Token processor native. Equivalent Cargo wrapper is npm run test:escrow:sbf"
+    },
+    {
+      "command": "node scripts/android-build-preflight.mjs --check",
+      "result": "expected-blocked",
+      "exitCode": 2,
+      "evidence": "android-storage-20261111.json",
+      "limits": "Conservative space budget and SDK check only, no build attempted"
+    }
+  ],
+  "genuineAcceptance": {
+    "walletExecution": "pending-human",
+    "escrowDeployment": "not-performed",
+    "programAddress": "placeholder-not-accepted",
+    "androidDevice": "pending-human",
+    "pushDelivery": "pending",
+    "bankSourceInstitutionsAccepted": 0,
+    "usdPartnerAccepted": false,
+    "onChainPaymentRequestAccepted": false
+  },
+  "noPaidServicesInvoked": true,
+  "noAiIntelligenceDevelopment": true,
+  "noUiRedesign": true,
+  "noMergePushOrDeployment": true,
+  "hostedCi": "configured-not-run",
+  "sourceFiles": {
+    "src/server/p2p.ts": "c140f943e6b869671714184e87fc1380b261ee0ec9fea4c92a0ac383a8faa1c9",
+    "src/server/p2p-fixture.ts": "6e2c320167037c12e83cf0584fc681fdeead4c345a63b7506789fe82b4797087",
+    "src/server/escrow/devnet.ts": "c6925257a69aba532100070e20ef86f3c0be97bd74b95770752a0708f774a309",
+    "src/server/escrow/bindings.ts": "ec0278a4ff3769211df87cf2ec053d2fb9c32c79a8ecd72000b4ce98b216253f",
+    "src/server/requests.ts": "2dc78a639f39af660df049582c642cb7d34f8414119dd556b0fcd68085385fb9",
+    "src/server/request-chain.ts": "9672719577e124aa3925c3fefb8159d883846ff0c9945ad4501ad93c85a9f644",
+    "src/server/request-discovery.ts": "c2a1410ea5148dacf9125f1152d400fccb42a4da454d1be1b1756aae2f9b9d3f",
+    "src/server/usd/contracts.ts": "6426a60810e39b1e8c32fb7a724faa877634347ea73ac41511afb3436c3a6589",
+    "src/server/usd/fixture.ts": "5999698a1745bdd47a398f22cc65d6ce9ed01e7e3c5947b503da16e5375e3896",
+    "src/server/usd/partners.ts": "bf24cbb783816d0cf9721e7c11c61726a782787f43d9952c24bc074399e9b398",
+    "escrow/programs/agus-devnet-escrow/src/lib.rs": "b840449d744711b75ad6a401da0f86b246b77d81a1c26c7eb0085d11d30ab291",
+    "escrow/programs/agus-devnet-escrow/tests/bank.rs": "6e3afa58a7b15067cab0f97da5ce2ac25cd60566c4ef06c2ef3826bc5aa1dbfe",
+    "escrow/fixtures/client-vector.json": "c6e4ada52f0aa2770a0c7100c70710c63098fab97e2774542cbc75800f0ed530",
+    "escrow/Cargo.lock": "8e317d51b11117f7f3922f14997879c9306a7fe7178a5a691aaeaa29ccec8c73",
+    "packages/contracts/openapi.json": "e1cf61227a928b0975dff34c24c52f95aae4485786ffa79bbe9937d4f5c30002",
+    "packages/api-client/src/generated.ts": "666cd3a775acd703954f8a4a462e07bf62e5972f42ac2c1736ae6d230acac53a"
+  }
+}

@@ -1,0 +1,35 @@
+
+> hackaholics-financial-agent@0.1.0 test:browser
+> node scripts/browser-chat-payments.mjs && node scripts/browser-voice-submit.mjs && node scripts/browser-voice-meter.mjs
+
+PASS 1440px: 15 integrated groups
+PASS 820px: 13 integrated groups
+PASS 390px: 13 integrated groups
+PASS 320px: 13 integrated groups
+PASS voice submit native 1440px: 4 groups
+PASS voice submit media 1440px: 5 groups
+PASS voice submit native 820px: 4 groups
+PASS voice submit media 820px: 5 groups
+PASS voice submit native 390px: 4 groups
+PASS voice submit media 390px: 5 groups
+PASS voice submit native 320px: 4 groups
+PASS voice submit media 320px: 5 groups
+{
+  "passed": 8,
+  "reportDir": "/tmp/agus-voice-meter",
+  "checks": [
+    "native: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "native: network failure and late permission grant clean up actual microphone tracks",
+    "native: spoken replies opt-in works after explicit Send, without restarting capture",
+    "native: disabling spoken replies during an in-flight answer suppresses playback",
+    "media: actual Chromium PCM waveform changes, preview/review, explicit Stop releases tracks/context, no automatic send",
+    "media: cancellation during provider processing ignores its late transcript",
+    "media: spoken replies opt-in works after explicit Send, without restarting capture",
+    "actual Chromium microphone permission denial retains draft and shows an error without fabricated bars"
+  ]
+}
+npm notice
+npm notice New minor version of npm available! 11.9.0 -> 11.21.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.21.1
+npm notice To update run: npm install -g npm@11.21.1
+npm notice

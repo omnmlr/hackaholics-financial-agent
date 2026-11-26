@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 3,
+  "baseline": {
+    "branch": "dev/agus2-agent-engine-20261109",
+    "commit": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+    "integrationBranch": "integration/agus2-foundation-20261110",
+    "approval": "User approved attached engineering plan and execution on 2026-11-10",
+    "plan": "docs/agus-2/APPROVED_ENGINEERING_PLAN.md"
+  },
+  "accepted": [
+    {
+      "commit": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+      "scope": "Existing application, Solana pipeline, durable agent execution; preserve intelligence behavior"
+    }
+  ],
+  "excluded": [
+    {
+      "commit": "5c2a995",
+      "branch": "feat/agus2-autonomous-engineering-sprint",
+      "scope": "Alternative autonomous executor, generic authorization, merchant-message adapter, shopping",
+      "reason": "Not merged, not imported into runtime; unsafe approval, retry, dispatch and evidence semantics"
+    },
+    {
+      "commit": "4f1237f",
+      "branch": "feature/agus-external-actions-opus",
+      "scope": "Overlapping shopping/external action runtime",
+      "reason": "Deferred by approved scope"
+    },
+    {
+      "commit": "144311e",
+      "branch": "experiment/agus-consumer-source-authority-2026-11-09",
+      "scope": "Banking research",
+      "reason": "Reference evidence only, no accepted bank connectivity"
+    },
+    {
+      "commit": "39e2e51",
+      "branch": "research/agus-2-solana-technical-validation-2026-11-09",
+      "scope": "RPC observations",
+      "reason": "Not execution policy; missing transaction never alone proves failure"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "solana-public-devnet-genesis-mint-reads",
+      "environment": "devnet",
+      "classification": "verified-read-only",
+      "genuineIntegration": true,
+      "scope": "Public RPC genesis and canonical test-USDC mint only; no wallet ownership or transfer proven",
+      "evidence": "docs/agus-2/evidence/devnet-read-only-20261110.json"
+    },
+    {
+      "id": "banking-fixtures",
+      "environment": "fixture",
+      "classification": "simulated-verified-postgresql",
+      "genuineIntegration": false,
+      "scope": "Durable account data, consent, payments, webhook inbox, reconciliation, reversals and simulated receipts",
+      "evidence": "docs/agus-2/PLATFORM_CHECKPOINT.md"
+    },
+    {
+      "id": "personal-bank-source-connectivity",
+      "environment": "live",
+      "classification": "blocked",
+      "acceptedInstitutions": 0,
+      "genuineIntegration": false,
+      "gate": "Partner approval, issued credentials and institution-specific acceptance",
+      "candidateInstitutions": 23,
+      "operationCapabilitiesPerInstitution": 7,
+      "verifiedLiveOperationFlags": 0
+    },
+    {
+      "id": "paystack-merchant-payout",
+      "environment": "sandbox",
+      "classification": "implemented-not-provider-accepted",
+      "personalSourcePayment": false,
+      "genuineIntegration": false
+    },
+    {
+      "id": "solana-wallet-transfers",
+      "environment": "devnet",
+      "classification": "pending-human-acceptance",
+      "genuineIntegration": false,
+      "gate": "Owner independently completes SOL and canonical test-USDC signatures and finalized acceptance; preserved Sprint 1 tools remain available"
+    },
+    {
+      "id": "native-android",
+      "environment": "development",
+      "classification": "foundation-bundle-verified-device-pending",
+      "genuineIntegration": false,
+      "gate": "Complete SDK and sufficient free build storage, followed by physical installation, wallet and push acceptance; no paid EAS build invoked",
+      "scope": "Typechecked Expo Android harness, SecureStore, server sessions, MWA exact signing and explicit durable submission recovery",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "usd-receiving-conversion-ngn-settlement",
+      "environment": "live",
+      "classification": "blocked",
+      "genuineIntegration": false,
+      "gate": "Approved partner, eligibility and settlement evidence"
+    },
+    {
+      "id": "shared-identity-persistence-apis",
+      "environment": "local-postgresql",
+      "classification": "locally-verified",
+      "genuineIntegration": false,
+      "scope": "Invite-only Better Auth/TOTP, action-bound one-use approvals, isolated multi-user APIs, checksum migrations, normalized payment compatibility, leased worker and generated client",
+      "evidence": "docs/agus-2/PLATFORM_CHECKPOINT.md"
+    },
+    {
+      "id": "mono-account-data-contract",
+      "environment": "injected-transport-fixtures",
+      "classification": "contract-verified-provider-acceptance-pending",
+      "genuineIntegration": false,
+      "scope": "Documented code exchange, account information, paginated transactions, reauthorization and unlink; no live activation",
+      "gate": "Issued provider access and genuine sandbox acceptance"
+    },
+    {
+      "id": "payment-requests",
+      "environment": "synthetic-signed-rpc-and-local-postgresql",
+      "classification": "implementation-verified-genuine-settlement-pending",
+      "genuineIntegration": false,
+      "scope": "Owned QR/Solana Pay lifecycle, strict finalized SOL/classic TransferChecked receipt inspection, bounded external-wallet reference discovery, append-only receipt history and additional-payment manual review; no genuine paid request claimed",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "p2p-marketplace-foundation",
+      "environment": "fixture",
+      "classification": "simulated-lifecycle-verified",
+      "genuineIntegration": false,
+      "scope": "Offers, deterministic quotes, atomic reservations, durable fictional token funding, independent fixture verifier, cooperative release, mutual cancellation, fixed 2-of-3 arbitration and terminal replay protection",
+      "gate": "Genuine wallet execution and escrow deployment pending; simulated fiat verification is not bank settlement",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "anchor-test-usdc-escrow",
+      "environment": "local-native-and-compiled-sbf-bank",
+      "classification": "implemented-local-runtime-verified-not-deployed",
+      "genuineIntegration": false,
+      "nativeTestsPassed": 6,
+      "compiledSbfBankTestsPassed": 4,
+      "artifactSha256": "bba86a2d0f396849e96c24cd708fed364c95bec6e0bfe989add83778707d8a21",
+      "programAddressAccepted": false,
+      "gate": "Owner-controlled program address/rebuild, genuine wallet acceptance and approved Devnet deployment; verifier remains simulated",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    },
+    {
+      "id": "escrow-backend-bindings",
+      "environment": "local-postgresql-and-synthetic-rpc",
+      "classification": "templates-and-read-only-observer-verified",
+      "genuineIntegration": false,
+      "transactionPrepared": false,
+      "feeAndRentReviewed": false,
+      "genuineExecutionEnabled": false,
+      "scope": "Verified party-wallet association required; immutable terms, Rust-compatible instructions, finalized funding proof recorded separately from fixture ledger"
+    },
+    {
+      "id": "usd-partner-ports",
+      "environment": "disabled-live-boundaries",
+      "classification": "typed-interfaces-only",
+      "genuineIntegration": false,
+      "scope": "Eligibility, receiving, incoming funds, conversion, blockchain delivery, NGN payout and returns ports; real adapters throw USD_PARTNER_NOT_ACCEPTED"
+    },
+    {
+      "id": "usd-fixture-workflow",
+      "environment": "local-postgresql-fixture",
+      "classification": "simulated-lifecycle-verified",
+      "genuineIntegration": false,
+      "scope": "Fictional encrypted receiving details, immutable quotes/source allocation, duplicate-proof provider effects, staged conversion/delivery/payout, unknown reconciliation and unallocated-source returns",
+      "evidence": "docs/agus-2/MARKETPLACE_ESCROW_CHECKPOINT.md"
+    }
+  ],
+  "prohibitedScope": [
+    "AI intelligence development",
+    "UI redesign",
+    "monetization decisions",
+    "automatic deployment",
+    "genuine escrow deployment or advanced swap execution without human wallet acceptance and explicit release gates"
+  ],
+  "scopeClarification": "Subsequent user instructions explicitly authorize independently achievable local P2P and escrow implementation while wallet signing remains pending; approved plan file preserved unchanged."
+}

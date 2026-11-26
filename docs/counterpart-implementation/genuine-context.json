@@ -1,0 +1,8 @@
+{
+  "genuineProviderRequest": true,
+  "httpStatus": 200,
+  "reply": "That invoice na **9 USDC** (payable to Acceptance records). As you talk am, I no prepare or send any payment.",
+  "steps": [],
+  "noPaymentExecutionAuthorized": true,
+  "automaticRetry": false
+}

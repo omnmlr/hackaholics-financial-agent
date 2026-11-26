@@ -1,0 +1,17 @@
+{
+  "scenario": "Local production-build welcome, Chromium, 390 x 844, 4x CPU throttle, fictional-only, no external resources; smoke measurement, not a physical-device or network benchmark",
+  "readyWithLocalFontMs": 1262,
+  "domContentLoadedMs": 847,
+  "loadMs": 856,
+  "resources": 14,
+  "resourceTransferBytes": 359380,
+  "horizontalOverflow": false,
+  "externalResources": 0,
+  "metrics": {
+    "Nodes": 443,
+    "LayoutDuration": 0.120053,
+    "ScriptDuration": 0.298142,
+    "TaskDuration": 1.043638,
+    "JSHeapUsedSize": 5858116
+  }
+}

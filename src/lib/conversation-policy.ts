@@ -1,5 +1,14 @@
 import type { Proposed } from "./intelligence";
 import type { Message, Mode, Status } from "./domain";
+import {
+  paymentSegment,
+  groundedPaymentAmounts,
+  paymentAmountCandidates,
+  rejectedPaymentAmount,
+  paymentAccountCandidates,
+  rejectedPaymentAccount,
+  rejectedPaymentField,
+} from "./payment-grounding";
 
 // No model-authored prose crosses the narration boundary. Even ordinary
 // conversational intents are untrusted: an intent label cannot certify prose.
@@ -94,24 +103,39 @@ const bankNames: Record<string, RegExp> = {
   "044": /\baccess\b/i,
   "058": /\b(?:gtbank|gtb|guaranty trust)\b/i,
   "033": /\buba\b/i,
+  "999992": /\bopay\b/i,
 };
 export function groundProposal(
   p: Proposed,
   request: string,
   previous?: Proposed,
 ): Proposed {
+  request = paymentSegment(request, p.accountNumber, p.name);
   const contains = (value: string) =>
     request.toLowerCase().includes(value.toLowerCase());
-  const bankCodes = [
+  const codeEvidence = [
     ...request.matchAll(/\bbank(?: code)?\s*[:=]?\s*(\d{3,6})\b/gi),
-  ].map((m) => m[1]);
-  const amounts = [
-    ...request.matchAll(
-      /(?:₦|NGN\s*|\bamount\s*[:=]?\s*)(\d+(?:\.\d{1,2})?)(?![\d.])|\b(\d+(?:\.\d{1,2})?)\s+(?:to|for|naira)\b/gi,
-    ),
-  ].map((m) => m[1] ?? m[2]);
+  ];
+  const rejectedBanks = new Set(
+    codeEvidence
+      .filter((m) => rejectedPaymentField(request, m.index!))
+      .map((m) => m[1]),
+  );
+  const bankCodes = codeEvidence
+    .filter((m) => !rejectedPaymentField(request, m.index!))
+    .map((m) => m[1]);
+  for (const [code, pattern] of Object.entries(bankNames)) {
+    const evidence = [...request.matchAll(new RegExp(pattern.source, "gi"))];
+    if (evidence.some((m) => rejectedPaymentField(request, m.index!)))
+      rejectedBanks.add(code);
+    if (evidence.some((m) => !rejectedPaymentField(request, m.index!)))
+      bankCodes.push(code);
+  }
+  const banks = [...new Set(bankCodes)];
+  const accounts = paymentAccountCandidates(request);
+  const amounts = groundedPaymentAmounts(request);
   const missingAccount =
-    /(?:haven.t|have not|not|no|missing|without|don.t|do not).{0,35}account|account.{0,25}(?:missing|unknown|not provided)/i.test(
+    /\b(?:haven.t|have not|don.t|do not)\s*(?:have|know)?[^\d.;\n]{0,25}\baccount\b|\b(?:no|missing|without)\b[^\d.;\n]{0,20}\baccount\b|\baccount\s+(?:is\s+)?(?:missing|unknown|not provided)\b/i.test(
       request,
     );
   const missingAmount =
@@ -122,27 +146,38 @@ export function groundProposal(
       p.name && (contains(p.name) || p.name === previous?.name) ? p.name : "",
     bankCode:
       p.bankCode &&
-      (bankCodes.includes(p.bankCode) ||
-        bankNames[p.bankCode]?.test(request) ||
-        p.bankCode === previous?.bankCode)
+      ((banks.length === 1 && banks[0] === p.bankCode) ||
+        (!banks.length &&
+          p.bankCode === previous?.bankCode &&
+          !rejectedBanks.has(p.bankCode)))
         ? p.bankCode
         : null,
     accountNumber:
       !missingAccount &&
       p.accountNumber &&
-      (contains(p.accountNumber) || p.accountNumber === previous?.accountNumber)
+      ((accounts.length === 1 && accounts[0] === p.accountNumber) ||
+        (!accounts.length &&
+          p.accountNumber === previous?.accountNumber &&
+          !rejectedPaymentAccount(request, p.accountNumber)))
         ? p.accountNumber
         : null,
     amountNaira:
       !missingAmount &&
       p.amountNaira &&
-      (amounts.some((n) => Number(n) === Number(p.amountNaira)) ||
-        p.amountNaira === previous?.amountNaira)
+      (amounts.some((n) => n === Number(p.amountNaira)) ||
+        (p.amountNaira === previous?.amountNaira &&
+          !paymentAmountCandidates(request).length &&
+          !rejectedPaymentAmount(request, Number(p.amountNaira))))
         ? p.amountNaira
         : null,
     reason: contains(p.reason) ? p.reason : "Payment",
     warnings: [
       "Unverified instructions. Missing details stay empty; review every field before saving.",
+      ...(/\b\d{6,}[A-Za-z]+\b/.test(request)
+        ? [
+            "The supplied account string is not a valid ten-digit number. Confirm the letter-to-number mapping and the full resulting number explicitly, then enter it in the account field. No account or ownership has been discovered or verified.",
+          ]
+        : []),
     ],
   };
   return grounded;

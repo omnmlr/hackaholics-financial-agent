@@ -1,0 +1,47 @@
+{
+    # Global options: disable administrative API and output structured JSON logs
+    admin off
+    log {
+        output stdout
+        format json
+    }
+}
+
+{$APP_DOMAIN:localhost} {
+    # Automatic TLS certificate issuance and renewal via Let's Encrypt / ZeroSSL
+    # When APP_DOMAIN is localhost or unset, Caddy automatically provisions internal self-signed certs.
+
+    # Strict security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+
+    # Bounded maximum request body size (10MB) to mitigate memory exhaustion
+    request_body {
+        max_size 10MB
+    }
+
+    # Reverse proxy to the internal Next.js API container
+    reverse_proxy api:3000 {
+        # Active health checking against preflight readiness endpoint
+        health_uri /api/v1/ready
+        health_interval 15s
+        health_timeout 5s
+        health_status 200
+
+        # Standard trusted reverse proxy headers
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto https
+        header_up X-Forwarded-Host {host}
+    }
+
+    # Application events carry redacted correlation IDs. Avoid full request URIs,
+    # which can contain authentication and recovery query parameters.
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-11-09",
+  "implementation_commit": "8b3535915db53ab3b31f54dbfa035da58d213112",
+  "recovered_base": "6fbbcf66fb5233e4b554f91cbde1508ad72a369d",
+  "branch": "dev/agus2-solana-core-20261109",
+  "full_suite": {
+    "command": "npm test",
+    "files": 61,
+    "tests": 1338,
+    "result": "passed",
+    "duration_seconds": 107.27
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "existing_payment_http_safety": "passed; fixture only",
+  "workspace_http_browser": "passed; production build, temporary SQL, Chromium390px, auth/approval/idempotency/memory/disabled-devnet checks",
+  "solana_and_workspace_focused_tests": 45,
+  "production_dependency_audit": {
+    "advisories": 0,
+    "scope": "npm audit --omit=dev; development-only SDK oracle advisories remain"
+  },
+  "production_trace_excludes": [
+    "@solana/spl-token",
+    "bigint-buffer",
+    "@solana/buffer-layout-utils"
+  ],
+  "independent_review": {
+    "workspace": "separate UI worker read-only review",
+    "solana": "lead review of worker implementation and protocol differential tests"
+  },
+  "genuine_external_evidence": "devnet-read.json",
+  "genuine_new_model_calls": 0,
+  "wallet_signing_or_transfers_performed": false,
+  "external_messages_sent": 0,
+  "purchases_or_paid_services": 0,
+  "ngn_spent": 0,
+  "production_deployed": false,
+  "merged": false,
+  "limits": [
+    "Funded user-controlled devnet wallet signing/transfer acceptance outstanding",
+    "Confirmed free development model entitlement/configuration required for genuine new model acceptance",
+    "Automatic reminders require the local runner or a separately configured scheduler",
+    "No live bank/customer data or production USD/USDC/FX/off-ramp integration claimed",
+    "Classic SPL only; Token-2022/extensions/multisig intentionally unsupported"
+  ]
+}

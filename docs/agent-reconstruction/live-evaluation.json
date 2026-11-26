@@ -1,0 +1,7 @@
+{
+  "status": "BLOCKED",
+  "reason": "MODEL_NOT_CONFIGURED",
+  "genuineModelCalls": 0,
+  "mockedModel": false,
+  "at": "2026-10-20T10:16:10.263Z"
+}

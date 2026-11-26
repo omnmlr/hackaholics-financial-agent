@@ -1,0 +1,101 @@
+{
+  "base": "http://localhost:3140",
+  "configuration": {
+    "configured": true,
+    "provider": "gemini",
+    "model": "gemini-3.5-flash-lite",
+    "architecture": "native-gemini",
+    "unavailableReason": null
+  },
+  "results": [
+    {
+      "width": 1440,
+      "view": "Home",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "genuineContextRestored": true
+    },
+    {
+      "width": 1440,
+      "view": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "view": "Money",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "view": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "view": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "view": "Home",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "genuineContextRestored": true
+    },
+    {
+      "width": 390,
+      "view": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "view": "Money",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "view": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "view": "Activity",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "view": "Home",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "genuineContextRestored": true
+    },
+    {
+      "width": 320,
+      "view": "AGUS",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "view": "Money",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "view": "Obligations",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "view": "Activity",
+      "overflow": false
+    }
+  ],
+  "browserErrors": [],
+  "records": "Isolated preview only. No Counterpart concept data is seeded."
+}

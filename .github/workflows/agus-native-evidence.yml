@@ -1,0 +1,28 @@
+name: AGUS inspect saved fictional evidence (zero provider calls)
+on:
+  push:
+    branches: [hardening/agus-native-release-20261020]
+    paths: [.github/workflows/agus-native-evidence.yml]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: agus-native-genuine
+          run-id: "39430148876"
+          github-token: ${{ github.token }}
+      - name: Print the already-sanitized fictional campaign artifact
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const data = JSON.parse(readFileSync('agus-native-genuine.json','utf8'));
+          if (!data.syntheticFinancialData || data.paymentExecutionCapability || data.genuineGenerationAttempts !== 25) throw new Error('Unexpected evidence identity');
+          console.log('BEGIN_AGUS_SAVED_EVIDENCE');
+          console.log(JSON.stringify(data));
+          console.log('END_AGUS_SAVED_EVIDENCE');
+          NODE

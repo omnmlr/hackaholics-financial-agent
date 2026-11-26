@@ -1,0 +1,5 @@
+
+> hackaholics-financial-agent@0.1.0 test:http
+> node scripts/http-smoke.mjs
+
+PASS: production Next.js HTTP smoke — login, route protection, two recipients, verification, approval, explicit submission, duplicate rejection, reconciliation, persisted status chat, CSV. No provider network calls or real money.

@@ -1,0 +1,40 @@
+AGUS premium experience — validation evidence
+Base: c2117ed643790950b6f4af7210e707831fab54db (PR #40)
+Branch: ui/agus-premium-experience-20261020
+Financial data: fictional only. Genuine model/provider calls: zero.
+Production branches/deployment/payment-provider configuration: unchanged.
+
+PASS npm run typecheck
+PASS npm run lint
+PASS npm run build (Next.js 16.4.1 production webpack build)
+PASS npm test: 48 files, 1,170 tests, including in-flight and pre-aborted native cancellation.
+PASS npm run test:http: auth, route protection, two fictional recipients, verification,
+  explicit approval/submission, duplicate rejection, reconciliation, persistence, CSV.
+PASS npm run test:browser:
+  Payment/chat integration: 1440px 15 groups; 820px, 390px and 320px 13 groups each.
+  Voice submit: native 4 groups and media fallback 5 groups at each of four widths.
+  Voice meter: 8 scenarios using actual Chromium PCM capture, synthetic audio,
+  cancellation/permission failure cleanup, and opt-in playback. No automatic sending.
+PASS npm run test:browser:native: 1440px and 390px, 7 native transport integration groups each.
+PASS npm run test:browser:premium: 1440px, 820px, 390px and 320px; 28 UX groups;
+  24 axe WCAG A/AA scans, zero violations; zero page errors; zero approval/execute POSTs.
+  Saved-state cancellation race, lost request recovery, preserved next draft,
+  authorized fictional financial results and transaction evidence, editable payments,
+  short viewport, long draft/conversation, fixed shell, navigation, persistence,
+  reduced motion, and compact composer covered. Raw report: after/browser-results.json.
+PASS git diff --check
+
+Visual review: actual running production build captures in before/ and after/.
+Final desktop welcome, 320px payment proposal and 390px financial results inspected.
+52 final screenshots cover 13 states at four widths; four baseline screenshots retained.
+The stale failure screenshot was removed after the final all-width pass.
+
+Performance smoke on continuation: production welcome at 390 x 844, 4x CPU throttle;
+ready including local font 1,262ms; DOM content loaded 847ms; 359,380 transferred bytes;
+5,858,116 bytes JS heap; zero external resources; no horizontal overflow.
+Local-only smoke, not a physical-device/network benchmark. Raw report: after/performance.json.
+
+Limits: no genuine Gemini acceptance campaign or live financial/provider test;
+physical iOS/Android keyboard and native speech-service checks remain manual follow-ups.
+Earlier temporary focus-color, recovery, mobile placeholder and shell-scroll failures
+were repaired and rerun. Final passing runs above use the implemented UI.

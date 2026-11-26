@@ -1,0 +1,131 @@
+{
+  "classification": "REAL HTTP observation history; GET-only monitor; no manual verification request",
+  "observations": [
+    {
+      "event": "independent-wallet-poll",
+      "round": 0,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 1,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 2,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 3,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 4,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 5,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 6,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 7,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 8,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 9,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 10,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 11,
+      "outputs": [],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 12,
+      "outputs": [
+        {
+          "txid": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+          "amountAtoms": "10000000",
+          "confirmations": 3,
+          "pool": 4
+        }
+      ],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 13,
+      "outputs": [
+        {
+          "txid": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+          "amountAtoms": "10000000",
+          "confirmations": 3,
+          "pool": 4
+        }
+      ],
+      "request": "pending",
+      "invoice": "open"
+    },
+    {
+      "event": "independent-wallet-poll",
+      "round": 14,
+      "outputs": [
+        {
+          "txid": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+          "amountAtoms": "10000000",
+          "confirmations": 3,
+          "pool": 4
+        }
+      ],
+      "request": "confirmed",
+      "invoice": "settled"
+    }
+  ]
+}

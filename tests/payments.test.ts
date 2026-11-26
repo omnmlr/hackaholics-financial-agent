@@ -1,5 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHmac, randomBytes, scryptSync } from "node:crypto";
+import sharp from "sharp";
 import { mutate, readState, db, attempts, sessions } from "../src/lib/db";
 import {
   digest,
@@ -489,7 +490,7 @@ describe("authentication, controlled AI, data and uploads", () => {
     process.env.AI_PROVIDER = "openai";
     process.env.AI_API_KEY = "fictional-model-key";
     const plan = {
-      intent: "authorize",
+      intent: "prepare",
       payments: [
         {
           name: "Ada",
@@ -513,7 +514,11 @@ describe("authentication, controlled AI, data and uploads", () => {
         ),
     );
     vi.stubGlobal("fetch", transport);
-    const bytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 0]);
+    const bytes = await sharp({
+      create: { width: 8, height: 8, channels: 3, background: "#111111" },
+    })
+      .png()
+      .toBuffer();
     const r = await extractImage(bytes, "image/png", "demo-operator");
     expect(r.requiresReview).toBe(true);
     expect(JSON.stringify(r)).not.toContain("The payout went through.");
@@ -729,4 +734,79 @@ it("failed repeat verification clears stale beneficiary evidence and blocks appr
   await expect(approveBatch(actor, batch.id, digest(saved))).rejects.toThrow(
     "Verify",
   );
+});
+
+describe("persisted execution rejection receipts", () => {
+  it("records a confirmed pre-claim rejection and never replays that attempt", async () => {
+    const b = await approved();
+    const attemptId = "00000000-0000-4000-8000-000000000001";
+    const api = new FixtureProvider();
+    const transfer = vi.spyOn(api, "submit");
+    vi.spyOn(api, "balance").mockResolvedValueOnce({
+      data: 0,
+      raw: { fixture: true },
+    });
+    await expect(
+      executeBatch(actor, b.id, b.approval!.nonce, api, attemptId),
+    ).rejects.toThrow(/Insufficient/);
+    const state = await readState();
+    expect(state.batches[0].approval?.consumedAt).toBeUndefined();
+    expect(state.audit).toContainEqual(
+      expect.objectContaining({
+        actor,
+        batchId: b.id,
+        action: "batch.execution_rejected",
+        details: { attemptId, nonce: b.approval!.nonce },
+      }),
+    );
+    await expect(
+      executeBatch(actor, b.id, b.approval!.nonce, api, attemptId),
+    ).rejects.toThrow(/attempt was rejected/);
+    expect(transfer).not.toHaveBeenCalled();
+    await executeBatch(
+      actor,
+      b.id,
+      b.approval!.nonce,
+      api,
+      "00000000-0000-4000-8000-000000000002",
+    );
+    expect(transfer).toHaveBeenCalledTimes(1);
+  });
+  it("never records a rejection for claimed or uncertain executions", async () => {
+    const b = await approved();
+    const api = new FixtureProvider();
+    vi.spyOn(api, "submit").mockRejectedValue(
+      new Error("Lost provider response"),
+    );
+    await executeBatch(
+      actor,
+      b.id,
+      b.approval!.nonce,
+      api,
+      "00000000-0000-4000-8000-000000000003",
+    );
+    const state = await readState();
+    expect(state.batches[0].approval?.consumedAt).toBeTruthy();
+    expect(
+      state.audit.some((e) => e.action === "batch.execution_rejected"),
+    ).toBe(false);
+    expect(state.batches[0].payments[0].status).toBe("unknown");
+  });
+  it("retains owner isolation when an attempt is rejected", async () => {
+    const b = await approved();
+    await expect(
+      executeBatch(
+        "other-owner",
+        b.id,
+        b.approval!.nonce,
+        fixture,
+        "00000000-0000-4000-8000-000000000004",
+      ),
+    ).rejects.toThrow();
+    expect(
+      (await readState()).audit.some(
+        (e) => e.action === "batch.execution_rejected",
+      ),
+    ).toBe(false);
+  });
 });

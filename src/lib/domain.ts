@@ -47,6 +47,8 @@ export interface Payment extends Instruction {
   responses: { at: string; operation: string; data: unknown }[];
 }
 export interface Batch {
+  // Server-owned source; never accepted from a payment instruction/model.
+  simulationSource?: { tenantId: string; ownerId: string; accountId: string };
   id: string;
   owner: string;
   mode: Mode;
@@ -93,6 +95,9 @@ export interface Message {
   }[];
   batchId?: string;
   sourceRequest?: string;
+  // Server-owned linkage from an authenticated saved conversation turn.
+  conversationId?: string;
+  turnId?: string;
   topic?: string;
   supersededBy?: string;
   // Server-owned selection for an unambiguous conversational follow-up.
@@ -122,6 +127,7 @@ export interface LedgerEntry {
   recurring: boolean;
 }
 export interface State {
+  simulationOpenings?: import("./financial-integration/simulation").SimulationOpening[];
   batches: Batch[];
   messages: Message[];
   audit: Audit[];

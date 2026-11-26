@@ -1,0 +1,150 @@
+name: AGUS 2 foundation (isolated fixtures)
+on:
+  pull_request:
+  push:
+    branches: ["main", "integration/agus2-**", "integration/agus-crypto-hackathon-20261129"]
+permissions:
+  contents: read
+concurrency:
+  group: agus2-foundation-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci-fixture-only
+          POSTGRES_DB: agus2
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      EXPO_NO_TELEMETRY: "1"
+      PAYMENT_MODE: fixture
+      AI_PROVIDER: none
+      AI_API_KEY: ""
+      PAYSTACK_SECRET_KEY: ""
+      AGUS_SOLANA_DEVNET_ENABLED: "false"
+      LIVE_TRANSFERS_ENABLED: "false"
+      LIVE_OWNER_AUTHORIZED: "false"
+      PAYSTACK_TRANSFERS_ENABLED: "false"
+      LIVE_WEBHOOK_VALIDATED: "false"
+      LIVE_RECONCILIATION_VALIDATED: "false"
+      AGUS_TEST_DATABASE_URL: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/agus2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm ci --ignore-scripts
+      - name: Verify contracts, types and tests offline
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh core
+  foundation-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: ci-fixture-only
+          POSTGRES_DB: agus2
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      EXPO_NO_TELEMETRY: "1"
+      PAYMENT_MODE: fixture
+      AI_PROVIDER: none
+      AI_API_KEY: ""
+      PAYSTACK_SECRET_KEY: ""
+      AGUS_SOLANA_DEVNET_ENABLED: "false"
+      LIVE_TRANSFERS_ENABLED: "false"
+      LIVE_OWNER_AUTHORIZED: "false"
+      PAYSTACK_TRANSFERS_ENABLED: "false"
+      LIVE_WEBHOOK_VALIDATED: "false"
+      LIVE_RECONCILIATION_VALIDATED: "false"
+      AGUS_TEST_DATABASE_URL: postgresql://postgres:ci-fixture-only@127.0.0.1:5432/agus2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - run: npm ci --ignore-scripts
+      - name: Install the locked Playwright Chromium build
+        timeout-minutes: 5
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: "30000"
+        run: npx playwright install chromium
+      - name: Export Android JavaScript offline
+        timeout-minutes: 5
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh android-export
+      - name: Build the production web app offline
+        timeout-minutes: 6
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh web-build
+      - name: Verify production HTTP and browser flows offline
+        timeout-minutes: 6
+        env:
+          POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: bash scripts/ci/foundation-offline.sh web-smoke
+  escrow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AI_PROVIDER: none
+      AI_API_KEY: ""
+      PAYSTACK_SECRET_KEY: ""
+      CARGO_INCREMENTAL: "0"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.99.1"
+      - name: Install checksum-pinned free SBF compiler
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/agus-sbf-tools"
+          curl -fsSL --retry 2 https://github.com/anza-xyz/platform-tools/releases/download/v1.58/platform-tools-linux-x86_64.tar.bz2 -o "$RUNNER_TEMP/agus-sbf-tools.tar.bz2"
+          printf '%s  %s\n' '7b82eb420b5aebd1e5590db0ae25c523eca06724d4238ae02139690535636c37' "$RUNNER_TEMP/agus-sbf-tools.tar.bz2" | sha256sum --check
+          tar -xjf "$RUNNER_TEMP/agus-sbf-tools.tar.bz2" -C "$RUNNER_TEMP/agus-sbf-tools"
+          rm "$RUNNER_TEMP/agus-sbf-tools.tar.bz2"
+          echo "AGUS_SBF_PLATFORM_TOOLS=$RUNNER_TEMP/agus-sbf-tools" >> "$GITHUB_ENV"
+      - name: Fetch locked Rust dependencies
+        run: cargo fetch --manifest-path escrow/Cargo.toml --locked
+      - name: Verify native bank, client oracle and compiled SBF
+        shell: bash
+        env:
+          CARGO_NET_OFFLINE: "true"
+        run: |
+          set -euo pipefail
+          cargo test --manifest-path escrow/Cargo.toml --locked --features bank-tests
+          cargo run --manifest-path escrow/Cargo.toml --locked --features bank-tests --example client-vector > "$RUNNER_TEMP/agus-client-vector.json"
+          cmp escrow/fixtures/client-vector.json "$RUNNER_TEMP/agus-client-vector.json"
+          npm run build:escrow:sbf
+          npm run test:escrow:sbf

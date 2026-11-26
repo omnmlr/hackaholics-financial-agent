@@ -1,0 +1,238 @@
+[
+  {
+    "width": 1440,
+    "checks": [
+      "Compact empty composer and no horizontal overflow",
+      "Authorized fictional source metrics and expandable calculation evidence",
+      "Editable fictional payment proposal in the conversation",
+      "Stop replaces Send; late reply ignored; committed response reconciled; next draft preserved",
+      "Network failure preserves question and checks saved state before retry",
+      "Reading position retained while a reply arrives; jump to latest works",
+      "Saved conversation survives reload; responsive navigation opens and closes"
+    ],
+    "initial": {
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "composer": {
+        "x": 318.59375,
+        "right": 1121.390625,
+        "bottom": 484.515625,
+        "height": 74.703125
+      },
+      "height": 1000,
+      "scrollbar": "visible",
+      "shellTop": 0,
+      "headerTop": 0,
+      "documentScroll": 0,
+      "shellScroll": 0,
+      "mainScroll": 0,
+      "mainOverflow": "auto"
+    },
+    "accessibility": [
+      {
+        "state": "welcome",
+        "violations": []
+      },
+      {
+        "state": "account",
+        "violations": []
+      },
+      {
+        "state": "financial",
+        "violations": []
+      },
+      {
+        "state": "transactions",
+        "violations": []
+      },
+      {
+        "state": "payment-draft",
+        "violations": []
+      },
+      {
+        "state": "navigation",
+        "violations": []
+      }
+    ],
+    "pageErrors": [],
+    "approvalCalls": 0,
+    "executionCalls": 0
+  },
+  {
+    "width": 820,
+    "checks": [
+      "Compact empty composer and no horizontal overflow",
+      "Authorized fictional source metrics and expandable calculation evidence",
+      "Editable fictional payment proposal in the conversation",
+      "Stop replaces Send; late reply ignored; committed response reconciled; next draft preserved",
+      "Network failure preserves question and checks saved state before retry",
+      "Reading position retained while a reply arrives; jump to latest works",
+      "Saved conversation survives reload; responsive navigation opens and closes"
+    ],
+    "initial": {
+      "documentWidth": 820,
+      "viewport": 820,
+      "composer": {
+        "x": 82,
+        "right": 738,
+        "bottom": 461.390625,
+        "height": 68
+      },
+      "height": 1000,
+      "scrollbar": "visible",
+      "shellTop": 0,
+      "headerTop": 0,
+      "documentScroll": 0,
+      "shellScroll": 0,
+      "mainScroll": 0,
+      "mainOverflow": "auto"
+    },
+    "accessibility": [
+      {
+        "state": "welcome",
+        "violations": []
+      },
+      {
+        "state": "account",
+        "violations": []
+      },
+      {
+        "state": "financial",
+        "violations": []
+      },
+      {
+        "state": "transactions",
+        "violations": []
+      },
+      {
+        "state": "payment-draft",
+        "violations": []
+      },
+      {
+        "state": "navigation",
+        "violations": []
+      }
+    ],
+    "pageErrors": [],
+    "approvalCalls": 0,
+    "executionCalls": 0
+  },
+  {
+    "width": 390,
+    "checks": [
+      "Compact empty composer and no horizontal overflow",
+      "Authorized fictional source metrics and expandable calculation evidence",
+      "Editable fictional payment proposal in the conversation",
+      "Stop replaces Send; late reply ignored; committed response reconciled; next draft preserved",
+      "Network failure preserves question and checks saved state before retry",
+      "Reading position retained while a reply arrives; jump to latest works",
+      "Saved conversation survives reload; responsive navigation opens and closes"
+    ],
+    "initial": {
+      "documentWidth": 390,
+      "viewport": 390,
+      "composer": {
+        "x": 16,
+        "right": 374,
+        "bottom": 403.890625,
+        "height": 62
+      },
+      "height": 844,
+      "scrollbar": "visible",
+      "shellTop": 0,
+      "headerTop": 0,
+      "documentScroll": 0,
+      "shellScroll": 0,
+      "mainScroll": 0,
+      "mainOverflow": "auto"
+    },
+    "accessibility": [
+      {
+        "state": "welcome",
+        "violations": []
+      },
+      {
+        "state": "account",
+        "violations": []
+      },
+      {
+        "state": "financial",
+        "violations": []
+      },
+      {
+        "state": "transactions",
+        "violations": []
+      },
+      {
+        "state": "payment-draft",
+        "violations": []
+      },
+      {
+        "state": "navigation",
+        "violations": []
+      }
+    ],
+    "pageErrors": [],
+    "approvalCalls": 0,
+    "executionCalls": 0
+  },
+  {
+    "width": 320,
+    "checks": [
+      "Compact empty composer and no horizontal overflow",
+      "Authorized fictional source metrics and expandable calculation evidence",
+      "Editable fictional payment proposal in the conversation",
+      "Stop replaces Send; late reply ignored; committed response reconciled; next draft preserved",
+      "Network failure preserves question and checks saved state before retry",
+      "Reading position retained while a reply arrives; jump to latest works",
+      "Saved conversation survives reload; responsive navigation opens and closes"
+    ],
+    "initial": {
+      "documentWidth": 320,
+      "viewport": 320,
+      "composer": {
+        "x": 16,
+        "right": 304,
+        "bottom": 399.109375,
+        "height": 62
+      },
+      "height": 844,
+      "scrollbar": "visible",
+      "shellTop": 0,
+      "headerTop": 0,
+      "documentScroll": 0,
+      "shellScroll": 0,
+      "mainScroll": 0,
+      "mainOverflow": "auto"
+    },
+    "accessibility": [
+      {
+        "state": "welcome",
+        "violations": []
+      },
+      {
+        "state": "account",
+        "violations": []
+      },
+      {
+        "state": "financial",
+        "violations": []
+      },
+      {
+        "state": "transactions",
+        "violations": []
+      },
+      {
+        "state": "payment-draft",
+        "violations": []
+      },
+      {
+        "state": "navigation",
+        "violations": []
+      }
+    ],
+    "pageErrors": [],
+    "approvalCalls": 0,
+    "executionCalls": 0
+  }
+]

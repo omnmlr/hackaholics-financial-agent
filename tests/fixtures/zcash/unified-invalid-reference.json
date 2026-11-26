@@ -1,0 +1,30 @@
+[
+  {
+    "reason": "padding mismatch",
+    "address": "utest1nuyfny0ar05hetmwdfef8f8ac59wuemfr7mwkslf3hnuxg9vhptav23k38kfu534xt2hhmn4y2gxjf0jg8skzrs09h6wk9k255nljnul"
+  },
+  {
+    "reason": "wrong receiver length",
+    "address": "utest1ckxm57690yy4az7p5jyzadasqssffkd73fvkx59xgrh7e4q729vjrtr3h3a5l3uxhhah2p45qlt93nzv6rk5ee2h8urqlldvfy8tyw"
+  },
+  {
+    "reason": "duplicate receiver",
+    "address": "utest196hqn0930aqj2nhu89nkwtezzsxq49mql28c9t2arf4r7dun3r5ctyy0mpl3svndm3y3yhd69t4nd0r0gvuvamf4ll27zcu4304h9aejucaynwsu37y3w0l3ktsqptguej7rhd896y6ltxqpvnj8cj2dvxv2dza2keywjs5wdu0a0a2w"
+  },
+  {
+    "reason": "receiver order",
+    "address": "utest1z7649vhth473nm2t4mc590guw4r6aq5h0yrprqedqzrxupefv4gsvndpxfpe8xhvxzyf4qu3n0mlls26udscegwpf7wezemzx32zms58mzcp5awtzlzyyndg5gpahzgn6s6dq3wfvhp4hk2cga6xhvkg84hnvutzl4f6v5rqzywm7r6d"
+  },
+  {
+    "reason": "noncanonical compact size",
+    "address": "utest13ptn08zdzj5umdqpcgtzxvta03wg6ud9yq8sxs35gevk545ge95wmfkjypcchqwzvu25j9pzfsy8tmsjjpdk5u964nnqlswtc9h4vkzpl35"
+  },
+  {
+    "reason": "transparent only",
+    "address": "utest1tn5fvukudwy0llkj4lcyw62u3nptmm7vfm3ud0udh2nj5nk5hdarx9tzp7jc8qn4p0f4uhxl0yvu5retjd9987vjzayxjdpfnnjwaw"
+  },
+  {
+    "reason": "unsupported must-understand metadata",
+    "address": "utest172wy08fw43dse4tset2xx7yxl0a47p690hwzltu4az4k90t439qlysutylctwjf0afmng9d0u63dhq78zlxkzuhpc53p448en8hrtfqes3xhx"
+  }
+]

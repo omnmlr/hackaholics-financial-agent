@@ -1,0 +1,17 @@
+{
+  "kind": "genuine-public-devnet-unsigned-simulation",
+  "observedAt": "2026-11-09T16:55:09.280Z",
+  "network": "devnet",
+  "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "sender": "2URn9ic3aMGQgGXzPcKMPjdwUJgj9Efumr2bTq4jWNAb",
+  "walletConnected": false,
+  "privateKeyGenerated": false,
+  "signaturesCollected": 0,
+  "transactionsSent": 0,
+  "result": {
+    "err": "AccountNotFound",
+    "slot": 520448828,
+    "unitsConsumed": 0
+  },
+  "interpretation": "Unfunded unsigned diagnostic rejected in simulation; exact transport works, funded signing/transfer acceptance remains outstanding."
+}

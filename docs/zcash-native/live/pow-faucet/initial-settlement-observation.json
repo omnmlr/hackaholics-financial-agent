@@ -1,0 +1,142 @@
+{
+  "classification": "REAL original pending-to-confirmed observation; native wallet output and persisted application records",
+  "url": "https://agusweb.up.railway.app",
+  "gemini": {
+    "status": 200,
+    "reply": "I have created your private testnet ZEC receiving invoice for 0.1 ZEC from the Public Testnet faucet titled \"Orchard shielded receiving demo.\" \n\nYou can review the invoice and QR code in your trusted owner UI. Note that it remains pending and unpaid until the native receiving wallet independently verifies the transaction with 3 confirmations.",
+    "steps": [
+      {
+        "sequence": 1,
+        "tool": "create_private_zec_invoice",
+        "state": "succeeded",
+        "summary": "Private ZEC invoice saved. Unpaid until the native receiving wallet independently verifies the exact amount and 3 confirmations. Address and QR are available only in the owner UI."
+      }
+    ]
+  },
+  "invoiceId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+  "requestId": "06edf48c-7268-414e-a424-33ab06d9fe4e",
+  "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+  "initialState": "pending",
+  "reminderBefore": "awaiting_approval",
+  "receivingWalletBefore": {
+    "network": "testnet",
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "invoiceKey": "db1c810ae83cde6edb3262ab1de7fc3916e9ccdd0530d7c6874bc20eddcbd1c8",
+    "termsDigest": "96ef930e1ba1ad70bfb8e95185580db66901dd5e67d8affa5133b57380ee3425",
+    "walletRequestId": "req_dfea420bb8b9423b8d93",
+    "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+    "amountAtoms": "10000000",
+    "chainTip": 4618876,
+    "synced": true,
+    "observedAt": 1794646895,
+    "outputs": [],
+    "source": "zaw-librustzcash-receiving-wallet",
+    "signingAvailable": false
+  },
+  "receivingWalletAfter": {
+    "network": "testnet",
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "invoiceKey": "db1c810ae83cde6edb3262ab1de7fc3916e9ccdd0530d7c6874bc20eddcbd1c8",
+    "termsDigest": "96ef930e1ba1ad70bfb8e95185580db66901dd5e67d8affa5133b57380ee3425",
+    "walletRequestId": "req_dfea420bb8b9423b8d93",
+    "address": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+    "amountAtoms": "10000000",
+    "chainTip": 4618880,
+    "synced": true,
+    "observedAt": 1794647050,
+    "outputs": [
+      {
+        "amountAtoms": "10000000",
+        "transactionId": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+        "height": 4618878,
+        "confirmations": 3,
+        "pool": 4,
+        "outputIndex": 1,
+        "blockTime": 1794646982
+      }
+    ],
+    "source": "zaw-librustzcash-receiving-wallet",
+    "signingAvailable": false
+  },
+  "receipt": {
+    "id": "06edf48c-7268-414e-a424-33ab06d9fe4e",
+    "uri": "zcash:utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt?amount=0.1&label=AGUS+private+invoice",
+    "memo": "",
+    "rail": "zcash",
+    "asset": "ZEC",
+    "owner": "counterpart-founder-acceptance",
+    "state": "confirmed",
+    "amount": "0.1",
+    "network": "testnet",
+    "evidence": {
+      "memo": "",
+      "asset": "ZEC",
+      "amount": "0.1",
+      "source": "zcash-receiving-wallet",
+      "network": "testnet",
+      "recipient": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+      "observedAt": "2026-11-14T09:04:09.000Z",
+      "confirmedAt": "2026-11-14T09:03:02.000Z",
+      "confirmations": 3,
+      "transactionId": "f6dfa6acf602b2f6b936123c0abc8fa4a8b8c99359e1180f7e675f5dd154d082",
+      "walletReceipt": {
+        "pool": 4,
+        "chainTip": 4618880,
+        "matching": "unique-wallet-address",
+        "walletId": "e0c86165421f16cd2ceef9c3",
+        "invoiceKey": "db1c810ae83cde6edb3262ab1de7fc3916e9ccdd0530d7c6874bc20eddcbd1c8",
+        "minedHeight": 4618878,
+        "outputIndex": 1,
+        "termsDigest": "96ef930e1ba1ad70bfb8e95185580db66901dd5e67d8affa5133b57380ee3425",
+        "walletRequestId": "req_dfea420bb8b9423b8d93"
+      }
+    },
+    "createdAt": "2026-11-14T08:58:48.409Z",
+    "expiresAt": "2026-11-15T08:58:48.410Z",
+    "invoiceId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+    "lastCheck": "Receiving evidence verified",
+    "recipient": "utest1uqgnhptrdxhwhrlx2q9tlwp973fde006jfgddtem6e5klrrf7nc23trdqhpkz2tlydg6h0mxkpx8xzqj6za2775ps7n5v4pukcf5ztxt",
+    "nativeWallet": {
+      "walletId": "e0c86165421f16cd2ceef9c3",
+      "invoiceKey": "db1c810ae83cde6edb3262ab1de7fc3916e9ccdd0530d7c6874bc20eddcbd1c8",
+      "termsDigest": "96ef930e1ba1ad70bfb8e95185580db66901dd5e67d8affa5133b57380ee3425",
+      "walletRequestId": "req_dfea420bb8b9423b8d93"
+    },
+    "reviewDigest": "ef368add7c45417c0e1ed72d0348724c7c7d4544edc15632dca30dfa79d17047",
+    "lastCheckedAt": "2026-11-14T09:04:09.000Z"
+  },
+  "invoice": {
+    "id": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+    "note": "",
+    "dueAt": "2026-11-21T12:00:00.000Z",
+    "owner": "counterpart-founder-acceptance",
+    "state": "settled",
+    "title": "Orchard shielded receiving demo",
+    "amount": "0.1",
+    "currency": "ZEC",
+    "createdAt": "2026-11-14T08:58:48.407Z",
+    "direction": "receivable",
+    "settledAt": "2026-11-14T09:04:09.000Z",
+    "counterparty": "Public Testnet faucet",
+    "responsibilityId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+    "settlementRequestId": "06edf48c-7268-414e-a424-33ab06d9fe4e"
+  },
+  "reminderAfter": {
+    "id": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+    "dueAt": "2026-11-21T12:00:00.000Z",
+    "scope": "in_app_reminder_only",
+    "state": "completed",
+    "title": "Orchard shielded receiving demo",
+    "version": 1,
+    "createdAt": "2026-11-14T08:58:48.406Z",
+    "objective": "Follow up with Public Testnet faucet: 0.1 ZEC.",
+    "requestId": "fcb5ab9d-a990-449f-a0c7-172f2f27f667"
+  },
+  "reminderAudit": [
+    {
+      "task": "fcb5ab9d-a990-449f-a0c7-172f2f27f667",
+      "kind": "settlement_verified",
+      "created_at": "2026-11-14 09:04:09.325+00"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+
+ RUN  v5.0.4 /workspace/hackaholics-financial-agent
+
+
+ Test Files  21 passed (21)
+      Tests  735 passed (735)
+   Start at  13:58:58
+   Duration  16.67s (tests 73%, import 23%, transform 3%, worker 1%)
+
+    Isolate  21 workers spawned · ~89ms startup each (spawn + environment, per file)
+             at least ~1.78s faster with isolate: false — reuses workers across files instead of one per file
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.0
+npm notice To update run: npm install -g npm@12.2.0
+npm notice

@@ -1,0 +1,38 @@
+{
+  "tasks": [
+    {
+      "id": "0c757498-e722-479a-8288-5a42f767e534",
+      "title": "Ada 5 USDC debt reminder",
+      "state": "paused",
+      "createdAt": "2026-11-14T05:12:49.172Z",
+      "dueAt": "2026-11-15T09:00:00Z",
+      "version": 2
+    },
+    {
+      "id": "63972655-2652-4296-848c-fea789ccf4ab",
+      "title": "Ada 5 USDC debt reminder",
+      "state": "active",
+      "createdAt": "2026-11-14T05:28:35.952Z",
+      "dueAt": "2026-11-15T09:00:00Z",
+      "version": 1
+    }
+  ],
+  "origins": [
+    {
+      "taskId": "63972655-2652-4296-848c-fea789ccf4ab",
+      "conversationId": "7ebf785a-8d31-4672-a28d-e998b05a235a",
+      "turnId": "596a527e-246e-4a9f-8d2e-db49a672df02",
+      "createdAt": "2026-11-14T05:28:37.673Z",
+      "request": "abeg you fit remind me say ada dey owe me 5 usdc tomorrow"
+    },
+    {
+      "taskId": "0c757498-e722-479a-8288-5a42f767e534",
+      "conversationId": "746267ad-ef18-49a4-bc98-676e8589de55",
+      "turnId": "a0a3fb18-a500-436d-97bc-45bcc8905328",
+      "createdAt": "2026-11-14T05:12:51.440Z",
+      "request": "abeg you fit remind me say ada dey owe me 5 usdc tomorrow"
+    }
+  ],
+  "recordsChanged": false,
+  "acceptanceTestTaskId": "63972655-2652-4296-848c-fea789ccf4ab"
+}

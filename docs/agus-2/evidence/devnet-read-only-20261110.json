@@ -1,0 +1,14 @@
+{
+  "classification": "genuine-public-read-only-observation",
+  "transferProven": false,
+  "network": "devnet",
+  "genesisHash": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "rpcEndpoint": "https://api.devnet.solana.com",
+  "mint": {
+    "mint": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+    "decimals": 6,
+    "tokenProgram": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "initialized": true
+  },
+  "observedAt": "2026-11-10T14:35:03.774Z"
+}

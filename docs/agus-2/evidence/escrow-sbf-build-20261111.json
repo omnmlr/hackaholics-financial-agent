@@ -1,0 +1,12 @@
+{
+  "artifact": "/workspace/agus2-integration/.data/agus2-sbf-artifacts/agus_devnet_escrow.so",
+  "sha256": "bba86a2d0f396849e96c24cd708fed364c95bec6e0bfe989add83778707d8a21",
+  "compiler": "rustc 1.95.0-dev (1e20dd0d5 2026-10-05)",
+  "platformTools": "v1.58 (Rust 1.95.0 / LLVM 22)",
+  "architecture": "v0",
+  "builtAt": "2026-11-11T09:23:59.280Z",
+  "deployed": false,
+  "programAddressAccepted": false,
+  "genuineWalletExecutionAccepted": false,
+  "notice": "Local compiled prototype only. Devnet deployment awaits an owner-controlled program address and wallet. Production release separately requires independent review and key governance. No network transaction is signed or sent by this build."
+}

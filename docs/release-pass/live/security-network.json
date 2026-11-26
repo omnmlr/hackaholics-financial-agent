@@ -1,0 +1,33 @@
+{
+  "url": "https://agusweb.up.railway.app",
+  "login": 200,
+  "oldPasswordRejected": 401,
+  "unauthenticatedFinancialData": 401,
+  "hostileOrigin": 403,
+  "cookie": {
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Strict"
+  },
+  "allPriorRecordsPreserved": true,
+  "recordCounts": {
+    "conversationIds": 3,
+    "responsibilityIds": 2,
+    "invoiceIds": 0,
+    "accountIds": 0
+  },
+  "pollarTestnet": true,
+  "paystackMode": "fixture",
+  "mainnetExecutionEnabled": false,
+  "network": {
+    "live": true,
+    "tipHeight": 4618720,
+    "tipHash": "000dd8c73884cceaba5db229e1f80b561f698d187c4f06de2007fb40c27fa22f",
+    "chainName": "test",
+    "branchId": "77190ad9",
+    "endpoint": "testnet.zec.rocks:443",
+    "observedAt": "2026-11-14T08:01:35.815Z",
+    "classification": "public-network-read-only"
+  },
+  "credentialsInReport": false
+}

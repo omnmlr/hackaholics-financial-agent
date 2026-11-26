@@ -1,0 +1,29 @@
+{
+  "classification": "MOCKED provider and Horizon HTTP; real official SDK/browser/API/SQL; no real funds or settlement",
+  "sdk": "@pollar/core@0.12.0",
+  "passed": true,
+  "wrongPasswordBlocked": true,
+  "singleProviderSigningCall": 1,
+  "nonceReplayStatus": 403,
+  "providerSuccessWithoutHorizonRemainedPending": true,
+  "linkedObligationSettledOnlyAfterMockedNetworkEvidence": true,
+  "moneyWalletConnectionAndBalanceRead": true,
+  "authenticatedSessionReusedAcrossViews": true,
+  "paths": [
+    "/v3/applications/config",
+    "/v3/auth/session",
+    "/v3/auth/email",
+    "/v3/auth/email/verify-code",
+    "/v3/auth/session/status/mock-browser-session",
+    "/v3/auth/login",
+    "/v3/cosign/requests",
+    "/v3/applications/config",
+    "/v3/tx/build",
+    "/v3/applications/config",
+    "/v3/applications/config",
+    "/v3/tx/sign-and-send",
+    "/v3/applications/config",
+    "/v3/wallet/balance"
+  ],
+  "jsErrors": []
+}

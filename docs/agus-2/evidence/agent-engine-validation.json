@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-09",
+  "branch": "dev/agus2-agent-engine-20261109",
+  "preserved_parent": "4e378f43cba2f67138fc69904bbc55d8aa2b2603",
+  "full_suite": {
+    "result": "passed",
+    "files": 69,
+    "tests": 1386,
+    "seconds": 133.01
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "actual_local_production_browser": "passed: scripted SDK transport, native multi-tool plan/calculation, real SQL memory/reminder, human approvals, persisted chat reload, financial fixture disabled; zero external networking",
+  "restart_recovery": "passed: committed proposal with lost acknowledgement recovered in independent processes, one memory record, unknown old step retained",
+  "financial_boundary": "existing regressions pass; read-only specialist rejects undeclared preparation; final/cached financial authorization rechecked; volatile results excluded from resumed model context; specialist financial narrative retained when a coordinator and reviewer accept conflicting numeric claims",
+  "genuine_external_tool": "agent-engine-devnet.json; scripted planner, three real public RPC calls, observed wallet snapshot",
+  "genuine_model_calls": 0,
+  "genuine_model_quality": "not measured: local provider disabled; confirmed authorized free Gemini configuration required",
+  "wallet_signatures_or_transactions": 0,
+  "spent_ngn": 0,
+  "external_communications": 0,
+  "production_deployed": false,
+  "merged": false,
+  "remaining": [
+    "Genuine Gemini 3.5 Flash-Lite evaluation",
+    "Full web UI for run controls/progress",
+    "Automatic continuation of general runs after human approval",
+    "Authorized existing-personal-bank integrations",
+    "Separate Antigravity external-action integration review",
+    "Independent security review before release"
+  ],
+  "previous_checkpoint": "d2561613d9cda0af1efe1a01f5d95333de68bc20",
+  "existing_payment_http_safeguards": "passed: actual local production HTTP auth, verification/approval/submission, duplicate rejection, reconciliation; fixture provider, no real money",
+  "final_targeted_regression": "25 tests passed for coordinator, authenticated HTTP and process restart before final full suite"
+}

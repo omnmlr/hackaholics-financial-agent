@@ -1,0 +1,24 @@
+{
+  "base": "http://127.0.0.1:3000",
+  "passed": true,
+  "transport": "scripted native Gemini; zero genuine calls",
+  "data": "fictional",
+  "storage": ".data/finals-fixture-preview/db",
+  "checks": [
+    "Generated private fixture login works",
+    "Calculator UI returns 540",
+    "Reload restores chat and contextual correction returns 1,080",
+    "Authenticated saved-chat API retains both turns",
+    "No browser page errors",
+    "Prior chat retains two saved turns across actual preview process restart",
+    "Saved conversation reopens through real sidebar after restart",
+    "Account picker resumes ISO-date request and renders verified fictional October spending",
+    "Two-recipient editable draft saves 650 amendment and persists after reload"
+  ],
+  "conversationId": "7aa5bec0-1ff0-4cb2-8e5f-023d8d880352",
+  "savedTurns": 2,
+  "errors": [],
+  "approvals": 0,
+  "executions": 0,
+  "priorConversationAfterRestart": "03b26e66-2a4d-4cd1-a02f-748d2f5ea582"
+}

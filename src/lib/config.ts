@@ -1,4 +1,5 @@
 import { AppError, type Mode } from "./domain";
+import { validateDeclaredEnvironment } from "./environment";
 function integer(key: string, fallback: number) {
   const n = Number(process.env[key] ?? fallback);
   if (!Number.isSafeInteger(n) || n < 0)
@@ -6,6 +7,7 @@ function integer(key: string, fallback: number) {
   return n;
 }
 export function config() {
+  validateDeclaredEnvironment();
   const mode = process.env.PAYMENT_MODE ?? "fixture";
   if (!["fixture", "test", "live"].includes(mode))
     throw new AppError("Invalid PAYMENT_MODE", 503);

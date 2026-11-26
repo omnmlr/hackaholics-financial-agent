@@ -1,0 +1,4 @@
+General Sans by Indian Type Foundry. Source: https://www.fontshare.com/fonts/general-sans
+Free font under the Fontshare license: https://www.fontshare.com/licenses
+IBM Plex Mono by IBM: https://fonts.google.com/specimen/IBM+Plex+Mono
+SIL Open Font License included alongside the font.

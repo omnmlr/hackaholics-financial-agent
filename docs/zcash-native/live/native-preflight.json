@@ -1,0 +1,19 @@
+{
+  "classification": "REAL native wallet; unpaid, no receipt or settlement claimed",
+  "status": 200,
+  "data": {
+    "network": "testnet",
+    "walletId": "e0c86165421f16cd2ceef9c3",
+    "invoiceKey": "b20cb858ab1bb8b9659501bdf0d1078470263867e687bca781f1eb29f65dbcae",
+    "termsDigest": "687a68deabef807cb3ba53aadac57367cca2c0443469c89c4b3758ed4bd0335c",
+    "walletRequestId": "req_e0c5c3cd2aa340bca319",
+    "address": "utest15hmgfsy3nfnt2p4a7c9cz8vjqnfafttpgxg657ksuwxvy5x87cwent9awgqd7kzfag0dzau9k4qz9zmwe8zh4lhs34ha0vdnzqwmvn9p",
+    "amountAtoms": "12500000",
+    "chainTip": 4618821,
+    "synced": true,
+    "observedAt": 1794645833,
+    "outputs": [],
+    "source": "zaw-librustzcash-receiving-wallet",
+    "signingAvailable": false
+  }
+}

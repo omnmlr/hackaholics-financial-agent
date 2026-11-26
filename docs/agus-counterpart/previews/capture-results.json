@@ -1,0 +1,74 @@
+[
+  {
+    "device": "desktop",
+    "screen": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "screen": "conversation",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "screen": "accounts",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "screen": "obligations",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "screen": "activity",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "desktop",
+    "screen": "review",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "home",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "conversation",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "accounts",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "obligations",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "activity",
+    "overflow": false,
+    "errors": []
+  },
+  {
+    "device": "mobile",
+    "screen": "review",
+    "overflow": false,
+    "errors": []
+  }
+]

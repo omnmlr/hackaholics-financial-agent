@@ -1,0 +1,32 @@
+{
+  "genuineModelCalls": 0,
+  "metric": "UTF-8 bytes, not provider tokens or cost",
+  "results": [
+    {
+      "selectedAccounts": 0,
+      "schemaBytes": 1529,
+      "systemBytes": 4516,
+      "historyBytes": 68,
+      "functionNames": [
+        "calculate",
+        "request_account",
+        "prepare_payment_draft"
+      ]
+    },
+    {
+      "selectedAccounts": 1,
+      "schemaBytes": 6255,
+      "systemBytes": 4531,
+      "historyBytes": 68,
+      "functionNames": [
+        "calculate",
+        "search_transactions",
+        "get_transaction",
+        "calculate_spending",
+        "find_payment_evidence",
+        "get_account_summary",
+        "prepare_payment_draft"
+      ]
+    }
+  ]
+}

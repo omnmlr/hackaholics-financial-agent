@@ -1,0 +1,8 @@
+[toolchain]
+anchor_version = "0.31.1"
+
+[programs.localnet]
+agus_devnet_escrow = "AYCkNeJSmk99TSDYq7tH7yRmAfv64vw6vA6SvT732yCi"
+
+# No provider wallet or Devnet deploy command is configured. Human wallet
+# acceptance and separate program/key-governance review remain release gates.

@@ -1,0 +1,116 @@
+{
+  "recordedAt": "2026-11-10T18:18:36.917136+00:00",
+  "branch": "integration/agus2-foundation-20261110",
+  "baseline": "3f767d17e35efb8e84a9fe4da05f231c8e6956b4",
+  "schemaVersion": "0013_record_observations.sql",
+  "checks": {
+    "fullRegression": {
+      "result": "passed",
+      "files": 79,
+      "tests": 1472,
+      "durationSeconds": 228.05,
+      "command": "npm test",
+      "log": "/tmp/agus2-roadmap-final-tests.log"
+    },
+    "webTypecheck": {
+      "result": "passed",
+      "command": "npm run typecheck"
+    },
+    "lint": {
+      "result": "passed",
+      "command": "npm run lint"
+    },
+    "webProductionBuild": {
+      "result": "passed",
+      "command": "npm run build"
+    },
+    "generatedContractDrift": {
+      "result": "passed",
+      "command": "npm run contracts:generate",
+      "method": "SHA-256 before/after comparison of OpenAPI and generated TypeScript"
+    },
+    "platformHttp": {
+      "result": "passed",
+      "command": "npm run test:platform:http",
+      "database": "Real PostgreSQL 17, isolated acceptance database and least-privilege runtime role",
+      "coverage": [
+        "invite-only identity",
+        "actual TOTP/session cookie rotation",
+        "owner isolation",
+        "simulated account and payment flow",
+        "duplicate execution claim",
+        "simulated receipt",
+        "normalized legacy operator compatibility",
+        "server restart recovery",
+        "remote session revocation",
+        "generated password/TOTP seed/session cookie/auth/wrapping-key log scan"
+      ],
+      "log": "/tmp/agus2-roadmap-final-platform-http.log"
+    },
+    "preservedPaymentHttp": {
+      "result": "passed",
+      "command": "npm run test:http",
+      "log": "/tmp/agus2-roadmap-final-http.log"
+    },
+    "preservedWorkspaceBrowser": {
+      "result": "passed",
+      "command": "npm run test:agent-workspace",
+      "log": "/tmp/agus2-roadmap-final-agent-workspace.log"
+    },
+    "preservedDevnetFollowupBrowser": {
+      "result": "passed-fixture-only",
+      "command": "npm run test:agent-followup",
+      "log": "/tmp/agus2-roadmap-final-agent-followup.log"
+    },
+    "preservedReminderRunnerBrowser": {
+      "result": "passed",
+      "command": "npm run test:agent-runner",
+      "log": "/tmp/agus2-roadmap-final-agent-runner.log"
+    },
+    "historicalVisualSuite": {
+      "result": "failed-baseline-test-incompatibility",
+      "command": "npm run test:browser:workspace",
+      "reason": "Historical script expects removed baseline sign-in hint, Spend navigation and fixed 16px typography. Diagnostic test-only edits reverted; no application UI changes.",
+      "log": "/tmp/agus2-roadmap-final-workspace.log"
+    },
+    "mobileTypecheck": {
+      "result": "passed",
+      "command": "npm run mobile:typecheck"
+    },
+    "mobileAndroidBundle": {
+      "result": "passed",
+      "command": "npm run mobile:export:android",
+      "apiUrl": "https://prototype.fixture.invalid",
+      "physicalConnectivityVerified": false,
+      "log": "/tmp/agus2-roadmap-final-mobile-export.log"
+    },
+    "mobileNativePrebuild": {
+      "result": "passed",
+      "command": "expo prebuild --platform android --no-install"
+    },
+    "mobileApkBuild": {
+      "result": "blocked-environment-storage",
+      "artifactProduced": false,
+      "reason": "Official SDK/NDK/JDK installed; local Gradle build exhausted workspace/tmp capacity. Disposable task build caches cleared, application/acceptance data preserved.",
+      "log": "/tmp/agus2-android-build.log"
+    }
+  },
+  "capabilityBoundaries": {
+    "genuineDevnetWalletExecution": "pending-human-acceptance",
+    "genuineDevnetTransferPassed": false,
+    "realSourceInstitutionsAccepted": 0,
+    "candidateInstitutions": 23,
+    "liveCapabilitiesPerInstitution": 7,
+    "enabledLiveSourceCapabilities": 0,
+    "monoAdapter": "injected-transport-contract-tests-only",
+    "bankReceipts": "simulated-no-bank-transfer",
+    "p2p": "fixture-reservations-only-escrow-disabled",
+    "mobilePhysicalAcceptance": "pending",
+    "pushDelivery": "pending-platform-credentials-and-device",
+    "automaticDeployment": false,
+    "hostedCi": "configured-not-run",
+    "paidModelCalls": 0,
+    "realBankCalls": 0,
+    "chainExecutionCalls": 0
+  }
+}

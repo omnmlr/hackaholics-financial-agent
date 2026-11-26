@@ -1,0 +1,55 @@
+name: AGUS model-led isolated quality checks
+
+on:
+  push:
+    branches: [experiment/agus-model-led-20261020]
+    paths:
+      - src/**
+      - tests/**
+      - scripts/browser-native-agent.mjs
+      - scripts/fixtures/gemini-native-agent.mjs
+      - package.json
+      - package-lock.json
+      - .github/workflows/agus-model-led-quality.yml
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Use Playwright's installed Chromium
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import { appendFile } from 'node:fs/promises';
+          await appendFile(process.env.GITHUB_ENV, `CHROMIUM_PATH=${chromium.executablePath()}\n`);
+          NODE
+      - run: npm run test:http
+      - run: npm run test:browser
+      - run: node scripts/browser-native-agent.mjs
+      - name: Save fixture-only browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agus-model-led-quality
+          path: |
+            /tmp/agus-native-agent-browser.json
+            /tmp/agus-native-agent-*.png
+            /tmp/agus-chat-payments-browser.json
+            /tmp/agus-voice-meter/results.json
+          retention-days: 7
+          if-no-files-found: warn

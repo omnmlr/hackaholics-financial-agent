@@ -1,0 +1,5 @@
+
+> hackaholics-financial-agent@0.1.0 test:agent-workspace
+> node scripts/agent-workspace-smoke.mjs
+
+PASS: actual production HTTP/browser auth, task approval/idempotency, due delivery, stale rejection, memory confirmation/forget, mobile routes, in-chat approval/pause/resume/cancel, lazy wallet, persisted recovery, disabled devnet boundary; zero provider or chain calls.

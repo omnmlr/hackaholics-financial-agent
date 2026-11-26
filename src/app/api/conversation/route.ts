@@ -1,0 +1,141 @@
+import {
+  rememberConversationPayment,
+  conversationPayment,
+} from "@/lib/conversation-payment";
+import { mutate } from "@/lib/db";
+import type { AgentReply } from "@/lib/financial-agent/agent";
+import type { SavedTurn } from "@/lib/chat-history/store";
+import { z } from "zod";
+import { operator, sameOrigin } from "@/lib/auth";
+import { chatHistory } from "@/lib/chat-history/store";
+import { AppError } from "@/lib/domain";
+import {
+  ConversationInput,
+  conversationTurn,
+} from "@/lib/financial-integration/conversation";
+import {
+  simulation,
+  requireConversation,
+} from "@/lib/financial-integration/service";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+const reply = (data: object, status = 200) =>
+  Response.json(
+    {
+      ...(process.env.AGUS_AGENT_ARCHITECTURE === "native-gemini" &&
+      process.env.AGUS_WORKSPACE_ENABLED === "true"
+        ? {
+            financialSimulation:
+              process.env.FINANCIAL_DEMO_ENABLED === "true" ? simulation : null,
+          }
+        : { simulation }),
+      ...data,
+    },
+    {
+      status,
+      headers: {
+        "Cache-Control": "no-store, private",
+        Vary: "Cookie, Origin",
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
+
+export async function POST(req: Request) {
+  try {
+    sameOrigin(req);
+    const owner = await operator(req);
+    requireConversation();
+    if (new URL(req.url).search) throw new SyntaxError();
+    if (
+      req.headers.get("content-type")?.split(";")[0].trim() !==
+      "application/json"
+    )
+      throw new AppError("JSON required", 415);
+    const reader = req.body?.getReader();
+    if (!reader) throw new SyntaxError();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 16384) {
+        await reader.cancel();
+        throw new AppError("Request too large", 413);
+      }
+      chunks.push(value);
+    }
+    const input = ConversationInput.parse(
+      JSON.parse(Buffer.concat(chunks).toString("utf8")),
+    );
+    const history = chatHistory(owner);
+    const lease = await history.claim(input.conversationId, input.text);
+    let result: AgentReply;
+    let turn: SavedTurn;
+    try {
+      result = await conversationTurn(req, input);
+      req.signal.throwIfAborted();
+      turn = await history.finish(
+        input.conversationId,
+        lease,
+        input.text,
+        result,
+        result.execution?.id,
+      );
+      if (result.paymentDraftId)
+        await mutate((s) => {
+          const message = s.messages.find(
+            (m) => m.id === result.paymentDraftId && m.owner === owner,
+          );
+          if (message) {
+            message.conversationId = input.conversationId;
+            message.turnId = turn.id;
+          }
+        });
+      else if (result.handoff) {
+        await rememberConversationPayment(
+          owner,
+          input.conversationId,
+          turn.id,
+          input.text,
+        );
+        // Preparing editable fields is reversible and grants no verification,
+        // approval or submission. The same owned turn claim prevents duplicates.
+        await conversationPayment(owner, input.conversationId, turn.id);
+      }
+    } catch (error) {
+      await history.release(input.conversationId, lease);
+      throw error;
+    }
+    return reply(
+      { conversationId: input.conversationId, reply: result, turn },
+      result.kind === "conflict"
+        ? 409
+        : result.kind === "unavailable"
+          ? 503
+          : 200,
+    );
+  } catch (error) {
+    const status =
+      error instanceof AppError
+        ? error.status
+        : error instanceof z.ZodError || error instanceof SyntaxError
+          ? 400
+          : 503;
+    const code =
+      status === 401
+        ? "UNAUTHORIZED"
+        : status === 403
+          ? "FORBIDDEN"
+          : status === 400
+            ? "INVALID_ARGUMENT"
+            : status === 409
+              ? "CHAT_BUSY"
+              : status === 413
+                ? "REQUEST_TOO_LARGE"
+                : "UNAVAILABLE";
+    return reply({ error: { code } }, status);
+  }
+}

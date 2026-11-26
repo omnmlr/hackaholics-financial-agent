@@ -1,0 +1,52 @@
+[
+  {
+    "width": 1440,
+    "view": "overview",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "view": "accounts",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "view": "assistant",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "view": "payment-review",
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "view": "settings",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "view": "overview",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "view": "accounts",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "view": "assistant",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "view": "payment-review",
+    "violations": []
+  },
+  {
+    "width": 390,
+    "view": "settings",
+    "violations": []
+  }
+]

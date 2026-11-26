@@ -1,0 +1,64 @@
+name: AGUS bounded native repair verification (remaining 15 attempts)
+on:
+  push:
+    branches: [hardening/agus-native-release-20261020]
+    paths: [.github/workflows/agus-native-hardening-repair.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: agus-targeted-native-campaign-20261020
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      PAYMENT_MODE: fixture
+      FINANCIAL_DEMO_ENABLED: "true"
+      PAYSTACK_TRANSFERS_ENABLED: "false"
+      LIVE_TRANSFERS_ENABLED: "false"
+      LIVE_OWNER_AUTHORIZED: "false"
+      LIVE_WEBHOOK_VALIDATED: "false"
+      LIVE_RECONCILIATION_VALIDATED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - uses: actions/download-artifact@v4
+        with:
+          name: agus-native-genuine
+          run-id: "39430148876"
+          github-token: ${{ github.token }}
+          path: prior-evidence
+      - name: Verify immutable spending ledger and single repair campaign before provider secret
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFileSync} from 'node:fs';
+          const prior = JSON.parse(readFileSync('prior-evidence/agus-native-genuine.json','utf8'));
+          if (prior.runId !== '39430148876' || prior.genuineGenerationAttempts !== 25 || prior.attempts.length !== 25 || prior.status !== 'COMPLETE_HUMAN_REVIEW_REQUIRED' || prior.attempts.some(a => [401,403,429].includes(a.status))) throw new Error('Prior quota stop or unverified ledger: do not continue');
+          const r = await fetch(`https://api.github.com/repos/${process.env.GITHUB_REPOSITORY}/actions/workflows/agus-native-hardening-repair.yml/runs?branch=hardening%2Fagus-native-release-20261020&per_page=100`, {headers:{Authorization:`Bearer ${process.env.GH_TOKEN}`,Accept:'application/vnd.github+json'}});
+          if (!r.ok) throw new Error('Cannot establish repair campaign ledger');
+          const data = await r.json();
+          if (Number(process.env.GITHUB_RUN_ATTEMPT) !== 1 || data.workflow_runs.some(run => String(run.id) !== process.env.GITHUB_RUN_ID && run.run_number < Number(process.env.GITHUB_RUN_NUMBER))) throw new Error('Repair campaign already started: no automatic rerun permitted');
+          NODE
+      - run: npm ci
+      - name: Native repair only, 25 prior plus at most 15 new generation attempts
+        env:
+          AI_PROVIDER: gemini
+          AI_MODEL: gemini-3.5-flash-lite
+          AI_API_KEY: ${{ secrets.AGUS_GEMINI_API_KEY }}
+          AGUS_NATIVE_REPAIR_CAMPAIGN: verified-initial-25
+          NODE_USE_ENV_PROXY: "1"
+        run: node --import=tsx scripts/verify-native-gemini.ts "${RUNNER_TEMP}/agus-native-repair.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: agus-native-repair
+          path: ${{ runner.temp }}/agus-native-repair.json
+          retention-days: 30
+          if-no-files-found: warn

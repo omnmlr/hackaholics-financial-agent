@@ -1,0 +1,102 @@
+name: agus-crypto-devnet
+
+x-devnet-environment: &devnet-environment
+  AGUS_ENVIRONMENT: devnet
+  AGUS_SOLANA_DEVNET_ENABLED: "true"
+  AGUS_CRYPTO_DEVNET_ROUTES: phantom,solflare
+  AGUS_CRYPTO_MONITORING: "true"
+  AGUS_CRYPTO_DATABASE_NAME: agus_crypto_devnet_20261124
+  PAYMENT_MODE: fixture
+
+x-runtime: &runtime
+  image: ${AGUS_CRYPTO_IMAGE:?Set the verified release image ID}
+  pull_policy: never
+  init: true
+  restart: unless-stopped
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  stop_grace_period: 60s
+  tmpfs:
+    - /tmp:size=64m,uid=1000,gid=1000,mode=1777
+  logging: &rotating-logs
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  api:
+    <<: *runtime
+    command: [sh, deploy/crypto/start.sh, api]
+    mem_limit: 850m
+    env_file:
+      - path: /etc/agus-crypto/shared.env
+        format: raw
+      - path: /etc/agus-crypto/api.env
+        format: raw
+    environment:
+      <<: *devnet-environment
+      APP_ORIGIN: https://${AGUS_CRYPTO_HOST:?Set the public API hostname}
+      BETTER_AUTH_URL: https://${AGUS_CRYPTO_HOST:?Set the public API hostname}
+      PORT: "3000"
+      OMP_THREAD_LIMIT: "1"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          fetch('http://127.0.0.1:3000/api/v1/ready', {signal: AbortSignal.timeout(4500)})
+            .then(async res => { if (!res.ok || (await res.json()).status !== 'ready') process.exitCode = 1 })
+            .catch(() => { process.exitCode = 1 })
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  worker:
+    <<: *runtime
+    command: [sh, deploy/crypto/start.sh, worker]
+    mem_limit: 450m
+    env_file:
+      - path: /etc/agus-crypto/shared.env
+        format: raw
+    environment:
+      <<: *devnet-environment
+      AGUS_CRYPTO_WORKER_HEALTH_FILE: /tmp/agus-worker-health
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - >-
+          const { statSync } = require('node:fs');
+          try { if (Date.now() - statSync(process.env.AGUS_CRYPTO_WORKER_HEALTH_FILE).mtimeMs > 100000) process.exitCode = 1; }
+          catch { process.exitCode = 1; }
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+
+  edge:
+    image: caddy:2.11.2-alpine@sha256:834468128c7696cec0ceea6172f7d692daf645ae51983ca76e39da54a97c570d
+    restart: unless-stopped
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
+    mem_limit: 130m
+    logging: *rotating-logs
+    environment:
+      AGUS_CRYPTO_HOST: ${AGUS_CRYPTO_HOST:?Set the public API hostname}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./favicon.png:/srv/agus/favicon.png:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-data:
+  caddy-config:

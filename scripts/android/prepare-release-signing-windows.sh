@@ -17,14 +17,10 @@ gh auth status --hostname github.com >/dev/null 2>&1 ||
   stop 'Sign in as a repository maintainer with gh auth login --hostname github.com --web.'
 
 if [[ "${1:-}" == --release ]]; then
-  [[ $# == 2 && $2 =~ ^[0-9]+$ ]] || stop 'Usage: bash prepare-release-signing-windows.sh --release GITHUB_RUN_ID'
+  [[ $# == 1 ]] || stop 'Usage: bash prepare-release-signing-windows.sh --release'
   for tool in curl jq; do
     command -v "$tool" >/dev/null || stop "Install $tool inside Ubuntu on WSL."
   done
-  run_id=$2
-  gh run view "$run_id" --repo "$repo" --json workflowName,headBranch,headSha,status |
-    jq -e '.workflowName == "AGUS Crypto Android Devnet APK" and .headBranch == "main" and .status == "completed"' >/dev/null ||
-    stop 'Select a completed Android Devnet workflow run from main.'
   safe_get() { curl --proto '=https' --fail --silent --show-error --max-time 20 "$1"; }
   safe_get "$origin/api/v1/ready" | jq -e '.status == "ready"' >/dev/null ||
     stop 'The Stockholm API did not pass public readiness.'
@@ -39,7 +35,6 @@ if [[ "${1:-}" == --release ]]; then
       and .target.namespace == "android_app" and .target.package_name == "app.agus.prototype"
       and any(.target.sha256_cert_fingerprints[]?; (gsub(":"; "") | ascii_upcase) == $sha))' >/dev/null ||
     stop 'Update Vercel Digital Asset Links with the replacement public certificate, then retry.'
-  gh run view "$run_id" --repo "$repo" --json headSha --jq '.headSha'
   read -r -p 'Type RELEASE to dispatch a new Android job from main: ' confirm
   [[ "$confirm" == RELEASE ]] || stop 'Release was cancelled.'
   gh workflow run agus-crypto-android.yml --ref main --repo "$repo"
@@ -77,4 +72,4 @@ cd "$script_dir/../.."
 bash "$script_dir/prepare-release-signing.sh" "$backup" "$recipient"
 printf '%s\n' 'Keep a second encrypted copy in approved recovery storage.' \
   'Share only the public certificate SHA-256 for the Vercel association.' \
-  'After the HTTPS API and Vercel association are ready, run this script with --release GITHUB_RUN_ID.'
+  'After the HTTPS API and Vercel association are ready, run this script with --release.'

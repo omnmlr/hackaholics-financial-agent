@@ -1,8 +1,54 @@
 # AGUS Crypto Devnet deployment
 
-The existing Stockholm EC2 host is the Devnet target for the Crypto API, monitoring and reconciliation worker, and Caddy. Neon stores durable application state. Caddy will serve the canonical HTTPS origin and forward the Crypto, identity, OpenAPI and health endpoints. [Railway checkpoint](RAILWAY_STAGED_REPURPOSE_20261124.md)
+The existing Stockholm EC2 host is the Devnet target for the Crypto API, monitoring and reconciliation worker, and Caddy. Neon stores durable application state. Caddy serves `https://agus.grindcity.app` and forward the Crypto, identity, OpenAPI and health endpoints. [Railway checkpoint](RAILWAY_STAGED_REPURPOSE_20261124.md)
 
-## Stockholm handoff · November 25, 2026
+## Activate the passwordless backend on the existing host
+
+This release reuses the deployed identity tables. Keep the existing Neon login, Better Auth secret, encryption keys, Google OAuth settings, and Resend credentials. No migration or infrastructure setup is required.
+
+1. On an approved GitHub revision, dispatch and download the existing Linux AMD64 packaging workflow. Use the exact run ID and commit printed by the run list. The workflow retains its checksum-bound bundle for one day.
+
+   ```bash
+   repo=omnmlr/hackaholics-financial-agent
+   gh workflow run agus-crypto-devnet-image.yml --ref main -f retain_bundle=true --repo "$repo"
+   gh run list --workflow agus-crypto-devnet-image.yml --branch main --event workflow_dispatch --limit 3 --repo "$repo"
+   run_id=<successful-run-id>
+   revision=$(gh run view "$run_id" --repo "$repo" --json headSha --jq .headSha)
+   bundle="$PWD/agus-release-$revision"
+   gh run download "$run_id" --repo "$repo" --name "agus-crypto-ec2-$revision" --dir "$bundle"
+   (cd "$bundle" && sha256sum --check --strict SHA256SUMS.txt)
+   ```
+
+2. Transfer the verified bundle unchanged to the existing EC2 host using the approved operator access, for example an already configured SCP-over-SSM host alias. The target directory in the examples below is `/home/ssm-user/agus-release-$revision`. In the existing SSM shell:
+
+   ```bash
+   revision=<artifact-commit>
+   bundle="/home/ssm-user/agus-release-$revision"
+   (cd "$bundle" && sha256sum --check --strict SHA256SUMS.txt)
+   test "$(cat "$bundle/revision.txt")" = "$revision"
+   sudo test -f /etc/agus-crypto/api.env
+   sudo test -f /etc/agus-crypto/shared.env
+   previous=$(sudo readlink -f /opt/agus-crypto/current)
+   printf 'Previous release %s\n' "$previous"
+   sudo bash "$bundle/activate-release.sh" "$bundle" agus.grindcity.app
+   curl --fail --silent --show-error https://agus.grindcity.app/api/v1/ready
+   curl --fail --silent --show-error https://agus.grindcity.app/api/auth/get-session
+   ```
+
+3. Confirm the code routes are active by requesting a code for the authorized disposable tester. Check actual delivery, OTP sign-in and repeat sign-in to the same user ID. Also check Google sign-in and a signed handset. Use the existing public audience setting (`AGUS_AUTH_PUBLIC=true` for open first sign-in). [Authentication API](HOSTED_AUTHENTICATION.md)
+
+The activation script verifies checksums, image platform and revision, API and worker health, and local HTTPS. If startup fails it attempts to restore the previous release automatically. To roll back after a successful activation, use the saved previous directory and its original configuration from the same elevated operator session:
+
+```bash
+sudo env -u AGUS_CRYPTO_IMAGE -u AGUS_CRYPTO_HOST docker compose \
+  --project-directory "$previous" --env-file "$previous/release.env" \
+  --file "$previous/compose.yml" up --detach --wait --wait-timeout 180
+curl --fail --silent --show-error https://agus.grindcity.app/api/v1/ready
+sudo ln -sfn "$previous" /opt/agus-crypto/current.rollback
+sudo mv -Tf /opt/agus-crypto/current.rollback /opt/agus-crypto/current
+```
+
+## Previous Stockholm deployment · November 25, 2026
 
 | Item | Provisioned target reported by the founder |
 | --- | --- |
@@ -10,7 +56,7 @@ The existing Stockholm EC2 host is the Devnet target for the Crypto API, monitor
 | CloudFormation stack | `agus-crypto-devnet` |
 | Instance | `i-0b608f6472205b337`, `t3.small`, Ubuntu 24.04 |
 | Public IPv4 | `13.48.206.202` |
-| Canonical origin | `https://13-48-206-202.sslip.io` |
+| Original deployment origin | `https://13-48-206-202.sslip.io` |
 | Host administration | AWS Systems Manager Session Manager |
 | Billing | Active Free plan, approximately $108.42 verified by the founder, intended for about one week through judging |
 
@@ -51,6 +97,6 @@ On November 25, the founder activated the approved image on Stockholm EC2 after 
 ## Hosted acceptance
 
 1. From an independent client, check the HTTPS origin and `/api/v1/ready`, then inspect `/api/v1/openapi` for the Crypto endpoints, including the attempts handoff, assistant, voice and receipt endpoints. Verify unauthorized wallet requests require a session.
-2. Using the direct owner connection, run `npm run identity:invite -- <tester-email>`. Enroll with that invitation and confirm an uninvited sign-up fails. Verify Devnet wallet portfolio balances and transaction activity using the two RPC providers. Ask Gemini a scoped balance question and compare its structured evidence with those reads.
+2. Sign in with a disposable tester account by email OTP and Google. When enrollment is invite-only, create the invitation from the direct owner connection via `npm run identity:invite -- <tester-email>`. Verify Devnet portfolio and activity against independent RPC reads. Ask Gemini a scoped balance question and compare its structured evidence with the portfolio.
 3. Check that the worker logs a successful cycle. Exercise a reviewed transfer on the signed Android build, verify wallet approval, handoff, finalized receipt recovery, and the resulting persistent alert. Reboot the EC2 host, verify readiness and worker health return, and recheck the same receipt and alert without resubmission.
-4. Set GitHub's `AGUS_CRYPTO_DEVICE_API_URL` after HTTPS, readiness, the contract, invite-only sign-in and authenticated portfolio reads are verified. Follow the signed APK and three-transfer procedure. [Device acceptance](ANDROID_DEVICE_TEST.md)
+4. Follow the signed APK and three-transfer procedure. [Device acceptance](ANDROID_DEVICE_TEST.md)

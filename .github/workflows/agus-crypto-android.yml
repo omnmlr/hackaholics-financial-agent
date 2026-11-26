@@ -14,7 +14,6 @@ permissions:
   contents: read
 env:
   DEVICE_API_ORIGIN: https://agus.grindcity.app
-  BUILD_TOOLS_VERSION: "36.0.0"
 jobs:
   preflight:
     runs-on: ubuntu-latest
@@ -111,7 +110,6 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - run: sdkmanager "build-tools;$BUILD_TOOLS_VERSION"
       - run: npm ci --ignore-scripts
       - run: npm run mobile:typecheck
       - name: Generate the Android project
@@ -138,7 +136,8 @@ jobs:
             echo "::error::AGUS_ANDROID_CERT_SHA256 must be the 64-digit certificate fingerprint."
             exit 1
           fi
-          build_tools="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION"
+          build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
+          printf 'Signing with Android SDK Build Tools %s\n' "${build_tools##*/}"
           input=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           output=phone-test/AGUS-Crypto-Devnet-arm64.apk
           mkdir -p phone-test
@@ -192,7 +191,6 @@ jobs:
         with:
           name: agus-crypto-devnet-arm64
           path: phone-test
-      - run: sdkmanager "build-tools;$BUILD_TOOLS_VERSION"
       - name: Publish verified APK and checksum
         env:
           GH_TOKEN: ${{ github.token }}
@@ -215,8 +213,7 @@ jobs:
             --pattern AGUS-Crypto-Devnet-arm64.apk --pattern SHA256SUMS.txt --pattern BUILD-IDENTITY.txt --dir "$receipt"
           cmp SHA256SUMS.txt "$receipt/SHA256SUMS.txt"
           cmp BUILD-IDENTITY.txt "$receipt/BUILD-IDENTITY.txt"
-          ANDROID_BUILD_TOOLS="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION" \
-            bash "$GITHUB_WORKSPACE/scripts/android/verify-devnet-apk.sh" \
+          bash "$GITHUB_WORKSPACE/scripts/android/verify-devnet-apk.sh" \
             "$receipt/AGUS-Crypto-Devnet-arm64.apk" "$AGUS_ANDROID_CERT_SHA256" \
             "$DEVICE_API_ORIGIN" "$WALLET_IDENTITY_ORIGIN" "$receipt/SHA256SUMS.txt"
           printf 'APK: https://github.com/%s/releases/download/%s/AGUS-Crypto-Devnet-arm64.apk\n' "$GITHUB_REPOSITORY" "$tag" >> "$GITHUB_STEP_SUMMARY"

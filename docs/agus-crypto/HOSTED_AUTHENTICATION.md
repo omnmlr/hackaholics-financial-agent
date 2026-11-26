@@ -1,31 +1,19 @@
-# Stockholm Devnet verification · November 25, 2026
+# AGUS Crypto authentication API
 
-The founder activated the prebuilt `126a528c2b7b0accc380d2af7cddae58ed6e624a` release and reported that all three containers started. The running release remains at that revision. This checkpoint changes the deployment launcher and future narration, with no host changes. [Stockholm API](https://13-48-206-202.sslip.io)
+Origin `https://agus.grindcity.app`. The examples below apply after activation of the passwordless release. Use HTTPS JSON requests and keep cookies in the clients' existing cookie stores. Native requests use `Origin: agus://`. The public web page at `/auth` uses the web origin.
 
-| Probe | Result |
+| Method and path | Request and response |
 | --- | --- |
-| HTTP `/api/v1/ready` | `308` HTTPS redirect |
-| HTTPS `/api/v1/ready` | `200` with `{"status":"ready"}` and successful certificate validation through the workspace HTTPS proxy |
-| HTTPS `/api/v1/openapi` | `200` and exact sorted JSON match to the checked-in contract. OpenAPI 3.1.0, 35 Crypto paths. |
-| Devnet wallet, portfolio and alerts GET, assistant turn POST | `401 SESSION_REQUIRED` without a session |
-| Auth session GET | `200` with `null` without a session |
-| Google sign-in initiation | `404 PROVIDER_NOT_FOUND` |
-| Isolated Neon query using the restricted role | 27 migrations, zero users, zero active invitations. No authorized hosted user credential was available. |
+| `POST /api/auth/email-otp/send-verification-otp` | Send `{"email":"you@example.com","type":"sign-in"}`. `200 {"success":true}` means the mail provider accepted the request. |
+| `POST /api/auth/sign-in/email-otp` | Send `{"email":"you@example.com","otp":"012345"}`. Success returns `{"user":{...}}` and sets the session cookie. Preserve leading zeros. |
+| `POST /api/auth/sign-in/social` | Web sends `{"provider":"google","callbackURL":"https://agus.grindcity.app/auth"}` and follows the returned Google URL. Better Auth processes Google's redirect at `/api/auth/callback/google`. |
+| `POST /api/auth/mobile-google/exchange` | The Expo wrapper supplies a 32-byte, lowercase hex verifier generated for this login. Its SHA-256 hex digest is the challenge in `agus://open/auth?challenge=…`. After browser return, send `{"verifier":"…"}`. A Google handoff expires after one minute and is single-use. The deep link carries only the challenge. |
+| `POST /api/auth/two-factor/verify-totp` | When OTP or native Google returns `{"twoFactorRedirect":true}`, send `{"code":"123456"}` with the temporary cookie. Continue after the authenticated cookie is issued. |
+| `GET /api/auth/get-session` | Returns current user and session, or `null` if signed out. Sessions expire after seven days under the existing Better Auth configuration. |
+| `POST /api/auth/sign-out` | Send `{}` with the session cookie. Clear signed-in UI after success. |
 
-Direct origin TLS inspection was unavailable from the workspace. An outside client with a direct network path can inspect the origin chain. Worker startup is founder-reported. Authenticated hosted portfolio and multimodal verification await an invited test account.
+Codes expire after five minutes. The server enforces five guesses per code, a 60-second resend window per email, and separate Better Auth request limits. Resends invalidate the earlier challenge. `400 INVALID_OTP` covers expired, wrong and already-used codes. `403 TOO_MANY_ATTEMPTS` requires a new code. For `429`, honor `Retry-After` and retain the email address. `503 OTP_DELIVERY_UNAVAILABLE` means email delivery failed. `401 GOOGLE_HANDOFF_REQUIRED` means restart Google sign-in. JSON syntax and field validation use Better Auth's normal errors.
 
-## Google sign-in
+Successful first sign-in creates a consumer account. Existing verified email and linked Google accounts retain their AGUS user IDs. Implicit linking remains disabled. If Google reports an existing unlinked email, use email OTP for that account. `AGUS_AUTH_PUBLIC=false` keeps the invitation gate on first account creation. Hosted email password registration, password sign-in and verification links are disabled. Crypto transfers still require wallet proof, immutable review, explicit wallet approval and independent reconciliation.
 
-1. In Google Auth Platform, configure the consent screen and a **Web application** OAuth client. While in Testing, add the authorized judge or tester Google accounts to the audience. Register the exact callback `https://13-48-206-202.sslip.io/api/auth/callback/google` if the OAuth project accepts this hostname. If domain ownership is required, use an AGUS-owned verified domain and its matching API origin and callback. [Google OAuth redirect rules](https://developers.google.com/identity/protocols/oauth2/web-server)
-2. In a future owner-approved runtime update, supply `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` together in the root-only API configuration. Keep `AGUS_AUTH_PUBLIC=false` for Devnet. Google and AGUS each have their own entry gate, so invite the same Google email in AGUS before its first sign-in.
-3. The current Android signing diagnostics screen offers email and password. Android Google sign-in needs a client entry point and verification of the browser-to-app `agus://` callback and session on a signed handset. An enabled server provider alone does not establish that flow.
-
-## Invite-only email
-
-Email and password sign-in are already supported. An owner can invite a disposable tester using `npm run identity:invite -- <tester-email>` with the authorized owner connection for the isolated Crypto database. The tester can register through Better Auth at `POST /api/auth/sign-up/email`, then use the existing Android email sign-in or a securely supplied hosted test session. No credentials or recovery links belong in chat. [Deployment runbook](DEVNET_DEPLOYMENT.md)
-
-Verification and password-reset email require both `RESEND_API_KEY` and `AGUS_AUTH_EMAIL_FROM` from a verified sender domain. Resend can use a sender domain separate from the API hostname. After an approved runtime update, deliver a verification email and a reset link to a disposable mailbox and check that both resolve to the live API origin. Keep invite-only registration through judging. [Resend verified domains](https://resend.com/docs/dashboard/domains/introduction)
-
-## Android publication
-
-The API origin is ready for the Android repository variable. The GitHub integration returned `403` when setting `AGUS_CRYPTO_DEVICE_API_URL`. The public Vercel association still lists the retired November 22 certificate. Restore the encrypted replacement signer on the trusted Windows workstation and publish the new public fingerprint to Vercel before calling the wrapper's `--release` mode. It checks readiness, the contract, and Digital Asset Links before setting the API variable and rerunning the selected workflow. The workflow independently validates the published ARM64 APK and checksum. [Windows procedure](ANDROID_DEVICE_TEST.md)
+Production activation uses the existing `BETTER_AUTH_SECRET`, OAuth client pair, `RESEND_API_KEY` and verified `AGUS_AUTH_EMAIL_FROM` in the root-only API environment. See the [EC2 activation instructions](DEVNET_DEPLOYMENT.md) and [Android integration guide](CHISOM_ANDROID_INTEGRATION.md).

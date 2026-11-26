@@ -64,6 +64,8 @@ services:
         format: raw
     environment:
       <<: *devnet-environment
+      # Worker has no public identity endpoints or email credentials.
+      AGUS_AUTH_PUBLIC: "false"
       AGUS_CRYPTO_WORKER_HEALTH_FILE: /tmp/agus-worker-health
     healthcheck:
       test:

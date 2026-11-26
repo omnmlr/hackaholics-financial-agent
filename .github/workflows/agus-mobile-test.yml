@@ -35,8 +35,25 @@ jobs:
           set -euxo pipefail
           mkdir -p "$AGUS_LAB"
           sudo chmod 0666 /dev/kvm
-          sdkmanager "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;default;x86_64"
-          printf 'no\n' | avdmanager create avd -n agus_ci -k 'system-images;android-35;default;x86_64' --force
+          export ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          test -d "$ANDROID_HOME" && test -w "$ANDROID_HOME" || export ANDROID_HOME="$AGUS_LAB/sdk"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          sdkmanager="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager -type f -print -quit 2>/dev/null || true)"
+          if [[ -z "$sdkmanager" ]]; then
+            mkdir -p "$ANDROID_HOME/cmdline-tools"
+            curl -fsSL https://dl.google.com/android/repository/commandlinetools-linux-16111833_latest.zip -o "$AGUS_LAB/cmdline.zip"
+            (cd "$AGUS_LAB" && printf 'e025545c62a8e64c7559119566a569fb1dec5f60  cmdline.zip\n' | sha1sum --check)
+            unzip -q "$AGUS_LAB/cmdline.zip" -d "$AGUS_LAB/cmdline"
+            mv "$AGUS_LAB/cmdline/cmdline-tools" "$ANDROID_HOME/cmdline-tools/latest"
+            sdkmanager="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          if [[ ! -e "$ANDROID_HOME/licenses/android-sdk-license" ]]; then
+            (yes || true) | "$sdkmanager" --licenses >/dev/null
+          fi
+          "$sdkmanager" "platform-tools" "emulator" "platforms;android-35" "build-tools;35.0.0" "system-images;android-35;default;x86_64"
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$ANDROID_HOME" "$ANDROID_HOME" >> "$GITHUB_ENV"
+          printf '%s/platform-tools\n' "$ANDROID_HOME" >> "$GITHUB_PATH"
+          printf 'no\n' | "$(dirname "$sdkmanager")/avdmanager" create avd -n agus_ci -k 'system-images;android-35;default;x86_64' --force
           "$ANDROID_HOME/emulator/emulator" -avd agus_ci -port 5554 -no-window -noaudio -no-metrics \
             -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$AGUS_LAB/emulator.log" 2>&1 &
           npm ci --no-audit --no-fund

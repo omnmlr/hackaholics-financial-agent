@@ -6,7 +6,7 @@
 AGUS Crypto combines natural-language portfolio analysis, owner-reviewed Solana Devnet payment requests and transaction preparation, multimodal AI interaction (Gemini chat/image understanding, ElevenLabs voice synthesis, Firecrawl research), and Mobile Wallet Adapter (MWA) signing on Android. All private keys remain on the user's device; the backend prepares and reconciles unsigned Devnet transactions without holding standing wallet authority.
 
 > [!IMPORTANT]
-> **Safety & Network Scope:** This codebase targets **Solana Devnet and simulated/fixture bank data only** (`PAYMENT_MODE=fixture`, `AGUS_SOLANA_DEVNET_ENABLED=true`). Mainnet execution, live transfers, guest mode, and unreviewed agent signing remain disabled.
+> **Network scope:** Crypto execution is limited to Solana Devnet and requires an approved wallet route and explicit user review. Bank data is simulated. Local fixture development leaves Solana execution disabled.
 
 ---
 
@@ -15,7 +15,7 @@ AGUS Crypto combines natural-language portfolio analysis, owner-reviewed Solana 
 ```bash
 git clone --branch integration/agus-crypto-hackathon-20261129 https://github.com/omnmlr/hackaholics-financial-agent.git
 cd hackaholics-financial-agent
-npm ci
+npm ci --ignore-scripts
 ```
 
 ---
@@ -35,7 +35,7 @@ npm ci
 
 ## Environment Requirements
 
-- **Node.js:** v22+ (v24 used in backend container & test runner) and **npm** (workspaces enabled for `packages/*` and `apps/*`)
+- **Node.js 24 and npm** match the Crypto container and Foundation CI. Install from the repository root to include the `packages/*` and `apps/*` workspaces.
 - **Python:** 3.11+ (for EC2 deployment utilities and unit tests under `deploy/crypto/ec2/`)
 - **Database:**
   - **Server / Devnet runtime:** PostgreSQL 16+ (two roles recommended: schema owner `MIGRATION_DATABASE_URL` for `npm run db:migrate`, and least-privilege runtime `DATABASE_URL` after running `scripts/sql/runtime-role.sql`)
@@ -56,29 +56,19 @@ Never commit secrets, API keys, passwords, or private wallet material. Copy `.en
 
 ## Local Setup
 
-1. **Install dependencies:**
-   ```bash
-   npm ci
-   ```
-2. **Configure local environment:**
+1. **Configure the local environment after installing dependencies:**
    ```bash
    cp .env.example .env.local
    ```
-   Fill in `BETTER_AUTH_SECRET` (32+ random characters) and `AGUS_ENCRYPTION_KEYS` / `AGUS_ENCRYPTION_ACTIVE_KEY` for local runtime, or keep fixture settings for offline validation.
-3. **Run database migrations (PostgreSQL runtime):**
+   Set `AGUS_ENVIRONMENT=fixture` in `.env.local` and keep the example's `PAYMENT_MODE=fixture` and `AGUS_SOLANA_DEVNET_ENABLED=false`. Set `BETTER_AUTH_SECRET` to at least 32 random characters for local sign-in. Set `AGUS_ENCRYPTION_KEYS` and `AGUS_ENCRYPTION_ACTIVE_KEY` when testing encrypted storage. Chisom can use the [in-process Android fixtures](docs/agus-crypto/CHISOM_ANDROID_INTEGRATION.md#3-fixture-first-development-agusapi-client--aguscontracts) without a running backend or provider credentials.
+2. **Migrate the local database and start the server:**
+   With the example PGlite URL, remove the empty `MIGRATION_DATABASE_URL=` line from `.env.local` so the migration script uses `DATABASE_URL`.
    ```bash
    npm run db:migrate
-   ```
-   Then apply [`scripts/sql/runtime-role.sql`](scripts/sql/runtime-role.sql) as the schema owner so `agus_runtime` has least-privilege access (no `UPDATE`/`DELETE`/`TRUNCATE` on ledger, receipt, review, or audit tables).
-4. **Verify configuration & contract parity:**
-   ```bash
-   npm run contracts:generate
-   AGUS_ENVIRONMENT=fixture npm run config:validate
-   ```
-5. **Start the development server:**
-   ```bash
+   node --env-file=.env.local --import=tsx scripts/validate-environment.ts
    npm run dev
    ```
+   For an isolated PostgreSQL instance, set `MIGRATION_DATABASE_URL` to the schema-owner connection. After migrating, apply [`scripts/sql/runtime-role.sql`](scripts/sql/runtime-role.sql) as the schema owner and use the restricted login for `DATABASE_URL`.
 
 ---
 
@@ -112,7 +102,7 @@ python3 -B -m unittest discover -s deploy/crypto/ec2 -p "test_*.py"
 
 ## Contribution Guidelines
 
-1. **Branch from canonical integration:** Create a descriptive feature branch from `integration/agus-crypto-hackathon-20261129`. Never force-push or rewrite shared branches.
+1. **Branch from canonical integration:** Create a descriptive feature branch from the latest `origin/integration/agus-crypto-hackathon-20261129` and open your pull request against that branch. Never force-push or rewrite shared branches.
 2. **Contract-first API changes:** Edit `packages/contracts/` and `src/` handlers together, regenerate `packages/contracts/openapi.json` and `packages/api-client/src/generated.ts` via `npm run contracts:generate`, and verify `git diff` includes regenerated artifacts.
 3. **Preserve ownership boundaries:**
    - **Android / Frontend UI:** Follow [`docs/agus-crypto/CHISOM_ANDROID_INTEGRATION.md`](docs/agus-crypto/CHISOM_ANDROID_INTEGRATION.md); consume `@agus/api-client` and preserve the approved identity/mascot assets and authenticated Better Auth flow (no guest mode).

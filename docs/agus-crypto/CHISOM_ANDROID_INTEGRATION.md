@@ -9,9 +9,14 @@ This guide gives Chisom the exact setup, authentication, multimodal API 1.1.0 wi
 
 ## 1. Branching, Packages, and Ownership Boundaries
 
-1. **Branch directly from `integration/agus-crypto-hackathon-20261129`** on a dedicated frontend branch (`git clone --branch integration/agus-crypto-hackathon-20261129 ...`).
+1. **Start from the canonical branch** with Node.js 24 and npm. Open frontend PRs against `integration/agus-crypto-hackathon-20261129`.
+   ```bash
+   git clone --branch integration/agus-crypto-hackathon-20261129 https://github.com/omnmlr/hackaholics-financial-agent.git
+   cd hackaholics-financial-agent
+   git switch -c feat/agus-crypto-android-ui
+   ```
 2. **Do not modify** backend routes (`src/app/api/v1/crypto/**`), server modules (`src/server/crypto/**`), database migrations/SQL, or the engineering test harness files (`apps/mobile/CryptoDeviceHarness.tsx`, `apps/mobile/src/crypto-signer.ts`, `apps/mobile/src/session.ts`, `apps/mobile/src/crypto-voice.ts`, `apps/mobile/src/crypto-device-state.ts`, `apps/mobile/src/crypto-wallet-policy.ts`, `apps/mobile/plugins/with-wallet-package.cjs`).
-3. **Keep `apps/mobile/App.tsx` gated safely**: `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST=true` renders `CryptoDeviceHarness` for CI/handset signing diagnostics (`apps/mobile/App.tsx:4-6`). Wire product screens into the non-diagnostic path or coordinate a clean root router switch without breaking `CryptoDeviceHarness`.
+3. **Keep the handset diagnostic entry point available.** `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST=true` selects `CryptoDeviceHarness` in `apps/mobile/App.tsx`. The other branch currently loads `DeveloperHarness`. Wire product screens into that branch.
 4. **Install dependencies and regenerate/verify contracts** before coding:
    ```bash
    npm ci --ignore-scripts
@@ -26,9 +31,11 @@ This guide gives Chisom the exact setup, authentication, multimodal API 1.1.0 wi
 
 | Variable | Fixture / Local Dev | Hosted Stockholm Devnet | Source / Constraint |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `http://localhost:3000` or `http://10.0.2.2:3000` (`__DEV__` only) | `https://13-48-206-202.sslip.io` | `apps/mobile/src/session.ts:10-20` rejects non-HTTPS outside `__DEV__`. |
+| `EXPO_PUBLIC_API_URL` | `https://fixture.invalid` for in-process fixtures, or `http://10.0.2.2:3000` for an Android emulator reaching a local backend | Use the HTTPS API origin confirmed by infrastructure. See [Devnet Deployment](DEVNET_DEPLOYMENT.md). | `apps/mobile/src/session.ts` requires HTTPS for release builds. |
 | `EXPO_PUBLIC_MWA_ORIGIN` | `https://agus-wallet-devnet-identity.vercel.app` | `https://agus-wallet-devnet-identity.vercel.app` | Must match `apps/mobile/app.json:45` (`autoVerify: true`). |
-| `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST` | `false` (product UI) | `false` (product UI) | Set `true` only for `CryptoDeviceHarness` diagnostic APK builds. |
+| `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST` | `false` | `false` | Set `true` only when running the `CryptoDeviceHarness` diagnostics. |
+
+Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set the values for your target. With Android SDK, JDK 17 and an emulator or connected device, run `npm run android --workspace @agus/mobile` from the repository root to build the native development client. With that client installed, use `npm run start --workspace @agus/mobile -- --dev-client` for subsequent UI work.
 
 - **Never** embed `AI_API_KEY`, `ELEVENLABS_API_KEY`, `FIRECRAWL_API_KEY`, `BETTER_AUTH_SECRET`, or `DATABASE_URL` in `apps/mobile/.env*` or `EXPO_PUBLIC_*` variables.
 - **No guest mode**: Google and verified email/password identity with per-user authorization are mandatory (`AGENTS.md`, `CONTROL_PLANE.md`).
@@ -75,7 +82,7 @@ Available scenarios in `packages/api-client/fixtures/crypto.ts`:
 - **Biometric local lock**: `lockSession()` sets `unlocked = false` on `AppState` `"background"` transitions (`CryptoDeviceHarness.tsx:214-228`). `unlockSession()` calls `LocalAuthentication.authenticateAsync(...)`. If a call runs while locked, `session.ts:72,74` throws `Error("LOCAL_SESSION_LOCKED")`. Always catch `LOCAL_SESSION_LOCKED` cleanly and prompt `"Unlock AGUS to recover the saved Devnet attempt."` rather than surfacing raw error strings or discarding saved attempt/composer state.
 - **401 expiry**: `expireSession()` clears `agus_cookie` and `agus_session_data` on HTTP 401 and locks the session (`session.ts:81-86`). Redirect to sign-in while preserving draft inputs if safe.
 - **Invite-only Devnet onboarding**: On Stockholm Devnet (`AGUS_AUTH_PUBLIC=false`), `POST /api/auth/sign-up/email` requires a valid row in `agus_invitations` (created by the founder via `npm run identity:invite -- <tester-email>`) and a minimum 12-character password (`src/server/auth.ts:38`).
-- **Current Stockholm auth readiness** (`HOSTED_AUTHENTICATION.md`): Email/password is active. Google OAuth (`POST /api/auth/sign-in/social`, provider `"google"`) currently returns `404 PROVIDER_NOT_FOUND` until the founder supplies `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`; Resend email verification awaits `RESEND_API_KEY` + `AGUS_AUTH_EMAIL_FROM`. Keep Google sign-in behind capability/error handling until live OAuth callback (`agus://`) is verified on a signed handset.
+- **Hosted authentication:** Ask infrastructure which sign-in methods are ready on the configured HTTPS origin. Google sign-in needs backend OAuth configuration and a verified `agus://` return on a signed handset. Public signup requires Resend, a verified sender and HTTPS. See the [public launch handoff](engineering/INFRA_PUBLIC_LAUNCH_HANDOFF.md).
 
 ---
 

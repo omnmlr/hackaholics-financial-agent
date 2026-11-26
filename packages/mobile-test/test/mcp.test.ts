@@ -27,17 +27,25 @@ test("a generic MCP client schedules a known scenario and polls its real runner 
     stderr: "pipe",
   });
   const client = new Client({ name: "independent-mcp-client", version: "1.0.0" });
+  let stderr = "";
+  let phase = "connect";
+  transport.stderr?.on("data", (data) => { stderr += data.toString(); });
   try {
     await client.connect(transport);
+    phase = "list tools";
     const { tools } = await client.listTools();
     assert.deepEqual(tools.map((tool) => tool.name), ["list_test_scenarios", "start_test_run", "get_test_run"]);
+    phase = "list scenarios";
     const listed = await client.callTool({ name: "list_test_scenarios" });
     assert.deepEqual((listed.structuredContent as { scenarios: unknown }).scenarios, [{ title: "Runner unavailable", scenario: "smoke" }]);
+    phase = "reject unapproved scenario";
     const invalid = await client.callTool({ name: "start_test_run", arguments: { scenario: "unapproved" } });
     assert.equal(invalid.isError, true);
+    phase = "start scenario";
     const run = await client.callTool({ name: "start_test_run", arguments: { scenario: "smoke" } });
     const { runId } = run.structuredContent as { runId: string };
     assert.match(runId, /^[0-9a-f-]{36}$/);
+    phase = "poll scenario";
     for (let attempt = 0; attempt < 20; attempt++) {
       const result = await client.callTool({ name: "get_test_run", arguments: { runId } });
       const report = result.structuredContent as { state: string; failure?: { code: string } };
@@ -48,6 +56,8 @@ test("a generic MCP client schedules a known scenario and polls its real runner 
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
     assert.fail("MCP report did not reach the expected terminal state");
+  } catch (error) {
+    throw new Error(`MCP integration failed during ${phase}${stderr ? `\n${stderr}` : ""}`, { cause: error });
   } finally {
     await client.close();
     await rm(workingDir, { recursive: true, force: true });

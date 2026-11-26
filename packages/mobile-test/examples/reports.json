@@ -1,0 +1,60 @@
+{
+  "source": "synthetic-frontend-fixtures",
+  "scenario": {
+    "scenario": "wallet-transfer",
+    "title": "MWA: wallet return and finalized SOL transfer",
+    "scenarioSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+    "version": 1,
+    "cluster": "localnet",
+    "startedAt": "2026-11-26T12:00:00.000Z",
+    "device": { "kind": "emulator", "model": "Fixture Android", "api": "35", "seekerVerified": false },
+    "artifacts": []
+  },
+  "variants": [
+    {
+      "runId": "00000000-0000-4000-a000-000000000001",
+      "state": "running",
+      "steps": [{ "action": "launch", "state": "running", "at": "2026-11-26T12:00:01.000Z" }]
+    },
+    {
+      "runId": "00000000-0000-4000-a000-000000000002",
+      "state": "failed",
+      "finishedAt": "2026-11-26T12:00:15.000Z",
+      "steps": [{ "action": "sol-transfer", "state": "failed", "at": "2026-11-26T12:00:14.000Z" }],
+      "callback": { "outcome": "failed", "code": "DECLINED" },
+      "failure": { "code": "DECLINED", "remedy": "Check how the Android app handles cancellation and review a new attempt." }
+    },
+    {
+      "runId": "00000000-0000-4000-a000-000000000003",
+      "state": "failed",
+      "finishedAt": "2026-11-26T12:00:30.000Z",
+      "steps": [{ "action": "sol-transfer", "state": "failed", "at": "2026-11-26T12:00:15.000Z" }],
+      "callback": {
+        "outcome": "submitted",
+        "payer": "FBaYNnwfxbVFFuetTZGs4GDy8ccEqR3ggXDs78swm7qy",
+        "signature": "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "failure": { "code": "FINALITY_TIMEOUT", "remedy": "Query the same signature before starting another send." }
+    },
+    {
+      "runId": "00000000-0000-4000-a000-000000000004",
+      "state": "passed",
+      "finishedAt": "2026-11-26T12:00:37.000Z",
+      "steps": [{ "action": "sol-transfer", "state": "passed", "at": "2026-11-26T12:00:15.000Z" }],
+      "receipt": {
+        "slot": 220,
+        "payer": "FBaYNnwfxbVFFuetTZGs4GDy8ccEqR3ggXDs78swm7qy",
+        "payerSource": "scenario",
+        "recipient": "EMtq5F54UxgEwYx1bmZpRJXNodBPPqjFekwQZNjpzH3w",
+        "lamports": "1000000",
+        "feeLamports": "5000"
+      }
+    }
+  ],
+  "settlement": {
+    "state": "finalized",
+    "cluster": "localnet",
+    "asset": "local six-decimal test SPL token",
+    "quote": { "currency": "USDC", "atoms": "2500000", "decimals": 6 }
+  }
+}

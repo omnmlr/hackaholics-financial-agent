@@ -1,0 +1,12 @@
+{
+  "evidence": "historical_read_only",
+  "genesis": "EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG",
+  "signature": "2ztFGAyjsrKmPLG84fY1jXYbZuEsaRBnVFVT9DmF4QJuBAd1GbHXaqWszd469fJSL98mBgQ78MsuJxFZo8bLidds",
+  "assertion": {
+    "slot": 525464932,
+    "feeLamports": "5000",
+    "payer": "FBaYNnwfxbVFFuetTZGs4GDy8ccEqR3ggXDs78swm7qy",
+    "recipient": "AAQKVK6jegecXLDr2ssP1jcNFF5meVQdhbVPMFpz9YzZ",
+    "lamports": "1000000"
+  }
+}

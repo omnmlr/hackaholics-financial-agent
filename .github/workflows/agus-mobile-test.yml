@@ -16,9 +16,9 @@ jobs:
   isolated-android:
     runs-on: ubuntu-24.04
     timeout-minutes: 22
-    env:
-      AGUS_LAB: ${{ runner.temp }}/agus-mobile-test
     steps:
+      - name: Configure lab paths
+        run: printf 'AGUS_LAB=%s/agus-mobile-test\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           persist-credentials: false

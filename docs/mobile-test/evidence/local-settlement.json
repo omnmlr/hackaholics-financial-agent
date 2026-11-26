@@ -1,0 +1,32 @@
+{
+  "state": "finalized",
+  "runId": null,
+  "genesis": "BptxZ6zhp5XNDPSJCSXmR9wMZRHJ7T1m4NqQH4RLJREJ",
+  "startSlot": 711,
+  "signature": "3mC1sR8qt1uMZb2e56xw6rBkyqYcNFSHvsuNNFtSVKtyNrGs8xqFzeeGiNauQ48Yb9ph3ZW1iVM8shVhQBFmvNP",
+  "expected": {
+    "payer": "FDEPZNeCn6puDuTKWW5XBEicXRQkNV47YDSz1C1Jyidq",
+    "owner": "GHSvz3cXXcrFVHhDAMZjnNkhBK25rohz6Pytzxo2qbpA",
+    "mint": "5DW1GbQ2UGuS9FrP6VhN4EpU4vRLuQ255mPrhriB97kU",
+    "source": "H5NBo25Zpi3TQr5rNYGvBhTQ7s6Xy2UR8fRnuRSKfs6B",
+    "destination": "37UnU3mmmxRXkhgkaHWw4MmFGDrCXy38xVJXzc2GFq6x",
+    "amount": "2500000",
+    "decimals": 6
+  },
+  "asset": "local six-decimal test SPL token",
+  "jobQuote": {
+    "currency": "USDC",
+    "atoms": "2500000",
+    "decimals": 6
+  },
+  "receipt": {
+    "slot": 717,
+    "payer": "FDEPZNeCn6puDuTKWW5XBEicXRQkNV47YDSz1C1Jyidq",
+    "owner": "GHSvz3cXXcrFVHhDAMZjnNkhBK25rohz6Pytzxo2qbpA",
+    "mint": "5DW1GbQ2UGuS9FrP6VhN4EpU4vRLuQ255mPrhriB97kU",
+    "source": "H5NBo25Zpi3TQr5rNYGvBhTQ7s6Xy2UR8fRnuRSKfs6B",
+    "destination": "37UnU3mmmxRXkhgkaHWw4MmFGDrCXy38xVJXzc2GFq6x",
+    "amount": "2500000",
+    "decimals": 6
+  }
+}

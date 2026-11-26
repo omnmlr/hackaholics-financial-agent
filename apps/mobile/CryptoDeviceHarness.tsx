@@ -14,7 +14,9 @@ import type { components } from "@agus/api-client";
 import {
   api,
   auth,
-  freshSignIn,
+  sendEmailCode,
+  signInWithEmailCode,
+  signInWithGoogle,
   lockSession,
   unlockSession,
 } from "./src/session";
@@ -65,7 +67,8 @@ export default function CryptoDeviceHarness() {
   const active = useRef(false);
   const [owner, setOwner] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
   const [totp, setTotp] = useState("");
   const [needsTotp, setNeedsTotp] = useState(false);
   const [notice, setNotice] = useState(
@@ -114,7 +117,7 @@ export default function CryptoDeviceHarness() {
     } finally {
       active.current = false;
       setBusy(false);
-      setPassword("");
+      setOtp("");
       setTotp("");
     }
   }
@@ -199,9 +202,8 @@ export default function CryptoDeviceHarness() {
   }
 
   async function restoreSession() {
-    const me = response(await api.GET("/api/v1/me")) as {
-      user: { id: string };
-    };
+    const { data: me, error } = await auth.getSession();
+    if (error || !me?.user) throw new Error("SIGN_IN_REQUIRED");
     setLinked((current) =>
       current?.owner === me.user.id ? current : undefined,
     );
@@ -369,17 +371,36 @@ export default function CryptoDeviceHarness() {
     await recover(paymentOwner);
   }
 
-  async function signIn() {
-    const result = await freshSignIn(email, password);
-    if (result.error) throw new Error("SIGN_IN_FAILED");
-    if (
-      result.data &&
-      "twoFactorRedirect" in result.data &&
-      result.data.twoFactorRedirect
-    ) {
+  async function requestCode() {
+    const result = await sendEmailCode(email);
+    if (result.error)
+      throw new Error(
+        result.error.status === 429
+          ? "OTP_RESEND_THROTTLED"
+          : "OTP_SEND_FAILED",
+      );
+    setCodeSent(true);
+    setOtp("");
+    setNotice("Check your email for the six-digit sign-in code.");
+  }
+
+  async function signIn(method: "email" | "google") {
+    const result = await (method === "email"
+      ? signInWithEmailCode(email, otp)
+      : signInWithGoogle());
+    if (result.error)
+      throw new Error(
+        result.error.status === 403
+          ? "CODE_REJECTED_OR_TOO_MANY_ATTEMPTS"
+          : "SIGN_IN_FAILED",
+      );
+    setOtp("");
+    if (result.data?.twoFactorRedirect) {
       setNeedsTotp(true);
+      setNotice("Enter your authenticator code.");
       return;
     }
+    setCodeSent(false);
     await restoreSession();
   }
 
@@ -392,20 +413,42 @@ export default function CryptoDeviceHarness() {
       <Text selectable>{notice}</Text>
       {!owner && (
         <>
-          <TextInput
-            accessibilityLabel="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            placeholder="Email"
-          />
-          <TextInput
-            accessibilityLabel="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholder="Password"
-          />
+          {!needsTotp && (
+            <>
+              <Button
+                title="Continue with Google"
+                disabled={busy}
+                onPress={() => void run(() => signIn("google"))}
+              />
+              <TextInput
+                accessibilityLabel="Email"
+                value={email}
+                onChangeText={(value) => {
+                  setEmail(value);
+                  setCodeSent(false);
+                  setOtp("");
+                }}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="Email"
+              />
+              <Button
+                title={codeSent ? "Resend email code" : "Send email code"}
+                disabled={busy || !email.trim()}
+                onPress={() => void run(requestCode)}
+              />
+              {codeSent && (
+                <TextInput
+                  accessibilityLabel="Email code"
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  placeholder="Six-digit email code"
+                />
+              )}
+            </>
+          )}
           {needsTotp ? (
             <>
               <TextInput
@@ -428,11 +471,13 @@ export default function CryptoDeviceHarness() {
               />
             </>
           ) : (
-            <Button
-              title="Sign in with email"
-              disabled={busy}
-              onPress={() => void run(signIn)}
-            />
+            codeSent && (
+              <Button
+                title="Verify email code"
+                disabled={busy || !/^\d{6}$/.test(otp)}
+                onPress={() => void run(() => signIn("email"))}
+              />
+            )
           )}
           <Button
             title="Unlock and resume"

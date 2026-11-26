@@ -15,7 +15,7 @@ checksums="${5:-}"
 retired_fingerprint=85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF
 
 if [[ ! "$fingerprint" =~ ^[0-9A-F]{64}$ || "$fingerprint" == "$retired_fingerprint" ]]; then
-  printf '%s\n' 'Use the SHA-256 fingerprint of the replacement release certificate.' >&2
+  printf '%s\n' 'Use the SHA-256 fingerprint of the approved release certificate.' >&2
   exit 1
 fi
 
@@ -48,8 +48,17 @@ aapt="${build_tools:+$build_tools/}aapt"
 
 identity="$("$apksigner" verify --verbose --print-certs "$apk")"
 grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' <<< "$identity"
-signer_fingerprints="$(awk '/^Signer #[0-9]+ certificate SHA-256 digest:/ {print toupper($NF)}' <<< "$identity")"
-if [[ "$signer_fingerprints" != "$fingerprint" ]]; then
+signer_fingerprints="$(awk '
+  /^Signer( #[0-9]+)?( \(.*\))? certificate SHA-256 digest:/ {
+    digest = $0
+    sub(/^.*digest:[[:space:]]*/, "", digest)
+    gsub(/[:[:space:]]/, "", digest)
+    print toupper(digest)
+  }
+' <<< "$identity" | sort -u)"
+if ! grep -Eq '^Number of signers: 1[[:space:]]*$' <<< "$identity" ||
+  [[ "$signer_fingerprints" != "$fingerprint" ]]; then
+  printf 'APK certificate records: %s\n' "${signer_fingerprints:-none}" >&2
   printf '%s\n' 'APK must have exactly one signer with the expected release certificate.' >&2
   exit 1
 fi

@@ -4,7 +4,15 @@ import { lstat, open, readFile } from "node:fs/promises";
 import { isAbsolute } from "node:path";
 import { promisify } from "node:util";
 import { setTimeout as delay } from "node:timers/promises";
-import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
+import {
+  beforeAll,
+  afterAll,
+  afterEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { base58 } from "@scure/base";
 import {
   Keypair,
@@ -451,86 +459,252 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         (await (await GET(new Request(created.shareUrl))).json()).solanaPayUri,
       ).toBeUndefined();
     });
-    it("supports public email verification and reset with the existing identity tables", async () => {
-      vi.stubEnv("AGUS_AUTH_PUBLIC", "true");
-      vi.stubEnv("BETTER_AUTH_URL", "https://auth.fixture.invalid");
-      vi.stubEnv("RESEND_API_KEY", "disposable-mail-provider-fixture");
-      vi.stubEnv("AGUS_AUTH_EMAIL_FROM", "AGUS <mail@fixture.invalid>");
-      const deliveries: Array<{ subject: string; text: string }> = [];
-      const fetcher = vi
-        .spyOn(globalThis, "fetch")
-        .mockImplementation(async (_url, init) => {
-          deliveries.push(JSON.parse(String(init?.body)));
-          return Response.json({ id: "mail-fixture" });
-        });
-      const auth = await createIdentity();
-      const email = "registered@fixture.invalid",
-        password = "disposable-registration-password";
-      const call = (path: string, data?: unknown) =>
-        auth.handler(
-          new Request(`https://auth.fixture.invalid/api/auth/${path}`, {
-            method: data ? "POST" : "GET",
+    describe("hosted passwordless authentication", () => {
+      const hostedOrigin = "https://auth.fixture.invalid";
+
+      function hostedEnv() {
+        vi.stubEnv("AGUS_AUTH_PUBLIC", "true");
+        vi.stubEnv("BETTER_AUTH_URL", hostedOrigin);
+        vi.stubEnv("RESEND_API_KEY", "disposable-mail-provider-fixture");
+        vi.stubEnv("AGUS_AUTH_EMAIL_FROM", "AGUS <mail@fixture.invalid>");
+      }
+
+      function requestAuth(
+        auth: Awaited<ReturnType<typeof createIdentity>>,
+        path: string,
+        body?: unknown,
+        cookie?: string,
+        requestOrigin = hostedOrigin,
+      ) {
+        return auth.handler(
+          new Request(`${hostedOrigin}/api/auth/${path}`, {
+            method: body === undefined ? "GET" : "POST",
             headers: {
-              origin: "https://auth.fixture.invalid",
+              origin: requestOrigin,
               "content-type": "application/json",
+              ...(cookie && { cookie }),
             },
-            ...(data !== undefined && { body: JSON.stringify(data) }),
+            ...(body !== undefined && { body: JSON.stringify(body) }),
           }),
         );
-      try {
-        expect(
-          (await call("sign-up/email", { email, password, name: "Registered" }))
-            .status,
-        ).toBe(200);
-        expect((await call("sign-in/email", { email, password })).status).toBe(
-          403,
-        );
-        const verification = deliveries
-          .find((mail) => mail.subject === "Verify your AGUS email")
-          ?.text.match(/https:\/\/[^\s]+/)?.[0];
-        expect(verification).toBeTruthy();
-        expect(
-          (await auth.handler(new Request(verification!))).status,
-        ).toBeLessThan(400);
-        expect((await call("sign-in/email", { email, password })).status).toBe(
-          200,
-        );
-        expect(
-          (
-            await call("request-password-reset", {
-              email,
-              redirectTo: "https://auth.fixture.invalid/reset",
-            })
-          ).status,
-        ).toBe(200);
-        const reset = deliveries
-          .find((mail) => mail.subject === "Reset your AGUS password")
-          ?.text.match(/https:\/\/[^\s]+/)?.[0];
-        expect(reset).toBeTruthy();
-        const token = new URL(reset!).pathname.split("/").at(-1);
-        expect(
-          (
-            await call("reset-password", {
-              token,
-              newPassword: "changed-disposable-password",
-            })
-          ).status,
-        ).toBe(200);
-        expect(
-          (
-            await call("sign-in/email", {
-              email,
-              password: "changed-disposable-password",
-            })
-          ).status,
-        ).toBe(200);
-      } finally {
-        fetcher.mockRestore();
+      }
+
+      function cookies(response: Response) {
+        return response.headers
+          .getSetCookie()
+          .map((cookie) => cookie.split(";")[0])
+          .join("; ");
+      }
+
+      afterEach(() => {
+        vi.restoreAllMocks();
         vi.stubEnv("AGUS_AUTH_PUBLIC", undefined);
         vi.stubEnv("BETTER_AUTH_URL", origin);
         vi.stubEnv("RESEND_API_KEY", undefined);
         vi.stubEnv("AGUS_AUTH_EMAIL_FROM", undefined);
-      }
+        vi.stubEnv("GOOGLE_CLIENT_ID", undefined);
+        vi.stubEnv("GOOGLE_CLIENT_SECRET", undefined);
+      });
+
+      it("creates one verified account and restricts resend, expiry, attempts and replay", async () => {
+        hostedEnv();
+        const deliveries: Array<{ text: string; to: string[] }> = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
+          expect(String(url)).toBe("https://api.resend.com/emails");
+          deliveries.push(JSON.parse(String(init?.body)));
+          return Response.json({ id: "mail-fixture" });
+        });
+        const auth = await createIdentity();
+        const email = "registered@fixture.invalid";
+        const issue = () =>
+          requestAuth(auth, "email-otp/send-verification-otp", {
+            email,
+            type: "sign-in",
+          });
+        const verify = (otp: string) =>
+          requestAuth(auth, "sign-in/email-otp", { email, otp });
+        const latestCode = () =>
+          deliveries.at(-1)!.text.match(/\b[0-9]{6}\b/)![0];
+
+        const issued = await Promise.all([issue(), issue()]);
+        expect(issued.map((result) => result.status).sort()).toEqual([
+          200, 429,
+        ]);
+        expect(deliveries).toHaveLength(1);
+        expect(deliveries[0].to).toEqual([email]);
+        expect(deliveries[0].text).not.toContain("https://");
+        expect(
+          await fixture.admin
+            .query("SELECT id FROM agus_users WHERE email=$1", [email])
+            .then(({ rows }) => rows),
+        ).toEqual([]);
+        expect(
+          (
+            await fixture.admin.query(
+              "SELECT value FROM agus_verifications WHERE id LIKE 'agus-login-otp-%'",
+            )
+          ).rows.at(-1)?.value,
+        ).toMatch(/^[a-f0-9]{64}:0$/);
+
+        const verified = await Promise.all([
+          verify(latestCode()),
+          verify(latestCode()),
+        ]);
+        expect(verified.map((result) => result.status).sort()).toEqual([
+          200, 400,
+        ]);
+        const accepted = verified.find((result) => result.ok)!;
+        const user = (await accepted.json()).user;
+        expect(user).toMatchObject({
+          email,
+          emailVerified: true,
+          role: "consumer",
+        });
+        const sessionCookie = cookies(accepted);
+        expect(
+          (
+            await (
+              await requestAuth(auth, "get-session", undefined, sessionCookie)
+            ).json()
+          ).user.id,
+        ).toBe(user.id);
+        expect((await issue()).status).toBe(429);
+        expect(
+          (
+            await requestAuth(auth, "sign-up/email", {
+              email,
+              password: "legacy-disposable-password",
+              name: "Legacy",
+            })
+          ).status,
+        ).toBe(404);
+
+        const allowResend = async () => {
+          await fixture.admin.query(
+            "UPDATE agus_verifications SET updated_at=now()-interval '61 seconds' WHERE id LIKE 'agus-login-otp-%'",
+          );
+          await fixture.admin.query(
+            "UPDATE agus_rate_limit SET last_request=last_request-61000",
+          );
+        };
+        await allowResend();
+        expect((await issue()).status).toBe(200);
+        const incorrectCode = latestCode() === "000000" ? "000001" : "000000";
+        for (let i = 0; i < 5; i++) {
+          // Model distinct rate-limit windows while keeping the same OTP alive.
+          await fixture.admin.query("UPDATE agus_rate_limit SET last_request=last_request-61000");
+          expect((await verify(incorrectCode)).status).toBe(400);
+        }
+        await fixture.admin.query("UPDATE agus_rate_limit SET last_request=last_request-61000");
+        expect((await verify(latestCode())).status).toBe(403);
+
+        await allowResend();
+        expect((await issue()).status).toBe(200);
+        await fixture.admin.query(
+          "UPDATE agus_verifications SET expires_at=now()-interval '1 second' WHERE id LIKE 'agus-login-otp-%'",
+        );
+        expect((await verify(latestCode())).status).toBe(400);
+
+        await fixture.admin.query(
+          "UPDATE agus_users SET two_factor_enabled=true WHERE id=$1",
+          [user.id],
+        );
+        await allowResend();
+        expect((await issue()).status).toBe(200);
+        const gated = await verify(latestCode());
+        expect(gated.status).toBe(200);
+        expect(await gated.json()).toMatchObject({ twoFactorRedirect: true });
+        expect(
+          await (
+            await requestAuth(auth, "get-session", undefined, cookies(gated))
+          ).json(),
+        ).toBeNull();
+
+        expect(
+          (await requestAuth(auth, "sign-out", {}, sessionCookie)).status,
+        ).toBe(200);
+        expect(
+          await (
+            await requestAuth(auth, "get-session", undefined, sessionCookie)
+          ).json(),
+        ).toBeNull();
+      });
+
+      it("delivers native Google sessions through a one-time verifier and keeps web callbacks intact", async () => {
+        hostedEnv();
+        vi.stubEnv("GOOGLE_CLIENT_ID", "google-fixture-id");
+        vi.stubEnv("GOOGLE_CLIENT_SECRET", "google-fixture-secret");
+        const auth = await createIdentity();
+        const google = (await (await auth.$context).socialProviders).find(
+          ({ id }) => id === "google",
+        )!;
+        vi.spyOn(google, "validateAuthorizationCode").mockResolvedValue({
+          accessToken: "fixture-access-token",
+        });
+        vi.spyOn(google, "getUserInfo").mockResolvedValue({
+          user: {
+            name: "Google Fixture",
+            email: "google@fixture.invalid",
+            emailVerified: true,
+          },
+          data: { sub: "fixture-google-subject" },
+        });
+        async function authorize(
+          callbackURL: string,
+          requestOrigin = hostedOrigin,
+        ) {
+          const start = await requestAuth(
+            auth,
+            "sign-in/social",
+            { provider: "google", callbackURL },
+            undefined,
+            requestOrigin,
+          );
+          expect(start.status).toBe(200);
+          const state = new URL((await start.json()).url).searchParams.get(
+            "state",
+          );
+          return requestAuth(
+            auth,
+            "callback/google?code=disposable-code&state=" + state,
+            undefined,
+            cookies(start),
+          );
+        }
+        const verifier = "a".repeat(64);
+        const challenge = createHash("sha256").update(verifier).digest("hex");
+        const callbackURL = "agus://open/auth?challenge=" + challenge;
+        const native = await authorize(callbackURL, "agus://");
+        expect(native.status).toBe(302);
+        expect(native.headers.get("location")).toBe(callbackURL);
+        expect(cookies(native)).not.toContain("session_token");
+        const exchange = (value: string) =>
+          requestAuth(
+            auth,
+            "mobile-google/exchange",
+            { verifier: value },
+            undefined,
+            "agus://",
+          );
+        expect((await exchange("b".repeat(64))).status).toBe(401);
+        const exchanged = await Promise.all([
+          exchange(verifier),
+          exchange(verifier),
+        ]);
+        expect(exchanged.map((result) => result.status).sort()).toEqual([
+          200, 401,
+        ]);
+        const user = (await exchanged.find((result) => result.ok)!.json()).user;
+        const web = await authorize(hostedOrigin + "/auth");
+        expect(web.headers.get("location")).toBe(hostedOrigin + "/auth");
+        expect(
+          (
+            await (
+              await requestAuth(auth, "get-session", undefined, cookies(web))
+            ).json()
+          ).user.id,
+        ).toBe(user.id);
+      });
     });
 
     it.skipIf(process.env.AGUS_CRYPTO_LIVE_READS !== "true")(

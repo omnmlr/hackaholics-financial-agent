@@ -11,14 +11,8 @@ export function identityEmail(origin: string) {
     503,
   );
 
-  async function send(email: string, link: string, action: "verify" | "reset") {
+  async function send(email: string, code: string) {
     invariant(key && from, "IDENTITY_EMAIL_CONFIGURATION_REQUIRED", 503);
-    const url = new URL(link);
-    invariant(
-      url.origin === new URL(origin).origin,
-      "IDENTITY_EMAIL_LINK_REJECTED",
-      503,
-    );
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -30,14 +24,8 @@ export function identityEmail(origin: string) {
       body: JSON.stringify({
         from,
         to: [email],
-        subject:
-          action === "verify"
-            ? "Verify your AGUS email"
-            : "Reset your AGUS password",
-        text:
-          action === "verify"
-            ? `Verify your email for AGUS: ${url}\n\nIf you did not register, you can ignore this message.`
-            : `Reset your AGUS password: ${url}\n\nIf you did not request a reset, you can ignore this message.`,
+        subject: "Your AGUS sign-in code",
+        text: `Your AGUS sign-in code is ${code}. It expires in 5 minutes. If you did not request it, you can ignore this message.`,
       }),
     });
     await response.body?.cancel();

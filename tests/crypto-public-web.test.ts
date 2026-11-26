@@ -54,7 +54,7 @@ describe("AGUS Crypto public launch website & auth pages", () => {
     expect(html).toContain("Opening your workspace");
   });
 
-  it("renders /auth and /reset-password cleanly with public identity capabilities", async () => {
+  it("renders passwordless copy and redirects the former reset page", async () => {
     vi.stubEnv("AGUS_AUTH_PUBLIC", "true");
     vi.stubEnv("GOOGLE_CLIENT_ID", "fixture-client-id");
     vi.stubEnv("GOOGLE_CLIENT_SECRET", "fixture-client-secret");
@@ -62,17 +62,13 @@ describe("AGUS Crypto public launch website & auth pages", () => {
     vi.stubEnv("AGUS_AUTH_EMAIL_FROM", "AGUS <noreply@mail.grindcity.app>");
 
     const authHtml = renderToStaticMarkup(
-      await AuthPage({ searchParams: Promise.resolve({ verified: "1" }) }),
+      await AuthPage({ searchParams: Promise.resolve({}) }),
     );
     expect(authHtml).toContain("Account Portal");
-    expect(authHtml).toContain("Email verified. You can now sign in with your account.");
+    expect(authHtml).toContain("Continue with Google or enter a one-time code");
     expect(authHtml).toContain("Checking session status...");
 
-    const resetHtml = renderToStaticMarkup(
-      await ResetPasswordPage({ searchParams: Promise.resolve({ token: "tok-123" }) }),
-    );
-    expect(resetHtml).toContain("Reset Password");
-    expect(resetHtml).toContain("Choose a new password");
+    expect(() => ResetPasswordPage()).toThrow("NEXT_REDIRECT");
   });
 
   it("exposes standalone CryptoPublicHome markup", () => {

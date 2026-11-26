@@ -24,7 +24,6 @@ export default async function AuthPage({
   const emailConfigured = Boolean(
     process.env.RESEND_API_KEY && process.env.AGUS_AUTH_EMAIL_FROM,
   );
-  const initialVerified = params.verified === "1" || params.verified === "true";
   const initialError =
     typeof params.error === "string" && params.error.length > 0
       ? params.error
@@ -35,13 +34,12 @@ export default async function AuthPage({
       <p className={s.eyebrow}>AGUS Identity</p>
       <h1 className={s.heroTitle}>Account Portal</h1>
       <p className={s.lead}>
-        Sign in with Google or register a verified email account for AGUS Crypto.
+        Continue with Google or enter a one-time code sent to your email.
       </p>
       <PublicAuthPanel
         googleEnabled={googleEnabled}
         publicRegistration={publicRegistration}
         emailConfigured={emailConfigured}
-        initialVerified={initialVerified}
         initialError={initialError}
       />
     </PublicShell>

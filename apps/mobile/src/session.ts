@@ -1,6 +1,11 @@
 import { createAuthClient } from "better-auth/react";
 import { twoFactorClient } from "better-auth/client/plugins";
 import { expoClient } from "@better-auth/expo/client";
+import {
+  CryptoDigestAlgorithm,
+  digestStringAsync,
+  getRandomBytesAsync,
+} from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import * as LocalAuthentication from "expo-local-authentication";
 import { fetch as streamingFetch } from "expo/fetch";
@@ -34,6 +39,7 @@ const storage = {
 };
 export const auth = createAuthClient({
   baseURL: apiOrigin,
+  fetchOptions: { headers: { origin: "agus://" } },
   plugins: [
     twoFactorClient(),
     expoClient({
@@ -60,12 +66,57 @@ export async function unlockSession() {
   unlocked = result.success;
   return unlocked;
 }
-export async function freshSignIn(email: string, password: string) {
-  // Without enrolled biometrics, use a fresh server login instead of unlocking
-  // an old credential from a client boolean. No password is persisted locally.
+async function beginFreshSignIn() {
+  lockSession();
   await SecureStore.deleteItemAsync("agus_cookie");
   await SecureStore.deleteItemAsync("agus_session_data");
   unlocked = true;
+}
+
+type SignInResult = { user?: { id: string }; twoFactorRedirect?: boolean };
+
+export function sendEmailCode(email: string) {
+  return auth.$fetch<{ success: boolean }>("/email-otp/send-verification-otp", {
+    method: "POST",
+    body: { email, type: "sign-in" },
+  });
+}
+
+export async function signInWithEmailCode(email: string, otp: string) {
+  await beginFreshSignIn();
+  return auth.$fetch<SignInResult>("/sign-in/email-otp", {
+    method: "POST",
+    body: { email, otp },
+  });
+}
+
+export async function signInWithGoogle() {
+  await beginFreshSignIn();
+  const random = await getRandomBytesAsync(32);
+  const verifier = Array.from(random, (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  const challenge = await digestStringAsync(
+    CryptoDigestAlgorithm.SHA256,
+    verifier,
+  );
+  const started = await auth.signIn.social({
+    provider: "google",
+    callbackURL: "agus://open/auth?challenge=" + challenge,
+  });
+  if (started.error) throw new Error("GOOGLE_SIGN_IN_FAILED");
+  // The browser switch locks local storage. Only the fresh, one-time
+  // exchange can supply a session after returning to AGUS.
+  await beginFreshSignIn();
+  return auth.$fetch<SignInResult>("/mobile-google/exchange", {
+    method: "POST",
+    body: { verifier },
+  });
+}
+
+// The separate platform diagnostics still exercise password-based financial step-up.
+export async function freshSignIn(email: string, password: string) {
+  await beginFreshSignIn();
   return auth.signIn.email({ email, password });
 }
 async function sessionHeaders(headers?: HeadersInit) {

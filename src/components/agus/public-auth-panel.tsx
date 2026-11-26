@@ -17,27 +17,21 @@ export function PublicAuthPanel({
   googleEnabled,
   publicRegistration,
   emailConfigured,
-  initialVerified,
   initialError,
 }: {
   googleEnabled: boolean;
   publicRegistration: boolean;
   emailConfigured: boolean;
-  initialVerified: boolean;
   initialError?: string;
 }) {
   const [session, setSession] = useState<SessionPayload>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(
-    initialVerified ? "Email verified. You can now sign in with your account." : null,
-  );
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(initialError ?? null);
-
-  const [mode, setMode] = useState<"signin" | "signup" | "reset">("signin");
-  const [name, setName] = useState("");
+  const [step, setStep] = useState<"email" | "otp" | "totp">("email");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
 
   const loadSession = useCallback(async () => {
     setLoadingSession(true);
@@ -91,10 +85,15 @@ export function PublicAuthPanel({
         callbackURL: `${window.location.origin}/auth`,
       });
       if (!res.ok) {
-        setError(String(payload.message ?? payload.code ?? `HTTP ${res.status}`));
+        setError(
+          String(payload.message ?? payload.code ?? `HTTP ${res.status}`),
+        );
         return;
       }
-      if (typeof payload.url === "string" && payload.url.startsWith("https://")) {
+      if (
+        typeof payload.url === "string" &&
+        payload.url.startsWith("https://")
+      ) {
         window.location.assign(payload.url);
         return;
       }
@@ -106,55 +105,63 @@ export function PublicAuthPanel({
     }
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
+  async function sendCode() {
+    await runAuth(async () => {
+      const { res } = await postJson("email-otp/send-verification-otp", {
+        email,
+        type: "sign-in",
+      });
+      if (!res.ok)
+        throw new Error(
+          res.status === 429
+            ? "Wait a minute before requesting another code."
+            : "The code could not be sent. Please retry shortly.",
+        );
+      setStep("otp");
+      setCode("");
+      setMessage("Check your inbox for a six-digit code.");
+    });
+  }
+
+  async function runAuth(action: () => Promise<void>) {
     setBusy(true);
     setError(null);
     setMessage(null);
     try {
-      if (mode === "signin") {
-        const { res, payload } = await postJson("sign-in/email", {
-          email,
-          password,
-        });
-        if (!res.ok) {
-          setError(String(payload.message ?? payload.code ?? `Sign-in failed (${res.status})`));
-          return;
-        }
-        setMessage("Signed in successfully.");
-        await loadSession();
-      } else if (mode === "signup") {
-        const { res, payload } = await postJson("sign-up/email", {
-          name: name.trim() || "AGUS User",
-          email,
-          password,
-          callbackURL: `${window.location.origin}/auth?verified=1`,
-        });
-        if (!res.ok) {
-          setError(String(payload.message ?? payload.code ?? `Registration failed (${res.status})`));
-          return;
-        }
-        setMessage(
-          emailConfigured
-            ? "Account created. Check your inbox for the AGUS verification link before signing in."
-            : "Account created.",
-        );
-      } else {
-        const { res, payload } = await postJson("request-password-reset", {
-          email,
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (!res.ok) {
-          setError(String(payload.message ?? payload.code ?? `Reset request failed (${res.status})`));
-          return;
-        }
-        setMessage("If that email is registered, a password reset link has been sent.");
-      }
-    } catch {
-      setError("Network error while communicating with AGUS authentication.");
+      await action();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Sign-in failed. Please retry.",
+      );
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (step === "email") return sendCode();
+    await runAuth(async () => {
+      const { res, payload } =
+        step === "otp"
+          ? await postJson("sign-in/email-otp", { email, otp: code })
+          : await postJson("two-factor/verify-totp", { code });
+      if (!res.ok)
+        throw new Error(
+          step === "totp"
+            ? "Authenticator code rejected."
+            : payload.code === "TOO_MANY_ATTEMPTS"
+              ? "Too many attempts. Request a new code."
+              : "Code rejected. Check the code or request a new one.",
+        );
+      setCode("");
+      if (payload.twoFactorRedirect === true) {
+        setStep("totp");
+        return;
+      }
+      setStep("email");
+      await loadSession();
+    });
   }
 
   async function handleSignOut() {
@@ -162,7 +169,8 @@ export function PublicAuthPanel({
     setError(null);
     setMessage(null);
     try {
-      await postJson("sign-out", {});
+      const { res } = await postJson("sign-out", {});
+      if (!res.ok) throw new Error("Sign-out failed.");
       setSession(null);
       setMessage("Signed out.");
     } catch {
@@ -194,7 +202,8 @@ export function PublicAuthPanel({
           <h2>Active session</h2>
           <p>
             Signed in as <strong>{session.user.email}</strong>
-            {session.user.name ? ` (${session.user.name})` : ""} · Email verified:{" "}
+            {session.user.name ? ` (${session.user.name})` : ""} · Email
+            verified:{" "}
             <strong>{session.user.emailVerified ? "yes" : "no"}</strong>.
           </p>
           <div className={s.actions} style={{ marginTop: 16, marginBottom: 0 }}>
@@ -210,12 +219,11 @@ export function PublicAuthPanel({
         </section>
       ) : (
         <section className={s.section}>
-          <p className={s.eyebrow}>
-            {publicRegistration ? "Open registration & judge sign-in" : "Invite-only Devnet access"}
-          </p>
-          <h2>Sign in or create an AGUS account</h2>
-
-          {googleEnabled ? (
+          {!publicRegistration && (
+            <p className={s.eyebrow}>Invite-only Devnet access</p>
+          )}
+          <h2>Sign in to AGUS</h2>
+          {googleEnabled && (
             <div style={{ margin: "16px 0 22px" }}>
               <button
                 type="button"
@@ -226,100 +234,88 @@ export function PublicAuthPanel({
                 Continue with Google
               </button>
             </div>
+          )}
+          {emailConfigured ? (
+            <form onSubmit={handleSubmit}>
+              {step === "email" ? (
+                <div className={s.formGroup}>
+                  <label className={s.label} htmlFor="auth-email">
+                    Email address
+                  </label>
+                  <input
+                    id="auth-email"
+                    className={s.input}
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
+                </div>
+              ) : (
+                <div className={s.formGroup}>
+                  <label className={s.label} htmlFor="auth-code">
+                    {step === "totp"
+                      ? "Authenticator code"
+                      : "Six-digit email code"}
+                  </label>
+                  <input
+                    id="auth-code"
+                    className={s.input}
+                    required
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(event) => setCode(event.target.value)}
+                  />
+                </div>
+              )}
+              <div className={s.actions}>
+                <button
+                  type="submit"
+                  className={s.buttonPrimary}
+                  disabled={busy}
+                >
+                  {step === "email"
+                    ? "Send sign-in code"
+                    : "Verify and sign in"}
+                </button>
+                {step === "otp" && (
+                  <button
+                    type="button"
+                    className={s.buttonSecondary}
+                    disabled={busy}
+                    onClick={sendCode}
+                  >
+                    Resend code
+                  </button>
+                )}
+                {step !== "email" && (
+                  <button
+                    type="button"
+                    className={s.buttonSecondary}
+                    disabled={busy}
+                    onClick={() => {
+                      setStep("email");
+                      setCode("");
+                      setMessage(null);
+                      setError(null);
+                    }}
+                  >
+                    Change email
+                  </button>
+                )}
+              </div>
+            </form>
           ) : (
-            <div className={s.notice}>
-              Google sign-in is pending server credential activation. Email authentication status:{" "}
-              {emailConfigured ? "active" : "email delivery pending"}.
-            </div>
+            <p>Email sign-in is unavailable.</p>
           )}
 
-          <div className={s.actions} style={{ marginBottom: 18 }}>
-            <button
-              type="button"
-              className={mode === "signin" ? s.buttonPrimary : s.buttonSecondary}
-              onClick={() => setMode("signin")}
-            >
-              Email sign in
-            </button>
-            <button
-              type="button"
-              className={mode === "signup" ? s.buttonPrimary : s.buttonSecondary}
-              onClick={() => setMode("signup")}
-            >
-              Create account
-            </button>
-            <button
-              type="button"
-              className={mode === "reset" ? s.buttonPrimary : s.buttonSecondary}
-              onClick={() => setMode("reset")}
-            >
-              Reset password
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit}>
-            {mode === "signup" && (
-              <div className={s.formGroup}>
-                <label className={s.label} htmlFor="auth-name">
-                  Display name
-                </label>
-                <input
-                  id="auth-name"
-                  className={s.input}
-                  type="text"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Alex Mercer"
-                />
-              </div>
-            )}
-
-            <div className={s.formGroup}>
-              <label className={s.label} htmlFor="auth-email">
-                Email address
-              </label>
-              <input
-                id="auth-email"
-                className={s.input}
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-              />
-            </div>
-
-            {mode !== "reset" && (
-              <div className={s.formGroup}>
-                <label className={s.label} htmlFor="auth-password">
-                  Password (minimum 12 characters)
-                </label>
-                <input
-                  id="auth-password"
-                  className={s.input}
-                  type="password"
-                  required
-                  minLength={12}
-                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            )}
-
-            <button type="submit" className={s.buttonPrimary} disabled={busy}>
-              {mode === "signin"
-                ? "Sign in"
-                : mode === "signup"
-                  ? "Create account"
-                  : "Send reset link"}
-            </button>
-          </form>
-
           <p style={{ marginTop: 18 }}>
-            By signing in, you agree to our <Link href="/terms">Terms of Service</Link> and{" "}
+            By signing in, you agree to our{" "}
+            <Link href="/terms">Terms of Service</Link> and{" "}
             <Link href="/privacy">Privacy Policy</Link>.
           </p>
         </section>

@@ -15,7 +15,7 @@ checksums="${5:-}"
 retired_fingerprint=85AD785DFF4A95D38DFA0E5799335E60D7A19266284BB0FFE062058FE7D8B7CF
 
 if [[ ! "$fingerprint" =~ ^[0-9A-F]{64}$ || "$fingerprint" == "$retired_fingerprint" ]]; then
-  printf '%s\n' 'Use the SHA-256 fingerprint of the replacement release certificate.' >&2
+  printf '%s\n' 'Use the SHA-256 fingerprint of the approved release certificate.' >&2
   exit 1
 fi
 
@@ -43,16 +43,17 @@ build_tools="${ANDROID_BUILD_TOOLS:-}"
 if [[ -z "$build_tools" && -n "${ANDROID_HOME:-}" ]]; then
   build_tools="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)"
 fi
-apksigner="${build_tools:+$build_tools/}apksigner"
 aapt="${build_tools:+$build_tools/}aapt"
-
-identity="$("$apksigner" verify --verbose --print-certs "$apk")"
-grep -Fx 'Verified using v2 scheme (APK Signature Scheme v2): true' <<< "$identity"
-signer_fingerprints="$(awk '/^Signer #[0-9]+ certificate SHA-256 digest:/ {print toupper($NF)}' <<< "$identity")"
-if [[ "$signer_fingerprints" != "$fingerprint" ]]; then
-  printf '%s\n' 'APK must have exactly one signer with the expected release certificate.' >&2
+signer_jar="$build_tools/lib/apksigner.jar"
+if [[ -z "$build_tools" || ! -f "$signer_jar" ]]; then
+  printf '%s\n' 'Set ANDROID_BUILD_TOOLS to an Android SDK Build Tools directory.' >&2
   exit 1
 fi
+
+# Use the same verification library as apksigner without parsing human-readable
+# certificate output, whose format differs between Android SDK releases.
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+java --class-path "$signer_jar" "$script_dir/VerifyApkSigner.java" "$apk" "$fingerprint"
 
 badging="$("$aapt" dump badging "$apk")"
 grep -E "^package: name='app\.agus\.prototype' " <<< "$badging"

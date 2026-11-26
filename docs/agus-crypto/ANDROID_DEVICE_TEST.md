@@ -4,37 +4,23 @@ The Android test build opens a diagnostic screen backed by the Crypto API. It us
 
 ## Prepare the signed build
 
-The November 22 key is retired. First locate any existing encrypted replacement backup in the founder's storage. Reuse that exact archive if one exists. Use a trusted workstation with GnuPG, a recoverable GPG encryption key, and a private backup directory outside the repository. With GitHub CLI authenticated as a repository administrator, run the preparation script with the existing archive path or the chosen new backup path.
+CI uses the existing approved signer from the four `AGUS_ANDROID_*` signing secrets and the `AGUS_ANDROID_CERT_SHA256` repository variable. Confirm the approved fingerprint matches the public Digital Asset Links statement before changing any GitHub setting. The API origin is set in the workflow to `https://agus.grindcity.app`. On an approved `main` revision, dispatch a fresh build so it runs the current signing code.
 
 ```bash
-bash scripts/android/prepare-release-signing.sh /durable/path/agus-signing.tar.gpg GPG_RECIPIENT_FINGERPRINT
+gh workflow run agus-crypto-android.yml --ref main --repo omnmlr/hackaholics-financial-agent
+gh run list --workflow agus-crypto-android.yml --branch main --repo omnmlr/hackaholics-financial-agent
 ```
 
-On a new path the script creates a 4096-bit RSA PKCS#12 signer and verifies the encrypted archive through restoration. It verifies that the private key can sign before installing the four repository secrets and the public `AGUS_ANDROID_CERT_SHA256` variable. A retry with the same backup reuses the same key. Retain a separate recoverable encrypted copy and the decryption key in the owner’s approved storage. Share the public fingerprint for updating the Vercel statement. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
-
-### Windows workstation
-
-Use Ubuntu under WSL 2 on the trusted signing workstation. If needed, run `wsl --install -d Ubuntu` in administrator PowerShell and finish Ubuntu setup. Run the following commands inside Ubuntu from the AGUS checkout. [WSL installation](https://learn.microsoft.com/en-us/windows/wsl/install)
+If CI specifically reports unavailable or unreadable signing inputs, restore the **existing** encrypted backup on the trusted signing workstation. The Windows wrapper runs inside Ubuntu on WSL, keeps decrypted working files in memory-backed temporary storage and installs the signing settings using an authenticated maintainer account. Pass the existing archive path and enter its GPG recipient fingerprint at the prompt. [Repository Actions settings](https://github.com/omnmlr/hackaholics-financial-agent/settings/secrets/actions)
 
 ```bash
-sudo apt update
-sudo apt install -y git gh gnupg openssl default-jdk-headless curl jq
-gh auth login --hostname github.com --git-protocol https --web
-bash scripts/android/prepare-release-signing-windows.sh
-```
-
-Enter the exact WSL path to the existing encrypted replacement backup and the public fingerprint of its GPG recipient. If the key is stored in approved recovery storage, import it into the WSL GnuPG keyring first. The wrapper verifies the backup and installs the signing settings via GitHub CLI. It keeps decrypted working files in WSL's memory-backed temporary directory. The optional `--create` mode requires explicit confirmation and an existing private, durable backup directory. Keep a second encrypted copy in approved recovery storage.
-
-Share only the replacement public certificate SHA-256 to update the Vercel Digital Asset Links statement for `app.agus.prototype`. After that change and after hosted readiness, use the same wrapper to verify both gates, set `AGUS_CRYPTO_DEVICE_API_URL`, and rerun the selected completed Android workflow.
-
-```bash
-gh run list --workflow agus-crypto-android.yml --branch feat/agus-crypto-backend --repo omnmlr/hackaholics-financial-agent
-bash scripts/android/prepare-release-signing-windows.sh --release <github-run-id>
+bash scripts/android/prepare-release-signing-windows.sh /path/to/existing/agus-signing.tar.gpg
+bash scripts/android/prepare-release-signing-windows.sh --release
 ```
 
 ### Verify the GitHub download
 
-Download the release using its exact tag. Run the verifier from the repo in Bash with `node`, `unzip`, `jq`, `curl`, `sha256sum`, and Android SDK Build Tools available. Set `ANDROID_BUILD_TOOLS` to the directory containing `apksigner` and `aapt` when it differs from the newest tools under `ANDROID_HOME`.
+Download the release using its exact tag. Run the verifier from the repo in Bash with JDK 21, `node`, `unzip`, `jq`, `curl`, `sha256sum`, and Android SDK Build Tools. Set `ANDROID_BUILD_TOOLS` to the directory containing `lib/apksigner.jar` and `aapt` when it differs from the newest tools under `ANDROID_HOME`.
 
 ```bash
 download_dir="$(mktemp -d)"
@@ -42,7 +28,7 @@ gh release download "<release-tag>" --repo omnmlr/hackaholics-financial-agent --
 cat "$download_dir/BUILD-IDENTITY.txt"
 bash scripts/android/verify-devnet-apk.sh \
   "$download_dir/AGUS-Crypto-Devnet-arm64.apk" \
-  "<replacement-certificate-sha256>" "<verified-devnet-https-origin>" \
+  "<approved-certificate-sha256>" https://agus.grindcity.app \
   https://agus-wallet-devnet-identity.vercel.app "$download_dir/SHA256SUMS.txt"
 ```
 
@@ -50,7 +36,7 @@ bash scripts/android/verify-devnet-apk.sh \
 
 1. Download `AGUS-Crypto-Devnet-arm64.apk` from the tested GitHub prerelease and compare its SHA-256 with `SHA256SUMS.txt`. Before replacing the November 22 AGUS APK, save any attempt IDs, receipts, signatures and screenshots you need. The new signer requires a clean AGUS install when Android rejects the update. Uninstall only AGUS, then open the new APK from Downloads and allow installation if prompted. Keep Phantom and Solflare installed with their existing accounts.
 2. Record the Android version, device model and installed Phantom and Solflare versions. Disable Android Battery Saver for the Solflare test. In both wallets select Devnet and select separate, funded, disposable accounts. Leave enough test SOL for three transfers and fees.
-3. Open **AGUS Android signing diagnostics**, sign in with the invited test account, and connect Phantom and Solflare separately. For each wallet, select the exact disposable address and tap **Prove ownership**. Review and confirm the ownership message in the wallet. If Android locks the AGUS session on app switch, tap **Unlock and resume** after returning. AGUS retains the proof for the same authenticated owner and submits it within its challenge lifetime.
+3. Open **AGUS Android signing diagnostics**, check Google and the six-digit email code flow with disposable tester accounts, and connect Phantom and Solflare separately. For each wallet, select the exact disposable address and tap **Prove ownership**. Review and confirm the ownership message in the wallet. If Android locks the AGUS session on app switch, tap **Unlock and resume** after returning. AGUS retains the proof for the same authenticated owner and submits it within its challenge lifetime.
 4. Select **Use phantom**, enter the Solflare Devnet address and `0.001` SOL, then tap **Prepare Devnet review**. Compare the sender, recipient, 1,000,000 lamports, fee estimate, and Devnet label. Tap **Approve in phantom** once. If Phantom displays an identity warning, capture its text and stop before approving. Otherwise approve the exact transfer in the wallet, return to AGUS and unlock if prompted.
 5. Wait for **finalized** or tap **Check existing attempt** to reconcile. Review the finalized amount, addresses, slot and fee in the AGUS receipt and open the transaction in Solana Explorer. Record the attempt ID, signature, and observed sender/recipient balance changes and fee. The sender should decrease by 1,000,000 lamports plus the verified fee. The recipient should increase by 1,000,000 lamports.
 6. Repeat once from Solflare to Phantom. After those two transactions finalize, force-stop and reopen AGUS. Verify it restores the previous attempt and receipt, then explicitly prepare and approve the third transfer from Phantom to Solflare. Save the three distinct finalized signatures.

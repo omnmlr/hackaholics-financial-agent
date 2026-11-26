@@ -31,14 +31,14 @@ This guide gives Chisom the exact setup, authentication, multimodal API 1.1.0 wi
 
 | Variable | Fixture / Local Dev | Hosted Stockholm Devnet | Source / Constraint |
 |---|---|---|---|
-| `EXPO_PUBLIC_API_URL` | `https://fixture.invalid` for in-process fixtures, or `http://10.0.2.2:3000` for an Android emulator reaching a local backend | Use the HTTPS API origin confirmed by infrastructure. See [Devnet Deployment](DEVNET_DEPLOYMENT.md). | `apps/mobile/src/session.ts` requires HTTPS for release builds. |
+| `EXPO_PUBLIC_API_URL` | `https://fixture.invalid` for in-process fixtures, or `http://10.0.2.2:3000` for an Android emulator reaching a local backend | `https://agus.grindcity.app`. See [Devnet Deployment](DEVNET_DEPLOYMENT.md). | `apps/mobile/src/session.ts` requires HTTPS for release builds. |
 | `EXPO_PUBLIC_MWA_ORIGIN` | `https://agus-wallet-devnet-identity.vercel.app` | `https://agus-wallet-devnet-identity.vercel.app` | Must match `apps/mobile/app.json:45` (`autoVerify: true`). |
 | `EXPO_PUBLIC_AGUS_CRYPTO_DEVICE_TEST` | `false` | `false` | Set `true` only when running the `CryptoDeviceHarness` diagnostics. |
 
 Copy `apps/mobile/.env.example` to `apps/mobile/.env.local` and set the values for your target. With Android SDK, JDK 17 and an emulator or connected device, run `npm run android --workspace @agus/mobile` from the repository root to build the native development client. With that client installed, use `npm run start --workspace @agus/mobile -- --dev-client` for subsequent UI work.
 
 - **Never** embed `AI_API_KEY`, `ELEVENLABS_API_KEY`, `FIRECRAWL_API_KEY`, `BETTER_AUTH_SECRET`, or `DATABASE_URL` in `apps/mobile/.env*` or `EXPO_PUBLIC_*` variables.
-- **No guest mode**: Google and verified email/password identity with per-user authorization are mandatory (`AGENTS.md`, `CONTROL_PLANE.md`).
+- **No guest mode**: Google or verified email OTP with per-user authorization is required (`AGENTS.md`, `CONTROL_PLANE.md`).
 
 ---
 
@@ -77,12 +77,15 @@ Available scenarios in `packages/api-client/fixtures/crypto.ts`:
 
 ## 4. Session, Better Auth, and App-Switch Locking
 
-`apps/mobile/src/session.ts` already implements the authenticated transport:
-- **Origin & cookies**: Every request made through `api` (`session.ts:88-95`) or `cryptoVoiceTransport` (`session.ts:97-108`) injects `origin: "agus://"` and the Better Auth session cookie. The backend requires `origin === expected || origin === "agus://"` (`src/server/auth.ts:170`) and uses `expo({ disableOriginOverride: true })` (`src/server/auth.ts:131`).
-- **Biometric local lock**: `lockSession()` sets `unlocked = false` on `AppState` `"background"` transitions (`CryptoDeviceHarness.tsx:214-228`). `unlockSession()` calls `LocalAuthentication.authenticateAsync(...)`. If a call runs while locked, `session.ts:72,74` throws `Error("LOCAL_SESSION_LOCKED")`. Always catch `LOCAL_SESSION_LOCKED` cleanly and prompt `"Unlock AGUS to recover the saved Devnet attempt."` rather than surfacing raw error strings or discarding saved attempt/composer state.
-- **401 expiry**: `expireSession()` clears `agus_cookie` and `agus_session_data` on HTTP 401 and locks the session (`session.ts:81-86`). Redirect to sign-in while preserving draft inputs if safe.
-- **Invite-only Devnet onboarding**: On Stockholm Devnet (`AGUS_AUTH_PUBLIC=false`), `POST /api/auth/sign-up/email` requires a valid row in `agus_invitations` (created by the founder via `npm run identity:invite -- <tester-email>`) and a minimum 12-character password (`src/server/auth.ts:38`).
-- **Hosted authentication:** Ask infrastructure which sign-in methods are ready on the configured HTTPS origin. Google sign-in needs backend OAuth configuration and a verified `agus://` return on a signed handset. Public signup requires Resend, a verified sender and HTTPS. See the [public launch handoff](engineering/INFRA_PUBLIC_LAUNCH_HANDOFF.md).
+`apps/mobile/src/session.ts` exposes the Better Auth wrappers `sendEmailCode(email)`, `signInWithEmailCode(email, code)` and `signInWithGoogle()`. The wrappers return `{ data, error }`. Use the same sign-in screen for new and existing users. The backend creates a new consumer account after email verification or verified Google sign-in. Existing Google identities and verified email accounts keep their user ID. If Google reports that an email already has an account, continue with email OTP. Automatic provider linking is disabled.
+
+1. **Email.** Request a six-digit code. On success, ask for the code with the email held fixed. Allow another send after 60 seconds and clear the previous code field when the resend succeeds. A code expires after five minutes and has five guesses. Resend replaces the previous code. Treat a network timeout as an uncertain result and retrieve the session before sending another verification request.
+2. **Google.** Launch the system browser through the shared wrapper. The `agus://open/auth` return carries a SHA-256 challenge. The wrapper exchanges the matching verifier once over HTTPS. Keep the verifier in memory and retry from the Google button after interruptions. Signed Android testing still needs to confirm browser return and cookie persistence on a physical phone.
+3. **Second factor.** If the result has `twoFactorRedirect: true`, collect the user's authenticator code and call `auth.twoFactor.verifyTotp({ code })` before entering the signed-in UI. Preserve the temporary Better Auth cookie between those requests.
+4. **Session and logout.** Call `auth.getSession()` (HTTP `GET /api/auth/get-session`), and treat `null` as signed out. Call `auth.signOut()` before clearing signed-in UI. Send the Better Auth session cookie and `Origin: agus://` on authenticated requests through `api` and `cryptoVoiceTransport`. The public edge serves `/api/auth/*` and `/api/v1/crypto/*`.
+5. **App switching.** Call `lockSession()` on backgrounding. Use `unlockSession()` for biometric recovery, or start a fresh sign-in if biometrics are unavailable. The transport clears stored session data after an authenticated API `401`. Preserve the saved attempt ID and bind it to the authenticated owner before recovering a transaction.
+
+See the [authentication API](HOSTED_AUTHENTICATION.md) for JSON bodies, session handling and errors. The new authentication routes require activation of the passwordless backend release.
 
 ---
 
@@ -160,7 +163,21 @@ Use `createCryptoSigner` (`apps/mobile/src/crypto-signer.ts`) and `canRecover` /
 
 ---
 
-## 9. Chisom Verification Checklist Before Handoff
+## 9. Readiness and remaining acceptance
+
+On 26 November, the public origin returned HTTPS health and readiness, the exact checked-in OpenAPI document, a signed-out auth session, and a Google authorization URL. Protected Crypto reads returned `401` without a session. The deployed OTP route returned `404` before activation of this release.
+
+| Capability | Verified in disposable PostgreSQL or fixtures | Hosted or device check still needed |
+| --- | --- | --- |
+| Authentication and sessions | Email issuance, expiry, attempts, resend, replay, sign-out, authenticator gate and Google verifier exchange | Receive real Resend email, sign in, and check the signed handset's Google browser return |
+| Multi-wallet, portfolio and transaction intelligence | Wallet proof and owner scoping, combined balances, activity attribution, partial or stale coverage | Link both test wallets and compare authenticated reads to Devnet RPC |
+| AI conversations, voice, image and research | Conversation continuity and retry, audio validation and delivery, image screening and research provenance | Exercise the complete authenticated conversation against the hosted providers |
+| Financial preparation, execution and receipts | Immutable review, approved route, one-time handoff, reconciliation and receipt rules | Complete the three approved Devnet transfers on the handset and verify receipts against Solana |
+| Monitoring and notifications | In-app alert rules, deduplication and read state | Check the live worker produces a persisted alert for an external inflow. Keep UI focused on the in-app inbox until push delivery is verified. |
+
+Mainnet execution, swap execution and Pocket remain gated. Read current capabilities after sign-in before showing optional actions.
+
+## 10. Chisom Verification Checklist Before Handoff
 
 1. `npm run contracts:generate` produces zero diff on `packages/contracts/openapi.json` and `packages/api-client/src/generated.ts`.
 2. `npm run mobile:typecheck` exits `0`.
@@ -169,4 +186,4 @@ Use `createCryptoSigner` (`apps/mobile/src/crypto-signer.ts`) and `canRecover` /
    ```bash
    npx vitest run tests/crypto-contract.test.ts apps/mobile/tests/crypto-mobile.test.ts apps/mobile/tests/crypto-mobile-standalone.test.ts
    ```
-5. Release APK passes `ANDROID_DEVICE_TEST.md` (verified `app.agus.prototype`, DAL `/.well-known/assetlinks.json`, and 3 finalized 0.001 Devnet SOL transfers: Phantom → Solflare → Phantom → Solflare).
+5. Run both sign-in methods on the signed handset, then follow the [device acceptance checklist](ANDROID_DEVICE_TEST.md) for app links, wallet approval and three Devnet transfers.

@@ -5,7 +5,7 @@ umask 077
 set +x
 
 repo=omnmlr/hackaholics-financial-agent
-origin=https://13-48-206-202.sslip.io
+origin=https://agus.grindcity.app
 identity=https://agus-wallet-devnet-identity.vercel.app
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
@@ -17,14 +17,10 @@ gh auth status --hostname github.com >/dev/null 2>&1 ||
   stop 'Sign in as a repository maintainer with gh auth login --hostname github.com --web.'
 
 if [[ "${1:-}" == --release ]]; then
-  [[ $# == 2 && $2 =~ ^[0-9]+$ ]] || stop 'Usage: bash prepare-release-signing-windows.sh --release GITHUB_RUN_ID'
+  [[ $# == 1 ]] || stop 'Usage: bash prepare-release-signing-windows.sh --release'
   for tool in curl jq; do
     command -v "$tool" >/dev/null || stop "Install $tool inside Ubuntu on WSL."
   done
-  run_id=$2
-  gh run view "$run_id" --repo "$repo" --json workflowName,headBranch,headSha,status |
-    jq -e '.workflowName == "AGUS Crypto Android Devnet APK" and .headBranch == "feat/agus-crypto-backend" and .status == "completed"' >/dev/null ||
-    stop 'Select a completed Android Devnet workflow run from feat/agus-crypto-backend.'
   safe_get() { curl --proto '=https' --fail --silent --show-error --max-time 20 "$1"; }
   safe_get "$origin/api/v1/ready" | jq -e '.status == "ready"' >/dev/null ||
     stop 'The Stockholm API did not pass public readiness.'
@@ -39,13 +35,11 @@ if [[ "${1:-}" == --release ]]; then
       and .target.namespace == "android_app" and .target.package_name == "app.agus.prototype"
       and any(.target.sha256_cert_fingerprints[]?; (gsub(":"; "") | ascii_upcase) == $sha))' >/dev/null ||
     stop 'Update Vercel Digital Asset Links with the replacement public certificate, then retry.'
-  gh run view "$run_id" --repo "$repo" --json headSha --jq '.headSha'
-  read -r -p 'Type RELEASE to configure the API URL and rerun this Android job: ' confirm
+  read -r -p 'Type RELEASE to dispatch a new Android job from main: ' confirm
   [[ "$confirm" == RELEASE ]] || stop 'Release was cancelled.'
-  gh variable set AGUS_CRYPTO_DEVICE_API_URL --body "$origin" --repo "$repo"
-  gh run rerun "$run_id" --repo "$repo"
+  gh workflow run agus-crypto-android.yml --ref main --repo "$repo"
   printf 'Android run queued. Check the verified APK and checksum in GitHub Releases.\n'
-  gh run view "$run_id" --repo "$repo" --json url --jq ' .url'
+  gh run list --workflow agus-crypto-android.yml --branch main --repo "$repo" --limit 3
   exit
 fi
 
@@ -78,4 +72,4 @@ cd "$script_dir/../.."
 bash "$script_dir/prepare-release-signing.sh" "$backup" "$recipient"
 printf '%s\n' 'Keep a second encrypted copy in approved recovery storage.' \
   'Share only the public certificate SHA-256 for the Vercel association.' \
-  'After the HTTPS API and Vercel association are ready, run this script with --release GITHUB_RUN_ID.'
+  'After the HTTPS API and Vercel association are ready, run this script with --release.'

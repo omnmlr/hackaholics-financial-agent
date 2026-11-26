@@ -8,6 +8,8 @@ import * as schema from "./auth-schema";
 import { database } from "./sql";
 import { invariant } from "./errors";
 import { identityEmail } from "./identity-email";
+import { emailOtp } from "./email-otp";
+import { mobileGoogle } from "./mobile-google";
 
 export async function createIdentity() {
   invariant(
@@ -21,6 +23,36 @@ export async function createIdentity() {
     process.env.APP_ORIGIN ??
     "http://localhost:3000";
   const email = identityEmail(origin);
+  const secret = process.env.BETTER_AUTH_SECRET!;
+  // Keep legacy platform credentials for its separate runtime and fixtures.
+  // An unconfigured email provider on Crypto Devnet must fail closed.
+  const legacyPasswords =
+    process.env.AGUS_ENVIRONMENT !== "devnet" &&
+    !email.configured &&
+    !email.publicRegistration;
+  const totp = twoFactor({ issuer: "AGUS" });
+  const otp = emailOtp(secret, email.send);
+  const googleHandoff = mobileGoogle();
+  const native = expo({ disableOriginOverride: true });
+  // The native Google handoff supplies its own callback handling. The Expo
+  // default appends the session cookie directly to custom-scheme URLs.
+  if (!legacyPasswords) {
+    native.hooks.after = native.hooks.after.map((hook) => ({
+      ...hook,
+      matcher: (ctx) => !ctx.path?.startsWith("/callback") && hook.matcher(ctx),
+    }));
+  }
+  const passwordlessPaths = new Set<string>([
+    otp.endpoints.signInEmailOTP.path,
+    googleHandoff.endpoints.exchangeMobileGoogle.path,
+  ]);
+  // Better Auth's credential 2FA hook only matches password, username and
+  // phone by default. Run that same challenge before returning an OTP session.
+  totp.hooks.after = totp.hooks.after.map((hook) => ({
+    ...hook,
+    matcher: (context) =>
+      passwordlessPaths.has(context.path ?? "") || hook.matcher(context),
+  }));
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   invariant(
@@ -31,27 +63,22 @@ export async function createIdentity() {
   return betterAuth({
     appName: "AGUS",
     baseURL: origin,
-    secret: process.env.BETTER_AUTH_SECRET,
+    secret,
     database: drizzleAdapter(await db(), { provider: "pg", schema }),
-    emailAndPassword: {
-      enabled: true,
-      minPasswordLength: 12,
-      revokeSessionsOnPasswordReset: true,
-      requireEmailVerification: email.configured,
-      resetPasswordTokenExpiresIn: 30 * 60,
-      ...(email.configured && {
-        sendResetPassword: ({ user, url }) =>
-          email.send(user.email, url, "reset"),
-      }),
-    },
-    ...(email.configured && {
-      emailVerification: {
-        sendOnSignUp: true,
-        expiresIn: 30 * 60,
-        sendVerificationEmail: ({ user, url }) =>
-          email.send(user.email, url, "verify"),
-      },
-    }),
+    emailAndPassword: { enabled: legacyPasswords, minPasswordLength: 12 },
+    disabledPaths: legacyPasswords
+      ? []
+      : [
+          "/sign-up/email",
+          "/sign-in/email",
+          "/send-verification-email",
+          "/verify-email",
+          "/request-password-reset",
+          "/reset-password",
+          "/reset-password/:token",
+          "/change-password",
+          "/set-password",
+        ],
     ...(clientId &&
       clientSecret && {
         socialProviders: {
@@ -86,6 +113,11 @@ export async function createIdentity() {
       user: {
         create: {
           before: async (user) => {
+            if (!legacyPasswords && !user.emailVerified) {
+              throw new APIError("FORBIDDEN", {
+                code: "VERIFIED_EMAIL_REQUIRED",
+              });
+            }
             if (!email.publicRegistration) {
               const r = await sql.query(
                 "SELECT email FROM agus_invitations WHERE email=$1 AND consumed_at IS NULL AND expires_at>now()",
@@ -127,8 +159,10 @@ export async function createIdentity() {
       },
     },
     plugins: [
-      twoFactor({ issuer: "AGUS" }),
-      expo({ disableOriginOverride: true }),
+      totp,
+      ...(email.configured ? [otp] : []),
+      native,
+      ...(!legacyPasswords ? [googleHandoff] : []),
       nextCookies(),
     ],
   });

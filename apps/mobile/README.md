@@ -10,8 +10,8 @@ From the repository root:
 ```sh
 npm ci --ignore-scripts
 npm run mobile:typecheck
-EXPO_PUBLIC_API_URL=https://your-approved-backend.example npm run start --workspace @agus/mobile
-EXPO_PUBLIC_API_URL=https://your-approved-backend.example npm run mobile:export:android
+EXPO_PUBLIC_API_URL=https://agus.grindcity.app npm run start --workspace @agus/mobile
+EXPO_PUBLIC_API_URL=https://agus.grindcity.app npm run mobile:export:android
 ```
 
 Use an Expo development build with Android MWA support; Expo Go is not the wallet

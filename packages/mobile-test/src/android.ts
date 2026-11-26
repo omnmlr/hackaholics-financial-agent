@@ -142,12 +142,12 @@ export class Android {
     do {
       const pid = (await this.shell("pidof", packageName).catch(() => "")).trim();
       if (/^\d+$/.test(pid)) {
-        const raw = await this.command(["logcat", "-d", "-v", "epoch", "--pid=" + pid, "-T", since, "-s", "AGUS_TEST:I"])
+        const raw = await this.command(["logcat", "-t", "500", "-v", "threadtime", "-v", "epoch", "-v", "usec", "--pid=" + pid, "-s", "AGUS_TEST:I"])
           .then((value) => value.toString()).catch(() => null);
         if (raw !== null) {
           validLogSource = true;
           const events = raw.split("\n").flatMap((line) => {
-            const result = line.match(/^(\d+\.\d+)\s+\d+\s+\d+\s+I\s+AGUS_TEST\s*:\s*(\{.*\})\s*$/);
+            const result = line.match(/^\s*(\d+\.\d+)\s+\d+\s+\d+\s+I\s+AGUS_TEST\s*:\s*(\{.*\})\s*$/);
             return result && Number(result[1]) > Number(since) ? [result[2]] : [];
           });
           if (events.length > 1) throw new RunFailure("CALLBACK_INVALID");

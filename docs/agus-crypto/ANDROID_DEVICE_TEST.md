@@ -20,7 +20,7 @@ bash scripts/android/prepare-release-signing-windows.sh --release
 
 ### Verify the GitHub download
 
-Download the release using its exact tag. Run the verifier from the repo in Bash with `node`, `unzip`, `jq`, `curl`, `sha256sum`, and Android SDK Build Tools available. Set `ANDROID_BUILD_TOOLS` to the directory containing `apksigner` and `aapt` when it differs from the newest tools under `ANDROID_HOME`.
+Download the release using its exact tag. Run the verifier from the repo in Bash with JDK 21, `node`, `unzip`, `jq`, `curl`, `sha256sum`, and Android SDK Build Tools. Set `ANDROID_BUILD_TOOLS` to the directory containing `lib/apksigner.jar` and `aapt` when it differs from the newest tools under `ANDROID_HOME`.
 
 ```bash
 download_dir="$(mktemp -d)"

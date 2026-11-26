@@ -1,0 +1,98 @@
+[
+  {
+    "package": "app.agus.testfixture",
+    "text": "",
+    "resourceId": "",
+    "clickable": false,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "",
+    "resourceId": "",
+    "clickable": false,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "",
+    "resourceId": "android:id/content",
+    "clickable": false,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "",
+    "resourceId": "",
+    "clickable": false,
+    "bounds": [
+      0,
+      0,
+      320,
+      640
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "AGUS MWA Test Fixture",
+    "resourceId": "",
+    "clickable": false,
+    "bounds": [
+      36,
+      64,
+      284,
+      130
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "Wallet returned a signature",
+    "resourceId": "",
+    "clickable": false,
+    "bounds": [
+      36,
+      130,
+      284,
+      149
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "SEND TEST SOL",
+    "resourceId": "android:id/button1",
+    "clickable": true,
+    "bounds": [
+      36,
+      149,
+      284,
+      197
+    ]
+  },
+  {
+    "package": "app.agus.testfixture",
+    "text": "",
+    "resourceId": "android:id/navigationBarBackground",
+    "clickable": false,
+    "bounds": [
+      0,
+      592,
+      320,
+      640
+    ]
+  }
+]

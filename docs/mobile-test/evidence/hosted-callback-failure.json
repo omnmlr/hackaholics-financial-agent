@@ -1,0 +1,102 @@
+{
+  "version": 1,
+  "runId": "2ed8fa7e-63b1-434c-a3fb-df9c9c5ccbcc",
+  "scenario": "wallet-transfer",
+  "title": "MWA: wallet return and finalized SOL transfer",
+  "scenarioSha256": "5c1f71501950bf45582fc9fc088364b0e77e6852292e1d7f1af11afaa3b63536",
+  "cluster": "localnet",
+  "state": "failed",
+  "startedAt": "2026-11-26T15:07:04.710Z",
+  "artifacts": [
+    "fixture.png",
+    "fixture.ui.json",
+    "wallet-authorization.png",
+    "wallet-authorization.ui.json",
+    "wallet-transaction.png",
+    "wallet-transaction.ui.json",
+    "failure-screen.png",
+    "failure-screen.ui.json"
+  ],
+  "steps": [
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:07:05.021Z"
+    },
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:07:06.272Z"
+    },
+    {
+      "action": "launch",
+      "state": "passed",
+      "at": "2026-11-26T15:07:07.287Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:07:09.358Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:07:12.596Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:07:14.847Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:07:19.500Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:07:21.698Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:07:23.793Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:07:26.569Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:07:28.787Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:07:30.844Z"
+    },
+    {
+      "action": "sol-transfer",
+      "state": "failed",
+      "at": "2026-11-26T15:07:33.038Z"
+    }
+  ],
+  "device": {
+    "kind": "emulator",
+    "model": "Android SDK built for x86_64",
+    "api": "35",
+    "seekerVerified": false
+  },
+  "chainWindow": {
+    "genesis": "EWbhgKenMkjtNmSgysKhNhR5Woxq7LedEX5dkEkTroro",
+    "slot": 59
+  },
+  "failure": {
+    "code": "CALLBACK_MISSING",
+    "remedy": "Check whether the dApp received the MWA response and emitted the approved callback event before timeout."
+  },
+  "finishedAt": "2026-11-26T15:08:20.582Z"
+}

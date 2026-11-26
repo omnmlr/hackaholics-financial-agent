@@ -68,3 +68,17 @@ If the runner stops unexpectedly while holding a device, stop all related client
 - The signed AGUS APK matched its published SHA-256, has package `app.agus.prototype` and ARM64 native libraries, and its signing certificate matched the public Android Asset Links declaration. Android SDK packaging tools compiled and verified the separate lab fixture. [Signed release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-crypto-devnet-1b56459d1875) · [Asset Links](https://agus-wallet-devnet-identity.vercel.app/.well-known/assetlinks.json)
 - [Circle test-USDC mint recheck](evidence/devnet-mint.json) returned exit 0. Finalized Devnet account data validated the initialized SPL token mint and its six decimals. The settlement demonstration uses its separately identified Localnet mint.
 - The local cloud has two CPU units and no KVM. Google's documented TCG flag started both API 35 guests and the official Solana Mobile CLI 0.6.0 found them. The initial early AOSP install failed before Android completed startup. Phone Harness 0.3.3 found ADB but its doctor timed out on the paused Google guest. The free GitHub-hosted KVM job is the reproducible accelerated option.
+- [Hosted Android failure report](evidence/hosted-callback-failure.json) and [wallet-return screenshot](evidence/hosted-wallet-return.png) record an API 35 emulator that installed both APKs, launched the dApp, observed wallet authorization and signing, and returned to the fixture. The UI said it received a signature, but the first runner lost the structured log event and correctly withheld a chain receipt. The following run widened the bounded log read and made the timestamp format explicit. [Android workflow run](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/45845438902)
+
+To grade a run and create a local issuer claim, use the evaluation and receipt commands. These keys are only for the isolated demonstration.
+
+```bash
+export AGUS_RUN="$(jq -er .runId "$AGUS_LAB/rerun.json")"
+node --import tsx packages/mobile-test/src/cli.ts score "$AGUS_RUN" finalized
+(umask 077 && openssl genpkey -algorithm ED25519 -out "$AGUS_LAB/runner-key.pem")
+openssl pkey -in "$AGUS_LAB/runner-key.pem" -pubout -out "$AGUS_LAB/runner.pub.pem"
+node --import tsx packages/mobile-test/src/cli.ts seal "$AGUS_RUN" "$AGUS_LAB/runner-key.pem" > "$AGUS_LAB/sealed-report.json"
+node --import tsx packages/mobile-test/src/cli.ts verify-receipt "$AGUS_LAB/sealed-report.json" "$AGUS_LAB/runner.pub.pem"
+```
+
+A review may compare `unresolved` and `finalized` claims on the same negative run. This grades interpretation of identical evidence. The UI interactions come from the versioned scenario.

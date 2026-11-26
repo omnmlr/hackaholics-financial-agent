@@ -77,7 +77,7 @@ jobs:
         run: |
           set -euxo pipefail
           export AGUS_TEST_CONFIG="$AGUS_LAB/runner.json" AGUS_TEST_EVIDENCE="$AGUS_LAB/evidence"
-          trap 'result=$?; if ((result)); then for log in emulator validator fixture; do tail -45 "$AGUS_LAB/$log.log" 2>/dev/null || true; done; fi' EXIT
+          trap 'result=$?; if ((result)); then for log in emulator validator fixture; do tail -45 "$AGUS_LAB/$log.log" 2>/dev/null || true; done; adb -s emulator-5554 logcat -t 400 -v threadtime -s AGUS_TEST:I AGUS_FIXTURE:W || true; fi' EXIT
           "$ANDROID_HOME/emulator/emulator" -avd agus_ci -port 5554 -accel on -no-window -noaudio \
             -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$AGUS_LAB/emulator.log" 2>&1 &
           emulator_pid=$!
@@ -105,6 +105,7 @@ jobs:
           node --import tsx packages/mobile-test/lab/configure.ts "$AGUS_TEST_CONFIG" emulator-5554 \
             "$AGUS_LAB/agus-mwa-lab.apk" "$AGUS_LAB/wallet.apk"
           runner() { node --import tsx packages/mobile-test/src/cli.ts "$@"; }
+          runner devices
           runner run wallet-transfer | tee "$AGUS_LAB/transfer.json"
           set +e
           runner run wallet-false-success > "$AGUS_LAB/negative.json"
@@ -112,8 +113,17 @@ jobs:
           set -e
           test "$result" -eq 1
           jq -e '.state == "failed" and .failure.code == "FINALITY_TIMEOUT" and .callback.outcome == "submitted" and (.receipt == null)' "$AGUS_LAB/negative.json"
+          negative_id="$(jq -er .runId "$AGUS_LAB/negative.json")"
+          runner score "$negative_id" unresolved | jq -e '.correct == true'
+          runner score "$negative_id" finalized | jq -e '.falseFinancialSuccess == true'
           runner run wallet-transfer | tee "$AGUS_LAB/rerun.json"
           run_id="$(jq -er .runId "$AGUS_LAB/rerun.json")"
+          runner score "$run_id" finalized | jq -e '.correct == true and .taskCompleted == true'
+          (umask 077 && openssl genpkey -algorithm ED25519 -out "$AGUS_LAB/runner-key.pem")
+          openssl pkey -in "$AGUS_LAB/runner-key.pem" -pubout -out "$AGUS_LAB/runner.pub.pem"
+          runner seal "$run_id" "$AGUS_LAB/runner-key.pem" > "$AGUS_LAB/sealed-report.json"
+          runner verify-receipt "$AGUS_LAB/sealed-report.json" "$AGUS_LAB/runner.pub.pem" | jq -e '.valid == true'
+          rm -f "$AGUS_LAB/runner-key.pem"
           node --import tsx packages/mobile-test/lab/settlement.ts "$AGUS_LAB/job" "$run_id"
           node --import tsx packages/mobile-test/lab/settlement.ts "$AGUS_LAB/job" "$run_id"
       - name: Upload disposable fixture evidence
@@ -124,5 +134,7 @@ jobs:
           path: |
             ${{ env.AGUS_LAB }}/evidence
             ${{ env.AGUS_LAB }}/job/job.json
+            ${{ env.AGUS_LAB }}/sealed-report.json
+            ${{ env.AGUS_LAB }}/runner.pub.pem
             ${{ env.AGUS_LAB }}/emulator.log
           retention-days: 7

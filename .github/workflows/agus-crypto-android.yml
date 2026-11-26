@@ -116,9 +116,31 @@ jobs:
       - name: Generate the Android project
         working-directory: apps/mobile
         run: npx --no-install expo prebuild --platform android --no-install
+      - name: Select the dedicated Crypto diagnostic entry point
+        # This is an isolated CI checkout. Do not change the consumer app's entry point.
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' 'export { default } from "./CryptoDeviceHarness";' > apps/mobile/App.tsx
       - name: Compile the ARM64 APK
         working-directory: apps/mobile/android
         run: ./gradlew :app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --max-workers=2
+      - name: Verify the packaged diagnostic interface
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import zipfile
+          path = "apps/mobile/android/app/build/outputs/apk/release/app-release.apk"
+          with zipfile.ZipFile(path) as apk:
+              bundle = apk.read("assets/index.android.bundle")
+          def contains(value):
+              return value.encode("utf-8") in bundle or value.encode("utf-16le") in bundle
+          if not contains("AGUS Android signing diagnostics"):
+              raise SystemExit("Crypto diagnostic interface missing from packaged bundle")
+          if contains("AGUS Android engineering prototype"):
+              raise SystemExit("Legacy DeveloperHarness unexpectedly packaged")
+          print("Crypto diagnostic interface present; legacy prototype absent.")
+          PY
       - name: Sign and verify the approved Devnet artifact
         id: sign
         if: needs.preflight.outputs.signing_ready == 'true' && needs.preflight.outputs.api_origin != ''

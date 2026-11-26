@@ -29,7 +29,7 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
-      - name: Install dependencies and start the dedicated AVD
+      - name: Install dependencies and create the dedicated AVD
         shell: bash
         run: |
           set -euxo pipefail
@@ -54,11 +54,9 @@ jobs:
           printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$ANDROID_HOME" "$ANDROID_HOME" >> "$GITHUB_ENV"
           printf '%s/platform-tools\n' "$ANDROID_HOME" >> "$GITHUB_PATH"
           printf 'no\n' | "$(dirname "$sdkmanager")/avdmanager" create avd -n agus_ci -k 'system-images;android-35;default;x86_64' --force
-          "$ANDROID_HOME/emulator/emulator" -avd agus_ci -port 5554 -no-window -noaudio -no-metrics \
-            -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$AGUS_LAB/emulator.log" 2>&1 &
           npm ci --no-audit --no-fund
           npm test --workspace @agus/mobile-test
-      - name: Build native fixture and start local Solana
+      - name: Build native fixture and download local Solana
         shell: bash
         run: |
           set -euxo pipefail
@@ -67,6 +65,15 @@ jobs:
           curl -fsSL 'https://github.com/anza-xyz/agave/releases/download/v4.4.1/solana-release-x86_64-unknown-linux-gnu.tar.bz2' -o "$AGUS_LAB/agave.tar.bz2"
           (cd "$AGUS_LAB" && printf '5b0f0fc7e4eedace05f6455de00aa1f2f3d1642068f1e8d50760ba49112c3941  agave.tar.bz2\n' | sha256sum --check)
           tar -xjf "$AGUS_LAB/agave.tar.bz2" -C "$AGUS_LAB"
+      - name: Execute Android wallet regression and reconcile payout
+        shell: bash
+        run: |
+          set -euxo pipefail
+          export AGUS_TEST_CONFIG="$AGUS_LAB/runner.json" AGUS_TEST_EVIDENCE="$AGUS_LAB/evidence"
+          trap 'result=$?; if ((result)); then for log in emulator validator fixture; do tail -45 "$AGUS_LAB/$log.log" 2>/dev/null || true; done; fi' EXIT
+          "$ANDROID_HOME/emulator/emulator" -avd agus_ci -port 5554 -accel on -no-window -noaudio \
+            -no-boot-anim -no-snapshot -gpu swiftshader_indirect > "$AGUS_LAB/emulator.log" 2>&1 &
+          emulator_pid=$!
           "$AGUS_LAB/solana-release/bin/solana-test-validator" --ledger "$AGUS_LAB/ledger" --bind-address 127.0.0.1 \
             --rpc-port 8899 --faucet-per-request-sol-cap 1 --quiet > "$AGUS_LAB/validator.log" 2>&1 &
           rpc_genesis() {
@@ -77,15 +84,11 @@ jobs:
             if genesis="$(rpc_genesis)"; then break; fi
             sleep 2
           done
-          printf 'AGUS_TEST_LOCAL_GENESIS=%s\n' "${genesis:?Validator unavailable}" >> "$GITHUB_ENV"
+          export AGUS_TEST_LOCAL_GENESIS="${genesis:?Validator unavailable}"
           AGUS_TEST_LOCAL_GENESIS="$genesis" node --import tsx packages/mobile-test/lab/prepare.ts > "$AGUS_LAB/fixture.log" 2>&1 &
-      - name: Execute Android wallet regression and reconcile payout
-        shell: bash
-        run: |
-          set -euxo pipefail
-          export AGUS_TEST_CONFIG="$AGUS_LAB/runner.json" AGUS_TEST_EVIDENCE="$AGUS_LAB/evidence"
-          for attempt in {1..60}; do
-            if [[ "$(adb -s emulator-5554 shell getprop sys.boot_completed | tr -d '\r')" == "1" ]]; then break; fi
+          for attempt in {1..90}; do
+            kill -0 "$emulator_pid"
+            if [[ "$(adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then break; fi
             sleep 2
           done
           test "$(adb -s emulator-5554 shell getprop sys.boot_completed | tr -d '\r')" = "1"

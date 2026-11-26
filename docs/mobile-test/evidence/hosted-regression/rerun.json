@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "runId": "86aba12b-d89a-4c3d-8f89-fe432549c24d",
+  "scenario": "wallet-transfer",
+  "title": "MWA: wallet return and finalized SOL transfer",
+  "scenarioSha256": "eb8ae59adf769b1e81a00436b8d0fec2c9a803d79b5efdc2f701fa4ab8e24c67",
+  "cluster": "localnet",
+  "state": "passed",
+  "startedAt": "2026-11-26T15:18:01.154Z",
+  "artifacts": [
+    "fixture.png",
+    "fixture.ui.json",
+    "wallet-authorization.png",
+    "wallet-authorization.ui.json",
+    "wallet-transaction.png",
+    "wallet-transaction.ui.json",
+    "wallet-callback.json",
+    "returned.png",
+    "returned.ui.json"
+  ],
+  "steps": [
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:18:01.251Z"
+    },
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:18:01.573Z"
+    },
+    {
+      "action": "launch",
+      "state": "passed",
+      "at": "2026-11-26T15:18:02.010Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:18:02.972Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:18:05.274Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:18:07.256Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:18:10.827Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:18:12.926Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:18:14.914Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:18:17.309Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:18:19.425Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:18:21.569Z"
+    },
+    {
+      "action": "sol-transfer",
+      "state": "passed",
+      "at": "2026-11-26T15:18:23.614Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:18:37.049Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:18:39.019Z"
+    }
+  ],
+  "device": {
+    "kind": "emulator",
+    "model": "Android SDK built for x86_64",
+    "api": "35",
+    "seekerVerified": false
+  },
+  "chainWindow": {
+    "genesis": "5vBKiey8uDRH65MUMzKLLgPKEvkTpnjaWuXH7NijRh9J",
+    "slot": 231
+  },
+  "callback": {
+    "outcome": "submitted",
+    "payer": "5TyY2jF7oWyfrM1MJiz6584uQy5NwyKn3Mnz1Yh8BwHY",
+    "signature": "5fDEah997diZ8NJQssnER2XmcmeivVZ74CaRHXvjZ3UfrUBjwnykUcxXbpoXcewFFhFVqEzDw5hu9uvKGAZsRayS"
+  },
+  "receipt": {
+    "slot": 282,
+    "feeLamports": "5000",
+    "payer": "5TyY2jF7oWyfrM1MJiz6584uQy5NwyKn3Mnz1Yh8BwHY",
+    "recipient": "EMtq5F54UxgEwYx1bmZpRJXNodBPPqjFekwQZNjpzH3w",
+    "lamports": "1000000",
+    "payerSource": "wallet-callback"
+  },
+  "finishedAt": "2026-11-26T15:18:41.136Z"
+}

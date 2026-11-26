@@ -38,7 +38,14 @@ node --import tsx packages/mobile-test/lab/settlement.ts "$AGUS_LAB/job" "$(jq -
 
 Check the first command gives exit 1 with `FINALITY_TIMEOUT` and a returned signature. In that scenario the Fake Wallet explicitly takes its “Simulate submitted” path. The transfer scenario must produce receipt and screenshot artifacts on each attempt. The second settlement invocation must return the same signature. For the rejection path, run `wallet-decline` to check for the `DECLINED` diagnosis. Avoid a shell configured to exit on the expected non-zero result without first capturing it.
 
-For the original application, download its pinned `1b56459d1875` release or provide an agreed candidate APK. Verify the release checksum and certificate before use. Append the absolute APK path to the `configure.ts` command and run `agus-crypto-launch`. The target’s real wallet journey additionally requires the Devnet host, funded disposable Phantom/Solflare accounts and a tester email or Google identity. [AGUS signed release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-crypto-devnet-1b56459d1875) · [Existing handset procedure](../agus-crypto/ANDROID_DEVICE_TEST.md)
+On an ARM64-capable test device, use the signed AGUS Crypto source revision matched to remote main. Its wallet journey requires the existing Devnet test host, funded disposable Phantom/Solflare accounts and a tester email or Google identity. [AGUS signed release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-crypto-devnet-1b56459d1875) · [Existing handset procedure](../agus-crypto/ANDROID_DEVICE_TEST.md)
+
+```bash
+curl -fsSL 'https://github.com/omnmlr/hackaholics-financial-agent/releases/download/agus-crypto-devnet-1b56459d1875/AGUS-Crypto-Devnet-arm64.apk' -o "$AGUS_LAB/agus-crypto.apk"
+(cd "$AGUS_LAB" && printf 'd6f449dc6f71454b6fc554e8121f9b5db6cb5cadf3c4402c7483d4033d681e55  agus-crypto.apk\n' | sha256sum --check)
+node --import tsx packages/mobile-test/lab/configure.ts "$AGUS_TEST_CONFIG" "$AGUS_SERIAL" "$AGUS_LAB/agus-mwa-lab.apk" "$AGUS_LAB/wallet.apk" "$AGUS_LAB/agus-crypto.apk"
+node --import tsx packages/mobile-test/src/cli.ts run agus-crypto-launch
+```
 
 ## MCP registration
 
@@ -82,3 +89,13 @@ node --import tsx packages/mobile-test/src/cli.ts verify-receipt "$AGUS_LAB/seal
 ```
 
 A review may compare `unresolved` and `finalized` claims on the same negative run. This grades interpretation of identical evidence. The UI interactions come from the versioned scenario.
+
+## Verified hosted regression
+
+The hosted API 35 emulator completed the native workflow with the official MWA Fake Wallet and an Agave Localnet validator. It installed and launched the fixture, captured app and wallet screens, authorized MWA, signed and broadcast **0.001 test SOL**, and independently verified it at slot **108**. An exact repeat with the same scenario hash finalized a new transfer at slot **282**. Both receipts verified the intended recipient and a 5,000-lamport fee. [Initial report](evidence/hosted-regression/initial.json) · [Rerun report](evidence/hosted-regression/rerun.json) · [Wallet approval](evidence/hosted-regression/wallet-approval.png)
+
+The negative run clicked the official wallet's “Simulate submitted” control. The dApp received a valid signature, and the runner withheld the receipt with `FINALITY_TIMEOUT`. The decision evaluator accepted the `unresolved` claim and flagged `finalized` as a false success on the same event stream. These are two explicit decisions on real run evidence, without a comparison between trained models. [Negative run](evidence/hosted-regression/signed-without-broadcast.json) · [Correct claim](evidence/hosted-regression/evaluation-correct.json) · [False success](evidence/hosted-regression/evaluation-false-success.json)
+
+The provider settlement was bound to the passing rerun, transferred 2.5 units of a six-decimal local fixture token, and finalized at slot **330**. Reopening the job reconciled the same signature. A fresh public Devnet RPC faucet request returned HTTP 410, so public Devnet verification is limited to the published transfer and mint reads above. [Linked settlement report](evidence/hosted-regression/provider-settlement.json) · [Passing GitHub Actions run](https://github.com/omnmlr/hackaholics-financial-agent/actions/runs/45847028726)
+
+The signed financial app was verified as a release artifact. The hosted wallet run uses a separate native fixture. It provides Android and MWA evidence with a real Localnet chain. Seeker Connect on hardware, Seed Vault, paid marketplace operations, and a new Circle test-USDC Devnet settlement still require dedicated acceptance work.

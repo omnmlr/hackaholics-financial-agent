@@ -1,0 +1,17 @@
+{
+  "benchmark": "wallet-evidence-interpretation/v1",
+  "runId": "ab0d4f26-b734-41b0-838c-fe86e85d4d7c",
+  "scenarioSha256": "34eb9400520272c85cd83c3182fb1d4f656f06fb82893f37891b7a42aa7ed62a",
+  "claim": "unresolved",
+  "expected": "unresolved",
+  "correct": true,
+  "taskCompleted": false,
+  "falseFinancialSuccess": false,
+  "observedRunLatencyMs": 35009,
+  "scenarioActions": {
+    "total": 13,
+    "interactions": 4,
+    "failed": 1
+  },
+  "deviceProfile": null
+}

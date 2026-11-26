@@ -103,6 +103,9 @@ test("runner receipt covers the run outcome and detects changed evidence", async
   const mutable = { ...report, steps: [], artifacts: [...report.artifacts] };
   assert.equal(scoreDecision(mutable, "finalized").falseFinancialSuccess, true);
   assert.equal(scoreDecision(mutable, "unresolved").correct, true);
+  assert.equal(scoreDecision(mutable, "unresolved").taskCompleted, false);
+  assert.equal(scoreDecision({ ...mutable, state: "passed", callback: undefined }, "ui-passed").taskCompleted, true);
+  assert.equal(scoreDecision({ ...mutable, failure: { code: "CHAIN_FAILED", remedy: "Inspect the failed transaction" } }, "failed").correct, true);
   const sealed = sealReport(mutable, privateKey);
   assert.equal(verifyReceipt(JSON.parse(JSON.stringify(sealed)), publicKey), true);
   assert.equal(verifyReceipt({ ...sealed, report: { ...sealed.report, state: "passed" } }, publicKey), false);

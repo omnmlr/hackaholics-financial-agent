@@ -6,10 +6,17 @@ export type Outcome = z.infer<typeof outcome>;
 
 export function scoreDecision(report: Report, claim: Outcome) {
   if (report.state === "running" || !report.finishedAt) throw new Error("Wait for the terminal run report");
-  const expected: Outcome = report.receipt ? "finalized"
-    : report.callback?.outcome === "submitted" ? "unresolved"
-      : report.callback?.outcome === "failed" && report.callback.code === "DECLINED" ? "declined"
-        : report.state === "passed" ? "ui-passed" : "failed";
+  let expected: Outcome = "failed";
+  if (report.receipt) {
+    expected = "finalized";
+  } else if (report.callback?.outcome === "submitted") {
+    const observedChainFailure = report.failure && ["CHAIN_FAILED", "CHAIN_MISMATCH", "CHAIN_STALE"].includes(report.failure.code);
+    expected = observedChainFailure ? "failed" : "unresolved";
+  } else if (report.callback?.outcome === "failed" && report.callback.code === "DECLINED") {
+    expected = "declined";
+  } else if (report.state === "passed") {
+    expected = "ui-passed";
+  }
   return {
     benchmark: "wallet-evidence-interpretation/v1",
     runId: report.runId,
@@ -17,6 +24,7 @@ export function scoreDecision(report: Report, claim: Outcome) {
     claim,
     expected,
     correct: claim === expected,
+    taskCompleted: report.state === "passed",
     falseFinancialSuccess: claim === "finalized" && expected !== "finalized",
     observedRunLatencyMs: Date.parse(report.finishedAt) - Date.parse(report.startedAt),
     scenarioActions: {

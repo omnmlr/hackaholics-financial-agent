@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "runId": "ab0d4f26-b734-41b0-838c-fe86e85d4d7c",
+  "scenario": "wallet-false-success",
+  "title": "MWA: signed result without broadcast",
+  "scenarioSha256": "34eb9400520272c85cd83c3182fb1d4f656f06fb82893f37891b7a42aa7ed62a",
+  "cluster": "localnet",
+  "state": "failed",
+  "startedAt": "2026-11-26T15:17:25.649Z",
+  "artifacts": [
+    "fixture.png",
+    "fixture.ui.json",
+    "wallet-authorization.png",
+    "wallet-authorization.ui.json",
+    "wallet-transaction.png",
+    "wallet-transaction.ui.json",
+    "wallet-callback.json",
+    "failure-screen.png",
+    "failure-screen.ui.json"
+  ],
+  "steps": [
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:17:25.764Z"
+    },
+    {
+      "action": "install",
+      "state": "passed",
+      "at": "2026-11-26T15:17:26.250Z"
+    },
+    {
+      "action": "launch",
+      "state": "passed",
+      "at": "2026-11-26T15:17:26.609Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:17:27.508Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:17:29.793Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:17:31.781Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:17:35.330Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:17:37.426Z"
+    },
+    {
+      "action": "wait",
+      "state": "passed",
+      "at": "2026-11-26T15:17:39.414Z"
+    },
+    {
+      "action": "capture",
+      "state": "passed",
+      "at": "2026-11-26T15:17:41.980Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:17:44.086Z"
+    },
+    {
+      "action": "tap",
+      "state": "passed",
+      "at": "2026-11-26T15:17:46.080Z"
+    },
+    {
+      "action": "sol-transfer",
+      "state": "failed",
+      "at": "2026-11-26T15:17:48.132Z"
+    }
+  ],
+  "device": {
+    "kind": "emulator",
+    "model": "Android SDK built for x86_64",
+    "api": "35",
+    "seekerVerified": false
+  },
+  "chainWindow": {
+    "genesis": "5vBKiey8uDRH65MUMzKLLgPKEvkTpnjaWuXH7NijRh9J",
+    "slot": 149
+  },
+  "callback": {
+    "outcome": "submitted",
+    "payer": "H5xXNw4Xxv5VhruUEwrXHYp54JeMYVKafZ5oGAQL3B1S",
+    "signature": "2QmiaE7cg5ajjVg163AuRQHfv9VTm9dCGoBa3JbXFtJWQTNoT72bBwxdDd356LxEDt2HStrxAdoRjvAPhKGS1iSf"
+  },
+  "failure": {
+    "code": "FINALITY_TIMEOUT",
+    "remedy": "The callback supplied a signature, but finality is unresolved. Query the same signature before starting another send."
+  },
+  "finishedAt": "2026-11-26T15:18:00.658Z"
+}

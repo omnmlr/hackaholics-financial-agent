@@ -22,7 +22,7 @@ export default function PrivacyPage() {
       <section className={s.section}>
         <h2>1. Identity &amp; Google OAuth Data</h2>
         <p>
-          When you sign in with Google or register with email, AGUS collects only the minimum
+          When you sign in with Google or an email code, AGUS collects only the minimum
           identity attributes needed to maintain your account and isolate your workspace:
         </p>
         <ul>
@@ -32,9 +32,9 @@ export default function PrivacyPage() {
             URL).
           </li>
           <li>
-            <strong>Email &amp; session records:</strong> Email address, hashed credentials (if
-            using password login), Better Auth session tokens stored in encrypted/HTTP-only
-            cookies, and verification or password-reset timestamps.
+            <strong>Email &amp; session records:</strong> Email address, temporary hashed sign-in
+            codes and their expiry timestamps, and Better Auth session tokens in HTTP-only
+            cookies.
           </li>
           <li>
             <strong>Use limitation:</strong> AGUS never sells Google user data, uses it for
@@ -46,8 +46,8 @@ export default function PrivacyPage() {
       <section className={s.section}>
         <h2>2. Transactional Email</h2>
         <p>
-          Verification links and password-reset emails are transmitted via Resend from{" "}
-          <code>mail.grindcity.app</code> strictly to complete account security flows you initiate.
+          Resend delivers six-digit sign-in codes from <code>mail.grindcity.app</code>
+          {" "}when you request them.
         </p>
       </section>
 

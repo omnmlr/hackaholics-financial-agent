@@ -163,7 +163,21 @@ Use `createCryptoSigner` (`apps/mobile/src/crypto-signer.ts`) and `canRecover` /
 
 ---
 
-## 9. Chisom Verification Checklist Before Handoff
+## 9. Readiness and remaining acceptance
+
+On 26 November, the public origin returned HTTPS health and readiness, the exact checked-in OpenAPI document, a signed-out auth session, and a Google authorization URL. Protected Crypto reads returned `401` without a session. The deployed OTP route returned `404` before activation of this release.
+
+| Capability | Verified in disposable PostgreSQL or fixtures | Hosted or device check still needed |
+| --- | --- | --- |
+| Authentication and sessions | Email issuance, expiry, attempts, resend, replay, sign-out, authenticator gate and Google verifier exchange | Receive real Resend email, sign in, and check the signed handset's Google browser return |
+| Multi-wallet, portfolio and transaction intelligence | Wallet proof and owner scoping, combined balances, activity attribution, partial or stale coverage | Link both test wallets and compare authenticated reads to Devnet RPC |
+| AI conversations, voice, image and research | Conversation continuity and retry, audio validation and delivery, image screening and research provenance | Exercise the complete authenticated conversation against the hosted providers |
+| Financial preparation, execution and receipts | Immutable review, approved route, one-time handoff, reconciliation and receipt rules | Complete the three approved Devnet transfers on the handset and verify receipts against Solana |
+| Monitoring and notifications | In-app alert rules, deduplication and read state | Check the live worker produces a persisted alert for an external inflow. Keep UI focused on the in-app inbox until push delivery is verified. |
+
+Mainnet execution, swap execution and Pocket remain gated. Read current capabilities after sign-in before showing optional actions.
+
+## 10. Chisom Verification Checklist Before Handoff
 
 1. `npm run contracts:generate` produces zero diff on `packages/contracts/openapi.json` and `packages/api-client/src/generated.ts`.
 2. `npm run mobile:typecheck` exits `0`.

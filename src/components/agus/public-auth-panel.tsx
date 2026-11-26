@@ -169,7 +169,8 @@ export function PublicAuthPanel({
     setError(null);
     setMessage(null);
     try {
-      await postJson("sign-out", {});
+      const { res } = await postJson("sign-out", {});
+      if (!res.ok) throw new Error("Sign-out failed.");
       setSession(null);
       setMessage("Signed out.");
     } catch {

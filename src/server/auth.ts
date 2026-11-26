@@ -24,9 +24,12 @@ export async function createIdentity() {
     "http://localhost:3000";
   const email = identityEmail(origin);
   const secret = process.env.BETTER_AUTH_SECRET!;
-  // Keep the separate legacy platform and fixture credentials available where
-  // the Crypto email provider is absent. Hosted consumers use Google or OTP.
-  const legacyPasswords = !email.configured && !email.publicRegistration;
+  // Keep legacy platform credentials for its separate runtime and fixtures.
+  // An unconfigured email provider on Crypto Devnet must fail closed.
+  const legacyPasswords =
+    process.env.AGUS_ENVIRONMENT !== "devnet" &&
+    !email.configured &&
+    !email.publicRegistration;
   const totp = twoFactor({ issuer: "AGUS" });
   const otp = emailOtp(secret, email.send);
   const googleHandoff = mobileGoogle();
@@ -110,7 +113,7 @@ export async function createIdentity() {
       user: {
         create: {
           before: async (user) => {
-            if (email.configured && !user.emailVerified) {
+            if (!legacyPasswords && !user.emailVerified) {
               throw new APIError("FORBIDDEN", {
                 code: "VERIFIED_EMAIL_REQUIRED",
               });

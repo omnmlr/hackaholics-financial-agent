@@ -506,6 +506,30 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         vi.stubEnv("GOOGLE_CLIENT_SECRET", undefined);
       });
 
+      it("keeps Devnet password sign-in disabled when email delivery is unavailable", async () => {
+        const previous = process.env.AGUS_ENVIRONMENT;
+        vi.stubEnv("AGUS_ENVIRONMENT", "devnet");
+        try {
+          const auth = await createIdentity();
+          expect(
+            (
+              await auth.handler(
+                new Request(`${origin}/api/auth/sign-in/email`, {
+                  method: "POST",
+                  headers: { origin, "content-type": "application/json" },
+                  body: JSON.stringify({
+                    email: "market0@fixture.invalid",
+                    password: "fixture-market-password-only",
+                  }),
+                }),
+              )
+            ).status,
+          ).toBe(404);
+        } finally {
+          vi.stubEnv("AGUS_ENVIRONMENT", previous);
+        }
+      });
+
       it("creates one verified account and restricts resend, expiry, attempts and replay", async () => {
         hostedEnv();
         const deliveries: Array<{ text: string; to: string[] }> = [];
@@ -592,10 +616,14 @@ describe.skipIf(!process.env.AGUS_TEST_DATABASE_URL)(
         const incorrectCode = latestCode() === "000000" ? "000001" : "000000";
         for (let i = 0; i < 5; i++) {
           // Model distinct rate-limit windows while keeping the same OTP alive.
-          await fixture.admin.query("UPDATE agus_rate_limit SET last_request=last_request-61000");
+          await fixture.admin.query(
+            "UPDATE agus_rate_limit SET last_request=last_request-61000",
+          );
           expect((await verify(incorrectCode)).status).toBe(400);
         }
-        await fixture.admin.query("UPDATE agus_rate_limit SET last_request=last_request-61000");
+        await fixture.admin.query(
+          "UPDATE agus_rate_limit SET last_request=last_request-61000",
+        );
         expect((await verify(latestCode())).status).toBe(403);
 
         await allowResend();

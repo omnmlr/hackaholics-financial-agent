@@ -1,0 +1,170 @@
+{
+  "version": 1,
+  "claim": "runner_report",
+  "runnerFingerprint": "0204f0f282b68fbbfe00937b57198d4c1fdf8d3c96494651b55ae59a2e02cc79",
+  "report": {
+    "lease": {
+      "deviceId": "runner-device-1",
+      "acquiredAt": "2026-11-26T15:21:22.874Z",
+      "releasedAt": "2026-11-26T15:22:02.545Z"
+    },
+    "builds": [
+      {
+        "apk": "fixture",
+        "package": "app.agus.testfixture",
+        "sha256": "bead693de679e4a98b080674e8f7200e8972aedeaf4f335497bea78d23016899"
+      },
+      {
+        "apk": "wallet",
+        "package": "com.solana.mobilewalletadapter.fakewallet",
+        "sha256": "269c0357b05d039dc544d777a06fb10092c340d9606a89d192911d7ba82da3aa"
+      }
+    ],
+    "artifactDigests": {
+      "fixture.png": "1410de547a87deb43eb8034e9dab129bf640e2798e19b183914733c2f066e443",
+      "fixture.ui.json": "0b1454b80f405c2ac10fc3015f8e99723c49dd26067423a8586b3fa8f15b892b",
+      "wallet-authorization.png": "c1041a1c93b47cb33eed7983493f9204b23416d12ea4be4c11f4b575784c4b54",
+      "wallet-authorization.ui.json": "7fe27aa1a2760c6a3056cdcf12ccd60bdc01f2838f97d3cacb8f8a163a2e909d",
+      "wallet-transaction.png": "fb4f3886dde679462d6d1a57f50b8c2f5fd493e907ccccbf308f05891ed438b9",
+      "wallet-transaction.ui.json": "2fb39027c6444418db0d56825dd9bb4464c9d77023ca2016aa70ca85b0f4072c",
+      "wallet-callback.json": "77cd105c071d1c70da5aacf567d48a670932a426a7778d5f4970cef93d5b6904",
+      "returned.png": "846b29b44d0fd1e5c386fba51313d8ddb1ef77d3adce006e93541c29cf8ea986",
+      "returned.ui.json": "3f06c29057c6f29daee67f0e344668adf32aacab5dba657f4c523d27c9a8a322"
+    },
+    "version": 1,
+    "runId": "bae42dc4-eac7-459d-a443-1a701fa2a47a",
+    "scenario": "wallet-transfer",
+    "title": "MWA: wallet return and finalized SOL transfer",
+    "scenarioSha256": "51a4b3d78ef0b3151e7d031d1a52437427d40e26122029dfced1333720273d81",
+    "cluster": "localnet",
+    "state": "passed",
+    "startedAt": "2026-11-26T15:21:22.874Z",
+    "artifacts": [
+      "fixture.png",
+      "fixture.ui.json",
+      "wallet-authorization.png",
+      "wallet-authorization.ui.json",
+      "wallet-transaction.png",
+      "wallet-transaction.ui.json",
+      "wallet-callback.json",
+      "returned.png",
+      "returned.ui.json"
+    ],
+    "steps": [
+      {
+        "action": "install",
+        "state": "passed",
+        "at": "2026-11-26T15:21:22.987Z"
+      },
+      {
+        "action": "install",
+        "state": "passed",
+        "at": "2026-11-26T15:21:23.296Z"
+      },
+      {
+        "action": "launch",
+        "state": "passed",
+        "at": "2026-11-26T15:21:23.659Z"
+      },
+      {
+        "action": "capture",
+        "state": "passed",
+        "at": "2026-11-26T15:21:24.540Z"
+      },
+      {
+        "action": "tap",
+        "state": "passed",
+        "at": "2026-11-26T15:21:26.811Z"
+      },
+      {
+        "action": "wait",
+        "state": "passed",
+        "at": "2026-11-26T15:21:28.816Z"
+      },
+      {
+        "action": "capture",
+        "state": "passed",
+        "at": "2026-11-26T15:21:32.187Z"
+      },
+      {
+        "action": "tap",
+        "state": "passed",
+        "at": "2026-11-26T15:21:34.316Z"
+      },
+      {
+        "action": "wait",
+        "state": "passed",
+        "at": "2026-11-26T15:21:36.323Z"
+      },
+      {
+        "action": "capture",
+        "state": "passed",
+        "at": "2026-11-26T15:21:38.955Z"
+      },
+      {
+        "action": "tap",
+        "state": "passed",
+        "at": "2026-11-26T15:21:41.085Z"
+      },
+      {
+        "action": "tap",
+        "state": "passed",
+        "at": "2026-11-26T15:21:43.079Z"
+      },
+      {
+        "action": "sol-transfer",
+        "state": "passed",
+        "at": "2026-11-26T15:21:45.104Z"
+      },
+      {
+        "action": "wait",
+        "state": "passed",
+        "at": "2026-11-26T15:21:58.434Z"
+      },
+      {
+        "action": "capture",
+        "state": "passed",
+        "at": "2026-11-26T15:22:00.414Z"
+      }
+    ],
+    "device": {
+      "kind": "emulator",
+      "model": "Android SDK built for x86_64",
+      "api": "35",
+      "seekerVerified": false
+    },
+    "deviceProfile": {
+      "version": 1,
+      "observedAt": "2026-11-26T15:21:22.880Z",
+      "source": "emulated_android",
+      "measured": {
+        "brand": "Android",
+        "dataAvailableBytes": 5778178048,
+        "memoryAvailableBytes": 1620942848,
+        "batteryPercent": 100,
+        "batteryTemperatureC": 25
+      },
+      "network": "not_measured",
+      "hardwareAttested": false
+    },
+    "chainWindow": {
+      "genesis": "K9ekWBKJ1Nn4XmZaWwserRf4eJpYPDMfX8Vprwx7tY7",
+      "slot": 229
+    },
+    "callback": {
+      "outcome": "submitted",
+      "payer": "73VAuxNPkwyFFtVm8LgMY5aCWDDefDv6Wm4g1Fz1NXPC",
+      "signature": "3C48bJGXBUmaU44rPJkEnWr7zGbS3jAMaUpAi61MpqdSMdkJnnbjCHxXmbakWyLV3FZpquDpGLXHyYDuTrhDsCaq"
+    },
+    "receipt": {
+      "slot": 280,
+      "feeLamports": "5000",
+      "payer": "73VAuxNPkwyFFtVm8LgMY5aCWDDefDv6Wm4g1Fz1NXPC",
+      "recipient": "EMtq5F54UxgEwYx1bmZpRJXNodBPPqjFekwQZNjpzH3w",
+      "lamports": "1000000",
+      "payerSource": "wallet-callback"
+    },
+    "finishedAt": "2026-11-26T15:22:02.545Z"
+  },
+  "signatureBase64": "W4RhousIG714l9an4ZL7O7RMAnnze8/mhbQ2k00VYe5XMKExf4zLtfpFEPXkxCJr3/97er8sk9SWwz4rAYLfAw=="
+}

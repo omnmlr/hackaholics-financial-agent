@@ -1,0 +1,30 @@
+{
+  "benchmark": "wallet-evidence-interpretation/v1",
+  "runId": "bae42dc4-eac7-459d-a443-1a701fa2a47a",
+  "scenarioSha256": "51a4b3d78ef0b3151e7d031d1a52437427d40e26122029dfced1333720273d81",
+  "claim": "finalized",
+  "expected": "finalized",
+  "correct": true,
+  "taskCompleted": true,
+  "falseFinancialSuccess": false,
+  "observedRunLatencyMs": 39671,
+  "scenarioActions": {
+    "total": 15,
+    "interactions": 4,
+    "failed": 0
+  },
+  "deviceProfile": {
+    "version": 1,
+    "observedAt": "2026-11-26T15:21:22.880Z",
+    "source": "emulated_android",
+    "measured": {
+      "brand": "Android",
+      "dataAvailableBytes": 5778178048,
+      "memoryAvailableBytes": 1620942848,
+      "batteryPercent": 100,
+      "batteryTemperatureC": 25
+    },
+    "network": "not_measured",
+    "hardwareAttested": false
+  }
+}

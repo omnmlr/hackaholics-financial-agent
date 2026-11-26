@@ -47,3 +47,9 @@ Do not allow general endpoints for ADB, shell, device-wide logs, file browsing o
 2. Ship a branch-only local scenario runner, CLI, stdio MCP, machine-readable reports, deterministic assertion tests and a local settlement demonstration.
 3. Add one applicant APK wallet flow with a disposable identity, then pilot a generic Android hardware unit and an attended Seeker loaner. Compare with internal Maestro scripts using the same outcomes.
 4. Add managed auth, isolated provider queue, artifact storage, Android shell and Devnet test-USDC job settlement only after pilot teams need them. Evaluate recurring pricing and vault-specific evidence before expanding provider supply.
+
+## Prototype scope and physical infrastructure path
+
+Broker selection now supports a small, operator-registered local pool. Device aliases are scoped to one runner. Discovery reports configured class, observed connectivity and lease state. Runs lease a compatible available device, record limited profile readings, and release the lease on terminal completion. No automated reassignment occurs after user or wallet interaction. Multi-host leases and consented everyday devices follow the dedicated test-device pilot.
+
+The benchmark grades the agent's interpretation separately from the test outcome. Run latency and taps belong to the scripted scenario. The report signature binds approved build and evidence digests through a runner-controlled key. SAS, escrow, new Devnet transfers, comparative agent UI control and training exports are future proof points. [Physical device network design](NETWORK.md)

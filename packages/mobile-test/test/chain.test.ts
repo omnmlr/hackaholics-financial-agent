@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { Keypair, PublicKey, SystemProgram, type Connection, type ParsedTransactionWithMeta } from "@solana/web3.js";
 import { assertSolTransfer, assertTokenTransfer, finalizedTransaction, startWindow } from "../src/chain";
 import { configSchema, RunFailure } from "../src/contracts";
-import { parseUi } from "../src/android";
+import { deviceMeasurements, parseUi } from "../src/android";
 
 const payer = Keypair.generate().publicKey;
 const recipient = Keypair.generate().publicKey;
@@ -83,4 +83,41 @@ test("runner contract rejects remote device addresses and UI capture drops other
   const xml = '<?xml version="1.0"?><hierarchy><node package="app.agus.testfixture" text="Authorize" bounds="[0,0][200,100]"/><node package="other.app" text="private" bounds="[0,0][200,100]"/></hierarchy>';
   assert.deepEqual(parseUi(xml, new Set(["app.agus.testfixture"])).map((node) => node.text), ["Authorize"]);
   assert.throws(() => parseUi('<!DOCTYPE hierarchy [<!ENTITY inline "value">]><hierarchy/>', new Set()));
+});
+
+test("runner receipt covers the run outcome and detects changed evidence", async () => {
+  const { generateKeyPairSync } = await import("node:crypto");
+  const { sealReport, verifyReceipt } = await import("../src/receipt");
+  const { scoreDecision } = await import("../src/evaluation");
+  const { privateKey, publicKey } = generateKeyPairSync("ed25519", {
+    privateKeyEncoding: { format: "pem", type: "pkcs8" },
+    publicKeyEncoding: { format: "pem", type: "spki" },
+  });
+  const report = {
+    version: 1, runId: "11111111-0000-4000-a000-000000000001", scenario: "wallet-assertion",
+    scenarioSha256: "a".repeat(64), title: "Synthetic fixture", cluster: "localnet", state: "failed",
+    startedAt: "2026-11-26T14:00:00Z", finishedAt: "2026-11-26T14:00:01Z", steps: [],
+    artifacts: ["wallet-callback.json"], artifactDigests: { "wallet-callback.json": "b".repeat(64) },
+    callback: { outcome: "submitted", payer: expected.payer, signature },
+  } as const;
+  const mutable = { ...report, steps: [], artifacts: [...report.artifacts] };
+  assert.equal(scoreDecision(mutable, "finalized").falseFinancialSuccess, true);
+  assert.equal(scoreDecision(mutable, "unresolved").correct, true);
+  const sealed = sealReport(mutable, privateKey);
+  assert.equal(verifyReceipt(JSON.parse(JSON.stringify(sealed)), publicKey), true);
+  assert.equal(verifyReceipt({ ...sealed, report: { ...sealed.report, state: "passed" } }, publicKey), false);
+});
+
+test("device profile keeps approved measurements and ignores unrelated data", () => {
+  const measured = deviceMeasurements(
+    "Current Battery Service state:\n  level: 51\n  temperature: 315\n  serial: private",
+    "MemAvailable: 1024 kB\n",
+    "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/block/test 2048 1024 1024 50% /data\n",
+    "Generic",
+  );
+  assert.deepEqual(measured, {
+    brand: "Generic", dataAvailableBytes: 1_048_576, memoryAvailableBytes: 1_048_576,
+    batteryPercent: 51, batteryTemperatureC: 31.5,
+  });
+  assert.equal(deviceMeasurements("level: 105", "", "", "unknown!").batteryPercent, null);
 });

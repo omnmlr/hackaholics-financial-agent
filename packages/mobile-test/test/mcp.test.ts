@@ -34,7 +34,7 @@ test("a generic MCP client schedules a known scenario and polls its real runner 
     await client.connect(transport);
     phase = "list tools";
     const { tools } = await client.listTools();
-    assert.deepEqual(tools.map((tool) => tool.name), ["list_test_scenarios", "start_test_run", "get_test_run"]);
+    assert.deepEqual(tools.map((tool) => tool.name), ["list_test_scenarios", "start_test_run", "get_test_run", "score_test_outcome"]);
     phase = "list scenarios";
     const listed = await client.callTool({ name: "list_test_scenarios" });
     assert.deepEqual((listed.structuredContent as { scenarios: unknown }).scenarios, [{ title: "Runner unavailable", scenario: "smoke" }]);
@@ -51,6 +51,8 @@ test("a generic MCP client schedules a known scenario and polls its real runner 
       const report = result.structuredContent as { state: string; failure?: { code: string } };
       if (report.state === "failed") {
         assert.equal(report.failure?.code, "DEVICE_UNAVAILABLE");
+        const grade = await client.callTool({ name: "score_test_outcome", arguments: { runId, outcome: "finalized" } });
+        assert.equal((grade.structuredContent as { falseFinancialSuccess: boolean }).falseFinancialSuccess, true);
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, 100));

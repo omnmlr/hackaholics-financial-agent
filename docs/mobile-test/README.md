@@ -5,6 +5,7 @@
 | Document | Contents |
 | --- | --- |
 | [Research](RESEARCH.md) | Pinned upstream code, competitors, product gate, commercial hypothesis |
+| [Physical device network](NETWORK.md) | Device diversity, agent evaluation, isolation, receipts, settlement and defensibility |
 | [Repository audit](REUSE.md) | Existing AGUS components and reuse decisions |
 | [Architecture](ARCHITECTURE.md) | Engine, reliability, compatibility and phased plan |
 | [Chisom’s integration contract](FRONTEND.md) | Navigation, transport, schemas, fixtures and branding |

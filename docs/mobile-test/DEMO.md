@@ -36,13 +36,13 @@ node --import tsx packages/mobile-test/lab/settlement.ts "$AGUS_LAB/job" "$(jq -
 node --import tsx packages/mobile-test/lab/settlement.ts "$AGUS_LAB/job" "$(jq -er .runId "$AGUS_LAB/rerun.json")"
 ```
 
-Check the first command gives exit 1 with `FINALITY_TIMEOUT` and a returned signature. In that scenario the Fake Wallet explicitly takes its “Simulate submitted” path. The transfer scenario must produce receipt and screenshot artifacts on each attempt. The second settlement invocation must return the same signature. For the rejection path, run `wallet-decline`; the expected diagnosis is `DECLINED`. Avoid a shell configured to exit on the expected non-zero result without first capturing it.
+Check the first command gives exit 1 with `FINALITY_TIMEOUT` and a returned signature. In that scenario the Fake Wallet explicitly takes its “Simulate submitted” path. The transfer scenario must produce receipt and screenshot artifacts on each attempt. The second settlement invocation must return the same signature. For the rejection path, run `wallet-decline` to check for the `DECLINED` diagnosis. Avoid a shell configured to exit on the expected non-zero result without first capturing it.
 
 For the original application, download its pinned `1b56459d1875` release or provide an agreed candidate APK. Verify the release checksum and certificate before use. Append the absolute APK path to the `configure.ts` command and run `agus-crypto-launch`. The target’s real wallet journey additionally requires the Devnet host, funded disposable Phantom/Solflare accounts and a tester email or Google identity. [AGUS signed release](https://github.com/omnmlr/hackaholics-financial-agent/releases/tag/agus-crypto-devnet-1b56459d1875) · [Existing handset procedure](../agus-crypto/ANDROID_DEVICE_TEST.md)
 
 ## MCP registration
 
-Use Node 24 and the working tree's locked dependencies. Set the same absolute configuration and evidence paths in the client. Use stdio; the server has no public listener. Codex can register it with the following setup; run from the repository root.
+Use Node 24 and the working tree's locked dependencies. Set the same absolute configuration and evidence paths in the client. The server connects through local stdio. Register it in Codex from the repository root.
 
 ```bash
 codex mcp add agus-mobile-test --env "AGUS_TEST_CONFIG=$AGUS_TEST_CONFIG" --env "AGUS_TEST_EVIDENCE=$AGUS_TEST_EVIDENCE" -- \

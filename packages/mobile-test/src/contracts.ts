@@ -33,10 +33,13 @@ const step = z.discriminatedUnion("action", [
 
 const scenario = z.strictObject({
   title: z.string().min(1).max(120),
+  deviceKind: z.enum(["emulator", "android-device"]).optional(),
   packages: z.array(packageName).min(1).max(6),
   steps: z.array(step).min(1).max(24),
 });
 const device = z.strictObject({
+  id: id.optional(),
+  label: z.string().min(1).max(60).optional(),
   serial: z.string().regex(/^[A-Za-z0-9_-]{1,100}$/),
   kind: z.enum(["emulator", "android-device"]),
   isolated: z.literal(true),
@@ -53,6 +56,7 @@ const network = z.discriminatedUnion("cluster", [
 export const configSchema = z.strictObject({
   version: z.literal(1),
   device,
+  additionalDevices: z.array(device).max(5).default([]),
   network,
   apks: z.record(id, apk),
   scenarios: z.record(id, scenario),

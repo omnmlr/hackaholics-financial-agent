@@ -18,15 +18,15 @@ Routes for the native shell are `/sign-in`, `/runs`, `/runs/new`, `/runs/:runId`
 ## Implemented local contract
 
 - `list_test_scenarios()` returns `{device:{kind,isolated,seekerVerified},cluster,scenarios:[{scenario,title}]}`.
-- `start_test_run({scenario})` returns `{runId}`; only an operator-approved scenario is callable. `get_test_run({runId})` returns the report below. Local CLI `devices`, `run` and `get` share the same core.
+- `start_test_run({scenario})` returns `{runId}`. The caller selects an operator-approved scenario. `get_test_run({runId})` returns the report below. Local CLI `devices`, `run` and `get` share the same core.
 - `report` includes `version:1`, `runId`, `scenario`, `scenarioSha256`, `title`, `cluster`, `state`, `startedAt`, `finishedAt?`, `device?`, `chainWindow?`, `steps`, `artifacts`, `callback?`, `receipt?` and `failure?`. `steps[]` contains `action`, `state` and UTC `at`. `receipt` contains payer, payer source, recipient, lamports, fee lamports and finalized slot. `callback` contains either a wallet failure code or a signature and payer. `failure` contains a stable code and remedy.
-- Status is `running | passed | failed`; a report with a signature and no receipt remains unresolved until it can be reconciled. Asset integer amounts are decimal strings. Public Devnet signatures may link to the cluster-specific explorer. Local validator signatures have no public explorer destination.
+- Status is `running | passed | failed`. A report with a signature and no receipt may require reconciliation. Asset integer amounts are decimal strings. Public Devnet signatures may link to the cluster-specific explorer. Local validator signatures have no public explorer destination.
 
 ## Planned hosted contract
 
 | Endpoint | Request and response |
 | --- | --- |
-| `GET /api/v1/mobile-test/devices` | `{items: Device[]}`. Device includes `id, name, class, state, compatibility, lastSeenAt`. `class=emulator\|android_device\|verified_seeker`; `state=online\|leased\|offline\|maintenance`. `compatibility[]` declares a wallet mode and evidence level. |
+| `GET /api/v1/mobile-test/devices` | `{items: Device[]}`. Device includes `id, name, class, state, compatibility, lastSeenAt`. `class=emulator\|android_device\|verified_seeker` and `state=online\|leased\|offline\|maintenance`. `compatibility[]` declares a wallet mode and evidence level. |
 | `GET /api/v1/mobile-test/scenarios` | `{items:[{id,version,title,packageName,walletModes,clusters,expectedChecks}]}`. |
 | `POST /api/v1/mobile-test/apks` | Authorizes an upload from `{projectId,packageName,sha256,bytes}` and returns `{apkId,uploadUrl,expiresAt}`. Ready only after server-side checksum and metadata verification. Implement before exposing unknown APK inputs. |
 | `POST /api/v1/mobile-test/runs` | `Idempotency-Key` plus `{apkId,scenarioId,scenarioVersion,deviceClass,cluster}`. Returns `202 {runId,state:"queued"}` or stable conflict code. |
@@ -40,3 +40,11 @@ A lease moves `requested → active → releasing → released` with `expired` a
 ## Fixture data
 
 Use [demo fixture reports](../../packages/mobile-test/examples/reports.json) for loading, wallet rejection, signed-without-receipt, successful Localnet execution and payment display. Keep fixture runs visibly labeled when used for a presentation. Test expired auth, device busy, generation mismatch, SSE disconnect and reopen, duplicate sequences and safe resume.
+
+## Physical inventory and evaluation addendum
+
+- The local discovery response now has `devices[]` with `id, kind, label, state, evidence, observed`. Use the ID for optional `start_test_run({scenario, device})` selection. These aliases are local to a runner. `evidence` distinguishes configuration, runner observations and hardware attestation. Do not expose serials.
+- `report.lease` gives the device alias and lease timestamps. `report.deviceProfile` includes `version, observedAt, source, measured, network, hardwareAttested`. Treat absent numerical values as unavailable. Label emulator values clearly, including battery and memory. Managed availability windows and pricing belong to a later provider flow.
+- Add an Evaluations entry under run detail. Send `score_test_outcome({runId,outcome})` after the model makes its decision. Show claim, expected outcome, correctness, false financial success, task completion, elapsed run time and scripted actions. Use the same scenario and environment for comparable completions. Keep task outcome and model decision visually distinct.
+- The receipt view shows issuer fingerprint, run and device alias, build identifiers, timestamps and evidence digests. Use “Runner-signed report” for the Ed25519 seal. Reserve hardware verification and SAS labels for independently implemented evidence.
+- Add provider navigation after authenticated enrollment exists. Planned areas are devices, availability, session history and accepted-work payout. Store explicit training consent separately from ordinary device participation. No guaranteed payout or earnings projection.

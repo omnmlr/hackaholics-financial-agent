@@ -4,6 +4,31 @@ import { SaxesParser } from "saxes";
 import { callbackSchema, RunFailure, type Config, type UiSelector } from "./contracts";
 
 const exec = promisify(execFile);
+const metric = (value: string | undefined, maximum = Number.MAX_SAFE_INTEGER) => {
+  if (!value || !/^\d+$/.test(value)) return null;
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number <= maximum ? number : null;
+};
+
+export function deviceMeasurements(battery: string, memory: string, storage: string, brand: string) {
+  const batteryField = (name: string) => battery.match(new RegExp("^\\s*" + name + ": (\\d+)\\s*$", "m"))?.[1];
+  const percent = metric(batteryField("level"), 100);
+  const tenthsCelsius = metric(batteryField("temperature"), 1_000);
+  return {
+    brand: /^[A-Za-z0-9 _.-]{1,40}$/.test(brand.trim()) ? brand.trim() : null,
+    dataAvailableBytes: (() => {
+      const kibibytes = metric(storage.trim().split("\n").at(-1)?.trim().split(/\s+/)[3], Number.MAX_SAFE_INTEGER / 1024);
+      return kibibytes === null ? null : kibibytes * 1024;
+    })(),
+    memoryAvailableBytes: (() => {
+      const kibibytes = metric(memory.match(/^MemAvailable:\s+(\d+) kB/m)?.[1], Number.MAX_SAFE_INTEGER / 1024);
+      return kibibytes === null ? null : kibibytes * 1024;
+    })(),
+    batteryPercent: percent,
+    batteryTemperatureC: tenthsCelsius === null ? null : tenthsCelsius / 10,
+  };
+}
+
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export type UiNode = {
@@ -60,6 +85,22 @@ export class Android {
       }
       return { kind: this.device.kind, model: model.trim().slice(0, 100), api: api.trim(), seekerVerified: false as const };
     } catch { throw new RunFailure("DEVICE_UNAVAILABLE"); }
+  }
+
+  async profile() {
+    const observedAt = new Date().toISOString();
+    const capture = (...args: string[]) => this.shell(...args).catch(() => "");
+    const [battery, memory, storage, brand] = await Promise.all([
+      capture("dumpsys", "battery"), capture("cat", "/proc/meminfo"),
+      capture("df", "-k", "/data"), capture("getprop", "ro.product.brand"),
+    ]);
+    return {
+      version: 1 as const, observedAt,
+      source: this.device.kind === "emulator" ? "emulated_android" as const : "runner_observed_android" as const,
+      measured: deviceMeasurements(battery, memory, storage, brand),
+      network: "not_measured" as const,
+      hardwareAttested: false as const,
+    };
   }
 
   async install(path: string) {
